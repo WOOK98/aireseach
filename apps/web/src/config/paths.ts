@@ -44,6 +44,7 @@ const pathsConfig = {
     user: {
       index: DASHBOARD_PREFIX,
       ai: `${DASHBOARD_PREFIX}/ai`,
+      report: `${DASHBOARD_PREFIX}/report`,
       settings: {
         index: `${DASHBOARD_PREFIX}/settings`,
         security: `${DASHBOARD_PREFIX}/settings/security`,

@@ -48,5 +48,57 @@ services:
       timeout: 5s
       retries: 5
 
+  report-agent:
+    build:
+      context: ./apps/report-agent
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${REPORT_AGENT_PORT:-8000}:8000"
+    environment:
+      REPORT_MODE: ${REPORT_MODE:-jina_llm}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
+      PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY:-}
+      JINA_API_KEY: ${JINA_API_KEY:-}
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-http://localhost:3000,http://localhost:3001}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
+
+  report-ui:
+    build:
+      context: ./apps/report-agent
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command:
+      [
+        "python3",
+        "-m",
+        "streamlit",
+        "run",
+        "app.py",
+        "--server.port=8501",
+        "--server.address=0.0.0.0",
+      ]
+    ports:
+      - "${REPORT_UI_PORT:-8501}:8501"
+    environment:
+      REPORT_MODE: ${REPORT_MODE:-jina_llm}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
+      PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY:-}
+      JINA_API_KEY: ${JINA_API_KEY:-}
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-http://localhost:8501}
+    depends_on:
+      - report-agent
+
 volumes:
   postgres_data:
