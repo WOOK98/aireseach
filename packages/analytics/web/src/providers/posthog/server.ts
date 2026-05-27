@@ -7,6 +7,10 @@ import type { AnalyticsProviderServerStrategy } from "@workspace/analytics";
 let client: PostHog | null = null;
 
 const getClient = () => {
+  if (!env.NEXT_PUBLIC_POSTHOG_KEY) {
+    return null;
+  }
+
   if (client) {
     return client;
   }
@@ -21,6 +25,10 @@ const getClient = () => {
 export const strategy = {
   track: (event, data) => {
     const client = getClient();
+
+    if (!client) {
+      return;
+    }
 
     client.capture({
       event,

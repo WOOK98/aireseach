@@ -6,9 +6,17 @@ import type { MonitoringProviderClientStrategy } from "../types";
 
 export const strategy = {
   captureException: (exception) => {
+    if (!env.NEXT_PUBLIC_POSTHOG_KEY || !posthog.__loaded) {
+      return;
+    }
+
     posthog.captureException(exception);
   },
   identify: <T extends { id: string }>(user: T | null) => {
+    if (!env.NEXT_PUBLIC_POSTHOG_KEY || !posthog.__loaded) {
+      return;
+    }
+
     if (user) {
       posthog.identify(user.id);
     } else {
@@ -16,7 +24,7 @@ export const strategy = {
     }
   },
   initialize: () => {
-    if (posthog.__loaded) {
+    if (!env.NEXT_PUBLIC_POSTHOG_KEY || posthog.__loaded) {
       return;
     }
 

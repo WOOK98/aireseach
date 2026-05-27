@@ -7,6 +7,10 @@ import type { MonitoringProviderServerStrategy } from "../types";
 let posthogInstance: PostHog | null = null;
 
 export function getPostHogServer() {
+  if (!env.NEXT_PUBLIC_POSTHOG_KEY) {
+    return null;
+  }
+
   posthogInstance ??= new PostHog(env.NEXT_PUBLIC_POSTHOG_KEY, {
     host: env.NEXT_PUBLIC_POSTHOG_HOST,
     flushAt: 1,
@@ -19,6 +23,10 @@ export function getPostHogServer() {
 export const strategy = {
   captureException: (exception, extra) => {
     const posthog = getPostHogServer();
+
+    if (!posthog) {
+      return;
+    }
 
     const distinctId = typeof extra?.id === "string" ? extra.id : undefined;
     posthog.captureException(exception, distinctId, extra);
@@ -33,6 +41,10 @@ export const strategy = {
     }
 
     const posthog = getPostHogServer();
+    if (!posthog) {
+      return;
+    }
+
     let distinctId: string | undefined;
     if (request.headers.cookie) {
       const cookieString = Array.isArray(request.headers.cookie)
