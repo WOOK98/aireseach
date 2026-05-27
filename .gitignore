@@ -1,0 +1,35 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+.pnpm-store
+
+# local env files
+.env
+.env*.local
+apps/*/.env
+apps/*/.env*.local
+
+# build outputs
+.next/
+out/
+build/
+dist/
+.turbo/
+.cache/
+.content-collections/
+apps/extension/.wxt/
+next-env.d.ts
+
+# platform files
+.vercel
+
+# misc
+.DS_Store
+*.pem
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

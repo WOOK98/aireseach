@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+apps/*/.env
+apps/*/.env.*
+node_modules
+**/node_modules
+.turbo
+**/.turbo
+.next
+**/.next
+.cache
+**/.cache
+apps/extension/.wxt
+**/*.log
