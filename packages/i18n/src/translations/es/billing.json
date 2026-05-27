@@ -1,0 +1,145 @@
+{
+  "pricing": {
+    "label": "Precios",
+    "title": "Planifica tu ingreso con precios ajustados",
+    "description": "Configura precios basados en tus necesidades y comienza a cobrar a tus clientes.",
+    "disclaimer": "Combina y ajusta configuraciones para crear el precio perfecto para tu negocio. <reference>Revisa la documentación para más información.</reference>"
+  },
+  "settings": {
+    "subscriptions": {
+      "description": "Tus planes activos y acceso."
+    },
+    "orders": {
+      "description": "Tus compras y facturas."
+    },
+    "yourPlan": {
+      "title": "Tu plan",
+      "description": "A continuación están los detalles de tu plan actual."
+    },
+    "information": {
+      "title": "Información de facturación",
+      "description": "Visita el enlace a continuación para gestionar tus detalles de facturación. Allí, puedes actualizar tu método de pago, cancelar tu suscripción, descargar facturas, y más.",
+      "visitPortal": "Visitar Portal de Facturación",
+      "reviewInStore": "Revisar en la tienda"
+    }
+  },
+  "additionalUsage": "Adicional {{unit}}",
+  "forFirst": "para el primer {{upTo}} {{unit}}",
+  "forNext": "para el siguiente {{upTo}} {{unit}}",
+  "upToIncluded": "Hasta {{upTo}} {{unit}} incluido",
+  "infiniteUsage": "arriba de {{threshold}} {{unit}}",
+  "currentBillingCycle": "Ciclo de facturación actual",
+  "subscribe": "Suscribirse ahora",
+  "updatePlan": "Actualizar plan",
+  "getLifetimeAccess": "Obtener acceso de por vida",
+  "trial": {
+    "label": "Prueba gratis",
+    "cta": "Comenzar gratis",
+    "period": "Prueba con {{period}} días gratis"
+  },
+  "discount": {
+    "specialOffer": "OFERTA ESPECIAL: <bold>-{{discount}} de descuento</bold>"
+  },
+  "plan": {
+    "free": {
+      "name": "Gratis",
+      "description": "Para pequeños proyectos que están comenzando"
+    },
+    "premium": {
+      "name": "Premium",
+      "description": "Desbloquea funciones avanzadas para crecer profesionalmente",
+      "badge": "Más vendido"
+    },
+    "enterprise": {
+      "name": "Empresarial",
+      "description": "Diseñado para organizaciones y grandes equipos"
+    }
+  },
+  "feature": {
+    "sync": "Sincronización perfecta entre dispositivos",
+    "basicSupport": "Soporte básico por correo",
+    "limitedStorage": "Almacenamiento en la nube limitado",
+    "emailNotifications": "Notificaciones de alerta por correo",
+    "basicReports": "Informes básicos de uso",
+    "advancedSync": "Sincronización avanzada en tiempo real",
+    "prioritySupport": "Soporte prioritario al cliente",
+    "moreStorage": "Más espacio de almacenamiento en la nube",
+    "teamCollaboration": "Herramientas de colaboración en equipo",
+    "smsNotifications": "Alertas y notificaciones por SMS",
+    "advancedReports": "Informes avanzados de análisis",
+    "unlimitedStorage": "Almacenamiento en la nube ilimitado",
+    "customBranding": "Opciones de marca personalizada",
+    "dedicatedSupport": "Soporte dedicado de cuenta",
+    "apiAccess": "Acceso completo a la API",
+    "userRoles": "Gestión completa de roles de usuario",
+    "auditLogs": "Registros de auditoría de cumplimiento",
+    "singleSignOn": "Inicio de sesión único empresarial",
+    "advancedAnalytics": "Análisis avanzado de uso"
+  },
+  "error": {
+    "checkout": "Ocurrió un error durante el proceso de pago.",
+    "checkoutRetrieve": "Ocurrió un error al recuperar la sesión de pago.",
+    "portal": "Ocurrió un error al obtener la URL del portal.",
+    "invalidProvider": "¡Proveedor de facturación inválido!",
+    "lemonSqueezy": "¡Error interno de la API de Lemon Squeezy!",
+    "variantNotFound": "¡Variante no encontrada!",
+    "priceNotFound": "¡Precio no encontrado!",
+    "customerNotFound": "¡Cliente no encontrado!",
+    "orderNotFound": "¡Pedido no encontrado!",
+    "subscriptionNotFound": "¡Suscripción no encontrada!",
+    "webhook": {
+      "signatureNotFound": "¡Firma del webhook no encontrada!",
+      "signatureInvalid": "Firma del webhook inválida.",
+      "metaInvalid": "Meta del webhook inválido.",
+      "dataInvalid": "Datos del webhook inválidos.",
+      "unsupportedEvent": "Evento de webhook no soportado.",
+      "unhandledEvent": "Evento de webhook no manejado.",
+      "userIdNotFound": "ID de usuario no encontrado en el evento de webhook.",
+      "productIdNotFound": "ID de producto no encontrado en el evento de webhook."
+    },
+    "customerCreation": "Error al crear el cliente.",
+    "promotionCodeRetrieve": "No se pudo recuperar el código de promoción.",
+    "usageRetrieve": "No se pudo recuperar el uso de la facturación.",
+    "subscriptionItemNotFound": "No se encontró ningún elemento de suscripción para esta suscripción.",
+    "subscriptionUpdate": "No se pudo actualizar la suscripción en el proveedor de facturación."
+  },
+  "subscription": {
+    "status": {
+      "active": "Activo",
+      "canceled": "Cancelado",
+      "incomplete": "Incompleto",
+      "incompleteExpired": "Incompleto expirado",
+      "pastDue": "Vencido",
+      "paused": "Pausado",
+      "trialing": "En prueba",
+      "unpaid": "Sin pagar"
+    }
+  },
+  "order": {
+    "cta": "Ver detalles",
+    "status": {
+      "succeeded": "Exitoso",
+      "failed": "Fallido",
+      "pending": "Pendiente"
+    }
+  },
+  "paywall": {
+    "result": {
+      "idle": "Inactivo",
+      "purchased": "Comprado",
+      "restored": "Restaurado",
+      "dismissed": "Descartado",
+      "skipped": "Omitido",
+      "error": "Error"
+    }
+  },
+  "type": {
+    "flat": "Fijo",
+    "per-seat": "Por asiento",
+    "metered": "Medido"
+  },
+  "model": {
+    "one-time": "Pago único",
+    "recurring": "Recurrente"
+  }
+}

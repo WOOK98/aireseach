@@ -1,0 +1,29 @@
+{
+  "name": "@workspace/billing-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./env": "./src/env.ts",
+    "./server": "./src/server.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules"
+  },
+  "dependencies": {
+    "@lemonsqueezy/lemonsqueezy.js": "4.0.0",
+    "@polar-sh/sdk": "0.47.1",
+    "@workspace/billing": "workspace:*",
+    "@workspace/db": "workspace:*",
+    "@workspace/shared": "workspace:*",
+    "dodopayments": "2.31.1",
+    "envin": "catalog:",
+    "stripe": "22.1.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@workspace/tsconfig": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

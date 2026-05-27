@@ -1,0 +1,18 @@
+{
+  "extends": "@workspace/tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "jsx": "preserve",
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "../../packages/ui/shared/src/typings/*.d.ts",
+    ".wxt/wxt.d.ts",
+    "src/**/*",
+    "*.ts",
+    "*.js"
+  ],
+  "exclude": ["node_modules"]
+}

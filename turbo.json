@@ -1,0 +1,39 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".cache/tsbuildinfo.json", "dist/**", "build/**"]
+    },
+    "//#lint": {},
+    "//#lint:fix": {
+      "cache": false
+    },
+    "//#format": {},
+    "//#format:fix": {
+      "cache": false
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": false
+    },
+    "clean": {
+      "cache": false
+    },
+    "setup": {
+      "cache": false,
+      "dependsOn": ["@workspace/db#db:setup"]
+    },
+    "test": {
+      "outputs": ["coverage.json"]
+    }
+  },
+  "globalEnv": ["DATABASE_URL", "PRODUCT_NAME", "URL", "DEFAULT_LOCALE"],
+  "globalPassThroughEnv": [
+    "NODE_ENV",
+    "SKIP_ENV_VALIDATION",
+    "npm_lifecycle_event"
+  ]
+}

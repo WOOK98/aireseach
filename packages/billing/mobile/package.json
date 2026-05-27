@@ -1,0 +1,33 @@
+{
+  "name": "@workspace/billing-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts",
+    "./server": "./src/server/index.ts",
+    "./server/env": "./src/server/env.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules"
+  },
+  "dependencies": {
+    "@better-fetch/fetch": "1.1.21",
+    "@workspace/billing": "workspace:*",
+    "@workspace/db": "workspace:*",
+    "@workspace/shared": "workspace:*",
+    "dayjs": "catalog:",
+    "envin": "catalog:",
+    "expo-iap": "4.2.3",
+    "expo-superwall": "1.0.11",
+    "react-native-purchases": "10.0.1",
+    "react-native-purchases-ui": "10.0.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:node24",
+    "@workspace/tsconfig": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "enabled": true,
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "enabled": false,
+      "matchPackageNames": ["/^@workspace//"]
+    }
+  ],
+  "updateInternalDeps": true,
+  "rangeStrategy": "bump",
+  "automerge": true,
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "schedule": ["on the first day of the month"],
+  "npm": {
+    "managerFilePatterns": [
+      "/(^|/)package\\.json$/",
+      "/(^|/)package\\.json\\.hbs$/"
+    ]
+  }
+}

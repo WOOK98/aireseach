@@ -1,0 +1,72 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "next-env.d.ts"],
+      "env": [
+        "CONTACT_EMAIL",
+
+        "BETTER_AUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "APPLE_CLIENT_ID",
+        "APPLE_CLIENT_SECRET",
+        "APPLE_APP_BUNDLE_IDENTIFIER",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "GITHUB_CLIENT_ID",
+        "GITHUB_CLIENT_SECRET",
+
+        "SEED_EMAIL",
+        "SEED_PASSWORD",
+
+        "STRIPE_WEBHOOK_SECRET",
+        "STRIPE_SECRET_KEY",
+        "LEMON_SQUEEZY_API_KEY",
+        "LEMON_SQUEEZY_SIGNING_SECRET",
+        "LEMON_SQUEEZY_STORE_ID",
+        "POLAR_ACCESS_TOKEN",
+        "POLAR_WEBHOOK_SECRET",
+        "POLAR_ORGANIZATION_SLUG",
+        "REVENUECAT_WEBHOOK_SECRET",
+        "REVENUECAT_API_KEY",
+        "SUPERWALL_WEBHOOK_SECRET",
+
+        "EMAIL_FROM",
+        "EMAIL_THEME",
+        "EMAIL_PROVIDER",
+        "RESEND_API_KEY",
+        "SENDGRID_API_KEY",
+        "PLUNK_API_KEY",
+        "POSTMARK_API_KEY",
+        "NODEMAILER_USER",
+        "NODEMAILER_PASSWORD",
+        "NODEMAILER_HOST",
+        "NODEMAILER_PORT",
+
+        "SENTRY_AUTH_TOKEN",
+
+        "OPEN_PANEL_SECRET",
+        "GOOGLE_ANALYTICS_SECRET",
+        "UMAMI_API_HOST",
+        "UMAMI_API_KEY",
+
+        "S3_REGION",
+        "S3_BUCKET",
+        "S3_ENDPOINT",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
+
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "GOOGLE_GENERATIVE_AI_API_KEY",
+        "MISTRAL_API_KEY",
+        "PERPLEXITY_API_KEY"
+      ]
+    },
+    "dev": {
+      "persistent": true
+    }
+  }
+}

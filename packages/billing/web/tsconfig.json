@@ -1,0 +1,8 @@
+{
+  "extends": "@workspace/tsconfig/internal.json",
+  "compilerOptions": {
+    "jsx": "preserve"
+  },
+  "include": ["src/**/*", "src/env.ts"],
+  "exclude": ["node_modules"]
+}

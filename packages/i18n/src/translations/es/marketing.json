@@ -1,0 +1,264 @@
+{
+  "product": {
+    "title": "Esta podría ser tu propia startup de 1 millón de dólares",
+    "description": "Una aplicación TurboStarter totalmente personalizable. Sustituye tu contenido y lanza tu producto más rápido que nunca.",
+    "mobile": {
+      "ios": {
+        "title": "App para iOS",
+        "description": "Experiencia nativa en iPhone y iPad"
+      },
+      "android": {
+        "title": "App para Android",
+        "description": "Optimizada para teléfonos Android"
+      }
+    },
+    "extension": {
+      "chrome": {
+        "title": "Extensión de Chrome",
+        "description": "Integración con el navegador Chrome"
+      },
+      "firefox": {
+        "title": "Complemento de Firefox",
+        "description": "Navegación mejorada para usuarios de Firefox"
+      },
+      "edge": {
+        "title": "Complemento de Edge",
+        "description": "Herramientas potentes para Microsoft Edge"
+      }
+    }
+  },
+
+  "announcement": "Aquí va el anuncio de tu próxima función",
+  "shippedWith": "Incluye herramientas listas para producción",
+  "cta": {
+    "question": "¿Listo para empezar?",
+    "button": "Empieza gratis",
+    "buy": {
+      "question": "¿Listo para empezar?",
+      "description": "Compra para desbloquear el acceso completo a la base de código y empieza a lanzar tu producto hoy mismo. En todas las plataformas.",
+      "button": "Obtén acceso",
+      "join": {
+        "description": "Únete a otros fundadores que personalizan TurboStarter, comparte tácticas de lanzamiento y mantente al tanto de las novedades.",
+        "button": "Únete a la comunidad"
+      }
+    }
+  },
+  "editToReload": "Edita <code>{{file}}</code> y guarda para recargar.",
+  "workInProgress": {
+    "title": "¡Estamos trabajando en ello!",
+    "description": "Actualmente {{feature}} no está disponible. Estamos trabajando en ello y estará disponible pronto."
+  },
+
+  "features": {
+    "label": "Características",
+    "title": "Convierte a los visitantes en clientes",
+    "description": "Todo lo que necesitas para crear, desplegar y escalar tus aplicaciones con confianza.",
+    "feature": {
+      "core": {
+        "title": "Base fundamental",
+        "description": "Autenticación, base de datos y API ya conectadas para que puedas enfocarte en aportar valor a tus clientes."
+      },
+      "ai": {
+        "title": "Capacidades impulsadas por IA",
+        "description": "Funciones inteligentes con recomendaciones y flujos de trabajo automatizados impulsados por IA."
+      },
+      "mobile": {
+        "title": "Experiencia móvil nativa",
+        "description": "Aplicación móvil completamente equipada con sincronización perfecta en todos tus dispositivos."
+      },
+      "extension": {
+        "title": "Extensión de navegador",
+        "description": "Mantén a los usuarios comprometidos en su navegador con accesos directos personalizables a tu producto."
+      }
+    }
+  },
+
+  "testimonials": {
+    "label": "Testimonios",
+    "title": "Los equipos lanzan más rápido con nosotros",
+    "description": "Conoce a fundadores y desarrolladores que personalizaron el starter para lanzar antes y convertir mejor.",
+    "rating": "{{rating}} de {{count}}+ reseñas",
+    "reviews": {
+      "jack": {
+        "name": "Jack",
+        "position": "Desarrollador Full Stack",
+        "body": "El starter liberó a nuestro equipo del trabajo repetitivo. Sustituimos el copy en un fin de semana y nos concentramos en las funciones que los clientes realmente querían."
+      },
+      "jill": {
+        "name": "Jill",
+        "position": "Fundadora de startup",
+        "body": "Lanzamos nuestro MVP en dos semanas. Todo, desde las páginas de marketing hasta la autenticación, estaba listo; solo reescribimos el copy para nuestra audiencia."
+      },
+      "john": {
+        "name": "John",
+        "position": "Desarrollador senior",
+        "body": "La experiencia de desarrollador es incomparable. El stack funciona desde el primer momento y se mantiene lo suficientemente flexible como para adaptarse a la narrativa de nuestro producto."
+      },
+      "sarah": {
+        "name": "Sarah",
+        "position": "Product Manager",
+        "body": "Escalamos del prototipo a miles de usuarios sin complicaciones. La analítica, la facturación y los flujos de marketing estaban listos para personalizar."
+      },
+      "mike": {
+        "name": "Mike",
+        "position": "Líder de ingeniería",
+        "body": "La comunidad es excelente. Respuestas rápidas, feedback para los lanzamientos y mejoras constantes mantienen a nuestro equipo avanzando."
+      }
+    }
+  },
+
+  "faq": {
+    "label": "Preguntas frecuentes",
+    "title": "¿Tienes una pregunta? Tenemos respuestas",
+    "description": "Encuentra respuestas a preguntas frecuentes sobre funciones, precios, implementación y cómo empezar con nuestra plataforma.",
+    "cta": "Contáctanos",
+    "question": {
+      "whatDoesOurPlatformDo": {
+        "question": "¿Qué hace nuestra plataforma?",
+        "answer": "TurboStarter te ofrece una base SaaS full-stack: sitio de marketing, aplicación web, apps móviles y extensiones, para que puedas enfocarte en la experiencia única de tus clientes."
+      },
+      "howWillThisBenefitMyBusiness": {
+        "question": "¿Cómo beneficiará esto a mi negocio?",
+        "answer": "Lanzas más rápido, entregas funciones antes y conviertes más leads porque el producto base, la analítica y los flujos de facturación ya están listos."
+      },
+      "isMyDataSafe": {
+        "question": "¿Mis datos están seguros?",
+        "answer": "Sí. Seguimos prácticas de seguridad de nivel empresarial y ofrecemos salvaguardas para que adaptes las políticas a los requisitos de tu industria."
+      },
+      "whatKindOfIntegrationsAreAvailable": {
+        "question": "¿Qué tipo de integraciones están disponibles?",
+        "answer": "TurboStarter incluye desde el inicio integraciones SaaS populares, y su arquitectura modular facilita añadir tu propio stack."
+      },
+      "howEasyIsItToOnboardMyTeam": {
+        "question": "¿Qué tan fácil es incorporar a mi equipo?",
+        "answer": "Tu equipo puede incorporarse rápidamente con documentación clara, patrones TypeScript-first y ejemplos que muestran exactamente dónde personalizar."
+      },
+      "whatTypesOfBusinessesCanUseThis": {
+        "question": "¿Qué tipos de empresas pueden usar esto?",
+        "answer": "Desde fundadores individuales hasta equipos de innovación empresarial, TurboStarter se adapta a cualquier caso de uso SaaS que necesite una ventaja inicial."
+      },
+      "canICustomizeThisToFitMyBusinessNeeds": {
+        "question": "¿Puedo personalizar esto para adaptarlo a las necesidades de mi negocio?",
+        "answer": "Por supuesto. Cada módulo está diseñado para personalizarse rápidamente: actualiza el copy, cambia componentes y amplía la lógica sin pelearte con el framework."
+      }
+    }
+  },
+
+  "contact": {
+    "label": "Contacto",
+    "title": "Ponte en contacto con nosotros hoy para soporte",
+    "cta": "Hablar con ventas",
+    "description": "Contáctanos para recibir ayuda o compartir comentarios",
+    "form": {
+      "name": {
+        "placeholder": "Juan Pérez"
+      },
+      "email": {
+        "placeholder": "tu@correo.com"
+      },
+      "message": {
+        "placeholder": "¿Cómo podemos ayudarte?"
+      },
+      "submit": "Enviar mensaje",
+      "success": {
+        "title": "¡Mensaje enviado!",
+        "description": "Gracias por tu mensaje. Te responderemos pronto."
+      }
+    },
+    "email": {
+      "subject": "Has recibido un nuevo envío del formulario de contacto",
+      "body": "Nuevo envío del formulario de contacto"
+    }
+  },
+
+  "blog": {
+    "label": "Blog",
+    "title": "Noticias y actualizaciones sobre la plataforma",
+    "description": "Mantente al día con las últimas noticias, ideas y actualizaciones de nuestra plataforma. Descubre nuevas funciones, buenas prácticas y tendencias del sector.",
+    "timeToRead": "{{time}} min de lectura",
+    "tag": {
+      "learning": "aprendizaje",
+      "skills": "habilidades",
+      "progress": "progreso",
+      "product": "producto",
+      "development": "desarrollo",
+      "prototype": "prototipo",
+      "launch": "lanzamiento"
+    }
+  },
+
+  "api": {
+    "title": "Referencia de API",
+    "description": "Crea integraciones con nuestra API"
+  },
+
+  "roadmap": {
+    "title": "Hoja de ruta",
+    "description": "Descubre lo que viene después"
+  },
+
+  "docs": {
+    "title": "Documentación",
+    "description": "Aprende a usar TurboStarter"
+  },
+  "ai": {
+    "description": "Libera productividad e innovación con el asistente de IA de TurboStarter. Obtén respuestas al instante, automatiza tareas y potencia tu flujo de trabajo con inteligencia artificial avanzada, segura, confiable y diseñada para equipos modernos.",
+    "prompt": {
+      "history": "Cuenta la historia de internet",
+      "capitals": "Hazme un cuestionario sobre las capitales del mundo",
+      "quantum": "Explica la computación cuántica",
+      "realWorld": "Describe un caso real de IA"
+    },
+    "placeholder": "Haz una pregunta...",
+    "cta": "Enviar"
+  },
+  "setup": {
+    "steps": {
+      "step": {
+        "start": {
+          "title": "Este es un paso simple",
+          "description": "Necesitas presionar el botón Continuar para proceder al siguiente paso"
+        },
+        "required": {
+          "title": "Este es un paso requerido",
+          "description": "Tienes que completar todos los campos requeridos para proceder al siguiente paso",
+          "fields": {
+            "data": "Entiendo que mis datos son privados y están encriptados",
+            "privacy": "He leído y acepto la <a>Política de Privacidad</a>"
+          }
+        },
+        "paywall": {
+          "title": "Este es un paso de pago",
+          "description": "Puedes animar a los usuarios a comprar el producto aquí o permitirles saltar por gratis",
+          "cta": "Presentar pago",
+          "state": {
+            "title": "Estado del pago",
+            "description": "Actualizaciones en tiempo real del flujo de pago, incluyendo carga, completación y errores.",
+            "status": {
+              "opening": "Abriendo pago…",
+              "dismissed": "Pago descartado",
+              "skipped": "Pago omitido",
+              "error": "Error de pago",
+              "idle": "Pago inactivo"
+            }
+          }
+        }
+      }
+    }
+  },
+  "update": {
+    "available": {
+      "title": "Nueva actualización disponible!",
+      "description": "Una nueva actualización está lista para ser instalada. Haz clic abajo para instalarla o descarta para más tarde."
+    },
+    "installing": {
+      "title": "Instalando actualización...",
+      "description": "La actualización está siendo instalada. Por favor, espera un momento."
+    }
+  },
+  "buyCta": {
+    "title": "Esta aplicación puede ser tuya.",
+    "description": "Personaliza, despliega y empieza a ganar $$$ en minutos.",
+    "link": "Obtén TurboStarter"
+  }
+}

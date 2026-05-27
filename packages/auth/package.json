@@ -1,0 +1,38 @@
+{
+  "name": "@workspace/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts",
+    "./server": "./src/server.ts",
+    "./client/*": "./src/client/*.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "db:generate": "cross-env SKIP_ENV_VALIDATION=1 pnpm dlx auth generate --config src/server.ts --output ../db/src/schema/auth.ts --y",
+    "db:seed": "cross-env SKIP_ENV_VALIDATION=1 pnpm dlx tsx ./src/scripts/seed.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "1.6.9",
+    "@better-auth/expo": "1.6.9",
+    "@better-auth/passkey": "1.6.9",
+    "@workspace/billing": "workspace:*",
+    "@workspace/billing-web": "workspace:*",
+    "@workspace/db": "workspace:*",
+    "@workspace/email": "workspace:*",
+    "@workspace/i18n": "workspace:*",
+    "@workspace/shared": "workspace:*",
+    "better-auth": "1.6.9",
+    "envin": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@workspace/tsconfig": "workspace:*",
+    "@workspace/vitest-config": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

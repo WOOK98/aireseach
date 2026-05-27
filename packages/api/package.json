@@ -1,0 +1,41 @@
+{
+  "name": "@workspace/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts",
+    "./utils": "./src/utils/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "3.0.53",
+    "@hono/zod-validator": "0.7.6",
+    "@workspace/auth": "workspace:*",
+    "@workspace/billing": "workspace:*",
+    "@workspace/billing-mobile": "workspace:*",
+    "@workspace/billing-web": "workspace:*",
+    "@workspace/db": "workspace:*",
+    "@workspace/email": "workspace:*",
+    "@workspace/i18n": "workspace:*",
+    "@workspace/monitoring-web": "workspace:*",
+    "@workspace/shared": "workspace:*",
+    "@workspace/storage": "workspace:*",
+    "ai": "6.0.168",
+    "envin": "catalog:",
+    "hono": "4.12.15",
+    "hono-status-monitor": "1.0.7",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@workspace/tsconfig": "workspace:*",
+    "@workspace/vitest-config": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

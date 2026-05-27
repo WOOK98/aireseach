@@ -1,0 +1,27 @@
+{
+  "name": "@workspace/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./globals.css": "./src/styles/globals.css",
+    "./assets": "./src/assets/index.ts",
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "build": "pnpm dlx tsx ./src/styles/themes/build.ts"
+  },
+  "dependencies": {
+    "class-variance-authority": "0.7.1",
+    "postcss": "8.5.12",
+    "tailwindcss": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:node24",
+    "@workspace/tsconfig": "workspace:*",
+    "react": "catalog:react19",
+    "tailwind-merge": "3.5.0",
+    "typescript": "catalog:"
+  }
+}

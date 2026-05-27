@@ -1,0 +1,22 @@
+name: CI / AI Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+jobs:
+  pr-agent-review:
+    name: 🤖 Review
+    if: ${{ github.event.sender.type != 'Bot' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+    steps:
+      - name: 🔍 Review
+        uses: qodo-ai/pr-agent@main
+        env:
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_action_config.auto_describe: "false"

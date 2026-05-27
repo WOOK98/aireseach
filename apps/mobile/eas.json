@@ -1,0 +1,77 @@
+{
+  "cli": {
+    "appVersionSource": "remote",
+    "version": ">= 4.1.2"
+  },
+  "build": {
+    "base": {
+      "node": "24.14.0",
+      "pnpm": "11.1.3",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_PUBLIC_DEFAULT_LOCALE": "en",
+        "EXPO_PUBLIC_AUTH_PASSWORD": "true",
+        "EXPO_PUBLIC_AUTH_MAGIC_LINK": "true",
+        "EXPO_PUBLIC_AUTH_EMAIL_OTP": "true",
+        "EXPO_PUBLIC_AUTH_ANONYMOUS": "true",
+        "EXPO_PUBLIC_THEME_MODE": "system",
+        "EXPO_PUBLIC_THEME_COLOR": "orange"
+      }
+    },
+    // Development profile used for local development
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "environment": "development",
+      "env": {
+        "APP_ENV": "development"
+      }
+    },
+    // Needed for iOS, as you can't reuse `development` profile there for simulator
+    "development-simulator": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "environment": "development",
+      "env": {
+        "APP_ENV": "development"
+      }
+    },
+    // Preview profile used for EAS test builds in preview environment
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "channel": "preview",
+      "environment": "preview",
+      "env": {
+        "APP_ENV": "preview"
+      }
+    },
+    // Production profile used for EAS production builds to be submitted to the stores
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "environment": "production",
+      "channel": "production",
+      "env": {
+        "APP_ENV": "production"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "6754278899"
+      }
+    }
+  }
+}

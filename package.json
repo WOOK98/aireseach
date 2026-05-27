@@ -1,0 +1,40 @@
+{
+  "name": "core",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm with-env turbo build",
+    "clean": "turbo clean && git clean -xdf .turbo .cache node_modules",
+    "dev": "pnpm with-env turbo dev",
+    "format": "oxfmt --check",
+    "format:fix": "oxfmt",
+    "postinstall": "pnpm lint:ws",
+    "lint": "turbo build --filter=./packages/* && oxlint",
+    "lint:fix": "turbo build --filter=./packages/* && oxlint --fix",
+    "lint:ws": "pnpm dlx sherif@latest -r packages-without-package-json",
+    "services:logs": "docker compose logs -f",
+    "services:setup": "pnpm services:start && pnpm with-env turbo setup",
+    "services:start": "docker compose up -d --wait",
+    "services:status": "docker compose ps",
+    "services:stop": "docker compose down",
+    "test": "turbo run test",
+    "test:projects": "vitest run",
+    "test:projects:watch": "vitest --watch",
+    "with-env": "dotenv -c --"
+  },
+  "devDependencies": {
+    "@turbo/gen": "catalog:turbo",
+    "@workspace/oxfmt": "workspace:*",
+    "@workspace/oxlint": "workspace:*",
+    "cross-env": "10.1.0",
+    "dotenv-cli": "11.0.0",
+    "lefthook": "2.1.6",
+    "turbo": "catalog:turbo",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@11.1.3"
+}
