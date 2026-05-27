@@ -1,4 +1,5 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { FileText } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { getBillingSummaryResponseSchema } from "@workspace/api/schema";
@@ -28,6 +29,11 @@ const menu = [
         title: "ai",
         href: pathsConfig.dashboard.user.ai,
         icon: <Icons.Brain />,
+      },
+      {
+        title: "report",
+        href: pathsConfig.dashboard.user.report,
+        icon: <FileText />,
       },
     ],
   },
