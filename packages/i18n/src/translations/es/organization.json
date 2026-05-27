@@ -1,0 +1,203 @@
+{
+  "create": {
+    "title": "Crear organización",
+    "description": "Crea una nueva organización para gestionar tu equipo y proyectos.",
+    "cta": "Crear organización",
+    "info": "El nombre de tu organización debe ser único y descriptivo."
+  },
+  "join": {
+    "title": "Unirse a una organización",
+    "description": "Únete a una organización para colaborar con tu equipo, gestionar proyectos eficientemente y acceder a recursos compartidos."
+  },
+  "settings": {
+    "title": "Configuración",
+    "header": {
+      "title": "Configuración de la organización",
+      "description": "Gestiona la configuración y preferencias de tu organización."
+    }
+  },
+  "invitations": {
+    "title": "Invitaciones",
+    "disclaimer": {
+      "title": "Has sido invitado a unirte a una organización",
+      "description": "Inicia sesión o crea una cuenta para aceptar la invitación y unirte a la organización."
+    },
+    "resend": { "success": "¡Invitación reenviada exitosamente!" },
+    "cancel": { "success": "¡Invitación cancelada exitosamente!" },
+    "accept": { "success": "¡Ahora eres miembro de {{organization}}!" },
+    "reject": { "success": "Has rechazado unirte a {{organization}}." },
+    "expired": {
+      "title": "Invitación no encontrada o expirada",
+      "description": "La invitación que estás buscando está expirada o no existe. Contacta al propietario de la organización para renovar la invitación.",
+      "cta": "Volver al panel"
+    },
+    "emailMismatch": {
+      "title": "Estás conectado con una cuenta diferente",
+      "description": "El correo que intentas usar no coincide con el correo de la invitación. Inicia sesión como <bold>{{email}}</bold> o contacta al propietario para actualizar la invitación.",
+      "cta": "Iniciar sesión como {{email}}",
+      "skip": "Ir al panel"
+    },
+    "invitation": {
+      "title": "Unirse a {{organizationName}}",
+      "description": "<bold>{{inviterEmail}}</bold> te ha invitado a unirte a <bold>{{organizationName}}</bold> en TurboStarter.",
+      "skip": "Ir al panel"
+    },
+    "user": {
+      "banner": {
+        "title_one": "Tienes una invitación pendiente",
+        "title_other": "Tienes {{count}} invitaciones pendientes",
+        "description": "Haz clic para revisar los detalles y aceptar o rechazar la invitación."
+      },
+      "list": {
+        "title": "Invitaciones pendientes",
+        "description": "Ver y gestionar tus invitaciones pendientes."
+      }
+    }
+  },
+  "members": {
+    "title": "Miembros",
+    "header": {
+      "title": "Miembros de la organización",
+      "description": "Gestiona los miembros de tu organización, invitaciones y roles."
+    },
+    "invite": {
+      "title": "Invitar miembro",
+      "description": "Para agregar un nuevo miembro a tu organización, envíale una invitación.",
+      "info": "Puedes invitar múltiples miembros a la vez.",
+      "missingPermission": "Necesitas permisos adicionales para invitar miembros a esta organización.",
+      "success_one": "¡Miembro invitado exitosamente!",
+      "success_other": "¡Miembros invitados exitosamente!",
+      "email": {
+        "subject": "Has sido invitado a unirte a una organización",
+        "preview": "Únete a {{inviter}} en TurboStarter",
+        "body": "<bold>{{inviter}}</bold> te ha invitado a unirte a <bold>{{organization}}</bold> en TurboStarter.",
+        "or": "O, copia y pega este enlace en tu navegador:",
+        "cta": "Unirse a {{organization}}",
+        "disclaimer": "Si no esperabas esta invitación, no te preocupes, puedes ignorar este correo."
+      }
+    },
+    "update": {
+      "role": {
+        "title": "Actualizar el rol de {{name}}",
+        "description": "Cambia el rol del miembro seleccionado desde el menú desplegable.",
+        "info": "El rol determina los permisos del miembro.",
+        "success": "¡Rol del miembro actualizado exitosamente!"
+      }
+    },
+    "remove": { "success": "¡Miembro eliminado exitosamente!" }
+  },
+  "name": {
+    "edit": {
+      "description": "Ingresa el nombre de tu organización, o un nombre con el que te sientas cómodo.",
+      "success": "¡Nombre de la organización actualizado exitosamente!",
+      "info": "Usa como máximo 32 caracteres.",
+      "missingPermission": "Necesitas permisos adicionales para gestionar el nombre de tu organización."
+    }
+  },
+  "logo": {
+    "description": "Este es el logo de tu organización.\nHaz clic en el logo para subir uno personalizado desde tus archivos.",
+    "info": "Aunque no es obligatorio, se recomienda agregar un logo.",
+    "missingPermission": "Necesitas permisos adicionales para gestionar el logo de tu organización.",
+    "update": {
+      "success": "¡Logo de la organización actualizado exitosamente!"
+    },
+    "remove": {
+      "success": "¡Logo de la organización eliminado exitosamente!"
+    }
+  },
+  "leave": {
+    "title": "Salir de la organización",
+    "description": "Revoca tu acceso a esta organización. Cualquier recurso agregado permanecerá.",
+    "cta": "Salir de la organización",
+    "disclaimer": "¿Seguro que quieres salir de esta organización?\n\nYa no tendrás acceso a sus recursos y necesitarás ser invitado nuevamente para unirte.\n\n¿Deseas continuar?",
+    "success": "¡Has salido de la organización exitosamente!",
+    "cannotLeaveAsOnlyOwner": "Para salir, asegúrate de que al menos otro miembro tenga el rol de Propietario."
+  },
+  "delete": {
+    "title": "Eliminar organización",
+    "description": "Elimina permanentemente esta organización y todo su contenido de la plataforma TurboStarter. Esta acción no es reversible.",
+    "cta": "Eliminar organización",
+    "disclaimer": "Estás a punto de eliminar esta organización. \n\nDespués, todos los datos (incluidos miembros y equipos) serán eliminados permanentemente y no podrán recuperarse. \n\n¿Deseas continuar?",
+    "success": "¡Organización eliminada exitosamente!",
+    "blocker": {
+      "missingPermission": "Necesitas permisos adicionales para eliminar esta organización.",
+      "subscriptions": {
+        "title_one": "Suscripción activa",
+        "title_other": "Suscripciones activas",
+        "description_one": "Esta organización tiene 1 suscripción activa. Por favor cancela todas las suscripciones antes de eliminar.",
+        "description_other": "Esta organización tiene {{count}} suscripciones activas. Por favor cancela todas las suscripciones antes de eliminar."
+      }
+    }
+  },
+  "billing": {
+    "title": "Facturación de la organización",
+    "description": "Gestiona la configuración y preferencias de tu organización."
+  },
+  "error": {
+    "slugAlreadyTaken": "El slug ya está tomado.",
+    "cannotCreateNew": "No puedes crear una nueva organización.",
+    "maximumNumberOfOrganizations": "Has alcanzado el número máximo de organizaciones.",
+    "alreadyExists": "Ya existe una organización con este nombre.",
+    "notFound": "No pudimos encontrar la organización.",
+    "userNotMember": "No eres miembro de esta organización.",
+    "cannotUpdate": "No puedes actualizar esta organización.",
+    "cannotDelete": "No puedes eliminar esta organización.",
+    "noActive": "No se encontró ninguna organización activa.",
+    "userAlreadyMember": "Ya eres miembro de esta organización.",
+    "memberNotFound": "No pudimos encontrar al miembro.",
+    "cannotLeaveAsOnlyOwner": "No puedes dejar la organización como el único propietario.",
+    "cannotLeaveWithoutOwner": "No puedes dejar la organización sin un propietario.",
+    "cannotDeleteMember": "No puedes eliminar a este miembro.",
+    "cannotUpdateMember": "No puedes actualizar a este miembro.",
+    "membershipLimitReached": "Has alcanzado el límite de miembros para esta organización.",
+    "cannotAccess": "No puedes acceder a esta organización.",
+    "slugNotAvailable": "El slug no está disponible.",
+    "role": {
+      "notFound": "No pudimos encontrar el rol."
+    },
+    "team": {
+      "cannotCreateNew": "No puedes crear un nuevo equipo.",
+      "alreadyExists": "Ya existe un equipo con este nombre.",
+      "notFound": "No pudimos encontrar el equipo.",
+      "maximumNumberOfTeams": "Has alcanzado el número máximo de equipos.",
+      "unableToRemoveLastTeam": "No puedes eliminar el último equipo.",
+      "cannotCreate": "No puedes crear un equipo en esta organización.",
+      "cannotDelete": "No puedes eliminar un equipo en esta organización.",
+      "cannotUpdate": "No puedes actualizar un equipo en esta organización.",
+      "cannotAccessMembers": "No puedes acceder a los miembros de este equipo.",
+      "memberLimitReached": "Has alcanzado el límite de miembros para este equipo.",
+      "userNotMember": "No eres miembro de este equipo.",
+      "noActive": "No se encontró ningún equipo activo.",
+      "cannotCreateNewMember": "No puedes crear un nuevo miembro.",
+      "cannotRemoveMember": "No puedes eliminar a este miembro.",
+      "cannotAccess": "No puedes acceder a esta organización."
+    },
+    "invitation": {
+      "cannotInviteUsers": "No puedes invitar usuarios a esta organización.",
+      "userAlreadyInvited": "Este usuario ya está invitado a esta organización.",
+      "notFound": "No pudimos encontrar la invitación.",
+      "notRecipient": "No eres el destinatario de esta invitación.",
+      "cannotCancel": "No puedes cancelar esta invitación.",
+      "inviterNoLongerMember": "El invitador ya no es miembro de la organización.",
+      "cannotInviteUserWithRole": "No puedes invitar a un usuario con este rol.",
+      "emailVerificationRequired": "Se requiere verificación de correo antes de aceptar o rechazar una invitación.",
+      "failedToRetrieve": "No pudimos recuperar la invitación.",
+      "limitReached": "Has alcanzado el límite de invitaciones para esta organización."
+    },
+    "ac": {
+      "roleAssignedToMembers": "El rol está asignado a miembros.",
+      "missingAcInstance": "Falta la instancia AC.",
+      "mustBeInOrganizationToCreateRole": "Debes estar en una organización para crear un rol.",
+      "cannotCreateRole": "No puedes crear un rol.",
+      "cannotUpdateRole": "No puedes actualizar un rol.",
+      "cannotDeleteRole": "No puedes eliminar un rol.",
+      "cannotReadRole": "No puedes leer un rol.",
+      "cannotListRole": "No puedes listar roles.",
+      "cannotGetRole": "No puedes obtener un rol.",
+      "tooManyRoles": "Has alcanzado el número máximo de roles.",
+      "invalidResource": "El recurso es inválido.",
+      "cannotDeletePreDefinedRole": "No puedes eliminar un rol predefinido.",
+      "roleNameAlreadyTaken": "El nombre del rol ya está en uso."
+    }
+  }
+}

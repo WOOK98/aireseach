@@ -1,0 +1,9 @@
+{
+  "extends": "@workspace/tsconfig/internal.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "lib": ["dom", "dom.iterable"]
+  },
+  "include": ["*.ts", "src/**/*"],
+  "exclude": ["node_modules"]
+}

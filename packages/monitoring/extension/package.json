@@ -1,0 +1,27 @@
+{
+  "name": "@workspace/monitoring-extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules"
+  },
+  "dependencies": {
+    "@sentry/browser": "10.50.0",
+    "@workspace/monitoring": "workspace:*",
+    "@workspace/shared": "workspace:*",
+    "envin": "catalog:",
+    "posthog-js": "1.372.3",
+    "uuid": "14.0.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.1.40",
+    "@types/node": "catalog:node24",
+    "@workspace/tsconfig": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,52 @@
+name: turbostarter
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-turbostarter}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-turbostarter}
+      POSTGRES_DB: ${POSTGRES_DB:-core}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-U",
+          "${POSTGRES_USER:-turbostarter}",
+          "-d",
+          "${POSTGRES_DB:-core}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    environment:
+      MP_SMTP_AUTH: "${MAILPIT_SMTP_USER:-turbostarter}:${MAILPIT_SMTP_PASSWORD:-turbostarter}"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_WEB_PORT:-8025}:8025"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8025/api/v1/info",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

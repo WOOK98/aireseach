@@ -1,0 +1,11 @@
+{
+  "extends": "@workspace/tsconfig/internal.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "content-collections": ["./.content-collections/generated"]
+    }
+  },
+  "include": ["*.ts", "src/**/*"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,31 @@
+name: CI / Publish mobile
+
+on:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: 🧪 Tests
+    secrets: inherit
+    uses: ./.github/workflows/tests.yml
+
+  publish:
+    name: 🚀 Publish mobile
+    runs-on: ubuntu-latest
+    environment: Production
+    needs: [tests]
+    steps:
+      - name: ✅ Checkout code
+        uses: actions/checkout@v6
+
+      - name: 🔨 Setup
+        uses: ./tooling/github/setup
+
+      - name: 🏗 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 💨 Publish!
+        run: cd apps/mobile && eas build --platform all --profile production --non-interactive --no-wait --auto-submit

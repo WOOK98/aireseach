@@ -1,0 +1,19 @@
+{
+  "name": "@workspace/{{ name }}",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@workspace/tsconfig": "workspace:*",
+    "@workspace/vitest-config": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

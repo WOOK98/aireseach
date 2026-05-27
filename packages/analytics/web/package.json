@@ -1,0 +1,32 @@
+{
+  "name": "@workspace/analytics-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./env": "./src/env.ts",
+    "./server": "./src/server.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules"
+  },
+  "dependencies": {
+    "@openpanel/nextjs": "1.5.0",
+    "@vemetric/node": "0.2.0",
+    "@vemetric/react": "0.6.1",
+    "@vercel/analytics": "2.0.1",
+    "@workspace/analytics": "workspace:*",
+    "@workspace/shared": "workspace:*",
+    "mixpanel": "0.21.0",
+    "mixpanel-browser": "2.78.0",
+    "posthog-js": "1.372.3",
+    "posthog-node": "5.30.6",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:node24",
+    "@workspace/tsconfig": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

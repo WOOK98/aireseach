@@ -1,0 +1,26 @@
+{
+  "name": "@workspace/analytics-extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules"
+  },
+  "dependencies": {
+    "@workspace/analytics": "workspace:*",
+    "@workspace/shared": "workspace:*",
+    "envin": "catalog:",
+    "posthog-js": "1.372.3",
+    "uuid": "14.0.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.1.40",
+    "@workspace/tsconfig": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

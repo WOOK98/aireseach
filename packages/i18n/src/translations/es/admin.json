@@ -1,0 +1,119 @@
+{
+  "home": {
+    "header": {
+      "title": "Super Admin",
+      "description": "Ve tu SaaS de un vistazo y gestiona todos tus recursos en un solo lugar."
+    },
+    "summary": {
+      "users": "El número de cuentas personales creadas.",
+      "organizations": "El número de organizaciones creadas.",
+      "customers": "El número de clientes de tu SaaS."
+    }
+  },
+  "users": {
+    "header": {
+      "title": "Usuarios",
+      "description": "Gestiona tus usuarios y sus roles."
+    },
+    "user": {
+      "details": {
+        "role": {
+          "update": { "success": "¡Rol de usuario actualizado exitosamente!" }
+        },
+        "name": {
+          "update": {
+            "success": "¡Nombre de usuario actualizado exitosamente!"
+          }
+        }
+      },
+      "ban": {
+        "description": "Banear a este usuario de la plataforma. Puedes especificar un motivo y una fecha de expiración opcional.",
+        "success": "¡Usuario baneado exitosamente!",
+        "form": {
+          "reason": { "info": "Ingresa el motivo del baneo." },
+          "expiresIn": {
+            "info": "Ingresa la fecha de expiración o deja en blanco para que no expire."
+          }
+        }
+      },
+      "unban": { "success": "¡Usuario desbaneado exitosamente!" },
+      "delete": {
+        "title": "Eliminar {{name}}",
+        "disclaimer": "Estás a punto de eliminar este usuario. \n\nTras eliminarlo, todos sus datos (incluidas sesiones y permisos) se eliminarán permanentemente y no podrán recuperarse. \n\n¿Deseas continuar?",
+        "success": "¡Usuario eliminado exitosamente!"
+      },
+      "accounts": {
+        "delete": { "success": "¡Cuenta eliminada exitosamente!" },
+        "password": {
+          "update": {
+            "title": "Actualizar la contraseña de {{name}}",
+            "description": "Elige una contraseña fuerte que cumpla con los requisitos de seguridad. Esta acción actualizará inmediatamente las credenciales de inicio de sesión.",
+            "success": "¡Contraseña de la cuenta actualizada exitosamente!",
+            "info": "Ingresa la nueva contraseña de la cuenta."
+          }
+        }
+      },
+      "sessions": {
+        "revokeAll": {
+          "success": "¡Todas las sesiones revocadas exitosamente!"
+        }
+      }
+    }
+  },
+  "organizations": {
+    "header": {
+      "title": "Organizaciones",
+      "description": "Gestiona tus organizaciones y sus miembros."
+    },
+    "organization": {
+      "delete": {
+        "title": "Eliminar {{name}}",
+        "disclaimer": "Estás a punto de eliminar esta organización. \n\nTras eliminarla, todos los datos (incluidos miembros y equipos) se eliminarán permanentemente y no podrán recuperarse. \n\n¿Deseas continuar?",
+        "success": "¡Organización eliminada exitosamente!"
+      },
+      "details": {
+        "name": {
+          "update": {
+            "success": "¡Nombre de la organización actualizado exitosamente!"
+          }
+        },
+        "slug": {
+          "update": {
+            "success": "¡Slug de la organización actualizado exitosamente!"
+          }
+        }
+      }
+    }
+  },
+  "customers": {
+    "header": {
+      "title": "Clientes",
+      "description": "Gestiona tus clientes y sus suscripciones."
+    },
+    "customer": {
+      "delete": { "success": "¡Cliente eliminado exitosamente!" },
+      "updatePlan": {
+        "title": "Actualizar el plan de {{name}}",
+        "description": "Elige un plan y un estado para el cliente. Esta acción actualizará inmediatamente el plan y el estado.",
+        "plan": {
+          "info": "El plan determina funciones y precios para el cliente."
+        },
+        "status": {
+          "info": "El estado determina el estado de la suscripción."
+        },
+        "success": "¡Plan del cliente actualizado exitosamente!"
+      }
+    }
+  },
+  "error": {
+    "cannotCreateUsers": "No puedes crear usuarios.",
+    "cannotListUsers": "No puedes listar usuarios.",
+    "cannotUpdateUsers": "No puedes actualizar usuarios.",
+    "cannotDeleteUsers": "No puedes eliminar usuarios.",
+    "cannotListUsersSessions": "No puedes listar sesiones de usuarios.",
+    "cannotBanUsers": "No puedes banear usuarios.",
+    "cannotImpersonateUsers": "No puedes suplantar usuarios.",
+    "cannotRevokeUsersSessions": "No puedes revocar sesiones de usuarios.",
+    "cannotSetUsersPassword": "No puedes establecer contraseñas de usuarios."
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@workspace/monitoring-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules"
+  },
+  "dependencies": {
+    "@sentry/react-native": "8.9.2",
+    "@workspace/monitoring": "workspace:*",
+    "@workspace/shared": "workspace:*",
+    "envin": "catalog:",
+    "posthog-react-native": "4.43.10"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:node24",
+    "@workspace/tsconfig": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build:chrome": {
+      "dependsOn": ["^build"],
+      "outputs": ["build/**"],
+      "env": ["VITE_*"]
+    },
+    "build:firefox": {
+      "dependsOn": ["^build"],
+      "outputs": ["build/**"],
+      "env": ["VITE_*"]
+    },
+    "build": {
+      "dependsOn": ["build:chrome", "build:firefox"]
+    },
+    "dev": {
+      "persistent": true
+    }
+  }
+}

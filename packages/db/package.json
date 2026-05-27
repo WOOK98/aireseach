@@ -1,0 +1,39 @@
+{
+  "name": "@workspace/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./schema": "./src/schema/index.ts",
+    "./env": "./src/env.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "db:check": "drizzle-kit check",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:reset": "pnpm dlx tsx ./src/scripts/reset.ts",
+    "db:seed": "pnpm dlx tsx ./src/scripts/seed.ts",
+    "db:setup": "turbo db:migrate && turbo db:seed",
+    "db:status": "pnpm dlx tsx ./src/scripts/status.ts",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@workspace/shared": "workspace:*",
+    "drizzle-orm": "0.45.2",
+    "drizzle-zod": "0.8.3",
+    "envin": "catalog:",
+    "postgres": "3.4.9",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:node24",
+    "@workspace/tsconfig": "workspace:*",
+    "drizzle-kit": "0.31.10",
+    "drizzle-seed": "0.3.1",
+    "typescript": "catalog:"
+  }
+}

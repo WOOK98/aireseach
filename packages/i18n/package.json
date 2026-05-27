@@ -1,0 +1,30 @@
+{
+  "name": "@workspace/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts",
+    "./with-i18n": "./src/server/with-i18n.tsx",
+    "./env": "./src/env.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules"
+  },
+  "dependencies": {
+    "@formatjs/intl-localematcher": "0.8.4",
+    "@workspace/shared": "workspace:*",
+    "i18next": "26.0.8",
+    "i18next-browser-languagedetector": "8.2.1",
+    "i18next-resources-to-backend": "1.2.1",
+    "negotiator": "1.0.0",
+    "react-i18next": "17.0.6",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/negotiator": "0.6.4",
+    "@workspace/tsconfig": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

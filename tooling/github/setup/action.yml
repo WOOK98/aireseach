@@ -1,0 +1,40 @@
+name: "CI / Setup"
+description: "Common setup steps for Github Actions"
+
+inputs:
+  install-deps:
+    description: "Install dependencies"
+    required: false
+    default: "true"
+  node-version:
+    description: "Override Node.js version (optional)"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: ✅ Checkout code
+      uses: actions/checkout@v5
+
+    - name: 🎬 Setup pnpm
+      uses: pnpm/action-setup@v6
+
+    - name: 🔨 Setup Node.js (custom)
+      if: ${{ inputs.node-version != '' }}
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - name: 🔨 Setup Node.js (.nvmrc)
+      if: ${{ inputs.node-version == '' }}
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: ".nvmrc"
+        cache: pnpm
+
+    - name: 🔌 Install
+      if: ${{ inputs.install-deps == 'true' }}
+      shell: bash
+      run: pnpm install --frozen-lockfile --prefer-offline
