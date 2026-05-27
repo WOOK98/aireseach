@@ -15,8 +15,11 @@ const PageView = dynamic(
   },
 );
 
-if (typeof window !== "undefined" && !posthog.__loaded) {
-  posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
+const posthogKey = env.NEXT_PUBLIC_POSTHOG_KEY;
+const enabled = Boolean(posthogKey);
+
+if (typeof window !== "undefined" && posthogKey && !posthog.__loaded) {
+  posthog.init(posthogKey, {
     api_host: env.NEXT_PUBLIC_POSTHOG_HOST,
     person_profiles: "always",
     capture_pageview: false,
@@ -27,6 +30,10 @@ if (typeof window !== "undefined" && !posthog.__loaded) {
 
 export const strategy = {
   Provider: ({ children }) => {
+    if (!enabled) {
+      return children;
+    }
+
     return (
       <PostHogProvider client={posthog}>
         {children}
@@ -39,6 +46,10 @@ export const strategy = {
       return;
     }
 
+    if (!enabled) {
+      return;
+    }
+
     posthog.capture(event, properties);
   },
   identify: (userId, traits) => {
@@ -46,10 +57,18 @@ export const strategy = {
       return;
     }
 
+    if (!enabled) {
+      return;
+    }
+
     posthog.identify(userId, traits);
   },
   reset: () => {
     if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!enabled) {
       return;
     }
 
