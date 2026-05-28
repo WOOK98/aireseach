@@ -1,58 +1,59 @@
 {
   "pricing": {
     "label": "定價",
-    "title": "簡單透明的定價",
-    "description": "免費開始；當你需要更多報告與進階功能時再升級。",
-    "disclaimer": "Mix and match config to create the perfect pricing for your business. <reference>Check docs for more information.</reference>"
+    "title": "為商業研究設計的簡單定價",
+    "description": "免費版可使用自己的模型 Key；升級後可使用平台 DeepSeek Key，並享有不限次數 Jina 搜尋。",
+    "disclaimer": "免費用戶可使用自己的模型 API Key，並每月使用 10 次 Aireseach Jina 搜尋。訂閱方案包含平台 DeepSeek 使用權與合理使用範圍內不限次數 Jina 搜尋。"
   },
   "settings": {
     "subscriptions": {
-      "description": "Your active plans and access."
+      "description": "你的有效方案與權限。"
     },
     "orders": {
-      "description": "Your purchases and invoices."
+      "description": "你的購買紀錄與發票。"
     },
     "yourPlan": {
-      "title": "Your plan",
-      "description": "Below are the details of your current plan."
+      "title": "你的方案",
+      "description": "以下是你目前方案的詳細資訊。"
     },
     "information": {
-      "title": "Billing information",
-      "description": "Visit the link below to manage your billing details. There, you can update your payment method, cancel your subscription, download invoices, and more.",
-      "visitPortal": "Visit Billing Portal",
-      "reviewInStore": "Review in store"
+      "title": "帳單資訊",
+      "description": "前往下方連結管理帳單資料。你可以更新付款方式、取消訂閱、下載發票等。",
+      "visitPortal": "前往帳單入口",
+      "reviewInStore": "前往商店查看"
     }
   },
-  "additionalUsage": "Additional {{unit}}",
+  "additionalUsage": "額外 {{unit}}",
   "forFirst": "for the first {{upTo}} {{unit}}",
   "forNext": "for next {{upTo}} {{unit}}",
   "upToIncluded": "Up to {{upTo}} {{unit}} included",
   "infiniteUsage": "above {{threshold}} {{unit}}",
-  "currentBillingCycle": "Current billing cycle",
+  "currentBillingCycle": "目前帳單週期",
   "subscribe": "立即訂閱",
   "updatePlan": "更新方案",
-  "getLifetimeAccess": "Get lifetime access",
+  "getLifetimeAccess": "取得終身使用權",
   "trial": {
-    "label": "Free trial",
+    "label": "免費試用",
     "cta": "免費開始",
-    "period": "Try with {{period}}-days trial"
+    "period": "免費試用 {{period}} 天"
   },
   "discount": {
-    "specialOffer": "SPECIAL OFFER: <bold>-{{discount}} off</bold>"
+    "specialOffer": "限時優惠：<bold>省 {{discount}}</bold>"
   },
   "plan": {
     "free": {
       "name": "免費",
-      "description": "每月 3 份報告，體驗 Aireseach"
+      "description": "每月 10 次 Jina 搜尋，使用你自己的 API Key"
     },
     "pro": {
       "name": "Pro",
-      "description": "適合個人研究者的無限報告方案",
+      "description": "內建 DeepSeek Key，Jina 搜尋不限次數",
       "badge": "最受歡迎"
     },
     "business": {
       "name": "Business",
-      "description": "團隊協作與進階分析"
+      "description": "團隊工作區、API 存取與品牌化匯出",
+      "badge": "適合團隊"
     }
   },
   "feature": {
@@ -73,19 +74,23 @@
     "API_ACCESS": "API 存取",
     "CUSTOM_TEMPLATES": "自訂報告範本",
     "BRANDED_PDF": "品牌化 PDF 匯出",
-    "PRIORITY_SUPPORT": "優先支援"
+    "PRIORITY_SUPPORT": "優先支援",
+    "REPORTS_10_MONTH": "每月 10 份報告",
+    "JINA_SEARCH_10_MONTH": "每月 10 次 Jina 搜尋",
+    "PLATFORM_DEEPSEEK_KEY": "內建 DeepSeek API Key",
+    "UNLIMITED_JINA_SEARCH": "Jina 搜尋不限次數"
   },
   "error": {
-    "checkout": "An error occurred while checking out.",
-    "checkoutRetrieve": "An error occurred while retrieving the checkout session.",
-    "portal": "An error occurred while getting the portal URL.",
-    "invalidProvider": "Invalid billing provider!",
+    "checkout": "結帳時發生錯誤。",
+    "checkoutRetrieve": "讀取結帳工作階段時發生錯誤。",
+    "portal": "取得帳單入口網址時發生錯誤。",
+    "invalidProvider": "無效的帳單供應商！",
     "lemonSqueezy": "Lemon Squeezy API internal error!",
-    "variantNotFound": "Variant not found!",
-    "priceNotFound": "Price not found!",
-    "customerNotFound": "Customer not found!",
-    "orderNotFound": "Order not found!",
-    "subscriptionNotFound": "Subscription not found!",
+    "variantNotFound": "找不到方案版本！",
+    "priceNotFound": "找不到價格！",
+    "customerNotFound": "找不到客戶！",
+    "orderNotFound": "找不到訂單！",
+    "subscriptionNotFound": "找不到訂閱！",
     "webhook": {
       "signatureNotFound": "Webhook signature not found!",
       "signatureInvalid": "Invalid webhook signature.",
@@ -104,22 +109,22 @@
   },
   "subscription": {
     "status": {
-      "active": "Active",
-      "canceled": "Canceled",
-      "incomplete": "Incomplete",
-      "incompleteExpired": "Incomplete expired",
-      "pastDue": "Past due",
-      "paused": "Paused",
-      "trialing": "Trialing",
-      "unpaid": "Unpaid"
+      "active": "有效",
+      "canceled": "已取消",
+      "incomplete": "未完成",
+      "incompleteExpired": "未完成且已逾期",
+      "pastDue": "逾期",
+      "paused": "已暫停",
+      "trialing": "試用中",
+      "unpaid": "未付款"
     }
   },
   "order": {
-    "cta": "See details",
+    "cta": "查看詳情",
     "status": {
-      "succeeded": "Succeeded",
-      "failed": "Failed",
-      "pending": "Pending"
+      "succeeded": "成功",
+      "failed": "失敗",
+      "pending": "處理中"
     }
   },
   "paywall": {
@@ -133,12 +138,12 @@
     }
   },
   "type": {
-    "flat": "Flat",
-    "per-seat": "Per seat",
-    "metered": "Metered"
+    "flat": "固定費用",
+    "per-seat": "按席位",
+    "metered": "按用量"
   },
   "model": {
-    "one-time": "One-time",
-    "recurring": "Recurring"
+    "one-time": "一次性",
+    "recurring": "週期訂閱"
   }
 }

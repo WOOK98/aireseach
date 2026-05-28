@@ -137,8 +137,14 @@ const getErrorDetail = (data: unknown) => {
   return null;
 };
 
-export const ReportGenerator = () => {
-  const [target, setTarget] = useState("");
+interface ReportGeneratorProps {
+  readonly initialTarget?: string;
+}
+
+export const ReportGenerator = ({
+  initialTarget = "",
+}: ReportGeneratorProps) => {
+  const [target, setTarget] = useState(initialTarget);
   const [analysisYears, setAnalysisYears] = useState("5");
   const [analysisLens, setAnalysisLens] = useState("Comprehensive");
   const [provider, setProvider] = useState<ProviderValue>("openai");

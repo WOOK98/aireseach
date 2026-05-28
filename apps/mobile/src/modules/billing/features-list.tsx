@@ -19,7 +19,7 @@ export const FeaturesList = ({ planId }: { planId: BillingPlan }) => {
   return (
     <View className="gap-1.5">
       {plan.features.map((feature) => {
-        const featureKey = `feature.${feature.toLowerCase().replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase())}`;
+        const featureKey = `feature.${feature}`;
         return (
           <View
             key={feature}

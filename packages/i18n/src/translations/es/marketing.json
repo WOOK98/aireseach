@@ -20,7 +20,6 @@
       }
     }
   },
-
   "announcement": "Sin bloqueo de proveedor. Usa tu propia clave API.",
   "report": {
     "title": "Informe de investigación empresarial con IA",
@@ -46,18 +45,96 @@
     "title": "¡Estamos trabajando en ello!",
     "description": "Actualmente {{feature}} no está disponible. Estamos trabajando en ello y estará disponible pronto."
   },
-
   "useCases": {
     "label": "Diseñado para",
     "title": "¿Quién usa Aireseach?",
-    "description": "Para fundadores, analistas, consultores e inversores que necesitan investigación empresarial creíble sin partir de una página en blanco."
+    "description": "Para fundadores, analistas, consultores e inversores que necesitan investigación empresarial creíble sin partir de una página en blanco.",
+    "items": {
+      "founders": {
+        "title": "Fundadores",
+        "description": "Valida nuevos mercados, estima TAM/SAM/SOM y compara competidores antes de invertir recursos."
+      },
+      "analysts": {
+        "title": "Analistas",
+        "description": "Acelera la due diligence con informes estructurados: cuota de mercado, finanzas y riesgo en una sola salida."
+      },
+      "consultants": {
+        "title": "Consultores",
+        "description": "Genera entregables de investigación listos para clientes en minutos. Exporta Markdown para cualquier flujo."
+      },
+      "investors": {
+        "title": "Inversores",
+        "description": "Dimensiona oportunidades, evalúa resiliencia y compara presión competitiva entre objetivos."
+      },
+      "operators": {
+        "title": "Equipos operativos",
+        "description": "Sigue cambios de industria, compara contra pares y crea memorandos estratégicos basados en datos."
+      },
+      "researchers": {
+        "title": "Investigadores",
+        "description": "Apoya el análisis en evidencia citada. Cada afirmación vuelve a fuentes públicas, noticias o datos de mercado."
+      }
+    }
   },
   "comparison": {
     "label": "Comparar planes",
     "title": "Elige el plan adecuado para tu flujo de investigación",
-    "description": "Empieza gratis y pasa a Pro o Business cuando necesites más informes, historial, colaboración y funciones avanzadas."
+    "description": "Empieza gratis y pasa a Pro o Business cuando necesites más informes, historial, colaboración y funciones avanzadas.",
+    "table": {
+      "feature": "Función",
+      "plans": {
+        "free": "Gratis",
+        "pro": "Pro",
+        "business": "Business"
+      },
+      "prices": {
+        "free": "$0/mes",
+        "pro": "$19/mes",
+        "business": "$49/mes"
+      },
+      "features": {
+        "reports": "Informes al mes",
+        "jinaSearch": "Uso de búsqueda Jina",
+        "modelKey": "Clave API del modelo",
+        "analysisLenses": "Lentes de análisis",
+        "reportHistory": "Historial e informes guardados",
+        "markdownExport": "Exportación Markdown",
+        "teamWorkspace": "Espacio de equipo",
+        "sharedLibrary": "Biblioteca compartida",
+        "apiAccess": "Acceso API",
+        "customTemplates": "Plantillas personalizadas",
+        "brandedPdf": "PDF con marca",
+        "support": "Soporte"
+      },
+      "value": {
+        "reports": {
+          "free": "10",
+          "pro": "Ilimitados",
+          "business": "Ilimitados"
+        },
+        "jinaSearch": {
+          "free": "10 búsquedas / mes",
+          "pro": "Ilimitada",
+          "business": "Ilimitada"
+        },
+        "modelKey": {
+          "free": "Usa tu propia clave",
+          "pro": "Clave DeepSeek incluida",
+          "business": "Clave DeepSeek incluida"
+        },
+        "analysisLenses": {
+          "free": "Integral",
+          "pro": "Todos los lentes",
+          "business": "Todos los lentes"
+        },
+        "support": {
+          "free": "Comunidad",
+          "pro": "Correo",
+          "business": "Prioritario"
+        }
+      }
+    }
   },
-
   "faq": {
     "label": "Preguntas frecuentes",
     "title": "Preguntas frecuentes",
@@ -94,7 +171,6 @@
       }
     }
   },
-
   "contact": {
     "label": "Contacto",
     "title": "Ponte en contacto con nosotros hoy para soporte",
@@ -121,7 +197,6 @@
       "body": "Nuevo envío del formulario de contacto"
     }
   },
-
   "blog": {
     "label": "Blog",
     "title": "Noticias y actualizaciones sobre la plataforma",
@@ -137,17 +212,14 @@
       "launch": "guías"
     }
   },
-
   "api": {
     "title": "Referencia de API",
     "description": "Crea integraciones con nuestra API"
   },
-
   "roadmap": {
     "title": "Flujo de informes",
     "description": "Abre el generador público de informes"
   },
-
   "docs": {
     "title": "Cómo funciona",
     "description": "Aprende a usar Aireseach"

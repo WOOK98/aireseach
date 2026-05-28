@@ -1,9 +1,9 @@
 {
   "pricing": {
     "label": "Pricing",
-    "title": "This is where you start earning",
-    "description": "Configure pricing based on your use-case and start charging your customers.",
-    "disclaimer": "Mix and match config to create the perfect pricing for your business. <reference>Check docs for more information.</reference>"
+    "title": "Simple pricing for business research",
+    "description": "Start free with your own model key. Upgrade when you want hosted DeepSeek usage and unlimited Jina search.",
+    "disclaimer": "Free users can bring their own model API key and use 10 Aireseach Jina searches per month. Paid plans include hosted DeepSeek usage and unlimited Jina search under fair use."
   },
   "settings": {
     "subscriptions": {
@@ -43,16 +43,17 @@
   "plan": {
     "free": {
       "name": "Free",
-      "description": "Explore Aireseach with 3 reports per month"
+      "description": "10 Jina searches per month with your own API key"
     },
     "pro": {
       "name": "Pro",
-      "description": "Unlimited reports for individual researchers",
+      "description": "Hosted DeepSeek key with unlimited Jina searches",
       "badge": "Most popular"
     },
     "business": {
       "name": "Business",
-      "description": "Team collaboration and advanced analytics"
+      "description": "Team workspace, API access, and branded exports",
+      "badge": "For teams"
     }
   },
   "feature": {
@@ -73,7 +74,11 @@
     "API_ACCESS": "API access",
     "CUSTOM_TEMPLATES": "Custom report templates",
     "BRANDED_PDF": "Branded PDF export",
-    "PRIORITY_SUPPORT": "Priority support"
+    "PRIORITY_SUPPORT": "Priority support",
+    "REPORTS_10_MONTH": "10 reports per month",
+    "JINA_SEARCH_10_MONTH": "10 Jina searches per month",
+    "PLATFORM_DEEPSEEK_KEY": "Hosted DeepSeek API key included",
+    "UNLIMITED_JINA_SEARCH": "Unlimited Jina searches"
   },
   "error": {
     "checkout": "An error occurred while checking out.",

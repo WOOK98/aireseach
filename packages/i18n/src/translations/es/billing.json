@@ -1,9 +1,9 @@
 {
   "pricing": {
     "label": "Precios",
-    "title": "Planifica tu ingreso con precios ajustados",
-    "description": "Configura precios basados en tus necesidades y comienza a cobrar a tus clientes.",
-    "disclaimer": "Combina y ajusta configuraciones para crear el precio perfecto para tu negocio. <reference>Revisa la documentación para más información.</reference>"
+    "title": "Precios simples para investigación empresarial",
+    "description": "Empieza gratis con tu propia clave de modelo. Pasa a un plan de pago para usar DeepSeek alojado y búsqueda Jina ilimitada.",
+    "disclaimer": "Los usuarios gratis pueden usar su propia clave de modelo y 10 búsquedas Jina de Aireseach al mes. Los planes de pago incluyen DeepSeek alojado y búsqueda Jina ilimitada bajo uso razonable."
   },
   "settings": {
     "subscriptions": {
@@ -43,16 +43,17 @@
   "plan": {
     "free": {
       "name": "Gratis",
-      "description": "Explora Aireseach con 3 informes al mes"
+      "description": "10 búsquedas Jina al mes con tu propia clave API"
     },
     "pro": {
       "name": "Pro",
-      "description": "Informes ilimitados para investigadores individuales",
+      "description": "Clave DeepSeek alojada con búsquedas Jina ilimitadas",
       "badge": "Más popular"
     },
     "business": {
       "name": "Business",
-      "description": "Colaboración en equipo y análisis avanzado"
+      "description": "Espacio de equipo, acceso API y exportaciones con marca",
+      "badge": "Para equipos"
     }
   },
   "feature": {
@@ -73,7 +74,11 @@
     "API_ACCESS": "Acceso a API",
     "CUSTOM_TEMPLATES": "Plantillas de informe personalizadas",
     "BRANDED_PDF": "Exportación PDF con marca",
-    "PRIORITY_SUPPORT": "Soporte prioritario"
+    "PRIORITY_SUPPORT": "Soporte prioritario",
+    "REPORTS_10_MONTH": "10 informes al mes",
+    "JINA_SEARCH_10_MONTH": "10 búsquedas Jina al mes",
+    "PLATFORM_DEEPSEEK_KEY": "Clave API DeepSeek incluida",
+    "UNLIMITED_JINA_SEARCH": "Búsquedas Jina ilimitadas"
   },
   "error": {
     "checkout": "Ocurrió un error durante el proceso de pago.",

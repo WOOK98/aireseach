@@ -40,20 +40,100 @@
       }
     }
   },
-  "editToReload": "Edit <code>{{file}}</code> and save to reload.",
+  "editToReload": "編輯 <code>{{file}}</code> 並儲存以重新載入。",
   "workInProgress": {
-    "title": "We're working on it!",
-    "description": "{{feature}} is currently not available. We're working on it and it will be available soon."
+    "title": "功能正在建置中",
+    "description": "{{feature}} 目前尚未開放，我們正在處理，很快就會推出。"
   },
   "useCases": {
     "label": "適合對象",
     "title": "誰適合使用 Aireseach？",
-    "description": "適合需要可信商業分析、但不想從空白頁開始的創辦人、分析師、顧問與投資人。"
+    "description": "適合需要可信商業分析、但不想從空白頁開始的創辦人、分析師、顧問與投資人。",
+    "items": {
+      "founders": {
+        "title": "創辦人",
+        "description": "驗證新市場、估算 TAM/SAM/SOM，並在投入資源前比較競爭對手。"
+      },
+      "analysts": {
+        "title": "分析師",
+        "description": "用結構化報告加速盡職調查，將市場份額、財務與風險整合到同一份輸出。"
+      },
+      "consultants": {
+        "title": "顧問",
+        "description": "幾分鐘內生成可交付給客戶的研究材料，並可匯出 Markdown。"
+      },
+      "investors": {
+        "title": "投資人",
+        "description": "評估機會規模、抗風險能力，並比較投資標的的競爭壓力。"
+      },
+      "operators": {
+        "title": "營運團隊",
+        "description": "追蹤產業變化、與同業基準比較，建立有資料支撐的策略備忘錄。"
+      },
+      "researchers": {
+        "title": "研究者",
+        "description": "讓分析建立在來源證據上，每個主張都能追溯到公開文件、新聞或市場資料。"
+      }
+    }
   },
   "comparison": {
     "label": "方案比較",
     "title": "找到適合你研究流程的方案",
-    "description": "免費開始；當你需要更多報告與進階功能時再升級。"
+    "description": "免費開始；當你需要更多報告與進階功能時再升級。",
+    "table": {
+      "feature": "功能",
+      "plans": {
+        "free": "免費",
+        "pro": "Pro",
+        "business": "Business"
+      },
+      "prices": {
+        "free": "US$0/月",
+        "pro": "US$19/月",
+        "business": "US$49/月"
+      },
+      "features": {
+        "reports": "每月報告數",
+        "jinaSearch": "Jina 搜尋用量",
+        "modelKey": "大模型 API Key",
+        "analysisLenses": "分析維度",
+        "reportHistory": "報告歷史與已儲存報告",
+        "markdownExport": "Markdown 匯出",
+        "teamWorkspace": "團隊工作區",
+        "sharedLibrary": "共享報告資料庫",
+        "apiAccess": "API 存取",
+        "customTemplates": "自訂報告範本",
+        "brandedPdf": "品牌化 PDF 匯出",
+        "support": "支援"
+      },
+      "value": {
+        "reports": {
+          "free": "10",
+          "pro": "不限次數",
+          "business": "不限次數"
+        },
+        "jinaSearch": {
+          "free": "每月 10 次搜尋",
+          "pro": "不限次數",
+          "business": "不限次數"
+        },
+        "modelKey": {
+          "free": "使用自己的 Key",
+          "pro": "內建 DeepSeek Key",
+          "business": "內建 DeepSeek Key"
+        },
+        "analysisLenses": {
+          "free": "綜合分析",
+          "pro": "全部分析維度",
+          "business": "全部分析維度"
+        },
+        "support": {
+          "free": "社群",
+          "pro": "電子郵件",
+          "business": "優先支援"
+        }
+      }
+    }
   },
   "faq": {
     "label": "常見問題",
@@ -98,13 +178,13 @@
     "description": "取得協助或提供回饋",
     "form": {
       "name": {
-        "placeholder": "John Doe"
+        "placeholder": "王小明"
       },
       "email": {
         "placeholder": "your@email.com"
       },
       "message": {
-        "placeholder": "How can we help you?"
+        "placeholder": "我們可以如何協助你？"
       },
       "submit": "送出訊息",
       "success": {
@@ -113,8 +193,8 @@
       }
     },
     "email": {
-      "subject": "You've received a new contact form submission",
-      "body": "New contact form submission"
+      "subject": "你收到一則新的聯絡表單提交",
+      "body": "新的聯絡表單提交"
     }
   },
   "blog": {

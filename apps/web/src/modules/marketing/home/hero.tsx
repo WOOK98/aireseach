@@ -7,6 +7,8 @@ import { TurboLink } from "~/modules/common/turbo-link";
 import { CtaButton } from "~/modules/marketing/layout/cta-button";
 import { Section, SectionBadge } from "~/modules/marketing/layout/section";
 
+import { HeroSearchForm } from "./hero-search-form";
+
 const exampleKeys = ["tesla", "coffee", "saas", "battery", "aiAgents"] as const;
 
 export const Hero = async () => {
@@ -50,30 +52,13 @@ export const Hero = async () => {
       </div>
 
       <div className="animate-fade-up relative mt-6 w-full max-w-3xl -translate-y-4 opacity-0 [--animation-delay:700ms] md:mt-10">
-        <div className="border-border/70 bg-background overflow-hidden rounded-lg border shadow-2xl">
-          <div className="flex items-center gap-3 p-3 sm:p-4">
-            <Icons.Search className="text-muted-foreground size-5 shrink-0" />
-            <div className="text-muted-foreground min-w-0 flex-1 truncate text-left text-sm sm:text-base">
-              {t("product.preview.placeholder")}
-            </div>
-            <TurboLink
-              href={pathsConfig.marketing.report}
-              className={buttonVariants({ size: "sm" })}
-            >
-              {t("product.preview.action")}
-            </TurboLink>
-          </div>
-          <div className="border-border/70 bg-muted/30 flex flex-wrap gap-2 border-t px-3 py-3 sm:px-4">
-            {exampleKeys.map((key) => (
-              <span
-                key={key}
-                className="bg-background text-muted-foreground rounded-md border px-2.5 py-1 text-xs"
-              >
-                {t(`product.preview.examples.${key}`)}
-              </span>
-            ))}
-          </div>
-        </div>
+        <HeroSearchForm
+          placeholder={t("product.preview.placeholder")}
+          action={t("product.preview.action")}
+          examples={exampleKeys.map((key) =>
+            t(`product.preview.examples.${key}`),
+          )}
+        />
       </div>
     </Section>
   );

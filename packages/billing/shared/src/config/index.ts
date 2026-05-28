@@ -2,7 +2,6 @@ import {
   BillingModel,
   BillingPlan,
   RecurringInterval,
-  BillingDiscountType,
   SubscriptionStatus,
   MobileStore,
   BillingType,
@@ -87,19 +86,7 @@ export const config = billingConfigSchema.parse({
       ],
     },
   ],
-  discounts: [
-    {
-      code: "LAUNCH50",
-      type: BillingDiscountType.PERCENT,
-      off: 50,
-      appliesTo: [
-        "pro-monthly",
-        "pro-yearly",
-        "business-monthly",
-        "business-yearly",
-      ],
-    },
-  ],
+  discounts: [],
 }) satisfies BillingConfig;
 
 export * from "./features";
