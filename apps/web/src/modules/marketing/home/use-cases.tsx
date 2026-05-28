@@ -1,4 +1,5 @@
 import { getTranslation } from "@workspace/i18n/server";
+
 import {
   Section,
   SectionBadge,
@@ -9,42 +10,30 @@ import {
 
 const useCases = [
   {
+    key: "founders",
     emoji: "🚀",
-    title: "Founders",
-    description:
-      "Validate new markets, size TAM/SAM/SOM, and benchmark competitors before committing resources.",
   },
   {
+    key: "analysts",
     emoji: "📊",
-    title: "Analysts",
-    description:
-      "Accelerate due diligence with structured reports — market share, financials, and risk in one output.",
   },
   {
+    key: "consultants",
     emoji: "💼",
-    title: "Consultants",
-    description:
-      "Generate client-ready research deliverables in minutes instead of days. Export Markdown to any format.",
   },
   {
+    key: "investors",
     emoji: "🏦",
-    title: "Investors",
-    description:
-      "Size opportunities, assess antifragility, and compare competitive pressure across portfolio targets.",
   },
   {
+    key: "operators",
     emoji: "⚙️",
-    title: "Operators",
-    description:
-      "Track industry shifts, benchmark against peers, and build data-backed strategy memos.",
   },
   {
+    key: "researchers",
     emoji: "🎓",
-    title: "Researchers",
-    description:
-      "Ground analysis in sourced evidence. Every claim links back to public filings, news, or market data.",
   },
-];
+] as const;
 
 export const UseCases = async () => {
   const { t } = await getTranslation({ ns: "marketing" });
@@ -60,13 +49,15 @@ export const UseCases = async () => {
       <div className="mt-10 grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {useCases.map((useCase) => (
           <div
-            key={useCase.title}
+            key={useCase.key}
             className="group bg-card hover:bg-accent/50 rounded-xl border p-5 transition-colors"
           >
             <div className="mb-3 text-2xl">{useCase.emoji}</div>
-            <h3 className="text-base font-semibold">{useCase.title}</h3>
+            <h3 className="text-base font-semibold">
+              {t(`useCases.items.${useCase.key}.title`)}
+            </h3>
             <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
-              {useCase.description}
+              {t(`useCases.items.${useCase.key}.description`)}
             </p>
           </div>
         ))}

@@ -78,7 +78,7 @@ export const usePlan = ({
   ].map((feature) => ({
     id: feature,
     available: plan.features.includes(feature),
-    key: `feature.${feature.toLowerCase().replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase())}`,
+    key: `feature.${feature}`,
   }));
 
   const handleCheckout = (

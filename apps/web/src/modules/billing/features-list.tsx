@@ -16,9 +16,7 @@ export const FeaturesList = ({ planId }: { planId: BillingPlan }) => {
   return (
     <div className="grid grid-cols-2 gap-2">
       {plan.features.map((feature) => {
-        const featureKey = `feature.${feature
-          .toLowerCase()
-          .replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase())}`;
+        const featureKey = `feature.${feature}`;
         return (
           <div key={feature} className="flex items-center justify-start gap-2">
             <Icons.Check className="size-4.5 shrink-0" />

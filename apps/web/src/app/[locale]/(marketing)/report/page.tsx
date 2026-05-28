@@ -8,8 +8,15 @@ export const generateMetadata = getMetadata({
   description: "marketing:report.description",
 });
 
-export default async function ReportPage() {
+interface ReportPageProps {
+  readonly searchParams: Promise<{
+    target?: string;
+  }>;
+}
+
+export default async function ReportPage({ searchParams }: ReportPageProps) {
   const { t } = await getTranslation({ ns: "marketing" });
+  const { target } = await searchParams;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8">
@@ -21,7 +28,7 @@ export default async function ReportPage() {
           {t("report.description")}
         </p>
       </div>
-      <ReportGenerator />
+      <ReportGenerator initialTarget={target ?? ""} />
     </div>
   );
 }

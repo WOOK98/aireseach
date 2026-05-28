@@ -48,12 +48,92 @@
   "useCases": {
     "label": "Built for",
     "title": "Who uses Aireseach?",
-    "description": "Anyone who needs credible business analysis without starting from a blank page."
+    "description": "Anyone who needs credible business analysis without starting from a blank page.",
+    "items": {
+      "founders": {
+        "title": "Founders",
+        "description": "Validate new markets, size TAM/SAM/SOM, and benchmark competitors before committing resources."
+      },
+      "analysts": {
+        "title": "Analysts",
+        "description": "Accelerate due diligence with structured reports: market share, financials, and risk in one output."
+      },
+      "consultants": {
+        "title": "Consultants",
+        "description": "Generate client-ready research deliverables in minutes instead of days. Export Markdown for any workflow."
+      },
+      "investors": {
+        "title": "Investors",
+        "description": "Size opportunities, assess resilience, and compare competitive pressure across portfolio targets."
+      },
+      "operators": {
+        "title": "Operators",
+        "description": "Track industry shifts, benchmark against peers, and build data-backed strategy memos."
+      },
+      "researchers": {
+        "title": "Researchers",
+        "description": "Ground analysis in sourced evidence. Every claim links back to public filings, news, or market data."
+      }
+    }
   },
   "comparison": {
     "label": "Compare plans",
     "title": "Find the right plan for your workflow",
-    "description": "Start free, upgrade when you need more reports and advanced features."
+    "description": "Start free, upgrade when you need more reports and advanced features.",
+    "table": {
+      "feature": "Feature",
+      "plans": {
+        "free": "Free",
+        "pro": "Pro",
+        "business": "Business"
+      },
+      "prices": {
+        "free": "$0/mo",
+        "pro": "$19/mo",
+        "business": "$49/mo"
+      },
+      "features": {
+        "reports": "Reports per month",
+        "jinaSearch": "Jina search usage",
+        "modelKey": "LLM API key",
+        "analysisLenses": "Analysis lenses",
+        "reportHistory": "Report history & saved reports",
+        "markdownExport": "Markdown export",
+        "teamWorkspace": "Team workspace",
+        "sharedLibrary": "Shared report library",
+        "apiAccess": "API access",
+        "customTemplates": "Custom report templates",
+        "brandedPdf": "Branded PDF export",
+        "support": "Support"
+      },
+      "value": {
+        "reports": {
+          "free": "10",
+          "pro": "Unlimited",
+          "business": "Unlimited"
+        },
+        "jinaSearch": {
+          "free": "10 searches / month",
+          "pro": "Unlimited",
+          "business": "Unlimited"
+        },
+        "modelKey": {
+          "free": "Bring your own key",
+          "pro": "DeepSeek key included",
+          "business": "DeepSeek key included"
+        },
+        "analysisLenses": {
+          "free": "Comprehensive",
+          "pro": "All lenses",
+          "business": "All lenses"
+        },
+        "support": {
+          "free": "Community",
+          "pro": "Email",
+          "business": "Priority"
+        }
+      }
+    }
   },
   "faq": {
     "label": "FAQ",

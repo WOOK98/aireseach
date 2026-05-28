@@ -11,87 +11,78 @@ import {
 
 const features = [
   {
-    name: "Reports per month",
-    free: "3",
-    pro: "Unlimited",
-    business: "Unlimited",
+    key: "reports",
+    free: "comparison.table.value.reports.free",
+    pro: "comparison.table.value.reports.pro",
+    business: "comparison.table.value.reports.business",
   },
   {
-    name: "Analysis lenses",
-    free: "1 (Comprehensive)",
-    pro: "All 6 lenses",
-    business: "All 6 lenses",
+    key: "jinaSearch",
+    free: "comparison.table.value.jinaSearch.free",
+    pro: "comparison.table.value.jinaSearch.pro",
+    business: "comparison.table.value.jinaSearch.business",
   },
   {
-    name: "Perplexity Deep Research",
+    key: "modelKey",
+    free: "comparison.table.value.modelKey.free",
+    pro: "comparison.table.value.modelKey.pro",
+    business: "comparison.table.value.modelKey.business",
+  },
+  {
+    key: "analysisLenses",
+    free: "comparison.table.value.analysisLenses.free",
+    pro: "comparison.table.value.analysisLenses.pro",
+    business: "comparison.table.value.analysisLenses.business",
+  },
+  {
+    key: "reportHistory",
     free: false,
     pro: true,
     business: true,
   },
   {
-    name: "Report history & saved reports",
-    free: false,
-    pro: true,
-    business: true,
-  },
-  {
-    name: "Custom model endpoints",
-    free: false,
-    pro: true,
-    business: true,
-  },
-  {
-    name: "Markdown export",
+    key: "markdownExport",
     free: true,
     pro: true,
     business: true,
   },
   {
-    name: "Team workspace (up to 5 seats)",
+    key: "teamWorkspace",
     free: false,
     pro: false,
     business: true,
   },
   {
-    name: "Shared report library",
+    key: "sharedLibrary",
     free: false,
     pro: false,
     business: true,
   },
   {
-    name: "API access",
+    key: "apiAccess",
     free: false,
     pro: false,
     business: true,
   },
   {
-    name: "Custom report templates",
+    key: "customTemplates",
     free: false,
     pro: false,
     business: true,
   },
   {
-    name: "Branded PDF export",
+    key: "brandedPdf",
     free: false,
     pro: false,
     business: true,
   },
   {
-    name: "Support",
-    free: "Community",
-    pro: "Email",
-    business: "Priority",
+    key: "support",
+    free: "comparison.table.value.support.free",
+    pro: "comparison.table.value.support.pro",
+    business: "comparison.table.value.support.business",
   },
-];
-
-const labels = {
-  feature: "Feature",
-  plans: [
-    { name: "Free", price: "$0/mo", highlighted: false },
-    { name: "Pro", price: "$19/mo", highlighted: true },
-    { name: "Business", price: "$49/mo", highlighted: false },
-  ],
-} as const;
+] as const;
 
 function CellValue({ value }: { value: boolean | string }) {
   if (value === true) {
@@ -127,21 +118,21 @@ export const Comparison = async () => {
           <thead>
             <tr className="border-b">
               <th className="text-muted-foreground pb-4 text-left text-sm font-medium">
-                {labels.feature}
+                {t("comparison.table.feature")}
               </th>
-              {labels.plans.map((plan) => (
-                <th key={plan.name} className="pb-4 text-center">
+              {(["free", "pro", "business"] as const).map((plan) => (
+                <th key={plan} className="pb-4 text-center">
                   <div
                     className={
-                      plan.highlighted
+                      plan === "pro"
                         ? "text-primary text-sm font-semibold"
                         : "text-sm font-semibold"
                     }
                   >
-                    {plan.name}
+                    {t(`comparison.table.plans.${plan}`)}
                   </div>
                   <div className="text-muted-foreground text-xs">
-                    {plan.price}
+                    {t(`comparison.table.prices.${plan}`)}
                   </div>
                 </th>
               ))}
@@ -150,18 +141,38 @@ export const Comparison = async () => {
           <tbody>
             {features.map((feature) => (
               <tr
-                key={feature.name}
+                key={feature.key}
                 className="border-border/50 hover:bg-muted/30 border-b transition-colors"
               >
-                <td className="py-3 pr-4 text-sm">{feature.name}</td>
-                <td className="py-3 text-center">
-                  <CellValue value={feature.free} />
+                <td className="py-3 pr-4 text-sm">
+                  {t(`comparison.table.features.${feature.key}`)}
                 </td>
                 <td className="py-3 text-center">
-                  <CellValue value={feature.pro} />
+                  <CellValue
+                    value={
+                      typeof feature.free === "string"
+                        ? t(feature.free)
+                        : feature.free
+                    }
+                  />
                 </td>
                 <td className="py-3 text-center">
-                  <CellValue value={feature.business} />
+                  <CellValue
+                    value={
+                      typeof feature.pro === "string"
+                        ? t(feature.pro)
+                        : feature.pro
+                    }
+                  />
+                </td>
+                <td className="py-3 text-center">
+                  <CellValue
+                    value={
+                      typeof feature.business === "string"
+                        ? t(feature.business)
+                        : feature.business
+                    }
+                  />
                 </td>
               </tr>
             ))}
