@@ -65,6 +65,13 @@ interface MetricItem {
   color?: string;
 }
 
+interface StructuredMetric {
+  indicator: string;
+  current: string;
+  trend: string;
+  confidence: string;
+}
+
 const SCORE_COLORS: Record<string, string> = {
   high: "#22c55e",
   strong: "#22c55e",
@@ -161,6 +168,18 @@ const clampScore = (score: number) => Math.max(0, Math.min(score, 100));
 
 const compactText = (text: string, maxLength = 96) =>
   text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+
+const normalizeCell = (value: string) =>
+  value
+    .replace(/\*\*/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/^[-:：]+|[-:：]+$/g, "")
+    .trim();
+
+const isSeparatorCell = (value: string) => /^[-—–\s]+$/.test(value.trim());
+
+const sectionHeadingPattern =
+  /(?:核心指標儀表板|核心指标仪表板|核心指標|核心指标|Key Metrics|Metric Dashboard|KPI Dashboard|Evidence List|Evidence|Sources?|References?|證據列表|证据列表|證據|证据|來源|来源|參考|参考)/i;
 
 const getSignalIcon = (signal: TechIndicator["signal"]) => {
   if (signal === "bullish") {
@@ -289,6 +308,142 @@ function parseMetricsFromMarkdown(content: string): MetricItem[] {
   }
 
   return metrics.slice(0, 8);
+}
+
+function extractSection(content: string, heading: RegExp) {
+  const lines = content.split("\n");
+  const start = lines.findIndex((line) => heading.test(line));
+
+  if (start === -1) {
+    return "";
+  }
+
+  const collected: string[] = [];
+  for (let index = start + 1; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
+    const isNextSection =
+      /^#{1,3}\s+/.test(line) ||
+      (/^\s*\*\*[^*]+\*\*\s*$/.test(line) &&
+        sectionHeadingPattern.test(line) &&
+        !heading.test(line));
+
+    if (isNextSection) {
+      break;
+    }
+
+    collected.push(line);
+  }
+
+  return collected.join("\n").trim();
+}
+
+function parseStructuredMetrics(content: string): StructuredMetric[] {
+  const section = extractSection(
+    content,
+    /(?:核心指標儀表板|核心指标仪表板|核心指標|核心指标|Key Metrics|Metric Dashboard|KPI Dashboard)/i,
+  );
+
+  if (!section) {
+    return [];
+  }
+
+  const rows: StructuredMetric[] = [];
+  const tableLines = section
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.includes("|"));
+
+  for (const line of tableLines) {
+    const cells = line
+      .split("|")
+      .map(normalizeCell)
+      .filter((cell) => cell && !isSeparatorCell(cell));
+    const headerText = cells.join(" ").toLowerCase();
+
+    if (
+      cells.length >= 4 &&
+      !headerText.includes("indicator") &&
+      !headerText.includes("current") &&
+      !headerText.includes("資料可信度") &&
+      !headerText.includes("资料可信度")
+    ) {
+      rows.push({
+        indicator: cells[0] ?? "",
+        current: cells[1] ?? "",
+        trend: cells[2] ?? "",
+        confidence: cells[3] ?? "",
+      });
+    }
+  }
+
+  if (rows.length > 0) {
+    return rows.slice(0, 12);
+  }
+
+  const cells = section
+    .replace(/\|\|/g, "|")
+    .split("|")
+    .map(normalizeCell)
+    .filter((cell) => cell && !isSeparatorCell(cell));
+  const dataCells = cells.filter((cell) => {
+    const lower = cell.toLowerCase();
+    return ![
+      "指标",
+      "指標",
+      "indicator",
+      "当前数值",
+      "當前數值",
+      "current value",
+      "趋势",
+      "趨勢",
+      "trend",
+      "资料可信度",
+      "資料可信度",
+      "confidence",
+    ].includes(lower);
+  });
+
+  for (let index = 0; index + 3 < dataCells.length; index += 4) {
+    rows.push({
+      indicator: dataCells[index] ?? "",
+      current: dataCells[index + 1] ?? "",
+      trend: dataCells[index + 2] ?? "",
+      confidence: dataCells[index + 3] ?? "",
+    });
+  }
+
+  return rows.filter((row) => row.indicator && row.current).slice(0, 12);
+}
+
+function stripGeneratedSections(content: string) {
+  const lines = content.split("\n");
+  const output: string[] = [];
+  let skip = false;
+
+  for (const line of lines) {
+    const isHeading =
+      /^#{1,3}\s+/.test(line) || /^\s*\*\*[^*]+\*\*\s*$/.test(line);
+    const shouldSkip =
+      isHeading &&
+      /(?:核心指標儀表板|核心指标仪表板|核心指標|核心指标|Key Metrics|Metric Dashboard|KPI Dashboard|Evidence List|Evidence|Sources?|References?|證據列表|证据列表|證據|证据|來源|来源|參考|参考)/i.test(
+        line,
+      );
+
+    if (shouldSkip) {
+      skip = true;
+      continue;
+    }
+
+    if (skip && isHeading) {
+      skip = false;
+    }
+
+    if (!skip) {
+      output.push(line);
+    }
+  }
+
+  return output.join("\n").trim();
 }
 
 function parseRadarData(content: string) {
@@ -691,6 +846,128 @@ function MetricDashboard({ metrics }: { metrics: MetricItem[] }) {
   );
 }
 
+function StructuredMetricTable({ metrics }: { metrics: StructuredMetric[] }) {
+  const [layout, setLayout] = useState<"cards" | "table">("cards");
+
+  if (metrics.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card className="border-primary/15 mb-6 overflow-hidden shadow-sm">
+      <CardHeader className="border-border/60 flex-row items-center justify-between border-b pb-4">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <BarChart3 className="text-primary size-4" />
+            Core Metrics Dashboard
+          </CardTitle>
+          <CardDescription>
+            Normalized from the generated markdown into scan-friendly data.
+          </CardDescription>
+        </div>
+        <div className="bg-muted/40 inline-flex rounded-md border p-1">
+          {(["cards", "table"] as const).map((item) => (
+            <Button
+              key={item}
+              onClick={() => setLayout(item)}
+              size="xs"
+              variant={layout === item ? "secondary" : "ghost"}
+            >
+              {item === "cards" ? "Cards" : "Table"}
+            </Button>
+          ))}
+        </div>
+      </CardHeader>
+      <CardContent className="p-4">
+        {layout === "cards" ? (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {metrics.map((metric) => {
+              const score = scoreFromText(
+                `${metric.current} ${metric.trend} ${metric.confidence}`,
+              );
+              const confidenceTone =
+                metric.confidence.includes("高") ||
+                metric.confidence.toLowerCase().includes("high")
+                  ? "success"
+                  : "outline";
+
+              return (
+                <div
+                  key={`${metric.indicator}-${metric.current}`}
+                  className="border-border/70 bg-background/70 hover:border-primary/30 rounded-lg border p-4 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">
+                        {metric.indicator}
+                      </p>
+                      <p className="mt-2 text-xl font-semibold tracking-tight">
+                        {metric.current}
+                      </p>
+                    </div>
+                    <Badge variant={confidenceTone}>{metric.confidence}</Badge>
+                  </div>
+                  <p className="text-muted-foreground mt-3 text-sm leading-6">
+                    {metric.trend}
+                  </p>
+                  <div className="bg-muted mt-3 h-1.5 overflow-hidden rounded-full">
+                    <div
+                      className="bg-primary h-full rounded-full"
+                      style={{ width: `${score ?? 68}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-lg border">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="border-b px-4 py-3 text-left font-semibold">
+                    Indicator
+                  </th>
+                  <th className="border-b px-4 py-3 text-left font-semibold">
+                    Current
+                  </th>
+                  <th className="border-b px-4 py-3 text-left font-semibold">
+                    Trend
+                  </th>
+                  <th className="border-b px-4 py-3 text-left font-semibold">
+                    Confidence
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {metrics.map((metric) => (
+                  <tr
+                    key={`${metric.indicator}-${metric.current}`}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="border-border/50 border-b px-4 py-3 font-medium">
+                      {metric.indicator}
+                    </td>
+                    <td className="border-border/50 border-b px-4 py-3">
+                      {metric.current}
+                    </td>
+                    <td className="border-border/50 border-b px-4 py-3">
+                      {metric.trend}
+                    </td>
+                    <td className="border-border/50 border-b px-4 py-3">
+                      {metric.confidence}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Charts ──
 
 function ReportCharts({ content }: { content: string }) {
@@ -1051,12 +1328,14 @@ function parseEvidenceList(content: string): EvidenceItem[] {
   // - ## Evidence List / ## Sources / ## References (heading)
   // - **Evidence List** (bold text)
   const evidenceSection = content.match(
-    /(?:^|\n)(?:#+\s*(?:Evidence|Sources?|References?)[^\n]*|\*\*Evidence[^*]*\*\*)\n([\s\S]*?)(?=\n(?:#{1,3}\s|\*\*(?!Eviden))|$)/i,
+    /(?:^|\n)(?:#+\s*(?:Evidence|Sources?|References?|證據列表|证据列表|證據|证据|來源|来源|參考|参考)[^\n]*|\*\*(?:Evidence|Sources?|References?|證據列表|证据列表|證據|证据|來源|来源|參考|参考)[^*]*\*\*)\n([\s\S]*?)(?=\n(?:#{1,3}\s|\*\*(?!(?:Evidence|Sources?|References?|證據|证据|來源|来源|參考|参考)))|$)/i,
   );
 
   if (!evidenceSection?.[1]) return items;
 
   const lines = evidenceSection[1].split("\n");
+
+  let previousItem: EvidenceItem | null = null;
 
   for (const line of lines) {
     const trimmed = line.replace(/^\s*[-*\d.]+\s*/, "").trim();
@@ -1065,6 +1344,13 @@ function parseEvidenceList(content: string): EvidenceItem[] {
     const mdLinkMatch = trimmed.match(/\[([^\]]+)\]\(([^)]+)\)/);
     const plainUrlMatch = trimmed.match(/(https?:\/\/[^\s|)\]]+)/);
     const url = mdLinkMatch?.[2] || plainUrlMatch?.[1];
+
+    if (!url && previousItem && /^[-*•]\s*/.test(line.trim())) {
+      previousItem.claim = previousItem.claim
+        ? `${previousItem.claim} ${trimmed}`
+        : trimmed;
+      continue;
+    }
 
     const dateMatch = trimmed.match(/\((\d{4}[-/]\d{2}(?:[-/]\d{2})?)\)/);
     const date = dateMatch?.[1];
@@ -1089,7 +1375,9 @@ function parseEvidenceList(content: string): EvidenceItem[] {
     const claim = claimMatch?.[1]?.trim();
 
     if (title) {
-      items.push({ title, date, url, claim });
+      const item = { title, date, url, claim };
+      items.push(item);
+      previousItem = item;
     }
   }
 
@@ -1325,11 +1613,23 @@ interface ReportViewerProps {
 
 export function ReportViewer({ content }: ReportViewerProps) {
   const metrics = useMemo(() => parseMetricsFromMarkdown(content), [content]);
+  const structuredMetrics = useMemo(
+    () => parseStructuredMetrics(content),
+    [content],
+  );
+  const cleanedContent = useMemo(
+    () => stripGeneratedSections(content),
+    [content],
+  );
+  const [showOriginal, setShowOriginal] = useState(false);
 
   return (
     <div className="space-y-0">
       {/* Executive research workspace */}
       <ReportExecutiveHeader content={content} metrics={metrics} />
+
+      {/* Normalized metric table */}
+      <StructuredMetricTable metrics={structuredMetrics} />
 
       {/* Metrics Dashboard */}
       <MetricDashboard metrics={metrics} />
@@ -1345,18 +1645,28 @@ export function ReportViewer({ content }: ReportViewerProps) {
 
       {/* Markdown Content */}
       <Card className="overflow-hidden shadow-sm">
-        <CardHeader className="border-border/60 border-b pb-4">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ClipboardCheck className="text-primary size-4" />
-            Full Report
-          </CardTitle>
-          <CardDescription>
-            Original markdown narrative with tables, sources, and linked URLs.
-          </CardDescription>
+        <CardHeader className="border-border/60 flex-row items-center justify-between border-b pb-4">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ClipboardCheck className="text-primary size-4" />
+              Report Narrative
+            </CardTitle>
+            <CardDescription>
+              Cleaned narrative after extracting metrics and source evidence
+              into structured UI.
+            </CardDescription>
+          </div>
+          <Button
+            onClick={() => setShowOriginal((value) => !value)}
+            size="xs"
+            variant="outline"
+          >
+            {showOriginal ? "Show organized view" : "Show original markdown"}
+          </Button>
         </CardHeader>
         <CardContent className="prose-sm p-6">
           <ReactMarkdown components={markdownComponents}>
-            {content}
+            {showOriginal ? content : cleanedContent || content}
           </ReactMarkdown>
         </CardContent>
       </Card>
