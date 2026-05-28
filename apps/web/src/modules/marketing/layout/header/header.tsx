@@ -4,6 +4,7 @@ import { useTranslation } from "@workspace/i18n";
 import { Icons } from "@workspace/ui-web/icons";
 
 import { pathsConfig } from "~/config/paths";
+import { I18nControls } from "~/modules/common/i18n/controls";
 import { ThemeControls } from "~/modules/common/theme";
 import { TurboLink } from "~/modules/common/turbo-link";
 import { CtaButton } from "~/modules/marketing/layout/cta-button";
@@ -61,6 +62,7 @@ export const Header = () => {
 
         <div className="flex items-center justify-center lg:gap-2">
           <ThemeControls />
+          <I18nControls variant="icon" />
           <CtaButton className="hidden lg:inline-flex" />
           <MobileNavigation links={links} />
         </div>

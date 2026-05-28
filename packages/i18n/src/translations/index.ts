@@ -1,5 +1,6 @@
 import { en } from "./en";
 import { es } from "./es";
+import { zhTW } from "./zh-TW";
 
 import type { config } from "../config";
 
@@ -9,4 +10,5 @@ export const translations: Record<
 > = {
   en,
   es,
+  "zh-TW": zhTW,
 } as const;

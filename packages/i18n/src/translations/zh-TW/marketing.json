@@ -1,0 +1,207 @@
+{
+  "product": {
+    "title": "AI 驅動的商業研究報告",
+    "description": "把任何公司、市場或產業轉換成結構化分析，結合即時來源、你的模型 API Key，幾分鐘內生成可匯出的報告。",
+    "preview": {
+      "badge": "即時研究",
+      "title": "以搜尋為基礎的報告流程",
+      "provider": "模型供應商",
+      "sources": "已驗證來源",
+      "report": "生成報告",
+      "reportTitle": "Tesla 市場格局與競爭分析",
+      "placeholder": "研究一家公司、市場或產業...",
+      "action": "研究",
+      "examples": {
+        "tesla": "Tesla 競爭格局",
+        "coffee": "美國精品咖啡市場",
+        "saas": "垂直 SaaS 定價趨勢",
+        "battery": "電池儲能機會",
+        "aiAgents": "金融團隊的 AI Agent"
+      }
+    }
+  },
+  "announcement": "不綁定模型。使用你自己的 API Key。",
+  "report": {
+    "title": "AI 商業研究報告",
+    "description": "從即時來源生成結構化的市場、競品與投資分析。"
+  },
+  "shippedWith": "為市場研究、策略與投資流程打造",
+  "cta": {
+    "question": "準備好更聰明地做研究了嗎？",
+    "button": "生成第一份報告",
+    "pricing": "查看價格",
+    "buy": {
+      "question": "準備擴展你的研究流程了嗎？",
+      "description": "用 Aireseach 標準化資料蒐集、分析結構與可匯出的商業報告。",
+      "button": "開始研究",
+      "join": {
+        "description": "加入正在用 AI 建立更好研究習慣的分析師、創辦人與營運團隊。",
+        "button": "加入候補名單"
+      }
+    }
+  },
+  "editToReload": "Edit <code>{{file}}</code> and save to reload.",
+  "workInProgress": {
+    "title": "We're working on it!",
+    "description": "{{feature}} is currently not available. We're working on it and it will be available soon."
+  },
+  "useCases": {
+    "label": "適合對象",
+    "title": "誰適合使用 Aireseach？",
+    "description": "適合需要可信商業分析、但不想從空白頁開始的創辦人、分析師、顧問與投資人。"
+  },
+  "comparison": {
+    "label": "方案比較",
+    "title": "找到適合你研究流程的方案",
+    "description": "免費開始；當你需要更多報告與進階功能時再升級。"
+  },
+  "faq": {
+    "label": "常見問題",
+    "title": "常見問題",
+    "description": "你需要了解的 Aireseach 重點都在這裡。",
+    "cta": "聯絡我們",
+    "question": {
+      "whatDoesOurPlatformDo": {
+        "question": "Aireseach 是什麼？",
+        "answer": "Aireseach 會從即時網頁來源生成結構化商業研究報告。它使用 Jina 搜尋蒐集公開資料，並用你偏好的大語言模型產出市場、競品、風險與投資分析。"
+      },
+      "howWillThisBenefitMyBusiness": {
+        "question": "Aireseach 適合誰？",
+        "answer": "適合驗證市場的創辦人、做盡職調查的分析師、準備客戶交付物的顧問，以及評估機會規模的投資人。"
+      },
+      "isMyDataSafe": {
+        "question": "我的 API Key 安全嗎？",
+        "answer": "安全。你的模型 API Key 只會用於當次請求，不會儲存在我們的伺服器。搜尋由 Aireseach 處理，推理會直接送往你選擇的模型供應商。"
+      },
+      "whatKindOfIntegrationsAreAvailable": {
+        "question": "支援哪些模型供應商？",
+        "answer": "支援 OpenAI、DeepSeek、OpenRouter、Perplexity（Deep Research），以及任何 OpenAI 相容端點。你提供 Key，Aireseach 負責搜尋與報告結構。"
+      },
+      "howEasyIsItToOnboardMyTeam": {
+        "question": "如何開始？",
+        "answer": "輸入研究目標、貼上 API Key，然後點擊生成。第一份報告不需要註冊；建立帳戶後可以保存歷史紀錄並使用進階功能。"
+      },
+      "whatTypesOfBusinessesCanUseThis": {
+        "question": "可以生成哪些報告？",
+        "answer": "可生成市場份額分析、競爭格局、財務品質、抗脆弱性評估、成長模型檢視，以及多維度綜合報告。每份報告都包含來源證據與結構化指標。"
+      },
+      "canICustomizeThisToFitMyBusinessNeeds": {
+        "question": "可以匯出和分享報告嗎？",
+        "answer": "可以。每份報告都能下載為 Markdown，用於備忘錄、簡報、客戶筆記或內部策略文件。"
+      }
+    }
+  },
+  "contact": {
+    "label": "聯絡",
+    "title": "需要協助？歡迎聯絡我們",
+    "cta": "聯絡銷售",
+    "description": "取得協助或提供回饋",
+    "form": {
+      "name": {
+        "placeholder": "John Doe"
+      },
+      "email": {
+        "placeholder": "your@email.com"
+      },
+      "message": {
+        "placeholder": "How can we help you?"
+      },
+      "submit": "送出訊息",
+      "success": {
+        "title": "訊息已送出！",
+        "description": "感謝你的訊息，我們會盡快回覆。"
+      }
+    },
+    "email": {
+      "subject": "You've received a new contact form submission",
+      "body": "New contact form submission"
+    }
+  },
+  "blog": {
+    "label": "部落格",
+    "title": "平台消息與研究洞察",
+    "description": "掌握最新產品更新、最佳實務與產業趨勢。",
+    "timeToRead": "{{time}} 分鐘閱讀",
+    "tag": {
+      "learning": "市場研究",
+      "skills": "競爭分析",
+      "progress": "盡職調查",
+      "product": "投資",
+      "development": "AI 工具",
+      "prototype": "產品更新",
+      "launch": "指南"
+    }
+  },
+  "api": {
+    "title": "API 參考",
+    "description": "使用我們的 API 建立整合"
+  },
+  "roadmap": {
+    "title": "報告流程",
+    "description": "開啟公開報告生成器"
+  },
+  "docs": {
+    "title": "運作方式",
+    "description": "了解如何使用 Aireseach"
+  },
+  "ai": {
+    "description": "Ask focused questions, explore a market, and turn public context into clearer business decisions.",
+    "prompt": {
+      "history": "Tell the history of the internet",
+      "capitals": "Quiz me on the world capitals",
+      "quantum": "Explain quantum computing",
+      "realWorld": "Describe a real-world AI case"
+    },
+    "placeholder": "Ask a question...",
+    "cta": "Submit"
+  },
+  "setup": {
+    "steps": {
+      "step": {
+        "start": {
+          "title": "This is a simple step",
+          "description": "You need to press Continue button to proceed to the next step"
+        },
+        "required": {
+          "title": "This is a required step",
+          "description": "You have to complete all the required fields to proceed to the next step",
+          "fields": {
+            "data": "I understand that my data is private and encrypted",
+            "privacy": "I've read and agree to the <a>Privacy Policy</a>"
+          }
+        },
+        "paywall": {
+          "title": "This is a paywall step",
+          "description": "You can encourage users to purchase the product here or allow them to skip for free",
+          "cta": "Present paywall",
+          "state": {
+            "title": "Paywall state",
+            "description": "Live status updates from the paywall flow, including loading, completion, and errors.",
+            "status": {
+              "opening": "Opening paywall…",
+              "dismissed": "Paywall dismissed",
+              "skipped": "Paywall skipped",
+              "error": "Paywall error",
+              "idle": "Paywall idle"
+            }
+          }
+        }
+      }
+    }
+  },
+  "update": {
+    "available": {
+      "title": "New update available!",
+      "description": "A new update is ready to be installed. Click below to install it or dismiss for later."
+    },
+    "installing": {
+      "title": "Installing update...",
+      "description": "The update is being installed. Please wait a moment."
+    }
+  },
+  "buyCta": {
+    "title": "AI 驅動的商業研究報告。",
+    "description": "使用你偏好的模型供應商生成以搜尋為基礎的商業報告。",
+    "link": "生成報告"
+  }
+}

@@ -12,7 +12,11 @@ import { setLocaleCookie } from "./actions";
 
 import type { Locale } from "@workspace/i18n";
 
-export const I18nControls = () => {
+interface I18nControlsProps {
+  readonly variant?: "default" | "icon";
+}
+
+export const I18nControls = ({ variant = "default" }: I18nControlsProps) => {
   const router = useRouter();
   const path = usePathname();
 
@@ -31,5 +35,5 @@ export const I18nControls = () => {
     [path, router],
   );
 
-  return <LocaleCustomizer onChange={onChange} />;
+  return <LocaleCustomizer onChange={onChange} variant={variant} />;
 };

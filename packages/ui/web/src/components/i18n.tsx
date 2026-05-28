@@ -17,6 +17,7 @@ import type { Icon } from "#components/icons";
 export const LocaleIcon: Record<Locale, Icon> = {
   [Locale.EN]: Icons.UnitedKingdom,
   [Locale.ES]: Icons.Spain,
+  [Locale.ZH_TW]: Icons.Globe2,
 } as const;
 
 interface LocaleCustomizerProps {
