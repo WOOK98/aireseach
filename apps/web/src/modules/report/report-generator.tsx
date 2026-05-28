@@ -428,7 +428,11 @@ export const ReportGenerator = ({
               { label: "Market share", value: "Pending", icon: "📊" },
               { label: "Growth quality", value: "Pending", icon: "📈" },
               { label: "Competitive intensity", value: "Pending", icon: "⚔️" },
+              { label: "Cash flow / assets", value: "Pending", icon: "💰" },
               { label: "Antifragility", value: "Pending", icon: "🛡️" },
+              { label: "MA 50/200", value: "Pending", icon: "📉" },
+              { label: "RSI (14)", value: "Pending", icon: "⚡" },
+              { label: "MACD", value: "Pending", icon: "🔀" },
             ].map((metric) => (
               <div
                 key={metric.label}
