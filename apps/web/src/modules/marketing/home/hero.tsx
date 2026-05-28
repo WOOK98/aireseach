@@ -15,10 +15,10 @@ const previewSources = [
 ];
 
 const previewMetrics = [
-  { label: "Market share", value: "Needs verification" },
-  { label: "Growth quality", value: "High variance" },
-  { label: "Competitive pressure", value: "Rising" },
-  { label: "Antifragility", value: "Mixed" },
+  { label: "Market share", value: "34.2%" },
+  { label: "Growth quality", value: "Strong" },
+  { label: "Competitive pressure", value: "Moderate" },
+  { label: "Antifragility", value: "High" },
 ];
 
 export const Hero = async () => {

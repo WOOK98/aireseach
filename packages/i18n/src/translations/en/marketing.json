@@ -1,45 +1,25 @@
 {
   "product": {
-    "title": "AI business research reports in minutes",
-    "description": "Aireseach turns live web search and your own model API key into structured market, competitor, risk, and investment reports.",
+    "title": "Business research reports, powered by AI",
+    "description": "Turn any company, market, or industry into a structured analysis — with live sources, your own model key, and exportable reports in minutes.",
     "preview": {
-      "badge": "AI",
+      "badge": "Live research",
       "title": "Search-grounded report workflow",
       "provider": "Model provider",
-      "sources": "Live source stack",
+      "sources": "Verified sources",
       "report": "Generated report",
-      "reportTitle": "Tesla market landscape and antifragility review"
-    },
-    "mobile": {
-      "ios": {
-        "title": "Report Generator",
-        "description": "Generate business reports from live search and your model key"
-      },
-      "android": {
-        "title": "Pricing",
-        "description": "Choose a plan for repeatable research workflows"
-      }
-    },
-    "extension": {
-      "chrome": {
-        "title": "Dashboard",
-        "description": "Manage reports, billing, and account settings"
-      },
-      "firefox": {
-        "title": "Firefox Add-on",
-        "description": "Enhanced browsing for Firefox users"
-      },
-      "edge": {
-        "title": "Edge Add-on",
-        "description": "Powerful tools for Microsoft Edge"
-      }
+      "reportTitle": "Tesla market landscape and competitive analysis"
     }
   },
-  "announcement": "Bring your own model key. Aireseach provides search.",
+  "announcement": "No lock-in. Bring your own API key.",
+  "report": {
+    "title": "AI Business Research Report",
+    "description": "Generate structured market, competitor, and investment analysis from live sources."
+  },
   "shippedWith": "Built for market research, strategy, and investment workflows",
   "cta": {
-    "question": "Ready to research?",
-    "button": "Generate a report",
+    "question": "Ready to research smarter?",
+    "button": "Generate your first report",
     "pricing": "View pricing",
     "buy": {
       "question": "Ready to scale your research workflow?",
@@ -56,95 +36,39 @@
     "title": "We're working on it!",
     "description": "{{feature}} is currently not available. We're working on it and it will be available soon."
   },
-  "features": {
-    "label": "Features",
-    "title": "From scattered sources to decision-ready reports",
-    "description": "A focused research workspace for people who need credible business analysis without starting from a blank page.",
-    "feature": {
-      "core": {
-        "title": "Search-grounded research",
-        "description": "Aireseach uses platform-managed Jina search to collect public context before the model writes."
-      },
-      "ai": {
-        "title": "Bring your own model key",
-        "description": "Use OpenAI, DeepSeek, OpenRouter, Perplexity, or any OpenAI-compatible endpoint without exposing platform model spend."
-      },
-      "mobile": {
-        "title": "Investment-grade structure",
-        "description": "Reports include metrics, evidence, market share, competitive pressure, antifragility, and risks."
-      },
-      "extension": {
-        "title": "Exportable output",
-        "description": "Download Markdown reports for memos, client notes, pitch prep, or internal strategy work."
-      }
-    }
-  },
-  "testimonials": {
-    "label": "Testimonials",
-    "title": "Teams ship faster with us",
-    "description": "Hear from founders and developers who customized the starter to launch sooner and convert better.",
-    "rating": "{{rating}} from {{count}}+ reviews",
-    "reviews": {
-      "jack": {
-        "name": "Jack",
-        "position": "Software Engineer",
-        "body": "The starter freed our team from boilerplate work. We swapped in our copy over a weekend and focused on features customers actually wanted."
-      },
-      "jill": {
-        "name": "Jill",
-        "position": "Startup Founder",
-        "body": "We launched our MVP in two weeks. Everything from marketing pages to auth was ready—we just rewrote the copy for our audience."
-      },
-      "john": {
-        "name": "John",
-        "position": "Senior Developer",
-        "body": "The DX is unmatched. The stack works out of the box and stays flexible enough to shape around our product narrative."
-      },
-      "sarah": {
-        "name": "Sarah",
-        "position": "Product Manager",
-        "body": "We scaled from prototype to thousands of users without drama. Analytics, billing, and marketing flows were ready to customize."
-      },
-      "mike": {
-        "name": "Mike",
-        "position": "Engineering Lead",
-        "body": "The community is stellar. Fast answers, launch feedback, and constant improvements keep our team moving."
-      }
-    }
-  },
   "faq": {
     "label": "FAQ",
-    "title": "Have a question? We got answers",
-    "description": "Find answers to frequently asked questions about features, pricing, implementation, and getting started with our platform.",
+    "title": "Frequently asked questions",
+    "description": "Everything you need to know about Aireseach.",
     "cta": "Contact us",
     "question": {
       "whatDoesOurPlatformDo": {
-        "question": "What does our platform do?",
-        "answer": "Aireseach generates structured business research reports from live search context and the model provider you choose."
+        "question": "What is Aireseach?",
+        "answer": "Aireseach generates structured business research reports from live web sources. It uses Jina search to gather public data and your preferred LLM to produce market, competitor, risk, and investment analyses."
       },
       "howWillThisBenefitMyBusiness": {
-        "question": "How will this benefit my business?",
-        "answer": "You launch faster, ship features sooner, and convert more leads because the core product, analytics, and billing flows are already in place."
+        "question": "Who is Aireseach for?",
+        "answer": "Founders validating markets, analysts doing due diligence, consultants preparing client deliverables, and investors sizing opportunities. Anyone who needs credible business analysis without starting from scratch."
       },
       "isMyDataSafe": {
-        "question": "Is my data safe?",
-        "answer": "Yes. We follow enterprise-grade security practices and provide guardrails so you can adapt policies to your industry requirements."
+        "question": "Is my API key safe?",
+        "answer": "Yes. Your model API key is used only for the current request and is never stored on our servers. Search is handled by Aireseach; inference goes directly to your chosen provider."
       },
       "whatKindOfIntegrationsAreAvailable": {
-        "question": "What kind of integrations are available?",
-        "answer": "The report workflow supports OpenAI, DeepSeek, OpenRouter, Perplexity, and custom OpenAI-compatible model endpoints."
+        "question": "Which model providers are supported?",
+        "answer": "OpenAI, DeepSeek, OpenRouter, Perplexity (deep research), and any OpenAI-compatible endpoint. You bring the key; Aireseach handles the search and report structure."
       },
       "howEasyIsItToOnboardMyTeam": {
-        "question": "How easy is it to onboard my team?",
-        "answer": "Your team can dive in quickly with clear docs, TypeScript-first patterns, and examples that show exactly where to customize."
+        "question": "How do I get started?",
+        "answer": "Enter a research target, paste your API key, and hit Generate. No signup required for your first report. Create an account to save history and access premium features."
       },
       "whatTypesOfBusinessesCanUseThis": {
-        "question": "What types of businesses can use this?",
-        "answer": "Founders, analysts, consultants, investors, and operators can use Aireseach to speed up repeatable market and company research."
+        "question": "What kind of reports can I generate?",
+        "answer": "Market share analysis, competitive landscape, financial quality, antifragility assessment, growth model review, and comprehensive multi-lens reports. Each includes sourced evidence and structured metrics."
       },
       "canICustomizeThisToFitMyBusinessNeeds": {
-        "question": "Can I customize this to fit my business needs?",
-        "answer": "Absolutely. Every module is designed for quick customization—update copy, swap components, and extend logic without fighting the framework."
+        "question": "Can I export and share reports?",
+        "answer": "Yes. Every report can be downloaded as Markdown for use in memos, pitch decks, client notes, or internal strategy documents."
       }
     }
   },
@@ -257,7 +181,7 @@
     }
   },
   "buyCta": {
-    "title": "Research faster with Aireseach.",
+    "title": "Business research reports, powered by AI.",
     "description": "Generate search-grounded business reports with your preferred model provider.",
     "link": "Generate a report"
   }
