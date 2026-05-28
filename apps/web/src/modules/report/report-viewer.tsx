@@ -241,6 +241,138 @@ function parsePieData(content: string) {
   return data;
 }
 
+// ── Technical Indicators ──
+
+interface TechIndicator {
+  name: string;
+  value: string;
+  signal?: "bullish" | "bearish" | "neutral";
+  icon: string;
+}
+
+const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
+  {
+    name: "MA 50/200",
+    icon: "📉",
+    patterns: [
+      /(?:50[-\s]?day|MA50|MA\s*50|SMA\s*50)[^\n|]*?(?:above|below|golden|death|cross)[^\n]*/i,
+      /(?:moving\s*average|MA)[^\n|]*(?:50|200)[^\n]*/i,
+    ],
+  },
+  {
+    name: "RSI (14)",
+    icon: "⚡",
+    patterns: [
+      /RSI[^\n|]*?(?:\d{1,3}(?:\.\d+)?)[^\n]*/i,
+      /(?:relative\s*strength)[^\n|]*?\d{1,3}[^\n]*/i,
+    ],
+  },
+  {
+    name: "MACD",
+    icon: "🔀",
+    patterns: [
+      /MACD[^\n|]*?(?:bullish|bearish|signal|crossover|above|below|positive|negative)[^\n]*/i,
+    ],
+  },
+  {
+    name: "Bollinger Bands",
+    icon: "📊",
+    patterns: [
+      /(?:bollinger|BB)[^\n|]*(?:upper|lower|squeeze|band|expand)[^\n]*/i,
+    ],
+  },
+  {
+    name: "Volume",
+    icon: "📶",
+    patterns: [
+      /(?:volume|trading\s*volume)[^\n|]*(?:increase|decrease|surge|drop|average|above|below)[^\n]*/i,
+    ],
+  },
+];
+
+function parseTechIndicators(content: string): TechIndicator[] {
+  const indicators: TechIndicator[] = [];
+
+  for (const { name, icon, patterns } of TECH_PATTERNS) {
+    for (const pattern of patterns) {
+      const match = content.match(pattern);
+      if (match?.[0]) {
+        const text = match[0].trim();
+        const lower = text.toLowerCase();
+        const signal =
+          lower.includes("bullish") ||
+          lower.includes("above") ||
+          lower.includes("golden") ||
+          lower.includes("positive") ||
+          lower.includes("buy")
+            ? ("bullish" as const)
+            : lower.includes("bearish") ||
+                lower.includes("below") ||
+                lower.includes("death") ||
+                lower.includes("negative") ||
+                lower.includes("sell")
+              ? ("bearish" as const)
+              : ("neutral" as const);
+
+        // Extract a short value from the match
+        const valueMatch = text.match(
+          /(?:\d{1,3}(?:\.\d+)?%?|above|below|bullish|bearish|neutral|positive|negative)/i,
+        );
+        const value = valueMatch?.[0] || text.slice(0, 30);
+
+        indicators.push({ name, value, signal, icon });
+        break;
+      }
+    }
+  }
+
+  return indicators;
+}
+
+function TechIndicatorPanel({ content }: { content: string }) {
+  const indicators = useMemo(() => parseTechIndicators(content), [content]);
+
+  if (indicators.length === 0) return null;
+
+  const signalColors = {
+    bullish: "text-green-600 bg-green-50 border-green-200",
+    bearish: "text-red-600 bg-red-50 border-red-200",
+    neutral: "text-amber-600 bg-amber-50 border-amber-200",
+  };
+
+  return (
+    <div className="mb-6">
+      <h3 className="text-muted-foreground mb-3 flex items-center gap-2 text-sm font-semibold tracking-wider uppercase">
+        {/* oxlint-disable-next-line i18next/no-literal-string */}
+        <span>📐</span> Technical Indicators
+      </h3>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {indicators.map((ind) => (
+          <div
+            key={ind.name}
+            className="border-border/60 bg-muted/20 hover:border-primary/30 hover:bg-muted/40 flex items-center gap-3 rounded-lg border p-3 transition-colors"
+          >
+            <span className="text-lg">{ind.icon}</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">{ind.name}</p>
+              <p className="text-muted-foreground truncate text-xs">
+                {ind.value}
+              </p>
+            </div>
+            {ind.signal && (
+              <span
+                className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${signalColors[ind.signal]}`}
+              >
+                {ind.signal}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Metric Dashboard ──
 
 function MetricDashboard({ metrics }: { metrics: MetricItem[] }) {
@@ -697,6 +829,9 @@ export function ReportViewer({ content }: ReportViewerProps) {
 
       {/* Evidence List - clickable links */}
       <EvidenceSection content={content} />
+
+      {/* Technical Indicators */}
+      <TechIndicatorPanel content={content} />
 
       {/* Markdown Content */}
       <Card>

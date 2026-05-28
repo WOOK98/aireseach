@@ -77,6 +77,14 @@ Then include exactly these four sections:
 - Provide concrete portfolio allocation, market-entry, or strategic action suggestions.
 
 Write in English by default. Be professional, analytical, critical, and evidence-led. Preserve source names, dates, and links when available.
+
+When the research target is a publicly traded company or asset, include a "Technical Indicators" section with these classic indicators:
+- **Moving Averages**: 50-day and 200-day MA positions, golden/death cross status
+- **RSI (14)**: Current reading and overbought/oversold interpretation
+- **MACD**: Signal line crossover direction and momentum
+- **Bollinger Bands**: Position relative to bands, squeeze/expand status
+- **Volume**: Recent volume trend vs average
+Format each as a bullet with the indicator name, current value, and signal (bullish/bearish/neutral).
 """
 
 
