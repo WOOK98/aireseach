@@ -43,38 +43,37 @@
   "plan": {
     "free": {
       "name": "Gratis",
-      "description": "Para pequeños proyectos que están comenzando"
+      "description": "Explora Aireseach con 3 informes al mes"
     },
-    "premium": {
-      "name": "Premium",
-      "description": "Desbloquea funciones avanzadas para crecer profesionalmente",
-      "badge": "Más vendido"
+    "pro": {
+      "name": "Pro",
+      "description": "Informes ilimitados para investigadores individuales",
+      "badge": "Más popular"
     },
-    "enterprise": {
-      "name": "Empresarial",
-      "description": "Diseñado para organizaciones y grandes equipos"
+    "business": {
+      "name": "Business",
+      "description": "Colaboración en equipo y análisis avanzado"
     }
   },
   "feature": {
-    "sync": "Sincronización perfecta entre dispositivos",
-    "basicSupport": "Soporte básico por correo",
-    "limitedStorage": "Almacenamiento en la nube limitado",
-    "emailNotifications": "Notificaciones de alerta por correo",
-    "basicReports": "Informes básicos de uso",
-    "advancedSync": "Sincronización avanzada en tiempo real",
-    "prioritySupport": "Soporte prioritario al cliente",
-    "moreStorage": "Más espacio de almacenamiento en la nube",
-    "teamCollaboration": "Herramientas de colaboración en equipo",
-    "smsNotifications": "Alertas y notificaciones por SMS",
-    "advancedReports": "Informes avanzados de análisis",
-    "unlimitedStorage": "Almacenamiento en la nube ilimitado",
-    "customBranding": "Opciones de marca personalizada",
-    "dedicatedSupport": "Soporte dedicado de cuenta",
-    "apiAccess": "Acceso completo a la API",
-    "userRoles": "Gestión completa de roles de usuario",
-    "auditLogs": "Registros de auditoría de cumplimiento",
-    "singleSignOn": "Inicio de sesión único empresarial",
-    "advancedAnalytics": "Análisis avanzado de uso"
+    "REPORTS_3_MONTH": "3 informes al mes",
+    "COMPREHENSIVE_LENS": "Lente de análisis integral",
+    "OWN_API_KEY": "Usa tu propia clave API",
+    "MARKDOWN_EXPORT": "Descarga en Markdown",
+    "COMMUNITY_SUPPORT": "Soporte comunitario",
+    "UNLIMITED_REPORTS": "Informes ilimitados",
+    "ALL_LENSES": "Los 6 lentes de análisis",
+    "DEEP_RESEARCH": "Modo Perplexity Deep Research",
+    "REPORT_HISTORY": "Historial y guardado de informes",
+    "CUSTOM_ENDPOINTS": "Endpoints de modelo personalizados",
+    "PRIORITY_SEARCH": "Búsqueda prioritaria",
+    "EMAIL_SUPPORT": "Soporte por correo",
+    "TEAM_WORKSPACE": "Espacio de equipo (hasta 5 miembros)",
+    "SHARED_LIBRARY": "Biblioteca de informes compartida",
+    "API_ACCESS": "Acceso a API",
+    "CUSTOM_TEMPLATES": "Plantillas de informe personalizadas",
+    "BRANDED_PDF": "Exportación PDF con marca",
+    "PRIORITY_SUPPORT": "Soporte prioritario"
   },
   "error": {
     "checkout": "Ocurrió un error durante el proceso de pago.",

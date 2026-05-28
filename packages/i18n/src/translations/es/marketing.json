@@ -120,6 +120,17 @@
     }
   },
 
+  "useCases": {
+    "label": "Diseñado para",
+    "title": "¿Quién usa Aireseach?",
+    "description": "Cualquiera que necesite análisis empresarial creíble sin empezar de cero."
+  },
+  "comparison": {
+    "label": "Comparar planes",
+    "title": "Encuentra el plan adecuado para tu flujo de trabajo",
+    "description": "Empieza gratis, actualiza cuando necesites más informes y funciones avanzadas."
+  },
+
   "faq": {
     "label": "Preguntas frecuentes",
     "title": "¿Tienes una pregunta? Tenemos respuestas",
