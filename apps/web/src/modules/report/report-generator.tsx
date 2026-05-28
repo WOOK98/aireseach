@@ -1,7 +1,7 @@
 "use client";
 
-import { Sparkles, Square } from "lucide-react";
-import { useState, useRef } from "react";
+import { Sparkles, Square, FileText, Download, Loader2, StopCircle, PanelLeftClose, PanelLeft } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
 
 import { Button } from "@workspace/ui-web/button";
 import { Icons } from "@workspace/ui-web/icons";
@@ -14,7 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui-web/select";
-import { Textarea } from "@workspace/ui-web/textarea";
+import { Badge } from "@workspace/ui-web/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui-web/card";
+
+import { ReportViewer } from "./report-viewer";
 
 import type { FormEvent } from "react";
 
@@ -218,11 +221,24 @@ export const ReportGenerator = () => {
   };
 
   const isLoading = report.status === "loading";
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), []);
 
   return (
-    <div className="flex gap-6">
-      {/* 左侧：参数面板 */}
-      <div className="w-80 shrink-0 space-y-6">
+    <div className="flex gap-6 relative">
+      {/* Toggle button */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="absolute top-0 right-0 z-10 lg:hidden"
+        onClick={toggleSidebar}
+      >
+        {sidebarOpen ? <PanelLeftClose className="size-4" /> : <PanelLeft className="size-4" />}
+      </Button>
+
+      {/* Left sidebar */}
+      <div className={`${sidebarOpen ? "w-80" : "w-0 overflow-hidden opacity-0"} shrink-0 space-y-6 transition-all duration-300`}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="target">{TEXT.targetLabel}</Label>
@@ -374,49 +390,67 @@ export const ReportGenerator = () => {
           </div>
         </form>
 
-        {/* 指标卡片 */}
-        <div className="bg-muted/50 rounded-lg border p-4">
-          <h3 className="mb-3 text-sm font-semibold">{TEXT.metricDashboard}</h3>
-          <div className="space-y-2">
+        {/* Metric dashboard */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">{TEXT.metricDashboard}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             {[
-              { label: "Market share", value: "To verify" },
-              { label: "Growth quality", value: "To verify" },
-              { label: "Competitive intensity", value: "To verify" },
-              { label: "Antifragility", value: "To assess" },
+              { label: "Market share", value: "Pending", icon: "📊" },
+              { label: "Growth quality", value: "Pending", icon: "📈" },
+              { label: "Competitive intensity", value: "Pending", icon: "⚔️" },
+              { label: "Antifragility", value: "Pending", icon: "🛡️" },
             ].map((metric) => (
               <div
                 key={metric.label}
                 className="flex items-center justify-between text-sm"
               >
-                <span className="text-muted-foreground">{metric.label}</span>
-                <span className="font-medium">{metric.value}</span>
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <span className="text-xs">{metric.icon}</span>
+                  {metric.label}
+                </span>
+                <Badge variant="outline" className="font-mono text-xs">
+                  {metric.value}
+                </Badge>
               </div>
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* 下载按钮 */}
+        {/* Download button */}
         {report.status === "done" && report.content && (
           <Button variant="outline" className="w-full" onClick={handleDownload}>
-            <Icons.Download className="mr-2 size-4" />
+            <Download className="mr-2 size-4" />
             {TEXT.download}
           </Button>
         )}
       </div>
 
-      {/* 右侧：报告展示 */}
+      {/* Right side: report display */}
       <div className="min-w-0 flex-1">
         {report.status === "idle" && (
-          <div className="text-muted-foreground flex h-64 items-center justify-center rounded-lg border border-dashed">
-            <p>{TEXT.emptyState}</p>
-          </div>
+          <Card className="flex h-[600px] items-center justify-center">
+            <CardContent className="text-center">
+              <FileText className="text-muted-foreground mx-auto mb-4 size-12" />
+              <p className="text-muted-foreground text-lg font-medium">{TEXT.emptyState}</p>
+              <p className="text-muted-foreground/60 mt-2 text-sm">
+                Reports include market share, competitive landscape, financial metrics, and risk analysis.
+              </p>
+            </CardContent>
+          </Card>
         )}
 
         {report.status === "loading" && !report.content && (
-          <div className="flex h-64 items-center justify-center rounded-lg border">
-            <Icons.Loader className="text-muted-foreground mr-2 size-5 animate-spin" />
-            <span className="text-muted-foreground">{TEXT.loading}</span>
-          </div>
+          <Card className="flex h-[600px] items-center justify-center">
+            <CardContent className="text-center">
+              <Loader2 className="text-primary mx-auto mb-4 size-10 animate-spin" />
+              <p className="text-muted-foreground font-medium">Generating your report...</p>
+              <p className="text-muted-foreground/60 mt-2 text-sm">
+                This may take 1-2 minutes for deep research.
+              </p>
+            </CardContent>
+          </Card>
         )}
 
         {report.error && (
@@ -426,13 +460,18 @@ export const ReportGenerator = () => {
         )}
 
         {report.content && (
-          <div className="prose dark:prose-invert max-w-none rounded-lg border p-6">
-            <Textarea
-              readOnly
-              value={report.content}
-              className="min-h-[500px] resize-none border-0 bg-transparent p-0 font-mono text-sm focus-visible:ring-0"
-            />
-          </div>
+          <>
+            {/* Streaming indicator */}
+            {isLoading && (
+              <div className="mb-3 flex items-center gap-2">
+                <Badge variant="secondary" className="animate-pulse">
+                  <Loader2 className="mr-1 size-3 animate-spin" />
+                  Streaming...
+                </Badge>
+              </div>
+            )}
+            <ReportViewer content={report.content} />
+          </>
         )}
       </div>
     </div>

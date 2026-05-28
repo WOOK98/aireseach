@@ -16,51 +16,16 @@ const links = [
     label: "product",
     items: [
       {
-        title: "marketing:product.mobile.ios.title",
-        description: "marketing:product.mobile.ios.description",
-        href: pathsConfig.marketing.report,
-        icon: Icons.BookOpen,
-      },
-      {
-        title: "marketing:product.mobile.android.title",
-        description: "marketing:product.mobile.android.description",
-        href: pathsConfig.marketing.pricing,
-        icon: Icons.Key,
-      },
-      {
-        title: "marketing:product.extension.chrome.title",
-        description: "marketing:product.extension.chrome.description",
-        href: pathsConfig.dashboard.user.report,
-        icon: Icons.Home,
-      },
-    ],
-  },
-  {
-    label: "resources",
-    items: [
-      {
-        title: "marketing:contact.label",
-        description: "marketing:contact.description",
-        href: pathsConfig.marketing.contact,
-        icon: Icons.SendHorizontal,
-      },
-      {
         title: "marketing:roadmap.title",
         description: "marketing:roadmap.description",
         href: pathsConfig.marketing.report,
-        icon: Icons.ChartNoAxesGantt,
+        icon: Icons.BookOpen,
       },
       {
         title: "marketing:docs.title",
         description: "marketing:docs.description",
         href: pathsConfig.marketing.report,
-        icon: Icons.BookOpen,
-      },
-      {
-        title: "marketing:api.title",
-        description: "marketing:api.description",
-        href: "#",
-        icon: Icons.Webhook,
+        icon: Icons.ChartNoAxesGantt,
       },
     ],
   },
