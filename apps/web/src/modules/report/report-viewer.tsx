@@ -1,6 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
+/* oxlint-disable i18next/no-literal-string */
+
+import {
+  Activity,
+  BarChart3,
+  CandlestickChart,
+  CircleDollarSign,
+  ClipboardCheck,
+  ExternalLink,
+  Gauge,
+  LineChartIcon,
+  RadarIcon,
+  ShieldCheck,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   BarChart,
@@ -19,11 +36,20 @@ import {
   Pie,
   Cell,
   Legend,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  ReferenceLine,
 } from "recharts";
 
+import { cn } from "@workspace/ui";
+import { Badge } from "@workspace/ui-web/badge";
+import { Button } from "@workspace/ui-web/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@workspace/ui-web/card";
@@ -52,19 +78,41 @@ const SCORE_COLORS: Record<string, string> = {
 };
 
 const PIE_COLORS = [
-  "#6366f1",
-  "#22c55e",
-  "#f59e0b",
-  "#ef4444",
-  "#06b6d4",
-  "#8b5cf6",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "hsl(var(--primary))",
 ];
 
 const CHART_LABELS = {
   metrics: "Key Metrics",
-  radar: "Analysis Radar",
+  overview: "Market Intelligence Dashboard",
+  radar: "Strategic Radar",
   dimensions: "Dimension Scores",
   marketShare: "Market Share Breakdown",
+  technical: "Technical Setup",
+} as const;
+
+const SIGNAL_STYLES = {
+  bullish:
+    "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  bearish: "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300",
+  neutral:
+    "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+} as const;
+
+const SIGNAL_LABELS = {
+  bullish: "Bullish",
+  bearish: "Bearish",
+  neutral: "Neutral",
+} as const;
+
+const SIGNAL_SCORES = {
+  bullish: 78,
+  neutral: 50,
+  bearish: 28,
 } as const;
 
 const RADAR_DIMENSIONS = [
@@ -110,6 +158,24 @@ const QUALITATIVE_SCORES: Record<string, number> = {
 };
 
 const clampScore = (score: number) => Math.max(0, Math.min(score, 100));
+
+const compactText = (text: string, maxLength = 96) =>
+  text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+
+const getSignalIcon = (signal: TechIndicator["signal"]) => {
+  if (signal === "bullish") {
+    return TrendingUp;
+  }
+
+  if (signal === "bearish") {
+    return TrendingDown;
+  }
+
+  return Activity;
+};
+
+const getSignalScore = (signal: TechIndicator["signal"]) =>
+  signal ? SIGNAL_SCORES[signal] : SIGNAL_SCORES.neutral;
 
 function scoreFromText(value: string) {
   const numeric = value.match(
@@ -263,6 +329,8 @@ interface TechIndicator {
   value: string;
   signal?: "bullish" | "bearish" | "neutral";
   icon: string;
+  detail: string;
+  numericValue?: number;
 }
 
 const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
@@ -272,6 +340,7 @@ const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
     patterns: [
       /(?:50[-\s]?day|MA50|MA\s*50|SMA\s*50)[^\n|]*?(?:above|below|golden|death|cross)[^\n]*/i,
       /(?:moving\s*average|MA)[^\n|]*(?:50|200)[^\n]*/i,
+      /(?:均线|均線|移动平均|移動平均|MA\s*50|MA\s*200)[^\n|]*(?:上方|下方|金叉|死叉|交叉|突破)[^\n]*/i,
     ],
   },
   {
@@ -280,6 +349,7 @@ const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
     patterns: [
       /RSI[^\n|]*?(?:\d{1,3}(?:\.\d+)?)[^\n]*/i,
       /(?:relative\s*strength)[^\n|]*?\d{1,3}[^\n]*/i,
+      /(?:相对强弱|相對強弱|强弱指标|強弱指標|RSI)[^\n|]*?\d{1,3}[^\n]*/i,
     ],
   },
   {
@@ -287,6 +357,7 @@ const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
     icon: "🔀",
     patterns: [
       /MACD[^\n|]*?(?:bullish|bearish|signal|crossover|above|below|positive|negative)[^\n]*/i,
+      /MACD[^\n|]*(?:看涨|看漲|看跌|金叉|死叉|信号线|訊號線|正值|负值|負值)[^\n]*/i,
     ],
   },
   {
@@ -294,6 +365,7 @@ const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
     icon: "📊",
     patterns: [
       /(?:bollinger|BB)[^\n|]*(?:upper|lower|squeeze|band|expand)[^\n]*/i,
+      /(?:布林|BOLL|BB)[^\n|]*(?:上轨|上軌|下轨|下軌|收窄|扩张|擴張|突破)[^\n]*/i,
     ],
   },
   {
@@ -301,6 +373,7 @@ const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
     icon: "📶",
     patterns: [
       /(?:volume|trading\s*volume)[^\n|]*(?:increase|decrease|surge|drop|average|above|below)[^\n]*/i,
+      /(?:成交量|交易量|量能)[^\n|]*(?:放大|萎缩|萎縮|高于|高於|低于|低於|平均)[^\n]*/i,
     ],
   },
 ];
@@ -319,23 +392,48 @@ function parseTechIndicators(content: string): TechIndicator[] {
           lower.includes("above") ||
           lower.includes("golden") ||
           lower.includes("positive") ||
-          lower.includes("buy")
+          lower.includes("buy") ||
+          text.includes("看涨") ||
+          text.includes("看漲") ||
+          text.includes("金叉") ||
+          text.includes("上方") ||
+          text.includes("突破") ||
+          text.includes("放大") ||
+          text.includes("高于") ||
+          text.includes("高於")
             ? ("bullish" as const)
             : lower.includes("bearish") ||
                 lower.includes("below") ||
                 lower.includes("death") ||
                 lower.includes("negative") ||
-                lower.includes("sell")
+                lower.includes("sell") ||
+                text.includes("看跌") ||
+                text.includes("死叉") ||
+                text.includes("下方") ||
+                text.includes("萎缩") ||
+                text.includes("萎縮") ||
+                text.includes("低于") ||
+                text.includes("低於")
               ? ("bearish" as const)
               : ("neutral" as const);
 
         // Extract a short value from the match
         const valueMatch = text.match(
-          /(?:\d{1,3}(?:\.\d+)?%?|above|below|bullish|bearish|neutral|positive|negative)/i,
+          /(?:\d{1,3}(?:\.\d+)?%?|above|below|bullish|bearish|neutral|positive|negative|金叉|死叉|上方|下方|看涨|看漲|看跌)/i,
         );
         const value = valueMatch?.[0] || text.slice(0, 30);
+        const numericValue = valueMatch?.[0]?.match(/\d/)
+          ? Number.parseFloat(valueMatch[0])
+          : undefined;
 
-        indicators.push({ name, value, signal, icon });
+        indicators.push({
+          name,
+          value,
+          signal,
+          icon,
+          detail: compactText(text, 140),
+          numericValue,
+        });
         break;
       }
     }
@@ -346,45 +444,199 @@ function parseTechIndicators(content: string): TechIndicator[] {
 
 function TechIndicatorPanel({ content }: { content: string }) {
   const indicators = useMemo(() => parseTechIndicators(content), [content]);
+  const [view, setView] = useState<"strength" | "details">("strength");
 
   if (indicators.length === 0) return null;
 
-  const signalColors = {
-    bullish: "text-green-600 bg-green-50 border-green-200",
-    bearish: "text-red-600 bg-red-50 border-red-200",
-    neutral: "text-amber-600 bg-amber-50 border-amber-200",
-  };
+  const bullishCount = indicators.filter(
+    (item) => item.signal === "bullish",
+  ).length;
+  const bearishCount = indicators.filter(
+    (item) => item.signal === "bearish",
+  ).length;
+  const overallSignal =
+    bullishCount > bearishCount
+      ? "bullish"
+      : bearishCount > bullishCount
+        ? "bearish"
+        : "neutral";
+  const overallScore = Math.round(
+    indicators.reduce((sum, item) => sum + getSignalScore(item.signal), 0) /
+      indicators.length,
+  );
+  const chartData = indicators.map((item) => ({
+    name: item.name.replace("Bollinger Bands", "Bollinger"),
+    signal: getSignalScore(item.signal),
+    value: item.numericValue ?? getSignalScore(item.signal),
+  }));
 
   return (
-    <div className="mb-6">
-      <h3 className="text-muted-foreground mb-3 flex items-center gap-2 text-sm font-semibold tracking-wider uppercase">
-        {/* oxlint-disable-next-line i18next/no-literal-string */}
-        <span>📐</span> Technical Indicators
-      </h3>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {indicators.map((ind) => (
-          <div
-            key={ind.name}
-            className="border-border/60 bg-muted/20 hover:border-primary/30 hover:bg-muted/40 flex items-center gap-3 rounded-lg border p-3 transition-colors"
-          >
-            <span className="text-lg">{ind.icon}</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">{ind.name}</p>
-              <p className="text-muted-foreground truncate text-xs">
-                {ind.value}
-              </p>
+    <Card className="border-primary/15 bg-card/95 mb-6 overflow-hidden shadow-sm">
+      <CardHeader className="border-border/60 flex flex-row items-start justify-between gap-4 border-b pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="bg-primary/10 text-primary flex size-8 items-center justify-center rounded-md">
+              <CandlestickChart className="size-4" />
             </div>
-            {ind.signal && (
-              <span
-                className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${signalColors[ind.signal]}`}
-              >
-                {ind.signal}
-              </span>
-            )}
+            <CardTitle className="text-base">
+              {CHART_LABELS.technical}
+            </CardTitle>
           </div>
-        ))}
-      </div>
-    </div>
+          <CardDescription className="mt-2">
+            Classic market indicators extracted from the report narrative.
+          </CardDescription>
+        </div>
+        <Badge className={SIGNAL_STYLES[overallSignal]} variant="outline">
+          {SIGNAL_LABELS[overallSignal]} {overallScore}
+        </Badge>
+      </CardHeader>
+      <CardContent className="space-y-4 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
+              <span className="text-muted-foreground block">Bullish</span>
+              <span className="font-semibold text-emerald-600">
+                {bullishCount}
+              </span>
+            </div>
+            <div className="rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2">
+              <span className="text-muted-foreground block">Neutral</span>
+              <span className="font-semibold text-amber-600">
+                {indicators.filter((item) => item.signal === "neutral").length}
+              </span>
+            </div>
+            <div className="rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2">
+              <span className="text-muted-foreground block">Bearish</span>
+              <span className="font-semibold text-red-600">{bearishCount}</span>
+            </div>
+          </div>
+          <div className="bg-muted/40 inline-flex rounded-md border p-1">
+            {(["strength", "details"] as const).map((item) => (
+              <Button
+                key={item}
+                size="xs"
+                variant={view === item ? "secondary" : "ghost"}
+                onClick={() => setView(item)}
+              >
+                {item === "strength" ? "Signal chart" : "Indicator cards"}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {view === "strength" ? (
+          <div className="bg-background/70 h-[260px] rounded-lg border p-3">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ left: 4, right: 16 }}>
+                <defs>
+                  <linearGradient id="signalFill" x1="0" x2="0" y1="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(var(--primary))"
+                      stopOpacity={0.34}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(var(--primary))"
+                      stopOpacity={0.02}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  stroke="hsl(var(--border))"
+                  strokeDasharray="3 3"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  tickLine={false}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  tickLine={false}
+                  width={32}
+                />
+                <ReferenceLine
+                  y={50}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray="4 4"
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    boxShadow: "0 12px 40px rgb(0 0 0 / 0.12)",
+                    fontSize: 12,
+                  }}
+                />
+                <Area
+                  dataKey="signal"
+                  fill="url(#signalFill)"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  type="monotone"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {indicators.map((ind) => {
+              const SignalIcon = getSignalIcon(ind.signal);
+
+              return (
+                <div
+                  key={ind.name}
+                  className="border-border/70 bg-background/70 hover:border-primary/30 rounded-lg border p-4 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-muted flex size-9 items-center justify-center rounded-md text-base">
+                        {ind.icon}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">{ind.name}</p>
+                        <p className="text-muted-foreground text-xs">
+                          Current read: {ind.value}
+                        </p>
+                      </div>
+                    </div>
+                    {ind.signal && (
+                      <Badge
+                        className={SIGNAL_STYLES[ind.signal]}
+                        variant="outline"
+                      >
+                        <SignalIcon className="size-3" />
+                        {SIGNAL_LABELS[ind.signal]}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
+                    {ind.detail}
+                  </p>
+                  <div className="bg-muted mt-3 h-1.5 overflow-hidden rounded-full">
+                    <div
+                      className={cn(
+                        "h-full rounded-full",
+                        ind.signal === "bullish"
+                          ? "bg-emerald-500"
+                          : ind.signal === "bearish"
+                            ? "bg-red-500"
+                            : "bg-amber-500",
+                      )}
+                      style={{ width: `${getSignalScore(ind.signal)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -394,28 +646,48 @@ function MetricDashboard({ metrics }: { metrics: MetricItem[] }) {
   if (metrics.length === 0) return null;
 
   return (
-    <div className="mb-6">
-      <h3 className="text-muted-foreground mb-3 text-sm font-semibold tracking-wider uppercase">
-        {CHART_LABELS.metrics}
-      </h3>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric) => (
-          <Card key={metric.label} className="py-3">
-            <CardContent className="px-4">
+    <Card className="border-primary/15 mb-6 overflow-hidden shadow-sm">
+      <CardHeader className="border-border/60 flex-row items-center justify-between border-b pb-4">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Gauge className="text-primary size-4" />
+            {CHART_LABELS.metrics}
+          </CardTitle>
+          <CardDescription>
+            Extracted signals, operating metrics, and risk markers.
+          </CardDescription>
+        </div>
+        <Badge variant="outline">{metrics.length} signals</Badge>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((metric) => (
+            <div
+              key={metric.label}
+              className="group border-border/70 bg-background/70 hover:border-primary/30 rounded-lg border p-4 transition-colors"
+            >
               <p className="text-muted-foreground truncate text-xs">
                 {metric.label}
               </p>
               <p
-                className="mt-1 text-lg font-bold"
+                className="mt-2 truncate text-xl font-semibold tracking-tight"
                 style={{ color: metric.color || "inherit" }}
               >
                 {metric.value}
               </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+              <div className="bg-muted mt-3 h-1 overflow-hidden rounded-full">
+                <div
+                  className="bg-primary h-full rounded-full transition-all group-hover:w-full"
+                  style={{
+                    width: `${metric.score ?? scoreFromText(metric.value) ?? 54}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -424,6 +696,9 @@ function MetricDashboard({ metrics }: { metrics: MetricItem[] }) {
 function ReportCharts({ content }: { content: string }) {
   const radarData = useMemo(() => parseRadarData(content), [content]);
   const pieData = useMemo(() => parsePieData(content), [content]);
+  const [activeChart, setActiveChart] = useState<"radar" | "bars" | "share">(
+    "radar",
+  );
 
   const barData = useMemo(() => {
     return radarData.map((d) => ({
@@ -436,97 +711,181 @@ function ReportCharts({ content }: { content: string }) {
     return null;
   }
 
+  const averageScore =
+    radarData.length > 0
+      ? Math.round(
+          radarData.reduce((sum, item) => sum + item.score, 0) /
+            radarData.length,
+        )
+      : null;
+  const strongestDimension = [...radarData].sort(
+    (a, b) => b.score - a.score,
+  )[0];
+  const hasMarketShare = pieData.length > 0;
+  const tabs = [
+    {
+      id: "radar",
+      label: "Radar",
+      icon: RadarIcon,
+      disabled: radarData.length === 0,
+    },
+    {
+      id: "bars",
+      label: "Scores",
+      icon: BarChart3,
+      disabled: barData.length === 0,
+    },
+    {
+      id: "share",
+      label: "Share",
+      icon: CircleDollarSign,
+      disabled: !hasMarketShare,
+    },
+  ] as const;
+
   return (
-    <div className="mb-6 grid gap-4 lg:grid-cols-3">
-      {/* Radar Chart */}
-      {radarData.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{CHART_LABELS.radar}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
+    <Card className="border-primary/15 mb-6 overflow-hidden shadow-sm">
+      <CardHeader className="border-border/60 border-b pb-4">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <LineChartIcon className="text-primary size-4" />
+              {CHART_LABELS.overview}
+            </CardTitle>
+            <CardDescription>
+              Interactive views of strategic scores and market composition.
+            </CardDescription>
+          </div>
+          <div className="bg-muted/40 inline-flex w-fit rounded-md border p-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const selected = activeChart === tab.id;
+
+              return (
+                <Button
+                  key={tab.id}
+                  disabled={tab.disabled}
+                  size="xs"
+                  variant={selected ? "secondary" : "ghost"}
+                  onClick={() => setActiveChart(tab.id)}
+                >
+                  <Icon className="size-3" />
+                  {tab.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-4 p-4 lg:grid-cols-[260px_1fr]">
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <div className="bg-background/70 rounded-lg border p-4">
+            <span className="text-muted-foreground text-xs">
+              Composite score
+            </span>
+            <div className="mt-2 flex items-end gap-2">
+              <span className="text-3xl font-semibold">
+                {averageScore ?? "N/A"}
+              </span>
+              {averageScore !== null && (
+                <span className="text-muted-foreground pb-1 text-xs">/100</span>
+              )}
+            </div>
+          </div>
+          <div className="bg-background/70 rounded-lg border p-4">
+            <span className="text-muted-foreground text-xs">
+              Strongest dimension
+            </span>
+            <p className="mt-2 text-sm font-semibold">
+              {strongestDimension?.dimension ?? "Awaiting data"}
+            </p>
+          </div>
+          <div className="bg-background/70 rounded-lg border p-4">
+            <span className="text-muted-foreground text-xs">Coverage</span>
+            <p className="mt-2 text-sm font-semibold">
+              {radarData.length} dimensions
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-background/70 min-h-[340px] rounded-lg border p-3">
+          {activeChart === "radar" && radarData.length > 0 && (
+            <ResponsiveContainer width="100%" height={320}>
               <RadarChart data={radarData}>
                 <PolarGrid stroke="hsl(var(--border))" />
                 <PolarAngleAxis
                   dataKey="dimension"
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
                 />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
                 <Radar
                   dataKey="score"
-                  stroke="hsl(var(--primary))"
                   fill="hsl(var(--primary))"
-                  fillOpacity={0.3}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Bar Chart */}
-      {barData.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{CHART_LABELS.dimensions}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={barData} layout="vertical">
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                />
-                <XAxis
-                  type="number"
-                  domain={[0, 100]}
-                  tick={{ fontSize: 10 }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={80}
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                  fillOpacity={0.24}
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
                 />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
+                    boxShadow: "0 12px 40px rgb(0 0 0 / 0.12)",
+                    fontSize: 12,
+                  }}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          )}
+
+          {activeChart === "bars" && barData.length > 0 && (
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={barData} layout="vertical" margin={{ right: 18 }}>
+                <CartesianGrid
+                  horizontal={false}
+                  stroke="hsl(var(--border))"
+                  strokeDasharray="3 3"
+                />
+                <XAxis
+                  domain={[0, 100]}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  type="number"
+                />
+                <YAxis
+                  dataKey="name"
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  type="category"
+                  width={96}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    boxShadow: "0 12px 40px rgb(0 0 0 / 0.12)",
                     fontSize: 12,
                   }}
                 />
                 <Bar
                   dataKey="score"
                   fill="hsl(var(--primary))"
-                  radius={[0, 4, 4, 0]}
+                  radius={[0, 6, 6, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
+          )}
 
-      {/* Pie Chart */}
-      {pieData.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">
-              {CHART_LABELS.marketShare}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
+          {activeChart === "share" && pieData.length > 0 && (
+            <ResponsiveContainer width="100%" height={320}>
               <PieChart>
                 <Pie
-                  data={pieData}
                   cx="50%"
-                  cy="50%"
-                  innerRadius={45}
-                  outerRadius={75}
-                  paddingAngle={3}
+                  cy="48%"
+                  data={pieData}
                   dataKey="value"
+                  innerRadius={72}
+                  outerRadius={104}
+                  paddingAngle={3}
                 >
                   {pieData.map((_, index) => (
                     <Cell
@@ -540,16 +899,140 @@ function ReportCharts({ content }: { content: string }) {
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
+                    boxShadow: "0 12px 40px rgb(0 0 0 / 0.12)",
                     fontSize: 12,
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: 11 }} iconSize={8} />
+                <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReportExecutiveHeader({
+  content,
+  metrics,
+}: {
+  content: string;
+  metrics: MetricItem[];
+}) {
+  const techIndicators = useMemo(() => parseTechIndicators(content), [content]);
+  const evidenceItems = useMemo(() => parseEvidenceList(content), [content]);
+  const radarData = useMemo(() => parseRadarData(content), [content]);
+  const sections = (content.match(/^#{1,3}\s+/gm) ?? []).length;
+  const words = content
+    .replace(/[#*_`>|-]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean).length;
+  const sparklineData =
+    radarData.length > 0
+      ? radarData.map((item) => ({
+          name: item.dimension.split(" ")[0],
+          score: item.score,
+        }))
+      : metrics.slice(0, 6).map((item, index) => ({
+          name: String(index + 1),
+          score: scoreFromText(item.value) ?? 50,
+        }));
+  const signal =
+    techIndicators.filter((item) => item.signal === "bullish").length >=
+    techIndicators.filter((item) => item.signal === "bearish").length
+      ? "bullish"
+      : "bearish";
+
+  return (
+    <Card className="border-primary/20 bg-card/95 mb-6 overflow-hidden shadow-sm">
+      <CardContent className="p-0">
+        <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="border-border/60 space-y-5 border-b p-5 lg:border-r lg:border-b-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="gap-1" variant="outline">
+                <Sparkles className="size-3" />
+                AI research report
+              </Badge>
+              {techIndicators.length > 0 && (
+                <Badge className={SIGNAL_STYLES[signal]} variant="outline">
+                  {SIGNAL_LABELS[signal]} technical bias
+                </Badge>
+              )}
+            </div>
+            <div>
+              <h2 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
+                Research Intelligence Workspace
+              </h2>
+              <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
+                A structured reading layer for strategy scores, market charts,
+                technical signals, and source evidence.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-4">
+              {[
+                { label: "Sections", value: sections || "N/A" },
+                { label: "Metrics", value: metrics.length },
+                { label: "Sources", value: evidenceItems.length },
+                { label: "Words", value: words.toLocaleString() },
+              ].map((item) => (
+                <div key={item.label} className="rounded-lg border p-3">
+                  <p className="text-muted-foreground text-xs">{item.label}</p>
+                  <p className="mt-1 text-xl font-semibold">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold">Signal contour</p>
+                <p className="text-muted-foreground text-xs">
+                  Derived from extracted scores
+                </p>
+              </div>
+              <Activity className="text-primary size-4" />
+            </div>
+            <div className="h-[190px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={sparklineData}>
+                  <CartesianGrid
+                    stroke="hsl(var(--border))"
+                    strokeDasharray="3 3"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="name"
+                    tick={{
+                      fill: "hsl(var(--muted-foreground))",
+                      fontSize: 11,
+                    }}
+                    tickLine={false}
+                  />
+                  <YAxis domain={[0, 100]} hide />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      boxShadow: "0 12px 40px rgb(0 0 0 / 0.12)",
+                      fontSize: 12,
+                    }}
+                  />
+                  <Line
+                    dataKey="score"
+                    dot={{ fill: "hsl(var(--primary))", r: 3 }}
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    type="monotone"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -615,9 +1098,9 @@ function parseEvidenceList(content: string): EvidenceItem[] {
 
 function EvidenceCard({ item }: { item: EvidenceItem }) {
   return (
-    <div className="group border-border/60 bg-muted/20 hover:border-primary/30 hover:bg-muted/40 flex items-start gap-3 rounded-lg border p-3 transition-colors">
-      <div className="bg-primary/10 text-primary mt-0.5 flex size-6 shrink-0 items-center justify-center rounded text-xs font-bold">
-        📄
+    <div className="group border-border/70 bg-background/70 hover:border-primary/30 flex items-start gap-3 rounded-lg border p-4 transition-colors">
+      <div className="bg-primary/10 text-primary mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md">
+        <ClipboardCheck className="size-4" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -626,9 +1109,10 @@ function EvidenceCard({ item }: { item: EvidenceItem }) {
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary truncate text-sm font-medium underline-offset-2 hover:underline"
+              className="text-primary inline-flex min-w-0 items-center gap-1 text-sm font-medium underline-offset-2 hover:underline"
             >
-              {item.title}
+              <span className="truncate">{item.title}</span>
+              <ExternalLink className="size-3 shrink-0" />
             </a>
           ) : (
             <span className="truncate text-sm font-medium">{item.title}</span>
@@ -649,12 +1133,12 @@ function EvidenceCard({ item }: { item: EvidenceItem }) {
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary/70 hover:text-primary mt-1.5 inline-flex items-center gap-1 text-xs"
+            className="text-primary/70 hover:text-primary mt-2 inline-flex max-w-full items-center gap-1 text-xs"
           >
             <span className="truncate">
               {item.url.replace(/^https?:\/\//, "").slice(0, 50)}
             </span>
-            <span className="shrink-0">↗</span>
+            <ExternalLink className="size-3 shrink-0" />
           </a>
         )}
       </div>
@@ -668,17 +1152,25 @@ function EvidenceSection({ content }: { content: string }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="mb-6">
-      <h3 className="text-muted-foreground mb-3 flex items-center gap-2 text-sm font-semibold tracking-wider uppercase">
-        {/* oxlint-disable-next-line i18next/no-literal-string */}
-        <span>📎</span> Evidence List
-      </h3>
-      <div className="grid gap-2 sm:grid-cols-2">
+    <Card className="border-primary/15 mb-6 overflow-hidden shadow-sm">
+      <CardHeader className="border-border/60 flex-row items-center justify-between border-b pb-4">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ShieldCheck className="text-primary size-4" />
+            Evidence List
+          </CardTitle>
+          <CardDescription>
+            Traceable sources extracted from the generated report.
+          </CardDescription>
+        </div>
+        <Badge variant="outline">{items.length} sources</Badge>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
         {items.map((item, i) => (
           <EvidenceCard key={i} item={item} />
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -836,20 +1328,32 @@ export function ReportViewer({ content }: ReportViewerProps) {
 
   return (
     <div className="space-y-0">
+      {/* Executive research workspace */}
+      <ReportExecutiveHeader content={content} metrics={metrics} />
+
       {/* Metrics Dashboard */}
       <MetricDashboard metrics={metrics} />
 
       {/* Charts */}
       <ReportCharts content={content} />
 
-      {/* Evidence List - clickable links */}
-      <EvidenceSection content={content} />
-
       {/* Technical Indicators */}
       <TechIndicatorPanel content={content} />
 
+      {/* Evidence List - clickable links */}
+      <EvidenceSection content={content} />
+
       {/* Markdown Content */}
-      <Card>
+      <Card className="overflow-hidden shadow-sm">
+        <CardHeader className="border-border/60 border-b pb-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ClipboardCheck className="text-primary size-4" />
+            Full Report
+          </CardTitle>
+          <CardDescription>
+            Original markdown narrative with tables, sources, and linked URLs.
+          </CardDescription>
+        </CardHeader>
         <CardContent className="prose-sm p-6">
           <ReactMarkdown components={markdownComponents}>
             {content}
