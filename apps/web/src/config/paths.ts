@@ -24,6 +24,7 @@ const pathsConfig = {
     },
   },
   marketing: {
+    report: "/report",
     pricing: "/pricing",
     contact: "/contact",
     blog: {

@@ -18,32 +18,20 @@ const links = [
       {
         title: "marketing:product.mobile.ios.title",
         description: "marketing:product.mobile.ios.description",
-        href: "https://apps.apple.com/app/id6754278899",
-        icon: Icons.AppleStroke,
+        href: pathsConfig.marketing.report,
+        icon: Icons.BookOpen,
       },
       {
         title: "marketing:product.mobile.android.title",
         description: "marketing:product.mobile.android.description",
-        href: "https://play.google.com/store/apps/details?id=com.turbostarter.core",
-        icon: Icons.AndroidStroke,
+        href: pathsConfig.marketing.pricing,
+        icon: Icons.Key,
       },
       {
         title: "marketing:product.extension.chrome.title",
         description: "marketing:product.extension.chrome.description",
-        href: "https://chromewebstore.google.com/detail/bcjmonmlfbnngpkllpnpmnjajaciaboo",
-        icon: Icons.ChromeStroke,
-      },
-      {
-        title: "marketing:product.extension.firefox.title",
-        description: "marketing:product.extension.firefox.description",
-        href: "https://addons.mozilla.org/addon/turbostarter_",
-        icon: Icons.FirefoxStroke,
-      },
-      {
-        title: "marketing:product.extension.edge.title",
-        description: "marketing:product.extension.edge.description",
-        href: "https://microsoftedge.microsoft.com/addons/detail/turbostarter/ianbflanmmoeleokihabnmmcahhfijig",
-        icon: Icons.EdgeStroke,
+        href: pathsConfig.dashboard.user.report,
+        icon: Icons.Home,
       },
     ],
   },
@@ -59,13 +47,13 @@ const links = [
       {
         title: "marketing:roadmap.title",
         description: "marketing:roadmap.description",
-        href: "https://github.com/orgs/turbostarter/projects/1",
+        href: pathsConfig.marketing.report,
         icon: Icons.ChartNoAxesGantt,
       },
       {
         title: "marketing:docs.title",
         description: "marketing:docs.description",
-        href: "https://turbostarter.dev/docs/web",
+        href: pathsConfig.marketing.report,
         icon: Icons.BookOpen,
       },
       {
@@ -86,6 +74,8 @@ const links = [
   },
 ] as const;
 
+const BRAND_NAME = "Aireseach";
+
 export const Header = () => {
   const { t } = useTranslation("common");
   return (
@@ -97,7 +87,9 @@ export const Header = () => {
           aria-label={t("home")}
         >
           <Icons.Logo className="text-primary h-8" />
-          <Icons.LogoText className="text-foreground h-4" />
+          <span className="text-foreground text-xl font-semibold tracking-tight">
+            {BRAND_NAME}
+          </span>
         </TurboLink>
 
         <Navigation links={links} />
