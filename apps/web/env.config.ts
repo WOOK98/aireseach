@@ -46,7 +46,7 @@ export default defineEnv({
     NEXT_PUBLIC_THEME_COLOR: z
       .enum(ThemeColor)
       .optional()
-      .default(ThemeColor.ORANGE),
+      .default(ThemeColor.GREEN),
   },
   /**
    * Destructure all variables from `process.env` to make sure they aren't tree-shaken away.
