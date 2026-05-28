@@ -31,13 +31,13 @@ describe("findPlanByVariantId", () => {
     expect(result.variant?.id).toBe("free-lifetime");
   });
 
-  it("should find premium plan variant", () => {
-    const result = findPlanByVariantId("premium-monthly");
+  it("should find pro plan variant", () => {
+    const result = findPlanByVariantId("pro-monthly");
 
     expect(result.plan).toBeDefined();
     expect(result.variant).toBeDefined();
-    expect(result.plan?.id).toBe(BillingPlan.PREMIUM);
-    expect(result.variant?.id).toBe("premium-monthly");
+    expect(result.plan?.id).toBe(BillingPlan.PRO);
+    expect(result.variant?.id).toBe("pro-monthly");
   });
 
   it("should return undefined for non-existent variant ID", () => {
@@ -48,7 +48,7 @@ describe("findPlanByVariantId", () => {
   });
 
   it("should find hidden variants", () => {
-    const result = findPlanByVariantId("premium-monthly-hidden");
+    const result = findPlanByVariantId("pro-monthly-hidden");
 
     expect(result.plan).toBeDefined();
     expect(result.variant).toBeDefined();
@@ -56,7 +56,7 @@ describe("findPlanByVariantId", () => {
   });
 
   it("should find custom variants", () => {
-    const result = findPlanByVariantId("enterprise-lifetime");
+    const result = findPlanByVariantId("business-lifetime");
 
     expect(result.plan).toBeDefined();
     expect(result.variant).toBeDefined();
@@ -65,7 +65,7 @@ describe("findPlanByVariantId", () => {
 });
 
 describe("findPlanById", () => {
-  it.each([BillingPlan.FREE, BillingPlan.PREMIUM, BillingPlan.ENTERPRISE])(
+  it.each([BillingPlan.FREE, BillingPlan.PRO, BillingPlan.BUSINESS])(
     "should find %s plan by ID",
     (id) => {
       const result = findPlanById(id);
@@ -85,8 +85,8 @@ describe("findPlanById", () => {
 describe("findPlanIndexById", () => {
   it.each([
     [BillingPlan.FREE, 0],
-    [BillingPlan.PREMIUM, 1],
-    [BillingPlan.ENTERPRISE, 2],
+    [BillingPlan.PRO, 1],
+    [BillingPlan.BUSINESS, 2],
   ])("should return correct index for %s plan", (id, index) => {
     const result = findPlanIndexById(id);
 
@@ -103,9 +103,9 @@ describe("findPlanIndexById", () => {
 describe("getPlanFeatures", () => {
   it.each([
     [BillingPlan.FREE, ["FEATURE_1", "FEATURE_2"]],
-    [BillingPlan.PREMIUM, ["FEATURE_1", "FEATURE_2", "FEATURE_3", "FEATURE_4"]],
+    [BillingPlan.PRO, ["FEATURE_1", "FEATURE_2", "FEATURE_3", "FEATURE_4"]],
     [
-      BillingPlan.ENTERPRISE,
+      BillingPlan.BUSINESS,
       ["FEATURE_1", "FEATURE_2", "FEATURE_3", "FEATURE_4", "FEATURE_5"],
     ],
   ])("should return features for %s plan", (id, features) => {
@@ -125,7 +125,7 @@ describe("getPlanFeatures", () => {
   });
 
   it("should return unique features (no duplicates)", () => {
-    const result = getPlanFeatures(BillingPlan.ENTERPRISE);
+    const result = getPlanFeatures(BillingPlan.BUSINESS);
 
     const uniqueFeatures = new Set(result);
     expect(result.length).toBe(uniqueFeatures.size);
@@ -169,14 +169,14 @@ describe("getActivePlan", () => {
           {
             id: "sub-1",
             status: status,
-            variantId: "premium-monthly",
+            variantId: "pro-monthly",
           },
         ],
       };
 
       const result = getActivePlan(summary);
 
-      expect(result).toBe(BillingPlan.PREMIUM);
+      expect(result).toBe(BillingPlan.PRO);
     },
   );
 
@@ -186,14 +186,14 @@ describe("getActivePlan", () => {
         {
           id: "order-1",
           status: PaymentStatus.SUCCEEDED,
-          variantId: "premium-one-time",
+          variantId: "pro-one-time",
         },
       ],
     };
 
     const result = getActivePlan(summary);
 
-    expect(result).toBe(BillingPlan.PREMIUM);
+    expect(result).toBe(BillingPlan.PRO);
   });
 
   it("should ignore inactive entitlements", () => {
@@ -218,7 +218,7 @@ describe("getActivePlan", () => {
         {
           id: "sub-1",
           status: SubscriptionStatus.CANCELED,
-          variantId: "premium-monthly",
+          variantId: "pro-monthly",
         },
       ],
     };
@@ -234,7 +234,7 @@ describe("getActivePlan", () => {
         {
           id: "order-1",
           status: PaymentStatus.PENDING,
-          variantId: "premium-one-time",
+          variantId: "pro-one-time",
         },
       ],
     };
@@ -257,14 +257,14 @@ describe("getActivePlan", () => {
         {
           id: "sub-1",
           status: SubscriptionStatus.ACTIVE,
-          variantId: "premium-monthly",
+          variantId: "pro-monthly",
         },
       ],
     };
 
     const result = getActivePlan(summary);
 
-    expect(result).toBe(BillingPlan.PREMIUM);
+    expect(result).toBe(BillingPlan.PRO);
   });
 
   it("should handle array of summaries", () => {
@@ -283,7 +283,7 @@ describe("getActivePlan", () => {
           {
             id: "sub-1",
             status: SubscriptionStatus.ACTIVE,
-            variantId: "premium-monthly",
+            variantId: "pro-monthly",
           },
         ],
       },
@@ -291,14 +291,14 @@ describe("getActivePlan", () => {
 
     const result = getActivePlan(summaries);
 
-    expect(result).toBe(BillingPlan.PREMIUM);
+    expect(result).toBe(BillingPlan.PRO);
   });
 
   it("should handle entitlement with only id (no variantId)", () => {
     const summary = {
       entitlements: [
         {
-          id: BillingPlan.PREMIUM,
+          id: BillingPlan.PRO,
           active: true,
         },
       ],
@@ -306,7 +306,7 @@ describe("getActivePlan", () => {
 
     const result = getActivePlan(summary);
 
-    expect(result).toBe(BillingPlan.PREMIUM);
+    expect(result).toBe(BillingPlan.PRO);
   });
 
   it("should handle missing optional fields", () => {
@@ -324,9 +324,9 @@ describe("getActivePlan", () => {
 
 describe("getHigherPlans", () => {
   it.each([
-    [BillingPlan.FREE, [BillingPlan.PREMIUM, BillingPlan.ENTERPRISE]],
-    [BillingPlan.PREMIUM, [BillingPlan.ENTERPRISE]],
-    [BillingPlan.ENTERPRISE, []],
+    [BillingPlan.FREE, [BillingPlan.PRO, BillingPlan.BUSINESS]],
+    [BillingPlan.PRO, [BillingPlan.BUSINESS]],
+    [BillingPlan.BUSINESS, []],
   ])("should return higher plans for %s plan", (id, plans) => {
     const result = getHigherPlans(id);
 
@@ -343,8 +343,8 @@ describe("getHigherPlans", () => {
 describe("getLowerPlans", () => {
   it.each([
     [BillingPlan.FREE, []],
-    [BillingPlan.PREMIUM, [BillingPlan.FREE]],
-    [BillingPlan.ENTERPRISE, [BillingPlan.FREE, BillingPlan.PREMIUM]],
+    [BillingPlan.PRO, [BillingPlan.FREE]],
+    [BillingPlan.BUSINESS, [BillingPlan.FREE, BillingPlan.PRO]],
   ])("should return lower plans for %s plan", (id, plans) => {
     const result = getLowerPlans(id);
 
@@ -376,7 +376,7 @@ describe("checkPlanLimit", () => {
 
   it("should allow when plan has no limits configured", () => {
     const result = checkPlanLimit({
-      id: BillingPlan.ENTERPRISE,
+      id: BillingPlan.BUSINESS,
       key: "projects",
       currentUsage: 100,
     });
@@ -467,7 +467,7 @@ describe("checkPlanLimit", () => {
 
   it("should respect custom value when checking limit", () => {
     const result = checkPlanLimit({
-      id: BillingPlan.PREMIUM,
+      id: BillingPlan.PRO,
       key: "members",
       currentUsage: 2,
       increment: 2,
@@ -483,7 +483,7 @@ describe("checkPlanLimit", () => {
 
   it("should deny when custom value pushes usage over limit", () => {
     const result = checkPlanLimit({
-      id: BillingPlan.PREMIUM,
+      id: BillingPlan.PRO,
       key: "members",
       currentUsage: 3,
       increment: 4,

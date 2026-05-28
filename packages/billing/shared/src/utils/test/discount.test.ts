@@ -108,7 +108,7 @@ describe("getVariantInitialCost", () => {
 describe("calculateDiscount", () => {
   it("returns null for custom variants", () => {
     const variant = {
-      id: "enterprise-monthly",
+      id: "business-monthly",
       type: BillingType.FLAT,
       custom: true as const,
       label: "Contact",
@@ -129,7 +129,7 @@ describe("calculateDiscount", () => {
 
   it("calculates amount discount for flat variants", () => {
     const variant = createRecurringVariant(
-      "premium-monthly",
+      "pro-monthly",
       10000,
       RecurringInterval.MONTH,
     );
@@ -146,7 +146,7 @@ describe("calculateDiscount", () => {
 
   it("calculates percent discount for flat variants", () => {
     const variant = createRecurringVariant(
-      "premium-yearly",
+      "pro-yearly",
       20000,
       RecurringInterval.YEAR,
     );
@@ -264,7 +264,7 @@ describe("getVariantDiscount", () => {
 
   it("uses config discounts by default", () => {
     const variant = createRecurringVariant(
-      "premium-monthly",
+      "pro-monthly",
       1900,
       RecurringInterval.MONTH,
     );
@@ -284,11 +284,11 @@ describe("getVariantWithHighestDiscount", () => {
 
   it("returns variant/discount pair with highest absolute savings", () => {
     const result = getVariantWithHighestDiscount(undefined, [
-      createPercentDiscount("P50", 50, ["premium-monthly"]),
-      createPercentDiscount("P10", 10, ["premium-yearly"]),
+      createPercentDiscount("P50", 50, ["pro-monthly"]),
+      createPercentDiscount("P10", 10, ["pro-yearly"]),
     ]);
 
-    expect(result?.id).toBe("premium-yearly");
+    expect(result?.id).toBe("pro-yearly");
     expect(result?.discount?.code).toBe("P10");
   });
 
@@ -338,35 +338,35 @@ describe("calculateRecurringDiscount", () => {
   });
 
   it("returns null for highest effective-cost variant within plan", () => {
-    const highestInPremium = createRecurringVariant(
-      "premium-monthly",
+    const highestInPro = createRecurringVariant(
+      "pro-monthly",
       1900,
       RecurringInterval.MONTH,
     );
 
-    expect(calculateRecurringDiscount(highestInPremium)).toBeNull();
+    expect(calculateRecurringDiscount(highestInPro)).toBeNull();
   });
 
   it("compares monthly and yearly costs after interval normalization", () => {
     const target = createRecurringVariant(
-      "premium-yearly",
+      "pro-yearly",
       19000,
       RecurringInterval.YEAR,
     );
     const result = calculateRecurringDiscount(target);
 
     expect(result).not.toBeNull();
-    expect(result?.original.id).toBe("premium-monthly");
+    expect(result?.original.id).toBe("pro-monthly");
     expect(result?.original.interval).toBe(RecurringInterval.YEAR);
     expect(result?.original.cost).toBe(10800);
-    expect(result?.discounted.id).toBe("premium-yearly");
+    expect(result?.discounted.id).toBe("pro-yearly");
     expect(result?.type).toBe(BillingDiscountType.PERCENT);
     expect(result?.percentage).toBe(12);
   });
 
   it("considers default discounts when comparing recurring variants", () => {
     const result = calculateRecurringDiscount(
-      createRecurringVariant("premium-yearly", 19000, RecurringInterval.YEAR),
+      createRecurringVariant("pro-yearly", 19000, RecurringInterval.YEAR),
     );
 
     expect(result?.original.cost).toBe(10800);
@@ -375,7 +375,7 @@ describe("calculateRecurringDiscount", () => {
 
   it("skips recurring interval discounts for metered variants", () => {
     const meteredMonthly = {
-      id: "premium-metered-monthly",
+      id: "pro-metered-monthly",
       type: BillingType.METERED,
       unit: "credit",
       meterId: "meter-credits-monthly",

@@ -54,10 +54,10 @@ export const config: BillingConfig = {
       ],
     },
     {
-      id: BillingPlan.PREMIUM,
-      name: "plan.premium.name",
-      description: "plan.premium.description",
-      badge: "plan.premium.badge",
+      id: BillingPlan.PRO,
+      name: "plan.pro.name",
+      description: "plan.pro.description",
+      badge: "plan.pro.badge",
       features: ["FEATURE_1", "FEATURE_2", "FEATURE_3", "FEATURE_4"],
       limits: {
         projects: 10,
@@ -65,7 +65,7 @@ export const config: BillingConfig = {
       },
       variants: [
         {
-          id: "premium-one-time",
+          id: "pro-one-time",
           type: BillingType.FLAT,
           cost: 19900,
           custom: false,
@@ -74,7 +74,7 @@ export const config: BillingConfig = {
           model: BillingModel.ONE_TIME,
         },
         {
-          id: "premium-monthly",
+          id: "pro-monthly",
           type: BillingType.FLAT,
           cost: 1900,
           custom: false,
@@ -85,7 +85,7 @@ export const config: BillingConfig = {
           trialDays: 7,
         },
         {
-          id: "premium-yearly",
+          id: "pro-yearly",
           type: BillingType.FLAT,
           cost: 19000, // Higher than monthly * 12 to test recurring discount
           custom: false,
@@ -96,7 +96,7 @@ export const config: BillingConfig = {
           trialDays: 7,
         },
         {
-          id: "premium-monthly-hidden",
+          id: "pro-monthly-hidden",
           type: BillingType.FLAT,
           cost: 1900,
           custom: false,
@@ -108,9 +108,9 @@ export const config: BillingConfig = {
       ],
     },
     {
-      id: BillingPlan.ENTERPRISE,
-      name: "plan.enterprise.name",
-      description: "plan.enterprise.description",
+      id: BillingPlan.BUSINESS,
+      name: "plan.business.name",
+      description: "plan.business.description",
       badge: null,
       features: [
         "FEATURE_1",
@@ -121,7 +121,7 @@ export const config: BillingConfig = {
       ],
       variants: [
         {
-          id: "enterprise-lifetime",
+          id: "business-lifetime",
           type: BillingType.FLAT,
           custom: true,
           label: "common:contactUs",
@@ -130,7 +130,7 @@ export const config: BillingConfig = {
           model: BillingModel.ONE_TIME,
         },
         {
-          id: "enterprise-monthly",
+          id: "business-monthly",
           type: BillingType.FLAT,
           custom: true,
           label: "common:contactUs",
@@ -140,7 +140,7 @@ export const config: BillingConfig = {
           interval: RecurringInterval.MONTH,
         },
         {
-          id: "enterprise-yearly",
+          id: "business-yearly",
           type: BillingType.FLAT,
           custom: true,
           label: "common:contactUs",
@@ -157,19 +157,19 @@ export const config: BillingConfig = {
       code: "50OFF",
       type: BillingDiscountType.PERCENT,
       off: 50,
-      appliesTo: ["premium-monthly", "premium-yearly"],
+      appliesTo: ["pro-monthly", "pro-yearly"],
     },
     {
       code: "100OFF",
       type: BillingDiscountType.AMOUNT,
       off: 1000,
-      appliesTo: ["premium-monthly"],
+      appliesTo: ["pro-monthly"],
     },
     {
       code: "10OFF",
       type: BillingDiscountType.PERCENT,
       off: 10,
-      appliesTo: ["premium-yearly"],
+      appliesTo: ["pro-yearly"],
     },
   ],
 };

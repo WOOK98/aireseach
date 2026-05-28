@@ -6,7 +6,6 @@ import {
   FileText,
   Download,
   Loader2,
-  StopCircle,
   PanelLeftClose,
   PanelLeft,
 } from "lucide-react";
@@ -20,7 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui-web/card";
-import { Icons } from "@workspace/ui-web/icons";
 import { Input } from "@workspace/ui-web/input";
 import { Label } from "@workspace/ui-web/label";
 import {
@@ -59,7 +57,8 @@ const TEXT = {
   modeLabel: "Generation mode",
   apiKeyLabel: "Model API key",
   apiKeyPlaceholder: "Only used for this request, never stored",
-  apiKeyHelp: "{TEXT.apiKeyHelp}",
+  apiKeyHelp:
+    "Your key is sent only with this request and is not stored by Aireseach.",
   modelLabel: "Model",
   modelPlaceholder: "gpt-4o-mini / deepseek-chat / openai/gpt-4o-mini",
   baseUrlLabel: "Base URL",
@@ -69,7 +68,10 @@ const TEXT = {
   metricDashboard: "Metric dashboard",
   download: "Download Markdown",
   emptyState: "Enter a research target and generate a search-grounded report.",
-  loading: "{TEXT.loading}",
+  emptyDescription:
+    "Reports include market share, competitive landscape, financial metrics, and risk analysis.",
+  loading: "Generating your report...",
+  loadingDescription: "This may take 1-2 minutes for deep research.",
 };
 
 const DEFAULT_PROVIDER = {
@@ -457,8 +459,7 @@ export const ReportGenerator = () => {
                 {TEXT.emptyState}
               </p>
               <p className="text-muted-foreground/60 mt-2 text-sm">
-                Reports include market share, competitive landscape, financial
-                metrics, and risk analysis.
+                {TEXT.emptyDescription}
               </p>
             </CardContent>
           </Card>
@@ -469,10 +470,10 @@ export const ReportGenerator = () => {
             <CardContent className="text-center">
               <Loader2 className="text-primary mx-auto mb-4 size-10 animate-spin" />
               <p className="text-muted-foreground font-medium">
-                Generating your report...
+                {TEXT.loading}
               </p>
               <p className="text-muted-foreground/60 mt-2 text-sm">
-                This may take 1-2 minutes for deep research.
+                {TEXT.loadingDescription}
               </p>
             </CardContent>
           </Card>

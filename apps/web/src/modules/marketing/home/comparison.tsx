@@ -1,5 +1,6 @@
 import { getTranslation } from "@workspace/i18n/server";
 import { Icons } from "@workspace/ui-web/icons";
+
 import {
   Section,
   SectionBadge,
@@ -83,6 +84,15 @@ const features = [
   },
 ];
 
+const labels = {
+  feature: "Feature",
+  plans: [
+    { name: "Free", price: "$0/mo", highlighted: false },
+    { name: "Pro", price: "$19/mo", highlighted: true },
+    { name: "Business", price: "$49/mo", highlighted: false },
+  ],
+} as const;
+
 function CellValue({ value }: { value: boolean | string }) {
   if (value === true) {
     return (
@@ -116,28 +126,32 @@ export const Comparison = async () => {
         <table className="w-full min-w-[600px] border-collapse">
           <thead>
             <tr className="border-b">
-              <th className="pb-4 text-left text-sm font-medium text-muted-foreground">
-                Feature
+              <th className="text-muted-foreground pb-4 text-left text-sm font-medium">
+                {labels.feature}
               </th>
-              <th className="pb-4 text-center">
-                <div className="text-sm font-semibold">Free</div>
-                <div className="text-muted-foreground text-xs">$0/mo</div>
-              </th>
-              <th className="pb-4 text-center">
-                <div className="text-primary text-sm font-semibold">Pro</div>
-                <div className="text-muted-foreground text-xs">$19/mo</div>
-              </th>
-              <th className="pb-4 text-center">
-                <div className="text-sm font-semibold">Business</div>
-                <div className="text-muted-foreground text-xs">$49/mo</div>
-              </th>
+              {labels.plans.map((plan) => (
+                <th key={plan.name} className="pb-4 text-center">
+                  <div
+                    className={
+                      plan.highlighted
+                        ? "text-primary text-sm font-semibold"
+                        : "text-sm font-semibold"
+                    }
+                  >
+                    {plan.name}
+                  </div>
+                  <div className="text-muted-foreground text-xs">
+                    {plan.price}
+                  </div>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {features.map((feature) => (
               <tr
                 key={feature.name}
-                className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                className="border-border/50 hover:bg-muted/30 border-b transition-colors"
               >
                 <td className="py-3 pr-4 text-sm">{feature.name}</td>
                 <td className="py-3 text-center">

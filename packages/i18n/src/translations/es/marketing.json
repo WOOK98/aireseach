@@ -3,40 +3,25 @@
     "title": "Informes de investigación empresarial con IA en minutos",
     "description": "Aireseach convierte búsqueda web en vivo y tu propia clave de modelo en informes estructurados de mercado, competencia, riesgo e inversión.",
     "preview": {
-      "badge": "IA",
+      "badge": "Investigación en vivo",
       "title": "Flujo de informes basado en búsqueda",
       "provider": "Proveedor de modelo",
-      "sources": "Fuentes en vivo",
+      "sources": "Fuentes verificadas",
       "report": "Informe generado",
-      "reportTitle": "Revisión de mercado y antifragilidad de Tesla"
-    },
-    "mobile": {
-      "ios": {
-        "title": "Generador de informes",
-        "description": "Genera informes empresariales desde búsqueda en vivo y tu clave de modelo"
-      },
-      "android": {
-        "title": "Precios",
-        "description": "Elige un plan para flujos de investigación repetibles"
-      }
-    },
-    "extension": {
-      "chrome": {
-        "title": "Panel",
-        "description": "Gestiona informes, facturación y ajustes de cuenta"
-      },
-      "firefox": {
-        "title": "Complemento de Firefox",
-        "description": "Navegación mejorada para usuarios de Firefox"
-      },
-      "edge": {
-        "title": "Complemento de Edge",
-        "description": "Herramientas potentes para Microsoft Edge"
+      "reportTitle": "Panorama de mercado y competencia de Tesla",
+      "placeholder": "Investiga una empresa, un mercado o una industria...",
+      "action": "Investigar",
+      "examples": {
+        "tesla": "Panorama competitivo de Tesla",
+        "coffee": "Mercado de café especializado en EE. UU.",
+        "saas": "Tendencias de precios en SaaS vertical",
+        "battery": "Oportunidad de almacenamiento con baterías",
+        "aiAgents": "Agentes de IA para equipos financieros"
       }
     }
   },
 
-  "announcement": "Trae tu propia clave de modelo. Aireseach proporciona búsqueda.",
+  "announcement": "Sin bloqueo de proveedor. Usa tu propia clave API.",
   "report": {
     "title": "Informe de investigación empresarial con IA",
     "description": "Genera informes estructurados de análisis de mercado, competencia e inversión con fuentes en vivo."
@@ -62,108 +47,50 @@
     "description": "Actualmente {{feature}} no está disponible. Estamos trabajando en ello y estará disponible pronto."
   },
 
-  "features": {
-    "label": "Características",
-    "title": "De fuentes dispersas a informes listos para decidir",
-    "description": "Un espacio de investigación enfocado para análisis empresarial creíble sin empezar desde una página en blanco.",
-    "feature": {
-      "core": {
-        "title": "Investigación basada en búsqueda",
-        "description": "Aireseach usa búsqueda Jina gestionada por la plataforma para recopilar contexto público antes de escribir."
-      },
-      "ai": {
-        "title": "Trae tu propia clave de modelo",
-        "description": "Usa OpenAI, DeepSeek, OpenRouter, Perplexity o cualquier endpoint compatible con OpenAI."
-      },
-      "mobile": {
-        "title": "Estructura de grado inversor",
-        "description": "Los informes incluyen métricas, evidencia, cuota de mercado, presión competitiva, antifragilidad y riesgos."
-      },
-      "extension": {
-        "title": "Salida exportable",
-        "description": "Descarga informes Markdown para memorandos, notas de clientes, preparación de pitches o estrategia interna."
-      }
-    }
-  },
-
-  "testimonials": {
-    "label": "Testimonios",
-    "title": "Los equipos lanzan más rápido con nosotros",
-    "description": "Conoce a fundadores y desarrolladores que personalizaron el starter para lanzar antes y convertir mejor.",
-    "rating": "{{rating}} de {{count}}+ reseñas",
-    "reviews": {
-      "jack": {
-        "name": "Jack",
-        "position": "Desarrollador Full Stack",
-        "body": "El starter liberó a nuestro equipo del trabajo repetitivo. Sustituimos el copy en un fin de semana y nos concentramos en las funciones que los clientes realmente querían."
-      },
-      "jill": {
-        "name": "Jill",
-        "position": "Fundadora de startup",
-        "body": "Lanzamos nuestro MVP en dos semanas. Todo, desde las páginas de marketing hasta la autenticación, estaba listo; solo reescribimos el copy para nuestra audiencia."
-      },
-      "john": {
-        "name": "John",
-        "position": "Desarrollador senior",
-        "body": "La experiencia de desarrollador es incomparable. El stack funciona desde el primer momento y se mantiene lo suficientemente flexible como para adaptarse a la narrativa de nuestro producto."
-      },
-      "sarah": {
-        "name": "Sarah",
-        "position": "Product Manager",
-        "body": "Escalamos del prototipo a miles de usuarios sin complicaciones. La analítica, la facturación y los flujos de marketing estaban listos para personalizar."
-      },
-      "mike": {
-        "name": "Mike",
-        "position": "Líder de ingeniería",
-        "body": "La comunidad es excelente. Respuestas rápidas, feedback para los lanzamientos y mejoras constantes mantienen a nuestro equipo avanzando."
-      }
-    }
-  },
-
   "useCases": {
     "label": "Diseñado para",
     "title": "¿Quién usa Aireseach?",
-    "description": "Cualquiera que necesite análisis empresarial creíble sin empezar de cero."
+    "description": "Para fundadores, analistas, consultores e inversores que necesitan investigación empresarial creíble sin partir de una página en blanco."
   },
   "comparison": {
     "label": "Comparar planes",
-    "title": "Encuentra el plan adecuado para tu flujo de trabajo",
-    "description": "Empieza gratis, actualiza cuando necesites más informes y funciones avanzadas."
+    "title": "Elige el plan adecuado para tu flujo de investigación",
+    "description": "Empieza gratis y pasa a Pro o Business cuando necesites más informes, historial, colaboración y funciones avanzadas."
   },
 
   "faq": {
     "label": "Preguntas frecuentes",
-    "title": "¿Tienes una pregunta? Tenemos respuestas",
-    "description": "Encuentra respuestas a preguntas frecuentes sobre funciones, precios, implementación y cómo empezar con nuestra plataforma.",
+    "title": "Preguntas frecuentes",
+    "description": "Todo lo que necesitas saber sobre Aireseach.",
     "cta": "Contáctanos",
     "question": {
       "whatDoesOurPlatformDo": {
-        "question": "¿Qué hace nuestra plataforma?",
-        "answer": "Aireseach genera informes estructurados de investigación empresarial usando contexto de búsqueda en vivo y el proveedor de modelo que elijas."
+        "question": "¿Qué es Aireseach?",
+        "answer": "Aireseach genera informes estructurados de investigación empresarial a partir de fuentes web en vivo. Usa búsqueda Jina para recopilar datos públicos y el modelo que elijas para producir análisis de mercado, competencia, riesgo e inversión."
       },
       "howWillThisBenefitMyBusiness": {
-        "question": "¿Cómo beneficiará esto a mi negocio?",
-        "answer": "Lanzas más rápido, entregas funciones antes y conviertes más leads porque el producto base, la analítica y los flujos de facturación ya están listos."
+        "question": "¿Para quién es Aireseach?",
+        "answer": "Para fundadores que validan mercados, analistas de due diligence, consultores que preparan entregables para clientes e inversores que dimensionan oportunidades."
       },
       "isMyDataSafe": {
-        "question": "¿Mis datos están seguros?",
-        "answer": "Sí. Seguimos prácticas de seguridad de nivel empresarial y ofrecemos salvaguardas para que adaptes las políticas a los requisitos de tu industria."
+        "question": "¿Mi clave API está segura?",
+        "answer": "Sí. Tu clave del modelo solo se usa para la solicitud actual y no se almacena en nuestros servidores. Aireseach gestiona la búsqueda; la inferencia va al proveedor que elijas."
       },
       "whatKindOfIntegrationsAreAvailable": {
         "question": "¿Qué tipo de integraciones están disponibles?",
         "answer": "El flujo de informes soporta OpenAI, DeepSeek, OpenRouter, Perplexity y endpoints personalizados compatibles con OpenAI."
       },
       "howEasyIsItToOnboardMyTeam": {
-        "question": "¿Qué tan fácil es incorporar a mi equipo?",
-        "answer": "Tu equipo puede incorporarse rápidamente con documentación clara, patrones TypeScript-first y ejemplos que muestran exactamente dónde personalizar."
+        "question": "¿Cómo empiezo?",
+        "answer": "Introduce un objetivo de investigación, pega tu clave API y genera el informe. El primer informe no requiere registro; crea una cuenta para guardar historial y acceder a funciones premium."
       },
       "whatTypesOfBusinessesCanUseThis": {
         "question": "¿Qué tipos de empresas pueden usar esto?",
         "answer": "Fundadores, analistas, consultores, inversores y operadores pueden usar Aireseach para acelerar investigación repetible de mercados y empresas."
       },
       "canICustomizeThisToFitMyBusinessNeeds": {
-        "question": "¿Puedo personalizar esto para adaptarlo a las necesidades de mi negocio?",
-        "answer": "Por supuesto. Cada módulo está diseñado para personalizarse rápidamente: actualiza el copy, cambia componentes y amplía la lógica sin pelearte con el framework."
+        "question": "¿Puedo exportar y compartir informes?",
+        "answer": "Sí. Cada informe puede descargarse en Markdown para usarlo en memorandos, presentaciones, notas de clientes o estrategia interna."
       }
     }
   },
@@ -201,13 +128,13 @@
     "description": "Mantente al día con las últimas noticias, ideas y actualizaciones de nuestra plataforma. Descubre nuevas funciones, buenas prácticas y tendencias del sector.",
     "timeToRead": "{{time}} min de lectura",
     "tag": {
-      "learning": "aprendizaje",
-      "skills": "habilidades",
-      "progress": "progreso",
-      "product": "producto",
-      "development": "desarrollo",
-      "prototype": "prototipo",
-      "launch": "lanzamiento"
+      "learning": "investigación de mercado",
+      "skills": "análisis competitivo",
+      "progress": "due diligence",
+      "product": "inversión",
+      "development": "herramientas de IA",
+      "prototype": "actualizaciones de producto",
+      "launch": "guías"
     }
   },
 
