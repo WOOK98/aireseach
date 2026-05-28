@@ -3,6 +3,17 @@ import { NextResponse } from "next/server";
 const REPORT_AGENT_URL =
   process.env.REPORT_AGENT_URL || "http://localhost:8000";
 
+const getErrorDetail = (data: unknown) => {
+  if (typeof data === "object" && data !== null && "detail" in data) {
+    const detail = (data as { detail?: unknown }).detail;
+    if (typeof detail === "string") {
+      return detail;
+    }
+  }
+
+  return null;
+};
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -19,7 +30,11 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
       return NextResponse.json(
-        { detail: errorData?.detail || `后端服务异常: ${response.status}` },
+        {
+          detail:
+            getErrorDetail(errorData) ||
+            `Report agent error: ${response.status}`,
+        },
         { status: response.status },
       );
     }
@@ -34,7 +49,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Report generation error:", error);
     return NextResponse.json(
-      { detail: "无法连接到报告生成服务，请确认 report-agent 已启动" },
+      {
+        detail:
+          "Unable to connect to the report agent. Check that the report-agent service is running.",
+      },
       { status: 502 },
     );
   }
