@@ -4,13 +4,16 @@ import env from "../../env.config";
 
 import type { AuthConfig } from "@workspace/auth";
 
+const toBool = (value: boolean | string) =>
+  typeof value === "boolean" ? value : value === "true";
+
 export const authConfig = authConfigSchema.parse({
   providers: {
-    password: env.NEXT_PUBLIC_AUTH_PASSWORD,
-    magicLink: env.NEXT_PUBLIC_AUTH_MAGIC_LINK,
-    emailOtp: env.NEXT_PUBLIC_AUTH_EMAIL_OTP,
-    passkey: env.NEXT_PUBLIC_AUTH_PASSKEY,
-    anonymous: env.NEXT_PUBLIC_AUTH_ANONYMOUS,
+    password: toBool(env.NEXT_PUBLIC_AUTH_PASSWORD),
+    magicLink: toBool(env.NEXT_PUBLIC_AUTH_MAGIC_LINK),
+    emailOtp: toBool(env.NEXT_PUBLIC_AUTH_EMAIL_OTP),
+    passkey: toBool(env.NEXT_PUBLIC_AUTH_PASSKEY),
+    anonymous: toBool(env.NEXT_PUBLIC_AUTH_ANONYMOUS),
     oAuth: [SocialProvider.APPLE, SocialProvider.GOOGLE, SocialProvider.GITHUB],
   },
 }) satisfies AuthConfig;

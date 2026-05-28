@@ -7,19 +7,7 @@ import { TurboLink } from "~/modules/common/turbo-link";
 import { CtaButton } from "~/modules/marketing/layout/cta-button";
 import { Section, SectionBadge } from "~/modules/marketing/layout/section";
 
-const previewSources = [
-  "10-K filings",
-  "market research",
-  "earnings calls",
-  "industry news",
-];
-
-const previewMetrics = [
-  { label: "Market share", value: "34.2%" },
-  { label: "Growth quality", value: "Strong" },
-  { label: "Competitive pressure", value: "Moderate" },
-  { label: "Antifragility", value: "High" },
-];
+const exampleKeys = ["tesla", "coffee", "saas", "battery", "aiAgents"] as const;
 
 export const Hero = async () => {
   const { t } = await getTranslation();
@@ -61,88 +49,29 @@ export const Hero = async () => {
         </TurboLink>
       </div>
 
-      <div className="animate-fade-up relative mt-6 w-full max-w-6xl -translate-y-4 opacity-0 [--animation-delay:700ms] md:mt-10">
+      <div className="animate-fade-up relative mt-6 w-full max-w-3xl -translate-y-4 opacity-0 [--animation-delay:700ms] md:mt-10">
         <div className="border-border/70 bg-background overflow-hidden rounded-lg border shadow-2xl">
-          <div className="border-border/70 bg-muted/40 flex items-center justify-between border-b px-4 py-3">
-            <div className="flex items-center gap-2">
-              <span className="bg-primary size-2.5 rounded-full" />
-              <span className="bg-secondary size-2.5 rounded-full" />
-              <span className="bg-muted-foreground/40 size-2.5 rounded-full" />
+          <div className="flex items-center gap-3 p-3 sm:p-4">
+            <Icons.Search className="text-muted-foreground size-5 shrink-0" />
+            <div className="text-muted-foreground min-w-0 flex-1 truncate text-left text-sm sm:text-base">
+              {t("product.preview.placeholder")}
             </div>
-            <span className="text-muted-foreground text-xs font-medium">
-              {t("product.preview.title")}
-            </span>
+            <TurboLink
+              href={pathsConfig.marketing.report}
+              className={buttonVariants({ size: "sm" })}
+            >
+              {t("product.preview.action")}
+            </TurboLink>
           </div>
-
-          <div className="grid gap-0 lg:grid-cols-[320px_1fr]">
-            <aside className="border-border/70 bg-muted/20 space-y-4 border-b p-5 lg:border-r lg:border-b-0">
-              <div>
-                <p className="text-muted-foreground text-xs font-medium uppercase">
-                  {t("product.preview.provider")}
-                </p>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {["OpenAI", "DeepSeek", "OpenRouter", "Perplexity"].map(
-                    (provider) => (
-                      <div
-                        key={provider}
-                        className="bg-background rounded-md border px-3 py-2 text-sm font-medium"
-                      >
-                        {provider}
-                      </div>
-                    ),
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-muted-foreground text-xs font-medium uppercase">
-                  {t("product.preview.sources")}
-                </p>
-                <div className="mt-2 space-y-2">
-                  {previewSources.map((source) => (
-                    <div
-                      key={source}
-                      className="bg-background flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
-                    >
-                      <Icons.Check className="text-primary size-4" />
-                      {source}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </aside>
-
-            <div className="space-y-5 p-5 md:p-6">
-              <div>
-                <p className="text-muted-foreground text-xs font-medium uppercase">
-                  {t("product.preview.report")}
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold">
-                  {t("product.preview.reportTitle")}
-                </h2>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-4">
-                {previewMetrics.map((metric) => (
-                  <div
-                    key={metric.label}
-                    className="bg-muted/30 rounded-md border p-3"
-                  >
-                    <p className="text-muted-foreground text-xs">
-                      {metric.label}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold">{metric.value}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-3 rounded-md border p-4">
-                <div className="bg-primary/20 h-3 w-2/3 rounded-full" />
-                <div className="bg-muted h-3 w-full rounded-full" />
-                <div className="bg-muted h-3 w-11/12 rounded-full" />
-                <div className="bg-muted h-3 w-4/5 rounded-full" />
-              </div>
-            </div>
+          <div className="border-border/70 bg-muted/30 flex flex-wrap gap-2 border-t px-3 py-3 sm:px-4">
+            {exampleKeys.map((key) => (
+              <span
+                key={key}
+                className="bg-background text-muted-foreground rounded-md border px-2.5 py-1 text-xs"
+              >
+                {t(`product.preview.examples.${key}`)}
+              </span>
+            ))}
           </div>
         </div>
       </div>

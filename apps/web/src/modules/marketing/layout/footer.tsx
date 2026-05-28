@@ -37,15 +37,15 @@ const links = [
     label: "common:product",
     items: [
       {
-        title: "marketing:product.mobile.ios.title",
+        title: "marketing:report.title",
         href: pathsConfig.marketing.report,
       },
       {
-        title: "marketing:product.mobile.android.title",
+        title: "billing:pricing.label",
         href: pathsConfig.marketing.pricing,
       },
       {
-        title: "marketing:product.extension.chrome.title",
+        title: "marketing:roadmap.title",
         href: pathsConfig.dashboard.user.report,
       },
     ],

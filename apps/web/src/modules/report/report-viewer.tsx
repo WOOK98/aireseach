@@ -21,7 +21,6 @@ import {
   Legend,
 } from "recharts";
 
-import { Badge } from "@workspace/ui-web/badge";
 import {
   Card,
   CardContent,
@@ -61,6 +60,104 @@ const PIE_COLORS = [
   "#8b5cf6",
 ];
 
+const CHART_LABELS = {
+  metrics: "Key Metrics",
+  radar: "Analysis Radar",
+  dimensions: "Dimension Scores",
+  marketShare: "Market Share Breakdown",
+} as const;
+
+const RADAR_DIMENSIONS = [
+  {
+    dimension: "Market Share",
+    aliases: ["market share", "market position", "market size"],
+  },
+  {
+    dimension: "Growth Quality",
+    aliases: ["growth quality", "growth", "revenue growth"],
+  },
+  {
+    dimension: "Competitive Position",
+    aliases: ["competitive position", "competitive pressure", "moat"],
+  },
+  {
+    dimension: "Financial Health",
+    aliases: ["financial health", "financial quality", "margin", "cash flow"],
+  },
+  {
+    dimension: "Antifragility",
+    aliases: ["antifragility", "resilience", "risk resilience"],
+  },
+  {
+    dimension: "Innovation",
+    aliases: ["innovation", "product velocity", "technology"],
+  },
+] as const;
+
+const QUALITATIVE_SCORES: Record<string, number> = {
+  excellent: 90,
+  high: 82,
+  strong: 82,
+  good: 72,
+  moderate: 58,
+  medium: 58,
+  mixed: 50,
+  average: 50,
+  low: 35,
+  weak: 30,
+  poor: 25,
+  declining: 30,
+};
+
+const clampScore = (score: number) => Math.max(0, Math.min(score, 100));
+
+function scoreFromText(value: string) {
+  const numeric = value.match(
+    /(?:score|rating)?\s*[:=]?\s*(\d{1,3})(?:\s*\/\s*100|\s*%)?/i,
+  );
+
+  if (numeric?.[1]) {
+    return clampScore(Number.parseInt(numeric[1], 10));
+  }
+
+  const normalized = value.toLowerCase();
+  const qualitative = Object.entries(QUALITATIVE_SCORES).find(([label]) =>
+    normalized.includes(label),
+  );
+
+  return qualitative?.[1];
+}
+
+function findDimensionScore(content: string, aliases: readonly string[]) {
+  const lines = content.split("\n");
+
+  for (const alias of aliases) {
+    const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const inlinePattern = new RegExp(
+      `${escapedAlias}[^\\n|:]*[:|\\-–—]?\\s*([^\\n]+)`,
+      "i",
+    );
+    const inlineMatch = content.match(inlinePattern);
+    const inlineScore = inlineMatch?.[1]
+      ? scoreFromText(inlineMatch[1])
+      : undefined;
+
+    if (inlineScore !== undefined) {
+      return inlineScore;
+    }
+
+    const tableRow = lines.find((line) => {
+      const lower = line.toLowerCase();
+      return lower.includes("|") && lower.includes(alias);
+    });
+    const tableScore = tableRow ? scoreFromText(tableRow) : undefined;
+
+    if (tableScore !== undefined) {
+      return tableScore;
+    }
+  }
+}
+
 function parseMetricsFromMarkdown(content: string): MetricItem[] {
   const metrics: MetricItem[] = [];
   // Match patterns like "**Metric**: Value" or "| Metric | Value |"
@@ -89,8 +186,14 @@ function parseMetricsFromMarkdown(content: string): MetricItem[] {
   for (const pattern of patterns) {
     let match;
     while ((match = pattern.exec(content)) !== null) {
-      const label = match[1].trim().replace(/\|/g, "").replace(/\*\*/g, "");
-      const value = match[2].trim().replace(/\|/g, "").replace(/\*\*/g, "");
+      const [, rawLabel, rawValue] = match;
+
+      if (!rawLabel || !rawValue) {
+        continue;
+      }
+
+      const label = rawLabel.trim().replace(/\|/g, "").replace(/\*\*/g, "");
+      const value = rawValue.trim().replace(/\|/g, "").replace(/\*\*/g, "");
 
       if (
         metricKeywords.some((kw) => label.toLowerCase().includes(kw)) &&
@@ -108,22 +211,10 @@ function parseMetricsFromMarkdown(content: string): MetricItem[] {
 }
 
 function parseRadarData(content: string) {
-  const dimensions = [
-    "Market Share",
-    "Growth Quality",
-    "Competitive Position",
-    "Financial Health",
-    "Antifragility",
-    "Innovation",
-  ];
+  return RADAR_DIMENSIONS.flatMap(({ dimension, aliases }) => {
+    const score = findDimensionScore(content, aliases);
 
-  return dimensions.map((dim) => {
-    const regex = new RegExp(`${dim}[^\\n]*?(\\d+)`, "i");
-    const match = content.match(regex);
-    const val = match
-      ? Math.min(Number.parseInt(match[1]), 100)
-      : Math.floor(Math.random() * 40 + 40);
-    return { dimension: dim, score: val, fullMark: 100 };
+    return score === undefined ? [] : [{ dimension, score, fullMark: 100 }];
   });
 }
 
@@ -135,20 +226,16 @@ function parsePieData(content: string) {
   let match;
 
   while ((match = sharePattern.exec(content)) !== null) {
-    data.push({
-      name: match[1].trim().slice(0, 20),
-      value: Number.parseFloat(match[2]),
-    });
-  }
+    const [, rawName, rawValue] = match;
 
-  if (data.length === 0) {
-    // Fallback sample data
-    return [
-      { name: "Leader", value: 35 },
-      { name: "Challenger", value: 25 },
-      { name: "Niche", value: 20 },
-      { name: "Others", value: 20 },
-    ];
+    if (!rawName || !rawValue) {
+      continue;
+    }
+
+    data.push({
+      name: rawName.trim().slice(0, 20),
+      value: Number.parseFloat(rawValue),
+    });
   }
 
   return data;
@@ -162,7 +249,7 @@ function MetricDashboard({ metrics }: { metrics: MetricItem[] }) {
   return (
     <div className="mb-6">
       <h3 className="text-muted-foreground mb-3 text-sm font-semibold tracking-wider uppercase">
-        Key Metrics
+        {CHART_LABELS.metrics}
       </h3>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric) => (
@@ -198,103 +285,123 @@ function ReportCharts({ content }: { content: string }) {
     }));
   }, [radarData]);
 
+  if (radarData.length === 0 && pieData.length === 0) {
+    return null;
+  }
+
   return (
     <div className="mb-6 grid gap-4 lg:grid-cols-3">
       {/* Radar Chart */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Analysis Radar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={220}>
-            <RadarChart data={radarData}>
-              <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis
-                dataKey="dimension"
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-              />
-              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
-              <Radar
-                dataKey="score"
-                stroke="#6366f1"
-                fill="#6366f1"
-                fillOpacity={0.3}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {radarData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">{CHART_LABELS.radar}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <RadarChart data={radarData}>
+                <PolarGrid stroke="hsl(var(--border))" />
+                <PolarAngleAxis
+                  dataKey="dimension"
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
+                <Radar
+                  dataKey="score"
+                  stroke="hsl(var(--primary))"
+                  fill="hsl(var(--primary))"
+                  fillOpacity={0.3}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Bar Chart */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Dimension Scores</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={barData} layout="vertical">
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(var(--border))"
-              />
-              <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} />
-              <YAxis
-                type="category"
-                dataKey="name"
-                width={80}
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                  fontSize: 12,
-                }}
-              />
-              <Bar dataKey="score" fill="#6366f1" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {barData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">{CHART_LABELS.dimensions}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={barData} layout="vertical">
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                />
+                <XAxis
+                  type="number"
+                  domain={[0, 100]}
+                  tick={{ fontSize: 10 }}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={80}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    fontSize: 12,
+                  }}
+                />
+                <Bar
+                  dataKey="score"
+                  fill="hsl(var(--primary))"
+                  radius={[0, 4, 4, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Pie Chart */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Market Share Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                innerRadius={45}
-                outerRadius={75}
-                paddingAngle={3}
-                dataKey="value"
-              >
-                {pieData.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={PIE_COLORS[index % PIE_COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                  fontSize: 12,
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: 11 }} iconSize={8} />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {pieData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">
+              {CHART_LABELS.marketShare}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={75}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {pieData.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={PIE_COLORS[index % PIE_COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    fontSize: 12,
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} iconSize={8} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

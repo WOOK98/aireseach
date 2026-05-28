@@ -8,7 +8,16 @@
       "provider": "Model provider",
       "sources": "Verified sources",
       "report": "Generated report",
-      "reportTitle": "Tesla market landscape and competitive analysis"
+      "reportTitle": "Tesla market landscape and competitive analysis",
+      "placeholder": "Research a company, market, or industry...",
+      "action": "Research",
+      "examples": {
+        "tesla": "Tesla competitive landscape",
+        "coffee": "US specialty coffee market",
+        "saas": "Vertical SaaS pricing trends",
+        "battery": "Battery storage opportunity",
+        "aiAgents": "AI agents for finance teams"
+      }
     }
   },
   "announcement": "No lock-in. Bring your own API key.",
@@ -114,13 +123,13 @@
     "description": "Stay up to date with the latest news, insights, and updates from our platform. Discover new features, best practices, and industry trends.",
     "timeToRead": "{{time}} min read",
     "tag": {
-      "market-research": "market research",
-      "competitive-analysis": "competitive analysis",
-      "due-diligence": "due diligence",
-      "investment": "investment",
-      "ai-tools": "AI tools",
-      "product-updates": "product updates",
-      "guides": "guides"
+      "learning": "market research",
+      "skills": "competitive analysis",
+      "progress": "due diligence",
+      "product": "investment",
+      "development": "AI tools",
+      "prototype": "product updates",
+      "launch": "guides"
     }
   },
   "api": {
