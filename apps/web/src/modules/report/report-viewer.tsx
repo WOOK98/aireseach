@@ -417,8 +417,11 @@ interface EvidenceItem {
 
 function parseEvidenceList(content: string): EvidenceItem[] {
   const items: EvidenceItem[] = [];
+  // Find the evidence list section — supports:
+  // - ## Evidence List / ## Sources / ## References (heading)
+  // - **Evidence List** (bold text)
   const evidenceSection = content.match(
-    /(?:^|\n)#+\s*(?:Evidence|Sources?|References?)[^\n]*\n([\s\S]*?)(?=\n#|$)/i,
+    /(?:^|\n)(?:#+\s*(?:Evidence|Sources?|References?)[^\n]*|\*\*Evidence[^*]*\*\*)\n([\s\S]*?)(?=\n(?:#{1,3}\s|\*\*(?!Eviden))|$)/i,
   );
 
   if (!evidenceSection?.[1]) return items;
