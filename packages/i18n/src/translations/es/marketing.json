@@ -37,6 +37,10 @@
   },
 
   "announcement": "Trae tu propia clave de modelo. Aireseach proporciona búsqueda.",
+  "report": {
+    "title": "Informe de investigación empresarial con IA",
+    "description": "Genera informes estructurados de análisis de mercado, competencia e inversión con fuentes en vivo."
+  },
   "shippedWith": "Creado para investigación de mercado, estrategia e inversión",
   "cta": {
     "question": "¿Listo para investigar?",
