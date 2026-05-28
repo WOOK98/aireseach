@@ -53,7 +53,7 @@ Generate a high-value Markdown business report for the user's target using curre
 
 Think like a professional investment research product: build the evidence spine first, then develop the judgment. Start the report with:
 - Core metrics dashboard: table with market share, revenue/profit growth, valuation or funding metrics, cash flow/asset quality, competitive intensity, and data confidence. If reliable data is unavailable, write "Needs verification" instead of inventing numbers.
-- Evidence list: 5-8 key sources with date, link, and the claim each source supports.
+- Evidence list: 5-8 key sources with date, full URL link, and the claim each source supports. Always include the complete URL (https://...) for each source so it can be rendered as a clickable link.
 - Reading path: 3-5 bullets showing which risks or opportunities the reader should inspect first.
 
 Then include exactly these four sections:

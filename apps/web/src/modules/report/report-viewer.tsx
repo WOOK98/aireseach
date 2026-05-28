@@ -406,6 +406,165 @@ function ReportCharts({ content }: { content: string }) {
   );
 }
 
+// ── Evidence list parser ──
+
+interface EvidenceItem {
+  title: string;
+  date?: string;
+  url?: string;
+  claim?: string;
+}
+
+function parseEvidenceList(content: string): EvidenceItem[] {
+  const items: EvidenceItem[] = [];
+  const evidenceSection = content.match(
+    /(?:^|\n)#+\s*(?:Evidence|Sources?|References?)[^\n]*\n([\s\S]*?)(?=\n#|$)/i,
+  );
+
+  if (!evidenceSection?.[1]) return items;
+
+  const lines = evidenceSection[1].split("\n");
+
+  for (const line of lines) {
+    const trimmed = line.replace(/^\s*[-*\d.]+\s*/, "").trim();
+    if (!trimmed) continue;
+
+    const mdLinkMatch = trimmed.match(/\[([^\]]+)\]\(([^)]+)\)/);
+    const plainUrlMatch = trimmed.match(/(https?:\/\/[^\s|)\]]+)/);
+    const url = mdLinkMatch?.[2] || plainUrlMatch?.[1];
+
+    const dateMatch = trimmed.match(/\((\d{4}[-/]\d{2}(?:[-/]\d{2})?)\)/);
+    const date = dateMatch?.[1];
+
+    let title = "";
+    if (mdLinkMatch?.[1]) {
+      title = mdLinkMatch[1];
+    } else {
+      title = trimmed
+        .replace(/https?:\/\/[^\s|)\]]+/g, "")
+        .replace(/\([^)]*\d{4}[^)]*\)/g, "")
+        .replace(/\*\*/g, "")
+        .replace(/[—–\-:]+\s*$/, "")
+        .trim();
+      const parts = title.split(/[—–:]\s+/);
+      if (parts.length > 1 && parts[0]) {
+        title = parts[0].trim();
+      }
+    }
+
+    const claimMatch = trimmed.match(/[—–:]\s*(.+?)(?:\s*https?:|$)/);
+    const claim = claimMatch?.[1]?.trim();
+
+    if (title) {
+      items.push({ title, date, url, claim });
+    }
+  }
+
+  return items;
+}
+
+function EvidenceCard({ item }: { item: EvidenceItem }) {
+  return (
+    <div className="group border-border/60 bg-muted/20 hover:border-primary/30 hover:bg-muted/40 flex items-start gap-3 rounded-lg border p-3 transition-colors">
+      <div className="bg-primary/10 text-primary mt-0.5 flex size-6 shrink-0 items-center justify-center rounded text-xs font-bold">
+        📄
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          {item.url ? (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary truncate text-sm font-medium underline-offset-2 hover:underline"
+            >
+              {item.title}
+            </a>
+          ) : (
+            <span className="truncate text-sm font-medium">{item.title}</span>
+          )}
+          {item.date && (
+            <span className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 text-xs">
+              {item.date}
+            </span>
+          )}
+        </div>
+        {item.claim && (
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+            {item.claim}
+          </p>
+        )}
+        {item.url && (
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary/70 hover:text-primary mt-1.5 inline-flex items-center gap-1 text-xs"
+          >
+            <span className="truncate">
+              {item.url.replace(/^https?:\/\//, "").slice(0, 50)}
+            </span>
+            <span className="shrink-0">↗</span>
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EvidenceSection({ content }: { content: string }) {
+  const items = useMemo(() => parseEvidenceList(content), [content]);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="mb-6">
+      <h3 className="text-muted-foreground mb-3 flex items-center gap-2 text-sm font-semibold tracking-wider uppercase">
+        {/* oxlint-disable-next-line i18next/no-literal-string */}
+        <span>📎</span> Evidence List
+      </h3>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {items.map((item, i) => (
+          <EvidenceCard key={i} item={item} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── URL auto-linkifier for inline text ──
+
+function linkifyText(text: string): React.ReactNode[] {
+  const urlRegex = /(https?:\/\/[^\s)]+)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = urlRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(
+      <a
+        key={match.index}
+        href={match[1]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary underline-offset-2 hover:underline"
+      >
+        {match[1]}
+      </a>,
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
+}
+
 // ── Markdown Renderer ──
 
 const markdownComponents: Components = {
@@ -432,7 +591,10 @@ const markdownComponents: Components = {
                 ? "✅"
                 : text.toLowerCase().includes("antifragil")
                   ? "🛡️"
-                  : null;
+                  : text.toLowerCase().includes("evidence") ||
+                      text.toLowerCase().includes("source")
+                    ? "📎"
+                    : null;
 
     return (
       <h2 className="text-foreground mt-6 mb-3 flex items-center gap-2 text-xl font-semibold">
@@ -478,6 +640,16 @@ const markdownComponents: Components = {
   strong: ({ children }) => (
     <strong className="text-foreground font-semibold">{children}</strong>
   ),
+  a: ({ href, children }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-primary font-medium underline-offset-2 hover:underline"
+    >
+      {children}
+    </a>
+  ),
   code: ({ children, className }) => {
     const isInline = !className;
     if (isInline) {
@@ -494,7 +666,13 @@ const markdownComponents: Components = {
     );
   },
   hr: () => <hr className="border-border my-6" />,
-  p: ({ children }) => <p className="my-2 text-sm leading-7">{children}</p>,
+  p: ({ children }) => {
+    if (typeof children === "string") {
+      const linked = linkifyText(children);
+      return <p className="my-2 text-sm leading-7">{linked}</p>;
+    }
+    return <p className="my-2 text-sm leading-7">{children}</p>;
+  },
 };
 
 // ── Main Component ──
@@ -513,6 +691,9 @@ export function ReportViewer({ content }: ReportViewerProps) {
 
       {/* Charts */}
       <ReportCharts content={content} />
+
+      {/* Evidence List - clickable links */}
+      <EvidenceSection content={content} />
 
       {/* Markdown Content */}
       <Card>
