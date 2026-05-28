@@ -43,38 +43,37 @@
   "plan": {
     "free": {
       "name": "Free",
-      "description": "For small projects just getting started"
+      "description": "Explore Aireseach with 3 reports per month"
     },
-    "premium": {
-      "name": "Premium",
-      "description": "Unlock advanced features for professional growth",
-      "badge": "Bestseller"
+    "pro": {
+      "name": "Pro",
+      "description": "Unlimited reports for individual researchers",
+      "badge": "Most popular"
     },
-    "enterprise": {
-      "name": "Enterprise",
-      "description": "Designed for organizations and big teams"
+    "business": {
+      "name": "Business",
+      "description": "Team collaboration and advanced analytics"
     }
   },
   "feature": {
-    "sync": "Seamless sync across devices",
-    "basicSupport": "Basic email support",
-    "limitedStorage": "Limited cloud storage",
-    "emailNotifications": "Email alert notifications",
-    "basicReports": "Basic usage reports",
-    "advancedSync": "Advanced real-time sync",
-    "prioritySupport": "Priority customer support",
-    "moreStorage": "More cloud storage space",
-    "teamCollaboration": "Team collaboration tools",
-    "smsNotifications": "SMS alert notifications",
-    "advancedReports": "Advanced analytics reports",
-    "unlimitedStorage": "Unlimited cloud storage",
-    "customBranding": "Custom branding options",
-    "dedicatedSupport": "Dedicated account support",
-    "apiAccess": "Full API access",
-    "userRoles": "Full user roles management",
-    "auditLogs": "Compliance audit logs",
-    "singleSignOn": "Enterprise single sign-on",
-    "advancedAnalytics": "Advanced usage analytics"
+    "REPORTS_3_MONTH": "3 reports per month",
+    "COMPREHENSIVE_LENS": "Comprehensive analysis lens",
+    "OWN_API_KEY": "Bring your own API key",
+    "MARKDOWN_EXPORT": "Markdown download",
+    "COMMUNITY_SUPPORT": "Community support",
+    "UNLIMITED_REPORTS": "Unlimited reports",
+    "ALL_LENSES": "All 6 analysis lenses",
+    "DEEP_RESEARCH": "Perplexity Deep Research mode",
+    "REPORT_HISTORY": "Report history & saved reports",
+    "CUSTOM_ENDPOINTS": "Custom model endpoints",
+    "PRIORITY_SEARCH": "Priority search",
+    "EMAIL_SUPPORT": "Email support",
+    "TEAM_WORKSPACE": "Team workspace (up to 5 seats)",
+    "SHARED_LIBRARY": "Shared report library",
+    "API_ACCESS": "API access",
+    "CUSTOM_TEMPLATES": "Custom report templates",
+    "BRANDED_PDF": "Branded PDF export",
+    "PRIORITY_SUPPORT": "Priority support"
   },
   "error": {
     "checkout": "An error occurred while checking out.",

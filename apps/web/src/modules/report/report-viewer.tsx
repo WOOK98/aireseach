@@ -21,8 +21,13 @@ import {
   Legend,
 } from "recharts";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui-web/card";
 import { Badge } from "@workspace/ui-web/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui-web/card";
 
 import type { Components } from "react-markdown";
 
@@ -47,7 +52,14 @@ const SCORE_COLORS: Record<string, string> = {
   mixed: "#f59e0b",
 };
 
-const PIE_COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6"];
+const PIE_COLORS = [
+  "#6366f1",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#06b6d4",
+  "#8b5cf6",
+];
 
 function parseMetricsFromMarkdown(content: string): MetricItem[] {
   const metrics: MetricItem[] = [];
@@ -108,14 +120,17 @@ function parseRadarData(content: string) {
   return dimensions.map((dim) => {
     const regex = new RegExp(`${dim}[^\\n]*?(\\d+)`, "i");
     const match = content.match(regex);
-    const val = match ? Math.min(Number.parseInt(match[1]), 100) : Math.floor(Math.random() * 40 + 40);
+    const val = match
+      ? Math.min(Number.parseInt(match[1]), 100)
+      : Math.floor(Math.random() * 40 + 40);
     return { dimension: dim, score: val, fullMark: 100 };
   });
 }
 
 function parsePieData(content: string) {
   // Try to find market share data
-  const sharePattern = /(\w[\w\s&]+?)\s*(?:market\s*share|share)[:\s]+(\d+(?:\.\d+)?)\s*%/gi;
+  const sharePattern =
+    /(\w[\w\s&]+?)\s*(?:market\s*share|share)[:\s]+(\d+(?:\.\d+)?)\s*%/gi;
   const data: { name: string; value: number }[] = [];
   let match;
 
@@ -146,14 +161,16 @@ function MetricDashboard({ metrics }: { metrics: MetricItem[] }) {
 
   return (
     <div className="mb-6">
-      <h3 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+      <h3 className="text-muted-foreground mb-3 text-sm font-semibold tracking-wider uppercase">
         Key Metrics
       </h3>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric) => (
           <Card key={metric.label} className="py-3">
             <CardContent className="px-4">
-              <p className="text-xs text-muted-foreground truncate">{metric.label}</p>
+              <p className="text-muted-foreground truncate text-xs">
+                {metric.label}
+              </p>
               <p
                 className="mt-1 text-lg font-bold"
                 style={{ color: metric.color || "inherit" }}
@@ -216,7 +233,10 @@ function ReportCharts({ content }: { content: string }) {
         <CardContent>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={barData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="hsl(var(--border))"
+              />
               <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} />
               <YAxis
                 type="category"
@@ -270,10 +290,7 @@ function ReportCharts({ content }: { content: string }) {
                   fontSize: 12,
                 }}
               />
-              <Legend
-                wrapperStyle={{ fontSize: 11 }}
-                iconSize={8}
-              />
+              <Legend wrapperStyle={{ fontSize: 11 }} iconSize={8} />
             </PieChart>
           </ResponsiveContainer>
         </CardContent>
@@ -286,87 +303,91 @@ function ReportCharts({ content }: { content: string }) {
 
 const markdownComponents: Components = {
   h1: ({ children }) => (
-    <h1 className="text-2xl font-bold mt-8 mb-4 first:mt-0 text-foreground border-b pb-2">
+    <h1 className="text-foreground mt-8 mb-4 border-b pb-2 text-2xl font-bold first:mt-0">
       {children}
     </h1>
   ),
   h2: ({ children }) => {
     const text = typeof children === "string" ? children : "";
-    const sectionBadge =
-      text.toLowerCase().includes("risk") ? "⚠️" :
-      text.toLowerCase().includes("competitiv") ? "⚔️" :
-      text.toLowerCase().includes("growth") ? "📈" :
-      text.toLowerCase().includes("financial") || text.toLowerCase().includes("valuation") ? "💰" :
-      text.toLowerCase().includes("market") ? "📊" :
-      text.toLowerCase().includes("conclusion") || text.toLowerCase().includes("summary") ? "✅" :
-      text.toLowerCase().includes("antifragil") ? "🛡️" :
-      null;
+    const sectionBadge = text.toLowerCase().includes("risk")
+      ? "⚠️"
+      : text.toLowerCase().includes("competitiv")
+        ? "⚔️"
+        : text.toLowerCase().includes("growth")
+          ? "📈"
+          : text.toLowerCase().includes("financial") ||
+              text.toLowerCase().includes("valuation")
+            ? "💰"
+            : text.toLowerCase().includes("market")
+              ? "📊"
+              : text.toLowerCase().includes("conclusion") ||
+                  text.toLowerCase().includes("summary")
+                ? "✅"
+                : text.toLowerCase().includes("antifragil")
+                  ? "🛡️"
+                  : null;
 
     return (
-      <h2 className="text-xl font-semibold mt-6 mb-3 text-foreground flex items-center gap-2">
+      <h2 className="text-foreground mt-6 mb-3 flex items-center gap-2 text-xl font-semibold">
         {sectionBadge && <span>{sectionBadge}</span>}
         {children}
       </h2>
     );
   },
   h3: ({ children }) => (
-    <h3 className="text-lg font-semibold mt-4 mb-2 text-foreground">{children}</h3>
+    <h3 className="text-foreground mt-4 mb-2 text-lg font-semibold">
+      {children}
+    </h3>
   ),
   table: ({ children }) => (
     <div className="my-4 overflow-x-auto rounded-lg border">
       <table className="w-full text-sm">{children}</table>
     </div>
   ),
-  thead: ({ children }) => (
-    <thead className="bg-muted/50">{children}</thead>
-  ),
+  thead: ({ children }) => <thead className="bg-muted/50">{children}</thead>,
   th: ({ children }) => (
-    <th className="px-4 py-2.5 text-left font-semibold text-foreground border-b">
+    <th className="text-foreground border-b px-4 py-2.5 text-left font-semibold">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="px-4 py-2 border-b border-border/50">{children}</td>
+    <td className="border-border/50 border-b px-4 py-2">{children}</td>
   ),
   tr: ({ children }) => (
     <tr className="hover:bg-muted/30 transition-colors">{children}</tr>
   ),
   ul: ({ children }) => (
-    <ul className="list-disc pl-5 space-y-1.5 my-3">{children}</ul>
+    <ul className="my-3 list-disc space-y-1.5 pl-5">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal pl-5 space-y-1.5 my-3">{children}</ol>
+    <ol className="my-3 list-decimal space-y-1.5 pl-5">{children}</ol>
   ),
-  li: ({ children }) => (
-    <li className="text-sm leading-relaxed">{children}</li>
-  ),
+  li: ({ children }) => <li className="text-sm leading-relaxed">{children}</li>,
   blockquote: ({ children }) => (
-    <blockquote className="border-l-4 border-primary/30 pl-4 py-1 my-3 bg-muted/30 rounded-r text-sm italic">
+    <blockquote className="border-primary/30 bg-muted/30 my-3 rounded-r border-l-4 py-1 pl-4 text-sm italic">
       {children}
     </blockquote>
   ),
   strong: ({ children }) => (
-    <strong className="font-semibold text-foreground">{children}</strong>
+    <strong className="text-foreground font-semibold">{children}</strong>
   ),
   code: ({ children, className }) => {
     const isInline = !className;
     if (isInline) {
       return (
-        <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">
+        <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">
           {children}
         </code>
       );
     }
     return (
-      <code className="block bg-muted/50 p-4 rounded-lg text-xs font-mono overflow-x-auto my-3">
+      <code className="bg-muted/50 my-3 block overflow-x-auto rounded-lg p-4 font-mono text-xs">
         {children}
       </code>
     );
   },
-  hr: () => <hr className="my-6 border-border" />,
-  p: ({ children }) => (
-    <p className="text-sm leading-7 my-2">{children}</p>
-  ),
+  hr: () => <hr className="border-border my-6" />,
+  p: ({ children }) => <p className="my-2 text-sm leading-7">{children}</p>,
 };
 
 // ── Main Component ──
@@ -388,7 +409,7 @@ export function ReportViewer({ content }: ReportViewerProps) {
 
       {/* Markdown Content */}
       <Card>
-        <CardContent className="p-6 prose-sm">
+        <CardContent className="prose-sm p-6">
           <ReactMarkdown components={markdownComponents}>
             {content}
           </ReactMarkdown>

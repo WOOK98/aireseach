@@ -36,6 +36,16 @@
     "title": "We're working on it!",
     "description": "{{feature}} is currently not available. We're working on it and it will be available soon."
   },
+  "useCases": {
+    "label": "Built for",
+    "title": "Who uses Aireseach?",
+    "description": "Anyone who needs credible business analysis without starting from a blank page."
+  },
+  "comparison": {
+    "label": "Compare plans",
+    "title": "Find the right plan for your workflow",
+    "description": "Start free, upgrade when you need more reports and advanced features."
+  },
   "faq": {
     "label": "FAQ",
     "title": "Frequently asked questions",
@@ -104,13 +114,13 @@
     "description": "Stay up to date with the latest news, insights, and updates from our platform. Discover new features, best practices, and industry trends.",
     "timeToRead": "{{time}} min read",
     "tag": {
-      "learning": "learning",
-      "skills": "skills",
-      "progress": "progress",
-      "product": "product",
-      "development": "development",
-      "prototype": "prototype",
-      "launch": "launch"
+      "market-research": "market research",
+      "competitive-analysis": "competitive analysis",
+      "due-diligence": "due diligence",
+      "investment": "investment",
+      "ai-tools": "AI tools",
+      "product-updates": "product updates",
+      "guides": "guides"
     }
   },
   "api": {

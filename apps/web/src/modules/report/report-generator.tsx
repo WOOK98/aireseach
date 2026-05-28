@@ -1,9 +1,25 @@
 "use client";
 
-import { Sparkles, Square, FileText, Download, Loader2, StopCircle, PanelLeftClose, PanelLeft } from "lucide-react";
+import {
+  Sparkles,
+  Square,
+  FileText,
+  Download,
+  Loader2,
+  StopCircle,
+  PanelLeftClose,
+  PanelLeft,
+} from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 
+import { Badge } from "@workspace/ui-web/badge";
 import { Button } from "@workspace/ui-web/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui-web/card";
 import { Icons } from "@workspace/ui-web/icons";
 import { Input } from "@workspace/ui-web/input";
 import { Label } from "@workspace/ui-web/label";
@@ -14,8 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui-web/select";
-import { Badge } from "@workspace/ui-web/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui-web/card";
 
 import { ReportViewer } from "./report-viewer";
 
@@ -226,7 +240,7 @@ export const ReportGenerator = () => {
   const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), []);
 
   return (
-    <div className="flex gap-6 relative">
+    <div className="relative flex gap-6">
       {/* Toggle button */}
       <Button
         variant="outline"
@@ -234,11 +248,17 @@ export const ReportGenerator = () => {
         className="absolute top-0 right-0 z-10 lg:hidden"
         onClick={toggleSidebar}
       >
-        {sidebarOpen ? <PanelLeftClose className="size-4" /> : <PanelLeft className="size-4" />}
+        {sidebarOpen ? (
+          <PanelLeftClose className="size-4" />
+        ) : (
+          <PanelLeft className="size-4" />
+        )}
       </Button>
 
       {/* Left sidebar */}
-      <div className={`${sidebarOpen ? "w-80" : "w-0 overflow-hidden opacity-0"} shrink-0 space-y-6 transition-all duration-300`}>
+      <div
+        className={`${sidebarOpen ? "w-80" : "w-0 overflow-hidden opacity-0"} shrink-0 space-y-6 transition-all duration-300`}
+      >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="target">{TEXT.targetLabel}</Label>
@@ -433,9 +453,12 @@ export const ReportGenerator = () => {
           <Card className="flex h-[600px] items-center justify-center">
             <CardContent className="text-center">
               <FileText className="text-muted-foreground mx-auto mb-4 size-12" />
-              <p className="text-muted-foreground text-lg font-medium">{TEXT.emptyState}</p>
+              <p className="text-muted-foreground text-lg font-medium">
+                {TEXT.emptyState}
+              </p>
               <p className="text-muted-foreground/60 mt-2 text-sm">
-                Reports include market share, competitive landscape, financial metrics, and risk analysis.
+                Reports include market share, competitive landscape, financial
+                metrics, and risk analysis.
               </p>
             </CardContent>
           </Card>
@@ -445,7 +468,9 @@ export const ReportGenerator = () => {
           <Card className="flex h-[600px] items-center justify-center">
             <CardContent className="text-center">
               <Loader2 className="text-primary mx-auto mb-4 size-10 animate-spin" />
-              <p className="text-muted-foreground font-medium">Generating your report...</p>
+              <p className="text-muted-foreground font-medium">
+                Generating your report...
+              </p>
               <p className="text-muted-foreground/60 mt-2 text-sm">
                 This may take 1-2 minutes for deep research.
               </p>
