@@ -191,6 +191,35 @@ def build_messages(
         "structured metrics and evidence first, then interpretation and judgment."
     )
 
+    # Serenity supply-chain bottleneck methodology
+    serenity_instruction = ""
+    if "Serenity" in analysis_lens or "bottleneck" in analysis_lens.lower():
+        serenity_instruction = """\n\nApply the Serenity (@aleabitoreddit) supply-chain bottleneck analysis framework:
+
+CORE PRINCIPLE: Don't buy the obvious "shovel seller" — trace the supply chain upstream to find the single chokepoint that a downstream buyer will pay anything to keep flowing. The further upstream and the smaller the market cap, the more underpriced the bottleneck.
+
+ANALYSIS STRUCTURE:
+1. Supply Chain Map: Map the full chain from end-demand (hyperscaler capex, AI infrastructure, etc.) down to raw materials/feedstock. Identify every hop.
+2. Bottleneck Identification: At each hop, ask "if this layer stopped shipping, what breaks downstream, and is there a second source?" The fewer substitutes and bigger the downstream dependency, the better the asymmetry.
+3. 14-Point Checklist:
+   - Bottleneck? Is it sole/near-sole-source with pricing power?
+   - Upstream & cheap? Small % of downstream BOM so buyers pay through?
+   - Chain fluency? Can you map the exact BOM chain?
+   - Demand driver? TAM expanding on AI/tech capex, not legacy market?
+   - Contracts & counterparty? Signed multi-year, creditworthy tenant?
+   - Real margins? GAAP margins support quality claim?
+   - Financing quality? Any ATM/SBC overhang?
+   - Stage? Pre-volume-ramp mispriced on TTM revenue?
+   - Catalyst? Dated catalyst within tradable window?
+   - Market cap headroom? Small enough for institutional re-rating?
+   - Validation lag? Analyst coverage still behind supply-chain evidence?
+   - Risk & sizing? How binary is it?
+   - Macro overlay? Rate path / tariff / war regime help or hurt?
+4. Key Metrics Dashboard: Market share, revenue/profit growth, valuation, cash flow, competitive intensity, with data confidence levels.
+5. Investment View: Strong Buy / Hold/Watch / Avoid / High Risk, with 3 black swan risks and portfolio allocation suggestions.
+
+IMPORTANT: This is analysis, not financial advice. Never generate, place, or cancel trade orders. Present as a lens for asking better questions."""
+
     if search_context:
         user_content = (
             f"{report_brief}\n\n"
@@ -198,7 +227,7 @@ def build_messages(
             "Prioritize this material, preserve verifiable sources, dates, and links, "
             "and clearly mark anything as an inference or needing verification when evidence is thin.\n\n"
             f"{search_context}\n\n"
-            f"Generate a deep business report for: {target}."
+            f"Generate a deep business report for: {target}.{serenity_instruction}"
         )
     elif search_warning:
         user_content = (
@@ -206,10 +235,10 @@ def build_messages(
             f"Real-time search failed: {search_warning}\n\n"
             "Generate a structurally complete business analysis report without fabricating current market data. "
             'For 2026 data, market share, news, or filings, clearly mark "Needs real-time verification".\n\n'
-            f"Generate a deep business report for: {target}."
+            f"Generate a deep business report for: {target}.{serenity_instruction}"
         )
     else:
-        user_content = f"{report_brief}\n\nGenerate a deep business report for: {target}."
+        user_content = f"{report_brief}\n\nGenerate a deep business report for: {target}.{serenity_instruction}"
 
     lang_instruction = ""
     lang_names = {
