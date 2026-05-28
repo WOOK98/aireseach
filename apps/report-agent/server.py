@@ -44,6 +44,7 @@ class ReportRequest(BaseModel):
     base_url: Optional[str] = Field(None, description="OpenAI-compatible API base URL")
     model: Optional[str] = Field(None, description="Model name")
     jina_api_key: Optional[str] = Field(None, description="Optional Jina AI API key")
+    language: Optional[str] = Field("en", description="Report output language code (en, zh-TW, zh-CN, ja, ko, etc.)")
 
 
 SYSTEM_PROMPT = """
@@ -180,6 +181,7 @@ def build_messages(
     analysis_lens: str,
     search_context: str = "",
     search_warning: str = "",
+    language: str = "en",
 ):
     report_brief = (
         f"Research target: {target}\n"
@@ -209,8 +211,23 @@ def build_messages(
     else:
         user_content = f"{report_brief}\n\nGenerate a deep business report for: {target}."
 
+    lang_instruction = ""
+    lang_names = {
+        "zh-TW": "Traditional Chinese (繁體中文)",
+        "zh-CN": "Simplified Chinese (简体中文)",
+        "ja": "Japanese (日本語)",
+        "ko": "Korean (한국어)",
+        "es": "Spanish",
+        "de": "German",
+        "fr": "French",
+        "en": "English",
+    }
+    if language and language != "en":
+        lang_name = lang_names.get(language, language)
+        lang_instruction = f"\n\nIMPORTANT: Write the ENTIRE report in {lang_name}. All section titles, analysis, evidence descriptions, and conclusions must be in {lang_name}."
+
     return [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": SYSTEM_PROMPT + lang_instruction},
         {"role": "user", "content": user_content},
     ]
 
@@ -237,7 +254,7 @@ def build_report_request(request: ReportRequest):
         api_key,
         base_url,
         model,
-        build_messages(target, analysis_years, analysis_lens, search_context, search_warning),
+        build_messages(target, analysis_years, analysis_lens, search_context, search_warning, request.language or "en"),
         search_warning,
     )
 

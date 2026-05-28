@@ -47,6 +47,17 @@ const REPORT_MODES = [
   { value: "deep_research", label: "Perplexity Deep Research" },
 ];
 
+const REPORT_LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "zh-TW", label: "繁體中文" },
+  { value: "zh-CN", label: "简体中文" },
+  { value: "ja", label: "日本語" },
+  { value: "ko", label: "한국어" },
+  { value: "es", label: "Español" },
+  { value: "de", label: "Deutsch" },
+  { value: "fr", label: "Français" },
+];
+
 const TEXT = {
   targetLabel: "Research target",
   targetPlaceholder: "Tesla / NVIDIA / North American battery storage",
@@ -153,6 +164,7 @@ export const ReportGenerator = ({
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState<string>(initialProvider.baseUrl);
   const [model, setModel] = useState<string>(initialProvider.model);
+  const [language, setLanguage] = useState("en");
   const [report, setReport] = useState<ReportState>({
     status: "idle",
     content: "",
@@ -188,6 +200,7 @@ export const ReportGenerator = ({
           analysis_years: Number.parseInt(analysisYears),
           analysis_lens: analysisLens,
           report_mode: reportMode,
+          language: language,
           ...(apiKey && { api_key: apiKey }),
           ...(baseUrl && { base_url: baseUrl }),
           ...(model && { model: model }),
@@ -313,6 +326,29 @@ export const ReportGenerator = ({
                 {ANALYSIS_LENSES.map((lens) => (
                   <SelectItem key={lens} value={lens}>
                     {lens}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="language">
+              {/* oxlint-disable-next-line i18next/no-literal-string */}
+              Language
+            </Label>
+            <Select
+              value={language}
+              onValueChange={(value) => value && setLanguage(value)}
+              disabled={isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REPORT_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.value} value={lang.value}>
+                    {lang.label}
                   </SelectItem>
                 ))}
               </SelectContent>
