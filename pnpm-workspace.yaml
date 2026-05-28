@@ -15,7 +15,9 @@ catalog:
   envin: 1.2.0
   dayjs: 1.11.20
   react-hook-form: 7.74.0
+  react-markdown: 10.1.0
   react-native: 0.83.6
+  recharts: 2.15.4
   tailwindcss: 4.2.4
   typescript: 6.0.3
   vitest: 4.1.5
