@@ -40,6 +40,7 @@ const ANALYSIS_LENSES = [
   "Cash flow and asset quality",
   "Antifragility and risk",
   "Growth and business model",
+  "Supply Chain Bottleneck (Serenity)",
 ];
 
 const REPORT_MODES = [
