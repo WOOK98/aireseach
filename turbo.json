@@ -30,7 +30,13 @@
       "outputs": ["coverage.json"]
     }
   },
-  "globalEnv": ["DATABASE_URL", "PRODUCT_NAME", "URL", "DEFAULT_LOCALE"],
+  "globalEnv": [
+    "DATABASE_URL",
+    "PRODUCT_NAME",
+    "URL",
+    "DEFAULT_LOCALE",
+    "REPORT_AGENT_URL"
+  ],
   "globalPassThroughEnv": [
     "NODE_ENV",
     "SKIP_ENV_VALIDATION",

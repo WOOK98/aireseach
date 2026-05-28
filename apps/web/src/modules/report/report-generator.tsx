@@ -1,9 +1,8 @@
 "use client";
 
-import { FileText, Sparkles, Square } from "lucide-react";
+import { Sparkles, Square } from "lucide-react";
 import { useState, useRef } from "react";
 
-import { cn } from "@workspace/ui";
 import { Button } from "@workspace/ui-web/button";
 import { Icons } from "@workspace/ui-web/icons";
 import { Input } from "@workspace/ui-web/input";
@@ -20,18 +19,81 @@ import { Textarea } from "@workspace/ui-web/textarea";
 import type { FormEvent } from "react";
 
 const ANALYSIS_LENSES = [
-  "综合",
-  "估值与财务质量",
-  "市场份额与竞争格局",
-  "现金流与资产质量",
-  "抗脆弱性与风险",
-  "增长与商业模式",
+  "Comprehensive",
+  "Valuation and financial quality",
+  "Market share and competitive landscape",
+  "Cash flow and asset quality",
+  "Antifragility and risk",
+  "Growth and business model",
 ];
 
 const REPORT_MODES = [
-  { value: "jina_llm", label: "Jina 搜索 + LLM（便宜）" },
-  { value: "deep_research", label: "Perplexity 深度研究" },
+  { value: "jina_llm", label: "Aireseach Search + your model" },
+  { value: "deep_research", label: "Perplexity Deep Research" },
 ];
+
+const TEXT = {
+  targetLabel: "Research target",
+  targetPlaceholder: "Tesla / NVIDIA / North American battery storage",
+  yearsLabel: "Lookback window",
+  yearsOption: (years: number) => `Last ${years} years`,
+  lensLabel: "Analysis lens",
+  providerLabel: "AI provider",
+  modeLabel: "Generation mode",
+  apiKeyLabel: "Model API key",
+  apiKeyPlaceholder: "Only used for this request, never stored",
+  apiKeyHelp: "{TEXT.apiKeyHelp}",
+  modelLabel: "Model",
+  modelPlaceholder: "gpt-4o-mini / deepseek-chat / openai/gpt-4o-mini",
+  baseUrlLabel: "Base URL",
+  baseUrlPlaceholder: "https://api.openai.com/v1",
+  stop: "Stop",
+  generate: "Generate report",
+  metricDashboard: "Metric dashboard",
+  download: "Download Markdown",
+  emptyState: "Enter a research target and generate a search-grounded report.",
+  loading: "{TEXT.loading}",
+};
+
+const DEFAULT_PROVIDER = {
+  value: "openai",
+  label: "OpenAI",
+  mode: "jina_llm",
+  baseUrl: "https://api.openai.com/v1",
+  model: "gpt-4o-mini",
+} as const;
+
+const MODEL_PROVIDERS = [
+  DEFAULT_PROVIDER,
+  {
+    value: "deepseek",
+    label: "DeepSeek",
+    mode: "jina_llm",
+    baseUrl: "https://api.deepseek.com/v1",
+    model: "deepseek-chat",
+  },
+  {
+    value: "openrouter",
+    label: "OpenRouter",
+    mode: "jina_llm",
+    baseUrl: "https://openrouter.ai/api/v1",
+    model: "openai/gpt-4o-mini",
+  },
+  {
+    value: "perplexity",
+    label: "Perplexity",
+    mode: "deep_research",
+    baseUrl: "https://api.perplexity.ai",
+    model: "sonar-deep-research",
+  },
+  {
+    value: "custom",
+    label: "Custom OpenAI-compatible",
+    mode: "jina_llm",
+    baseUrl: "",
+    model: "",
+  },
+] as const;
 
 interface ReportState {
   status: "idle" | "loading" | "done" | "error";
@@ -39,20 +101,51 @@ interface ReportState {
   error: string;
 }
 
+type ProviderValue = (typeof MODEL_PROVIDERS)[number]["value"];
+
+const getProvider = (value: string) =>
+  MODEL_PROVIDERS.find((provider) => provider.value === value) ??
+  DEFAULT_PROVIDER;
+
+const getErrorDetail = (data: unknown) => {
+  if (typeof data === "object" && data !== null && "detail" in data) {
+    const detail = (data as { detail?: unknown }).detail;
+    if (typeof detail === "string") {
+      return detail;
+    }
+  }
+
+  return null;
+};
+
 export const ReportGenerator = () => {
   const [target, setTarget] = useState("");
   const [analysisYears, setAnalysisYears] = useState("5");
-  const [analysisLens, setAnalysisLens] = useState("综合");
-  const [reportMode, setReportMode] = useState("jina_llm");
+  const [analysisLens, setAnalysisLens] = useState("Comprehensive");
+  const [provider, setProvider] = useState<ProviderValue>("openai");
+  const initialProvider = getProvider("openai");
+  const [reportMode, setReportMode] = useState<string>(initialProvider.mode);
   const [apiKey, setApiKey] = useState("");
-  const [baseUrl, setBaseUrl] = useState("");
-  const [model, setModel] = useState("");
+  const [baseUrl, setBaseUrl] = useState<string>(initialProvider.baseUrl);
+  const [model, setModel] = useState<string>(initialProvider.model);
   const [report, setReport] = useState<ReportState>({
     status: "idle",
     content: "",
     error: "",
   });
   const abortRef = useRef<AbortController | null>(null);
+
+  const handleProviderChange = (value: string | null) => {
+    if (!value) {
+      return;
+    }
+
+    const nextProvider = getProvider(value);
+    setProvider(nextProvider.value);
+    setReportMode(nextProvider.mode);
+    setBaseUrl(nextProvider.baseUrl);
+    setModel(nextProvider.model);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -80,13 +173,13 @@ export const ReportGenerator = () => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(
-          errorData?.detail ||
+          getErrorDetail(errorData) ||
             `HTTP ${response.status}: ${response.statusText}`,
         );
       }
 
       const reader = response.body?.getReader();
-      if (!reader) throw new Error("无法读取响应流");
+      if (!reader) throw new Error("Unable to read the response stream");
 
       const decoder = new TextDecoder();
       let content = "";
@@ -104,7 +197,7 @@ export const ReportGenerator = () => {
       setReport({
         status: "error",
         content: "",
-        error: err instanceof Error ? err.message : "未知错误",
+        error: err instanceof Error ? err.message : "Unknown error",
       });
     }
   };
@@ -119,7 +212,7 @@ export const ReportGenerator = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${target}_商业分析报告.md`;
+    a.download = `${target}_business_analysis_report.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -132,10 +225,10 @@ export const ReportGenerator = () => {
       <div className="w-80 shrink-0 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="target">分析目标</Label>
+            <Label htmlFor="target">{TEXT.targetLabel}</Label>
             <Input
               id="target"
-              placeholder="例如：瑞幸咖啡 / Tesla / 北美储能电池市场"
+              placeholder={TEXT.targetPlaceholder}
               value={target}
               onChange={(e) => setTarget(e.target.value)}
               disabled={isLoading}
@@ -143,10 +236,10 @@ export const ReportGenerator = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="years">回看年限</Label>
+            <Label htmlFor="years">{TEXT.yearsLabel}</Label>
             <Select
               value={analysisYears}
-              onValueChange={setAnalysisYears}
+              onValueChange={(value) => value && setAnalysisYears(value)}
               disabled={isLoading}
             >
               <SelectTrigger>
@@ -155,7 +248,7 @@ export const ReportGenerator = () => {
               <SelectContent>
                 {Array.from({ length: 10 }, (_, i) => i + 1).map((y) => (
                   <SelectItem key={y} value={String(y)}>
-                    近 {y} 年
+                    {TEXT.yearsOption(y)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -163,10 +256,10 @@ export const ReportGenerator = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="lens">分析视角</Label>
+            <Label htmlFor="lens">{TEXT.lensLabel}</Label>
             <Select
               value={analysisLens}
-              onValueChange={setAnalysisLens}
+              onValueChange={(value) => value && setAnalysisLens(value)}
               disabled={isLoading}
             >
               <SelectTrigger>
@@ -183,10 +276,30 @@ export const ReportGenerator = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="mode">生成模式</Label>
+            <Label htmlFor="provider">{TEXT.providerLabel}</Label>
+            <Select
+              value={provider}
+              onValueChange={handleProviderChange}
+              disabled={isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MODEL_PROVIDERS.map((provider) => (
+                  <SelectItem key={provider.value} value={provider.value}>
+                    {provider.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mode">{TEXT.modeLabel}</Label>
             <Select
               value={reportMode}
-              onValueChange={setReportMode}
+              onValueChange={(value) => value && setReportMode(value)}
               disabled={isLoading}
             >
               <SelectTrigger>
@@ -203,24 +316,36 @@ export const ReportGenerator = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="apiKey">API Key（可选）</Label>
+            <Label htmlFor="apiKey">{TEXT.apiKeyLabel}</Label>
             <Input
               id="apiKey"
               type="password"
-              placeholder="留空则使用后端环境变量"
+              placeholder={TEXT.apiKeyPlaceholder}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
+              disabled={isLoading}
+            />
+            <p className="text-muted-foreground text-xs">{TEXT.apiKeyHelp}</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="model">{TEXT.modelLabel}</Label>
+            <Input
+              id="model"
+              placeholder={TEXT.modelPlaceholder}
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
               disabled={isLoading}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="model">模型名称（可选）</Label>
+            <Label htmlFor="baseUrl">{TEXT.baseUrlLabel}</Label>
             <Input
-              id="model"
-              placeholder="例如：deepseek-chat / sonar-deep-research"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
+              id="baseUrl"
+              placeholder={TEXT.baseUrlPlaceholder}
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
               disabled={isLoading}
             />
           </div>
@@ -234,7 +359,7 @@ export const ReportGenerator = () => {
                 onClick={handleStop}
               >
                 <Square className="mr-2 size-4" />
-                停止生成
+                {TEXT.stop}
               </Button>
             ) : (
               <Button
@@ -243,7 +368,7 @@ export const ReportGenerator = () => {
                 disabled={!target.trim()}
               >
                 <Sparkles className="mr-2 size-4" />
-                启动分析
+                {TEXT.generate}
               </Button>
             )}
           </div>
@@ -251,13 +376,13 @@ export const ReportGenerator = () => {
 
         {/* 指标卡片 */}
         <div className="bg-muted/50 rounded-lg border p-4">
-          <h3 className="mb-3 text-sm font-semibold">指标仪表盘</h3>
+          <h3 className="mb-3 text-sm font-semibold">{TEXT.metricDashboard}</h3>
           <div className="space-y-2">
             {[
-              { label: "市场份额", value: "待核验" },
-              { label: "增长质量", value: "待核验" },
-              { label: "竞争强度", value: "待核验" },
-              { label: "抗脆弱性", value: "待判断" },
+              { label: "Market share", value: "To verify" },
+              { label: "Growth quality", value: "To verify" },
+              { label: "Competitive intensity", value: "To verify" },
+              { label: "Antifragility", value: "To assess" },
             ].map((metric) => (
               <div
                 key={metric.label}
@@ -274,7 +399,7 @@ export const ReportGenerator = () => {
         {report.status === "done" && report.content && (
           <Button variant="outline" className="w-full" onClick={handleDownload}>
             <Icons.Download className="mr-2 size-4" />
-            下载 Markdown
+            {TEXT.download}
           </Button>
         )}
       </div>
@@ -283,16 +408,14 @@ export const ReportGenerator = () => {
       <div className="min-w-0 flex-1">
         {report.status === "idle" && (
           <div className="text-muted-foreground flex h-64 items-center justify-center rounded-lg border border-dashed">
-            <p>输入分析目标，点击「启动分析」开始生成报告</p>
+            <p>{TEXT.emptyState}</p>
           </div>
         )}
 
         {report.status === "loading" && !report.content && (
           <div className="flex h-64 items-center justify-center rounded-lg border">
             <Icons.Loader className="text-muted-foreground mr-2 size-5 animate-spin" />
-            <span className="text-muted-foreground">
-              Agent 正在检索数据并生成报告…
-            </span>
+            <span className="text-muted-foreground">{TEXT.loading}</span>
           </div>
         )}
 

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 import requests
 
 
-app = FastAPI(title="AI Agent 商业报告生成器")
+app = FastAPI(title="Aireseach Business Report Agent")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ALLOW_ORIGINS", "*").split(","),
@@ -36,54 +36,54 @@ SEARCH_CONTEXT_CHARS = int(os.getenv("SEARCH_CONTEXT_CHARS", "12000"))
 
 
 class ReportRequest(BaseModel):
-    target: str = Field(..., min_length=1, description="企业或行业分析目标")
-    analysis_years: int = Field(5, ge=1, le=10, description="分析回看年限")
-    analysis_lens: str = Field("综合", description="分析视角")
-    report_mode: Optional[str] = Field(None, description="deep_research 或 jina_llm")
-    api_key: Optional[str] = Field(None, description="本次请求使用的 API Key")
-    base_url: Optional[str] = Field(None, description="OpenAI-compatible API 地址")
-    model: Optional[str] = Field(None, description="模型名称")
-    jina_api_key: Optional[str] = Field(None, description="可选的 Jina AI API Key")
+    target: str = Field(..., min_length=1, description="Company, asset, or industry to analyze")
+    analysis_years: int = Field(5, ge=1, le=10, description="Lookback window in years")
+    analysis_lens: str = Field("Comprehensive", description="Primary analysis lens")
+    report_mode: Optional[str] = Field(None, description="deep_research or jina_llm")
+    api_key: Optional[str] = Field(None, description="Model API key for this request")
+    base_url: Optional[str] = Field(None, description="OpenAI-compatible API base URL")
+    model: Optional[str] = Field(None, description="Model name")
+    jina_api_key: Optional[str] = Field(None, description="Optional Jina AI API key")
 
 
 SYSTEM_PROMPT = """
-你是一个资深的商业分析师（Business Intelligence Agent），精通企业架构、金融投资、市场竞争策略以及塔勒布的“抗脆弱性（Antifragility）”理论。
+You are a senior business intelligence analyst with deep expertise in company architecture, financial analysis, competitive strategy, and Nassim Taleb's concept of antifragility.
 
-请针对用户指定的目标，通过检索最新（2026年）的真实市场数据、财报、新闻和行业白皮书，生成一份具备高商业价值的 Markdown 分析报告。
+Generate a high-value Markdown business report for the user's target using current public market data, financial filings, news, and industry reports whenever retrieved context is available.
 
-借鉴专业投研工具的产品逻辑：先搭建“数据骨架”，再做观点推演。报告开头必须先给出：
-- 核心指标仪表盘：用表格列出市场份额、收入/利润增长、估值或融资指标、现金流/资产质量、竞争强度、数据置信度；没有可靠数据时写“待核验”，不要编造。
-- 证据清单：列出 5-8 条最关键来源、日期、链接、对应结论。
-- 阅读路线：用 3-5 条 bullet 告诉读者应该先看哪些风险/机会。
+Think like a professional investment research product: build the evidence spine first, then develop the judgment. Start the report with:
+- Core metrics dashboard: table with market share, revenue/profit growth, valuation or funding metrics, cash flow/asset quality, competitive intensity, and data confidence. If reliable data is unavailable, write "Needs verification" instead of inventing numbers.
+- Evidence list: 5-8 key sources with date, link, and the claim each source supports.
+- Reading path: 3-5 bullets showing which risks or opportunities the reader should inspect first.
 
-随后报告必须严格包含以下四个板块：
+Then include exactly these four sections:
 
-1. 市场份额与行业格局 (Market Share & Landscape)
-- 提供该企业在所属行业/细分领域的最新市场份额百分比，必须引用可考证的最新数据或权威第三方调研机构预测。
-- 梳理行业前三至前五的核心玩家，对比其优劣势，以表格形式呈现。
+1. Market Share & Landscape
+- Provide the latest verifiable market share for the company or segment when available, citing public filings or credible third-party research.
+- Compare the top three to five industry players in a table, including strengths and weaknesses.
 
-2. 竞争分析 (Competitive Analysis - Porter's Five Forces Extended)
-- 深入分析直接竞品、潜在进入者和替代品的威胁。
-- 提炼该企业的核心壁垒（护城河），如技术壁垒、网络效应、供应链优势或高转换成本。
+2. Competitive Analysis - Porter's Five Forces Extended
+- Analyze direct competitors, potential entrants, substitutes, supplier power, and customer power.
+- Identify durable moats such as technology, network effects, distribution, supply chain advantages, regulation, or switching costs.
 
-3. 抗脆弱性评估 (Antifragility Assessment)
-- 严禁将“抗脆弱”等同于“抗压/强韧”。强韧（Robust）是指在冲击中保持不变；抗脆弱（Antifragile）是指能从不确定性、波动性和外部冲击中获益并变得更强。
-- 评估企业在面对宏观经济下行、供应链断裂、技术突变、法律合规风险时的表现。
-- 寻找其商业模式中的“杠铃策略（Barbell Strategy）”：是否在核心业务上极度保守（确保生存），同时在边际业务上进行高风险、高回报的非对称性创新尝试？
+3. Antifragility Assessment
+- Do not confuse antifragility with resilience. Resilience means surviving shocks; antifragility means benefiting from volatility, disorder, or external shocks.
+- Assess how the business performs under macro downturns, supply chain breaks, technology shifts, legal/regulatory pressure, and funding stress.
+- Look for a barbell strategy: conservative core operations that preserve survival plus asymmetric, high-upside experiments at the edge.
 
-4. 投资建议与潜在风险 (Investment Advice & Risks)
-- 给出明确的投资评级，如：强烈推荐买入 / 观望持有 / 风险警示。
-- 基于上述分析，列出 3 个企业未来 12-24 个月内可能面临的黑天鹅事件（Black Swan Risks）或核心灰犀牛风险。
-- 提供具体的资金配置或战略切入建议。
+4. Investment View & Risks
+- Give a clear rating such as Strong Buy, Hold/Watch, Avoid, or High Risk.
+- List three black swan or grey rhino risks over the next 12-24 months.
+- Provide concrete portfolio allocation, market-entry, or strategic action suggestions.
 
-写作风格：专业、理性、批判性。多用数据说话，避免宽泛赞美。请保留关键引用来源、日期和链接。
+Write in English by default. Be professional, analytical, critical, and evidence-led. Preserve source names, dates, and links when available.
 """
 
 
 def validate_target(target: str) -> str:
     cleaned_target = target.strip()
     if not cleaned_target:
-        raise HTTPException(status_code=400, detail="请输入分析目标")
+        raise HTTPException(status_code=400, detail="Enter a research target.")
     return cleaned_target
 
 
@@ -100,8 +100,8 @@ def validate_header_value(value: str, label: str) -> str:
         raise HTTPException(
             status_code=400,
             detail=(
-                f"{label} 含有非 ASCII 字符，请只粘贴真实 Key，"
-                "不要包含中文、emoji、引号或说明文字。"
+                f"{label} contains non-ASCII characters. Paste the raw key only, "
+                "without quotes, notes, emoji, or extra text."
             ),
         ) from exc
     return value
@@ -117,16 +117,16 @@ def get_llm_config(request: ReportRequest):
         api_key = validate_header_value(request_api_key or LLM_API_KEY, "API Key")
         if not api_key:
             raise HTTPException(
-                status_code=500,
-                detail="请先设置 LLM_API_KEY 或 DEEPSEEK_API_KEY 环境变量",
+                status_code=400,
+                detail="Enter your model API key to generate this report.",
             )
         return api_key, request_base_url or LLM_BASE_URL, request_model or LLM_MODEL, report_mode
 
     api_key = validate_header_value(request_api_key or DEEP_RESEARCH_API_KEY, "API Key")
     if not api_key:
         raise HTTPException(
-            status_code=500,
-            detail="请先设置 PERPLEXITY_API_KEY 或 OPENAI_API_KEY 环境变量",
+            status_code=400,
+            detail="Enter your Perplexity or compatible model API key to generate this report.",
         )
     return (
         api_key,
@@ -138,8 +138,8 @@ def get_llm_config(request: ReportRequest):
 
 def fetch_search_context(target: str, analysis_years: int, analysis_lens: str, jina_api_key: str = ""):
     query = (
-        f"{target} 市场份额 竞争分析 财报 行业报告 2026 "
-        f"近{analysis_years}年 {analysis_lens}"
+        f"{target} market share competitive analysis financial filings industry report 2026 "
+        f"last {analysis_years} years {analysis_lens}"
     )
     encoded_query = urllib.parse.quote(query)
     jina_url = f"{JINA_SEARCH_BASE_URL}{encoded_query}"
@@ -156,14 +156,14 @@ def fetch_search_context(target: str, analysis_years: int, analysis_lens: str, j
         if response.status_code == 401:
             return (
                 "",
-                "Jina 搜索接口返回 401 未授权。可以在左侧填写 Jina API Key，"
-                "或切换到 Perplexity 深度研究模式。",
+                "Jina Search returned 401 Unauthorized. The platform search key may need attention, "
+                "or the user can switch to Perplexity Deep Research mode.",
             )
         if response.status_code >= 400:
-            return "", f"Jina 搜索接口返回 HTTP {response.status_code}：{response.text[:300]}"
+            return "", f"Jina Search returned HTTP {response.status_code}: {response.text[:300]}"
         return response.text[:SEARCH_CONTEXT_CHARS], ""
     except requests.exceptions.RequestException as exc:
-        return "", f"Jina 搜索请求失败：{exc}"
+        return "", f"Jina Search request failed: {exc}"
 
 
 def build_messages(
@@ -174,30 +174,32 @@ def build_messages(
     search_warning: str = "",
 ):
     report_brief = (
-        f"分析目标：{target}\n"
-        f"分析回看年限：近 {analysis_years} 年\n"
-        f"优先分析视角：{analysis_lens}\n\n"
-        "请像专业投研产品一样组织输出：先给结构化指标和证据，再给解释和判断。"
+        f"Research target: {target}\n"
+        f"Lookback window: last {analysis_years} years\n"
+        f"Primary analysis lens: {analysis_lens}\n\n"
+        "Organize the output like a professional investment research product: "
+        "structured metrics and evidence first, then interpretation and judgment."
     )
 
     if search_context:
         user_content = (
             f"{report_brief}\n\n"
-            "以下是 Jina AI 实时搜索接口返回的公开资料片段。请优先基于这些资料做分析，"
-            "并在报告中保留可核验来源、日期和链接；如果资料不足，请明确标注为推断或待核验。\n\n"
+            "Below are public-source snippets returned by Jina AI real-time search. "
+            "Prioritize this material, preserve verifiable sources, dates, and links, "
+            "and clearly mark anything as an inference or needing verification when evidence is thin.\n\n"
             f"{search_context}\n\n"
-            f"请针对目标【{target}】生成深度商业报告。"
+            f"Generate a deep business report for: {target}."
         )
     elif search_warning:
         user_content = (
             f"{report_brief}\n\n"
-            f"实时搜索资料获取失败，原因：{search_warning}\n\n"
-            "请在不虚构最新市场数据的前提下，基于你已有知识生成一份框架完整的商业分析报告；"
-            "涉及 2026 最新数据、市场份额、新闻或财报时，必须明确标注“待实时检索核验”。\n\n"
-            f"请针对目标【{target}】生成深度商业报告。"
+            f"Real-time search failed: {search_warning}\n\n"
+            "Generate a structurally complete business analysis report without fabricating current market data. "
+            'For 2026 data, market share, news, or filings, clearly mark "Needs real-time verification".\n\n'
+            f"Generate a deep business report for: {target}."
         )
     else:
-        user_content = f"{report_brief}\n\n请针对以下目标生成深度分析报告：{target}"
+        user_content = f"{report_brief}\n\nGenerate a deep business report for: {target}."
 
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -246,7 +248,7 @@ async def generate_report(request: ReportRequest):
         )
         report_content = response.choices[0].message.content
         if search_warning:
-            report_content = f"> 搜索提示：{search_warning}\n\n{report_content}"
+            report_content = f"> Search note: {search_warning}\n\n{report_content}"
         return {"status": "success", "data": report_content}
     except HTTPException:
         raise
@@ -267,7 +269,7 @@ async def generate_report_stream(request: ReportRequest):
     def stream_report():
         try:
             if search_warning:
-                yield f"> 搜索提示：{search_warning}\n\n"
+                yield f"> Search note: {search_warning}\n\n"
             client = OpenAI(api_key=api_key, base_url=base_url)
             response = client.chat.completions.create(
                 model=model,
@@ -279,7 +281,7 @@ async def generate_report_stream(request: ReportRequest):
                 if delta:
                     yield delta
         except Exception as exc:
-            yield f"\n\n生成报告时发生错误：{exc}"
+            yield f"\n\nReport generation failed: {exc}"
 
     return StreamingResponse(stream_report(), media_type="text/markdown; charset=utf-8")
 
