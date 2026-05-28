@@ -1,0 +1,53 @@
+{
+  "user": {
+    "home": {
+      "title": "Dashboard",
+      "description": "Overview of your personal account's activity across all your projects."
+    }
+  },
+  "organization": {
+    "home": {
+      "title": "Organization dashboard",
+      "description": "Overview of your organization's activity and performance across all projects.",
+      "mrr": {
+        "title": "MRR",
+        "description": "Monthly recurring revenue",
+        "label": "Showing revenue for the last 5 months"
+      },
+      "customers": {
+        "title": "Customers",
+        "description": "Paying users over time"
+      },
+      "visitors": {
+        "title": "Visitors",
+        "description": "Showing visitors for the last period"
+      },
+      "pageViews": {
+        "title": "Page views",
+        "description": "Showing total page views for the last 90 days"
+      },
+      "activation": {
+        "title": "Activation rate",
+        "description": "Share of trials reaching activation",
+        "label": "Activated trials"
+      },
+      "engagement": {
+        "title": "Engagement by platform",
+        "description": "Active users across web and mobile"
+      },
+      "planDistribution": {
+        "title": "Plan distribution",
+        "description": "Active subscriptions by plan",
+        "plans": {
+          "starter": "Starter",
+          "growth": "Growth",
+          "pro": "Pro",
+          "scale": "Scale",
+          "enterprise": "Enterprise"
+        }
+      }
+    }
+  },
+  "trendingUp": "Trending up by {{percentage}}% this month",
+  "trendingDown": "Trending down by {{percentage}}% this month"
+}

@@ -5,7 +5,6 @@ import { Icons } from "@workspace/ui-web/icons";
 
 import { appConfig } from "~/config/app";
 import { pathsConfig } from "~/config/paths";
-import { I18nControls } from "~/modules/common/i18n/controls";
 import { TurboLink } from "~/modules/common/turbo-link";
 
 const socials = [
@@ -125,8 +124,6 @@ export const Footer = async () => {
             <p className="text-muted-foreground text-sm text-pretty">
               {t("marketing:product.description")}
             </p>
-
-            <I18nControls />
 
             <div className="mt-2 flex items-center gap-2.5">
               {socials.map((social) => (

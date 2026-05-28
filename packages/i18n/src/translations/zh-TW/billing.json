@@ -1,0 +1,144 @@
+{
+  "pricing": {
+    "label": "定價",
+    "title": "簡單透明的定價",
+    "description": "免費開始；當你需要更多報告與進階功能時再升級。",
+    "disclaimer": "Mix and match config to create the perfect pricing for your business. <reference>Check docs for more information.</reference>"
+  },
+  "settings": {
+    "subscriptions": {
+      "description": "Your active plans and access."
+    },
+    "orders": {
+      "description": "Your purchases and invoices."
+    },
+    "yourPlan": {
+      "title": "Your plan",
+      "description": "Below are the details of your current plan."
+    },
+    "information": {
+      "title": "Billing information",
+      "description": "Visit the link below to manage your billing details. There, you can update your payment method, cancel your subscription, download invoices, and more.",
+      "visitPortal": "Visit Billing Portal",
+      "reviewInStore": "Review in store"
+    }
+  },
+  "additionalUsage": "Additional {{unit}}",
+  "forFirst": "for the first {{upTo}} {{unit}}",
+  "forNext": "for next {{upTo}} {{unit}}",
+  "upToIncluded": "Up to {{upTo}} {{unit}} included",
+  "infiniteUsage": "above {{threshold}} {{unit}}",
+  "currentBillingCycle": "Current billing cycle",
+  "subscribe": "立即訂閱",
+  "updatePlan": "更新方案",
+  "getLifetimeAccess": "Get lifetime access",
+  "trial": {
+    "label": "Free trial",
+    "cta": "免費開始",
+    "period": "Try with {{period}}-days trial"
+  },
+  "discount": {
+    "specialOffer": "SPECIAL OFFER: <bold>-{{discount}} off</bold>"
+  },
+  "plan": {
+    "free": {
+      "name": "免費",
+      "description": "每月 3 份報告，體驗 Aireseach"
+    },
+    "pro": {
+      "name": "Pro",
+      "description": "適合個人研究者的無限報告方案",
+      "badge": "最受歡迎"
+    },
+    "business": {
+      "name": "Business",
+      "description": "團隊協作與進階分析"
+    }
+  },
+  "feature": {
+    "REPORTS_3_MONTH": "每月 3 份報告",
+    "COMPREHENSIVE_LENS": "綜合分析維度",
+    "OWN_API_KEY": "使用自己的 API Key",
+    "MARKDOWN_EXPORT": "Markdown 下載",
+    "COMMUNITY_SUPPORT": "社群支援",
+    "UNLIMITED_REPORTS": "無限報告",
+    "ALL_LENSES": "全部 6 種分析維度",
+    "DEEP_RESEARCH": "Perplexity Deep Research 模式",
+    "REPORT_HISTORY": "報告歷史與已儲存報告",
+    "CUSTOM_ENDPOINTS": "自訂模型端點",
+    "PRIORITY_SEARCH": "優先搜尋",
+    "EMAIL_SUPPORT": "電子郵件支援",
+    "TEAM_WORKSPACE": "團隊工作區（最多 5 席）",
+    "SHARED_LIBRARY": "共享報告資料庫",
+    "API_ACCESS": "API 存取",
+    "CUSTOM_TEMPLATES": "自訂報告範本",
+    "BRANDED_PDF": "品牌化 PDF 匯出",
+    "PRIORITY_SUPPORT": "優先支援"
+  },
+  "error": {
+    "checkout": "An error occurred while checking out.",
+    "checkoutRetrieve": "An error occurred while retrieving the checkout session.",
+    "portal": "An error occurred while getting the portal URL.",
+    "invalidProvider": "Invalid billing provider!",
+    "lemonSqueezy": "Lemon Squeezy API internal error!",
+    "variantNotFound": "Variant not found!",
+    "priceNotFound": "Price not found!",
+    "customerNotFound": "Customer not found!",
+    "orderNotFound": "Order not found!",
+    "subscriptionNotFound": "Subscription not found!",
+    "webhook": {
+      "signatureNotFound": "Webhook signature not found!",
+      "signatureInvalid": "Invalid webhook signature.",
+      "metaInvalid": "Invalid webhook meta.",
+      "dataInvalid": "Invalid webhook data.",
+      "unsupportedEvent": "Unsupported webhook event.",
+      "unhandledEvent": "Unhandled webhook event.",
+      "userIdNotFound": "User ID not found in webhook event.",
+      "productIdNotFound": "Product ID not found in webhook event."
+    },
+    "customerCreation": "Customer creation failed.",
+    "promotionCodeRetrieve": "Could not retrieve promotion code.",
+    "usageRetrieve": "Could not retrieve usage from billing provider.",
+    "subscriptionItemNotFound": "No subscription item was found for this subscription.",
+    "subscriptionUpdate": "Unable to update the subscription in the billing provider."
+  },
+  "subscription": {
+    "status": {
+      "active": "Active",
+      "canceled": "Canceled",
+      "incomplete": "Incomplete",
+      "incompleteExpired": "Incomplete expired",
+      "pastDue": "Past due",
+      "paused": "Paused",
+      "trialing": "Trialing",
+      "unpaid": "Unpaid"
+    }
+  },
+  "order": {
+    "cta": "See details",
+    "status": {
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "pending": "Pending"
+    }
+  },
+  "paywall": {
+    "result": {
+      "idle": "Idle",
+      "purchased": "Purchased",
+      "restored": "Restored",
+      "dismissed": "Dismissed",
+      "skipped": "Skipped",
+      "error": "Error"
+    }
+  },
+  "type": {
+    "flat": "Flat",
+    "per-seat": "Per seat",
+    "metered": "Metered"
+  },
+  "model": {
+    "one-time": "One-time",
+    "recurring": "Recurring"
+  }
+}
