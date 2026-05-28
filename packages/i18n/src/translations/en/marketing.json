@@ -1,21 +1,29 @@
 {
   "product": {
-    "title": "This could be your very own $1M startup",
-    "description": "A fully customizable TurboStarter application. Swap in your content and launch your product faster than ever.",
+    "title": "AI business research reports in minutes",
+    "description": "Aireseach turns live web search and your own model API key into structured market, competitor, risk, and investment reports.",
+    "preview": {
+      "badge": "AI",
+      "title": "Search-grounded report workflow",
+      "provider": "Model provider",
+      "sources": "Live source stack",
+      "report": "Generated report",
+      "reportTitle": "Tesla market landscape and antifragility review"
+    },
     "mobile": {
       "ios": {
-        "title": "iOS App",
-        "description": "Native experience on iPhone and iPad"
+        "title": "Report Generator",
+        "description": "Generate business reports from live search and your model key"
       },
       "android": {
-        "title": "Android App",
-        "description": "Optimized for Android phones"
+        "title": "Pricing",
+        "description": "Choose a plan for repeatable research workflows"
       }
     },
     "extension": {
       "chrome": {
-        "title": "Chrome Extension",
-        "description": "Integration with Chrome browser"
+        "title": "Dashboard",
+        "description": "Manage reports, billing, and account settings"
       },
       "firefox": {
         "title": "Firefox Add-on",
@@ -27,18 +35,19 @@
       }
     }
   },
-  "announcement": "Your feature announcement goes here",
-  "shippedWith": "Shipped with production-ready tools",
+  "announcement": "Bring your own model key. Aireseach provides search.",
+  "shippedWith": "Built for market research, strategy, and investment workflows",
   "cta": {
-    "question": "Ready to start?",
-    "button": "Start for free",
+    "question": "Ready to research?",
+    "button": "Generate a report",
+    "pricing": "View pricing",
     "buy": {
-      "question": "Ready to start?",
-      "description": "Purchase to unlock full access to the codebase and start shipping your product today. On all platforms.",
-      "button": "Get access",
+      "question": "Ready to scale your research workflow?",
+      "description": "Use Aireseach to standardize source gathering, analysis structure, and exportable business reports.",
+      "button": "Start researching",
       "join": {
-        "description": "Join other founders customizing TurboStarter, share launch tactics, and stay close to new drops.",
-        "button": "Join the community"
+        "description": "Join analysts, founders, and operators building better research habits with AI.",
+        "button": "Join the waitlist"
       }
     }
   },
@@ -49,24 +58,24 @@
   },
   "features": {
     "label": "Features",
-    "title": "Turn visitors into customers",
-    "description": "Everything you need to build, deploy, and scale your applications with confidence.",
+    "title": "From scattered sources to decision-ready reports",
+    "description": "A focused research workspace for people who need credible business analysis without starting from a blank page.",
     "feature": {
       "core": {
-        "title": "Core foundation",
-        "description": "Authentication, database, and API already wired up so you can focus on customer value."
+        "title": "Search-grounded research",
+        "description": "Aireseach uses platform-managed Jina search to collect public context before the model writes."
       },
       "ai": {
-        "title": "AI-powered capabilities",
-        "description": "Intelligent features with smart recommendations and automated workflows powered by AI."
+        "title": "Bring your own model key",
+        "description": "Use OpenAI, DeepSeek, OpenRouter, Perplexity, or any OpenAI-compatible endpoint without exposing platform model spend."
       },
       "mobile": {
-        "title": "Native mobile experience",
-        "description": "Fully-featured mobile app with seamless synchronization across all your devices."
+        "title": "Investment-grade structure",
+        "description": "Reports include metrics, evidence, market share, competitive pressure, antifragility, and risks."
       },
       "extension": {
-        "title": "Browser extension",
-        "description": "Keep users engaged in their browser with customizable shortcuts to your product."
+        "title": "Exportable output",
+        "description": "Download Markdown reports for memos, client notes, pitch prep, or internal strategy work."
       }
     }
   },
@@ -111,7 +120,7 @@
     "question": {
       "whatDoesOurPlatformDo": {
         "question": "What does our platform do?",
-        "answer": "TurboStarter gives you a full-stack SaaS foundation—marketing site, web app, mobile apps, and extensions—so you can focus on your unique customer experience."
+        "answer": "Aireseach generates structured business research reports from live search context and the model provider you choose."
       },
       "howWillThisBenefitMyBusiness": {
         "question": "How will this benefit my business?",
@@ -123,7 +132,7 @@
       },
       "whatKindOfIntegrationsAreAvailable": {
         "question": "What kind of integrations are available?",
-        "answer": "TurboStarter ships with popular SaaS integrations out of the box, and the modular architecture makes adding your stack straightforward."
+        "answer": "The report workflow supports OpenAI, DeepSeek, OpenRouter, Perplexity, and custom OpenAI-compatible model endpoints."
       },
       "howEasyIsItToOnboardMyTeam": {
         "question": "How easy is it to onboard my team?",
@@ -131,7 +140,7 @@
       },
       "whatTypesOfBusinessesCanUseThis": {
         "question": "What types of businesses can use this?",
-        "answer": "From solo founders to enterprise innovation teams, TurboStarter adapts to any SaaS use case that needs a head start."
+        "answer": "Founders, analysts, consultants, investors, and operators can use Aireseach to speed up repeatable market and company research."
       },
       "canICustomizeThisToFitMyBusinessNeeds": {
         "question": "Can I customize this to fit my business needs?",
@@ -185,15 +194,15 @@
     "description": "Build integrations with our API"
   },
   "roadmap": {
-    "title": "Roadmap",
-    "description": "See what's coming next"
+    "title": "Report workflow",
+    "description": "Open the public report generator"
   },
   "docs": {
-    "title": "Docs",
-    "description": "Learn how to use TurboStarter"
+    "title": "How it works",
+    "description": "Learn how to use Aireseach"
   },
   "ai": {
-    "description": "Unlock productivity and innovation with TurboStarter's AI assistant. Get instant answers, automate tasks, and boost your workflow using advanced artificial intelligence—secure, reliable, and designed for modern teams.",
+    "description": "Ask focused questions, explore a market, and turn public context into clearer business decisions.",
     "prompt": {
       "history": "Tell the history of the internet",
       "capitals": "Quiz me on the world capitals",
@@ -248,8 +257,8 @@
     }
   },
   "buyCta": {
-    "title": "This app can be yours.",
-    "description": "Customize, deploy and start earning $$$. In minutes.",
-    "link": "Get TurboStarter"
+    "title": "Research faster with Aireseach.",
+    "description": "Generate search-grounded business reports with your preferred model provider.",
+    "link": "Generate a report"
   }
 }

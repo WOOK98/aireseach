@@ -11,12 +11,12 @@ import { TurboLink } from "~/modules/common/turbo-link";
 const socials = [
   {
     id: "x",
-    href: "https://x.com/turbostarter_",
+    href: "#",
     icon: Icons.Twitter,
   },
   {
     id: "github",
-    href: "https://github.com/turbostarter",
+    href: "https://github.com/WOOK98/aireseach",
     icon: Icons.Github,
   },
 
@@ -38,23 +38,15 @@ const links = [
     items: [
       {
         title: "marketing:product.mobile.ios.title",
-        href: "https://turbostarter.dev",
+        href: pathsConfig.marketing.report,
       },
       {
         title: "marketing:product.mobile.android.title",
-        href: "https://turbostarter.dev",
+        href: pathsConfig.marketing.pricing,
       },
       {
         title: "marketing:product.extension.chrome.title",
-        href: "https://chromewebstore.google.com/detail/bcjmonmlfbnngpkllpnpmnjajaciaboo",
-      },
-      {
-        title: "marketing:product.extension.firefox.title",
-        href: "https://addons.mozilla.org/addon/turbostarter_",
-      },
-      {
-        title: "marketing:product.extension.edge.title",
-        href: "https://microsoftedge.microsoft.com/addons/detail/turbostarter/ianbflanmmoeleokihabnmmcahhfijig",
+        href: pathsConfig.dashboard.user.report,
       },
     ],
   },
@@ -67,11 +59,11 @@ const links = [
       },
       {
         title: "marketing:roadmap.title",
-        href: "https://github.com/orgs/turbostarter/projects/1",
+        href: pathsConfig.marketing.report,
       },
       {
         title: "marketing:docs.title",
-        href: "https://turbostarter.dev/docs/web",
+        href: pathsConfig.marketing.report,
       },
       {
         title: "marketing:api.title",
@@ -107,6 +99,8 @@ const links = [
   },
 ] as const;
 
+const BRAND_NAME = "Aireseach";
+
 export const Footer = async () => {
   const { t } = await getTranslation({
     ns: ["common", "marketing", "billing"],
@@ -123,11 +117,13 @@ export const Footer = async () => {
               aria-label={t("home")}
             >
               <Icons.Logo className="text-primary h-8" />
-              <Icons.LogoText className="text-foreground h-4" />
+              <span className="text-foreground text-xl font-semibold tracking-tight">
+                {BRAND_NAME}
+              </span>
             </TurboLink>
 
             <p className="text-muted-foreground text-sm text-pretty">
-              {t("product.title")}
+              {t("marketing:product.description")}
             </p>
 
             <I18nControls />

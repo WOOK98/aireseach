@@ -1,21 +1,29 @@
 {
   "product": {
-    "title": "Esta podría ser tu propia startup de 1 millón de dólares",
-    "description": "Una aplicación TurboStarter totalmente personalizable. Sustituye tu contenido y lanza tu producto más rápido que nunca.",
+    "title": "Informes de investigación empresarial con IA en minutos",
+    "description": "Aireseach convierte búsqueda web en vivo y tu propia clave de modelo en informes estructurados de mercado, competencia, riesgo e inversión.",
+    "preview": {
+      "badge": "IA",
+      "title": "Flujo de informes basado en búsqueda",
+      "provider": "Proveedor de modelo",
+      "sources": "Fuentes en vivo",
+      "report": "Informe generado",
+      "reportTitle": "Revisión de mercado y antifragilidad de Tesla"
+    },
     "mobile": {
       "ios": {
-        "title": "App para iOS",
-        "description": "Experiencia nativa en iPhone y iPad"
+        "title": "Generador de informes",
+        "description": "Genera informes empresariales desde búsqueda en vivo y tu clave de modelo"
       },
       "android": {
-        "title": "App para Android",
-        "description": "Optimizada para teléfonos Android"
+        "title": "Precios",
+        "description": "Elige un plan para flujos de investigación repetibles"
       }
     },
     "extension": {
       "chrome": {
-        "title": "Extensión de Chrome",
-        "description": "Integración con el navegador Chrome"
+        "title": "Panel",
+        "description": "Gestiona informes, facturación y ajustes de cuenta"
       },
       "firefox": {
         "title": "Complemento de Firefox",
@@ -28,18 +36,19 @@
     }
   },
 
-  "announcement": "Aquí va el anuncio de tu próxima función",
-  "shippedWith": "Incluye herramientas listas para producción",
+  "announcement": "Trae tu propia clave de modelo. Aireseach proporciona búsqueda.",
+  "shippedWith": "Creado para investigación de mercado, estrategia e inversión",
   "cta": {
-    "question": "¿Listo para empezar?",
-    "button": "Empieza gratis",
+    "question": "¿Listo para investigar?",
+    "button": "Generar informe",
+    "pricing": "Ver precios",
     "buy": {
-      "question": "¿Listo para empezar?",
-      "description": "Compra para desbloquear el acceso completo a la base de código y empieza a lanzar tu producto hoy mismo. En todas las plataformas.",
-      "button": "Obtén acceso",
+      "question": "¿Listo para escalar tu investigación?",
+      "description": "Usa Aireseach para estandarizar fuentes, estructura analítica e informes empresariales exportables.",
+      "button": "Empezar a investigar",
       "join": {
-        "description": "Únete a otros fundadores que personalizan TurboStarter, comparte tácticas de lanzamiento y mantente al tanto de las novedades.",
-        "button": "Únete a la comunidad"
+        "description": "Únete a analistas, fundadores y operadores que construyen mejores hábitos de investigación con IA.",
+        "button": "Unirse a la lista"
       }
     }
   },
@@ -51,24 +60,24 @@
 
   "features": {
     "label": "Características",
-    "title": "Convierte a los visitantes en clientes",
-    "description": "Todo lo que necesitas para crear, desplegar y escalar tus aplicaciones con confianza.",
+    "title": "De fuentes dispersas a informes listos para decidir",
+    "description": "Un espacio de investigación enfocado para análisis empresarial creíble sin empezar desde una página en blanco.",
     "feature": {
       "core": {
-        "title": "Base fundamental",
-        "description": "Autenticación, base de datos y API ya conectadas para que puedas enfocarte en aportar valor a tus clientes."
+        "title": "Investigación basada en búsqueda",
+        "description": "Aireseach usa búsqueda Jina gestionada por la plataforma para recopilar contexto público antes de escribir."
       },
       "ai": {
-        "title": "Capacidades impulsadas por IA",
-        "description": "Funciones inteligentes con recomendaciones y flujos de trabajo automatizados impulsados por IA."
+        "title": "Trae tu propia clave de modelo",
+        "description": "Usa OpenAI, DeepSeek, OpenRouter, Perplexity o cualquier endpoint compatible con OpenAI."
       },
       "mobile": {
-        "title": "Experiencia móvil nativa",
-        "description": "Aplicación móvil completamente equipada con sincronización perfecta en todos tus dispositivos."
+        "title": "Estructura de grado inversor",
+        "description": "Los informes incluyen métricas, evidencia, cuota de mercado, presión competitiva, antifragilidad y riesgos."
       },
       "extension": {
-        "title": "Extensión de navegador",
-        "description": "Mantén a los usuarios comprometidos en su navegador con accesos directos personalizables a tu producto."
+        "title": "Salida exportable",
+        "description": "Descarga informes Markdown para memorandos, notas de clientes, preparación de pitches o estrategia interna."
       }
     }
   },
@@ -115,7 +124,7 @@
     "question": {
       "whatDoesOurPlatformDo": {
         "question": "¿Qué hace nuestra plataforma?",
-        "answer": "TurboStarter te ofrece una base SaaS full-stack: sitio de marketing, aplicación web, apps móviles y extensiones, para que puedas enfocarte en la experiencia única de tus clientes."
+        "answer": "Aireseach genera informes estructurados de investigación empresarial usando contexto de búsqueda en vivo y el proveedor de modelo que elijas."
       },
       "howWillThisBenefitMyBusiness": {
         "question": "¿Cómo beneficiará esto a mi negocio?",
@@ -127,7 +136,7 @@
       },
       "whatKindOfIntegrationsAreAvailable": {
         "question": "¿Qué tipo de integraciones están disponibles?",
-        "answer": "TurboStarter incluye desde el inicio integraciones SaaS populares, y su arquitectura modular facilita añadir tu propio stack."
+        "answer": "El flujo de informes soporta OpenAI, DeepSeek, OpenRouter, Perplexity y endpoints personalizados compatibles con OpenAI."
       },
       "howEasyIsItToOnboardMyTeam": {
         "question": "¿Qué tan fácil es incorporar a mi equipo?",
@@ -135,7 +144,7 @@
       },
       "whatTypesOfBusinessesCanUseThis": {
         "question": "¿Qué tipos de empresas pueden usar esto?",
-        "answer": "Desde fundadores individuales hasta equipos de innovación empresarial, TurboStarter se adapta a cualquier caso de uso SaaS que necesite una ventaja inicial."
+        "answer": "Fundadores, analistas, consultores, inversores y operadores pueden usar Aireseach para acelerar investigación repetible de mercados y empresas."
       },
       "canICustomizeThisToFitMyBusinessNeeds": {
         "question": "¿Puedo personalizar esto para adaptarlo a las necesidades de mi negocio?",
@@ -193,16 +202,16 @@
   },
 
   "roadmap": {
-    "title": "Hoja de ruta",
-    "description": "Descubre lo que viene después"
+    "title": "Flujo de informes",
+    "description": "Abre el generador público de informes"
   },
 
   "docs": {
-    "title": "Documentación",
-    "description": "Aprende a usar TurboStarter"
+    "title": "Cómo funciona",
+    "description": "Aprende a usar Aireseach"
   },
   "ai": {
-    "description": "Libera productividad e innovación con el asistente de IA de TurboStarter. Obtén respuestas al instante, automatiza tareas y potencia tu flujo de trabajo con inteligencia artificial avanzada, segura, confiable y diseñada para equipos modernos.",
+    "description": "Haz preguntas enfocadas, explora un mercado y convierte contexto público en decisiones empresariales más claras.",
     "prompt": {
       "history": "Cuenta la historia de internet",
       "capitals": "Hazme un cuestionario sobre las capitales del mundo",
@@ -257,8 +266,8 @@
     }
   },
   "buyCta": {
-    "title": "Esta aplicación puede ser tuya.",
-    "description": "Personaliza, despliega y empieza a ganar $$$ en minutos.",
-    "link": "Obtén TurboStarter"
+    "title": "Investiga más rápido con Aireseach.",
+    "description": "Genera informes empresariales basados en búsqueda con tu proveedor de modelo preferido.",
+    "link": "Generar informe"
   }
 }
