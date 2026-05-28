@@ -7,7 +7,6 @@ import { Providers } from "~/lib/providers/providers";
 import { ImpersonatingBanner } from "~/modules/admin/users/user/impersonating-banner";
 import { BaseLayout } from "~/modules/common/layout/base";
 import { Toaster } from "~/modules/common/toast";
-import { BuyCtaDialog } from "~/modules/marketing/layout/buy-cta-dialog";
 
 export function generateStaticParams() {
   return config.locales.map((locale) => ({ locale }));
@@ -33,7 +32,7 @@ export default async function RootLayout({
       <Providers locale={locale}>
         <ImpersonatingBanner />
         {children}
-        <BuyCtaDialog />
+
         <Toaster />
       </Providers>
     </BaseLayout>
