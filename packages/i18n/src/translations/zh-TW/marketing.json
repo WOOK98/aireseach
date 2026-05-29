@@ -32,7 +32,7 @@
     "pricing": "查看價格",
     "buy": {
       "question": "準備擴展你的研究流程了嗎？",
-      "description": "用 Aireseach 標準化資料蒐集、分析結構與可匯出的商業報告。",
+      "description": "用 Airesearch 標準化資料蒐集、分析結構與可匯出的商業報告。",
       "button": "開始研究",
       "join": {
         "description": "加入正在用 AI 建立更好研究習慣的分析師、創辦人與營運團隊。",
@@ -47,7 +47,7 @@
   },
   "useCases": {
     "label": "適合對象",
-    "title": "誰適合使用 Aireseach？",
+    "title": "誰適合使用 Airesearch？",
     "description": "適合需要可信商業分析、但不想從空白頁開始的創辦人、分析師、顧問與投資人。",
     "items": {
       "founders": {
@@ -138,24 +138,24 @@
   "faq": {
     "label": "常見問題",
     "title": "常見問題",
-    "description": "你需要了解的 Aireseach 重點都在這裡。",
+    "description": "你需要了解的 Airesearch 重點都在這裡。",
     "cta": "聯絡我們",
     "question": {
       "whatDoesOurPlatformDo": {
-        "question": "Aireseach 是什麼？",
-        "answer": "Aireseach 會從即時網頁來源生成結構化商業研究報告。它使用 Jina 搜尋蒐集公開資料，並用你偏好的大語言模型產出市場、競品、風險與投資分析。"
+        "question": "Airesearch 是什麼？",
+        "answer": "Airesearch 會從即時網頁來源生成結構化商業研究報告。它使用 Jina 搜尋蒐集公開資料，並用你偏好的大語言模型產出市場、競品、風險與投資分析。"
       },
       "howWillThisBenefitMyBusiness": {
-        "question": "Aireseach 適合誰？",
+        "question": "Airesearch 適合誰？",
         "answer": "適合驗證市場的創辦人、做盡職調查的分析師、準備客戶交付物的顧問，以及評估機會規模的投資人。"
       },
       "isMyDataSafe": {
         "question": "我的 API Key 安全嗎？",
-        "answer": "安全。你的模型 API Key 只會用於當次請求，不會儲存在我們的伺服器。搜尋由 Aireseach 處理，推理會直接送往你選擇的模型供應商。"
+        "answer": "安全。你的模型 API Key 只會用於當次請求，不會儲存在我們的伺服器。搜尋由 Airesearch 處理，推理會直接送往你選擇的模型供應商。"
       },
       "whatKindOfIntegrationsAreAvailable": {
         "question": "支援哪些模型供應商？",
-        "answer": "支援 OpenAI、DeepSeek、OpenRouter、Perplexity（Deep Research），以及任何 OpenAI 相容端點。你提供 Key，Aireseach 負責搜尋與報告結構。"
+        "answer": "支援 OpenAI、DeepSeek、OpenRouter、Perplexity（Deep Research），以及任何 OpenAI 相容端點。你提供 Key，Airesearch 負責搜尋與報告結構。"
       },
       "howEasyIsItToOnboardMyTeam": {
         "question": "如何開始？",
@@ -222,7 +222,7 @@
   },
   "docs": {
     "title": "運作方式",
-    "description": "了解如何使用 Aireseach"
+    "description": "了解如何使用 Airesearch"
   },
   "ai": {
     "description": "Ask focused questions, explore a market, and turn public context into clearer business decisions.",

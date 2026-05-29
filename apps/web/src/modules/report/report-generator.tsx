@@ -44,7 +44,7 @@ const ANALYSIS_LENSES = [
 ];
 
 const REPORT_MODES = [
-  { value: "jina_llm", label: "Aireseach Search + your model" },
+  { value: "jina_llm", label: "Airesearch Search + your model" },
   { value: "deep_research", label: "Perplexity Deep Research" },
 ];
 
@@ -70,7 +70,7 @@ const TEXT = {
   apiKeyLabel: "Model API key",
   apiKeyPlaceholder: "Only used for this request, never stored",
   apiKeyHelp:
-    "Your key is sent only with this request and is not stored by Aireseach.",
+    "Your key is sent only with this request and is not stored by Airesearch.",
   modelLabel: "Model",
   modelPlaceholder: "gpt-4o-mini / deepseek-chat / openai/gpt-4o-mini",
   baseUrlLabel: "Base URL",

@@ -98,7 +98,7 @@ const links = [
   },
 ] as const;
 
-const BRAND_NAME = "Aireseach";
+const BRAND_NAME = "Airesearch";
 
 export const Footer = async () => {
   const { t } = await getTranslation({
