@@ -108,12 +108,12 @@
       },
       "value": {
         "reports": {
-          "free": "10",
+          "free": "3 次（終身）",
           "pro": "不限次數",
           "business": "不限次數"
         },
         "jinaSearch": {
-          "free": "每月 10 次搜尋",
+          "free": "3 次搜尋（終身）",
           "pro": "不限次數",
           "business": "不限次數"
         },

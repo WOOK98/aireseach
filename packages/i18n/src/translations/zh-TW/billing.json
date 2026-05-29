@@ -3,7 +3,7 @@
     "label": "定價",
     "title": "為商業研究設計的簡單定價",
     "description": "免費版可使用自己的模型 Key；升級後可使用平台 DeepSeek Key，並享有不限次數 Jina 搜尋。",
-    "disclaimer": "免費用戶可使用自己的模型 API Key，並每月使用 10 次 Aireseach Jina 搜尋。訂閱方案包含平台 DeepSeek 使用權與合理使用範圍內不限次數 Jina 搜尋。"
+    "disclaimer": "免費用戶可使用自己的模型 API Key，獲得 3 次免費報告生成（終身）。訂閱方案包含平台 DeepSeek 使用權與合理使用範圍內不限次數 Jina 搜尋。"
   },
   "settings": {
     "subscriptions": {
@@ -43,7 +43,7 @@
   "plan": {
     "free": {
       "name": "免費",
-      "description": "每月 10 次 Jina 搜尋，使用你自己的 API Key"
+      "description": "3 次免費報告生成（終身），使用你自己的 API Key"
     },
     "pro": {
       "name": "Pro",
@@ -75,8 +75,8 @@
     "CUSTOM_TEMPLATES": "自訂報告範本",
     "BRANDED_PDF": "品牌化 PDF 匯出",
     "PRIORITY_SUPPORT": "優先支援",
-    "REPORTS_10_MONTH": "每月 10 份報告",
-    "JINA_SEARCH_10_MONTH": "每月 10 次 Jina 搜尋",
+    "REPORTS_3_TOTAL": "3 次報告生成（終身）",
+    "JINA_SEARCH_3_TOTAL": "3 次 Jina 搜尋（終身）",
     "PLATFORM_DEEPSEEK_KEY": "內建 DeepSeek API Key",
     "UNLIMITED_JINA_SEARCH": "Jina 搜尋不限次數"
   },
