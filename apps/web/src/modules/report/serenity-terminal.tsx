@@ -11,19 +11,12 @@ import {
   Shield,
   GitBranch,
   Grid3X3,
-  Play,
-  Square,
-  Loader2,
-  Download,
-  ToggleLeft,
-  ToggleRight,
 } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 
 import { Badge } from "@workspace/ui-web/badge";
 import { Button } from "@workspace/ui-web/button";
 import { Input } from "@workspace/ui-web/input";
-import { Label } from "@workspace/ui-web/label";
 
 import { CalibrationChart } from "./serenity-tabs/calibration-chart";
 import { ConvictionMatrix } from "./serenity-tabs/conviction-matrix";
@@ -31,205 +24,171 @@ import { SupplyChainMap } from "./serenity-tabs/supply-chain-map";
 
 import type { FormEvent } from "react";
 
-// ─── Skill Definitions ───────────────────────────────────────────
+// ─── Skills ──────────────────────────────────────────────────────
 
 interface Skill {
   id: string;
   name: string;
-  shortName: string;
+  sub: string;
   icon: typeof Zap;
   color: string;
-  systemPrompt: string;
+  prompt: string;
 }
 
 const SKILLS: Skill[] = [
   {
     id: "serenity",
     name: "Serenity",
-    shortName: "SRTY",
+    sub: "供应链",
     icon: GitBranch,
-    color: "#22c55e",
-    systemPrompt: `You are Serenity's AI analytical assistant — a supply-chain bottleneck analyst modeled after @aleabitoreddit's methodology.
+    color: "#1a3a5c",
+    prompt: `You are an analytical assistant applying the distilled thinking framework of Serenity (@aleabitoreddit) — an AI/semiconductor supply-chain analyst with ~450K followers, built from 5,582 tweets (2025-07 to 2026-05) and 4 long-form articles.
 
-CORE PRINCIPLE: Don't buy the obvious "shovel seller" (NVDA). Trace the supply chain as far upstream as possible and find the single point of failure that a hyperscaler will pay *anything* to keep flowing.
+CORE PRINCIPLE: Don't buy the obvious "shovel seller" (NVDA). Trace the supply chain as far upstream as possible and find the single point of failure a hyperscaler will pay anything to keep flowing.
 
-ANALYSIS STRUCTURE:
-1. Supply Chain Map — Map the full chain from end-demand to raw materials
-2. Bottleneck Identification — "if this layer stopped shipping, what breaks?"
-3. 14-Point Checklist — Bottleneck?, Upstream & cheap?, Chain fluency?, Demand driver?, Contracts?, Real margins?, Financing quality?, Stage?, Catalyst?, Market cap headroom?, Validation lag?, Risk & sizing?, Macro overlay?, Position?
-4. Key tickers: SIVE (#1), AXTI (chokepoint), LITE, COHR, AAOI, NBIS, IQE
-5. Calibration: ~61% 30-day accuracy, ~75-85% on mature supply-chain theses
+Supply chain: hyperscaler capex → ASICs/TPUs → optical transceivers → CW/DFB laser (SIVE) → InP epiwafer (IQE) → InP substrate (AXTI) → indium feedstock
 
-This is decision-support only. Never auto-trade. State disclaimers.`,
+14 PRINCIPLES: 1) Bottleneck hunting 2) Multi-hop BOM/OSINT mapping 3) Signed-contract ARR vs market-cap mismatch 4) Mag7 customer-concentration filter 5) GAAP-margin war 6) Qualification cycle vs TTM revenue 7) Dilution/ATM as disqualifier 8) Counterparty/financing-quality spectrum 9) Short-squeeze setup (profitable-grower only) 10) Tariff/macro-shock-as-buy 11) Institutional lag/dark-pool reading 12) Vega/IV mispricing 13) Conviction tiering and sizing 14) Anti-patterns
+
+KEY STANCES (May 2026): SIVE #1 conviction, AXTI flagship chokepoint, AAOI high conviction, NBIS S-tier, LITE structural long. IREN/CRWV bear. PLTR short. POET downgraded.
+
+Calibration: ~61% 30-day accuracy, ~75-85% mature supply-chain theses. Self-reported, unverified.
+
+Respond in Chinese. Structure: 供应链位置 → 瓶颈测试 → Serenity已知立场 → 牛熊论点 → 不确定性声明. End with disclaimer.`,
   },
   {
     id: "fundamental",
     name: "Fundamental",
-    shortName: "FNDM",
+    sub: "基本面",
     icon: BarChart3,
-    color: "#3b82f6",
-    systemPrompt: `You are a senior fundamental analyst. Analyze stocks through traditional financial metrics.
-
-ANALYSIS STRUCTURE:
-1. Revenue & Growth — YoY/QoQ trends, guidance accuracy, revenue quality
-2. Profitability — Gross/Operating/Net margins, FCF generation, margin trajectory
-3. Balance Sheet — Cash position, debt levels, current ratio, capital allocation
-4. Valuation — P/E, P/S, EV/EBITDA, PEG ratio vs peers and historical range
-5. Competitive Position — Market share, moat durability, switching costs
-6. Management Quality — Track record, insider activity, capital allocation decisions
-
-Provide a clear bull/bear case with price targets if applicable.`,
+    color: "#1a5c3a",
+    prompt: `You are a rigorous fundamental analyst. Analyze: revenue/earnings quality and trends, balance sheet strength, valuation multiples vs peers (P/E, EV/EBITDA, P/S), moat analysis, management quality and capital allocation. Respond in Chinese. Use specific numbers. Bold key metrics. Structure: summary → financials → valuation → moat → verdict. End with disclaimer.`,
   },
   {
     id: "macro",
     name: "Macro",
-    shortName: "MACR",
+    sub: "宏观",
     icon: Globe,
-    color: "#8b5cf6",
-    systemPrompt: `You are a macro strategist analyzing stocks through the lens of global macroeconomic forces.
-
-ANALYSIS STRUCTURE:
-1. Interest Rate Environment — Fed policy trajectory, yield curve shape, real rates
-2. Currency Impact — USD strength, FX exposure, hedging strategies
-3. Geopolitical Risks — Trade tensions, sanctions, supply chain reshoring
-4. Sector Rotation — Where is money flowing? Risk-on vs risk-off signals
-5. Credit Conditions — Liquidity, spreads, refinancing risk
-6. Commodity Input Costs — Energy, metals, materials impact on margins
-7. Regulatory Landscape — Policy changes, subsidies, compliance costs
-
-Frame analysis in terms of macro regime changes and their sector implications.`,
+    color: "#7a4f00",
+    prompt: `You are a macro analyst. Analyze: interest rate sensitivity and Fed policy impact, dollar/FX effects, sector rotation and capital flow dynamics, geopolitical risk exposure (tariffs, export controls), inflation/deflation regime impact. Respond in Chinese. Structure: macro backdrop → rate sensitivity → sector rotation → geopolitical overlay → positioning implication. End with disclaimer.`,
   },
   {
     id: "technical",
     name: "Technical",
-    shortName: "TECH",
+    sub: "技术面",
     icon: TrendingUp,
-    color: "#f59e0b",
-    systemPrompt: `You are a technical analyst. Analyze stocks through price action and chart patterns.
-
-ANALYSIS STRUCTURE:
-1. Trend Analysis — Primary/secondary trends, support/resistance levels
-2. Moving Averages — 50/100/200 MA positioning, golden/death crosses
-3. Momentum — RSI, MACD, Stochastic readings and divergences
-4. Volume — On-balance volume, accumulation/distribution, unusual volume
-5. Chart Patterns — Head & shoulders, flags, wedges, breakouts
-6. Volatility — Bollinger Bands, ATR, IV rank/percentile
-7. Key Levels — Major support/resistance, Fibonacci retracements
-
-Provide entry/exit levels with risk/reward ratios.`,
+    color: "#4a1e8a",
+    prompt: `You are a technical analyst. Serenity's view: "TA is snake oil without fundamentals" — so frame technical as a COMPLEMENT to fundamental. Analyze: trend structure, key support/resistance levels, momentum (RSI, MACD), volume signals, chart patterns. Respond in Chinese. Structure: trend → key levels → momentum → volume → setup trigger. End with disclaimer.`,
   },
   {
     id: "sentiment",
     name: "Sentiment",
-    shortName: "SENT",
+    sub: "市场情绪",
     icon: MessageSquare,
-    color: "#ec4899",
-    systemPrompt: `You are a sentiment analyst. Analyze stocks through market sentiment and positioning.
-
-ANALYSIS STRUCTURE:
-1. Institutional Flow — Dark pool activity, options flow, 13F changes
-2. Short Interest — Days to cover, borrow cost, squeeze potential
-3. Insider Activity — Buying/selling patterns, timing relative to catalysts
-4. Social Sentiment — Retail attention, Reddit/Twitter buzz, search trends
-5. Analyst Consensus — Rating distribution, price target revisions, estimate momentum
-6. News Flow — Sentiment of recent headlines, narrative shifts
-7. Put/Call Ratio — Options positioning, skew, unusual activity
-
-Flag when sentiment extremes suggest contrarian opportunities.`,
+    color: "#0a5c5c",
+    prompt: `You are a market sentiment analyst. Key principle: "IGNORE Reddit/X sentiment — usually wrong." Focus on: institutional vs retail positioning divergence, options market signals, analyst consensus and revision trends, dark-pool/block-trade patterns, insider activity. Respond in Chinese. Structure: retail sentiment → institutional flow → options positioning → analyst lag → contrarian opportunity. End with disclaimer.`,
   },
   {
     id: "risk",
-    name: "Risk Matrix",
-    shortName: "RSKM",
+    name: "Risk",
+    sub: "风险矩阵",
     icon: Shield,
-    color: "#ef4444",
-    systemPrompt: `You are a risk analyst. Evaluate stocks through a comprehensive risk framework.
-
-ANALYSIS STRUCTURE:
-1. Business Risk — Customer concentration, cyclicality, disruption threats
-2. Financial Risk — Leverage, liquidity, refinancing needs, covenant risk
-3. Operational Risk — Key person dependency, supply chain vulnerability, execution risk
-4. Regulatory Risk — Pending legislation, compliance costs, litigation exposure
-5. Market Risk — Beta, correlation, sector sensitivity, volatility profile
-6. Tail Risks — Black swan scenarios, binary event risks, bankruptcy risk
-7. Risk/Reward Asymmetry — Downside scenarios vs upside potential
-
-Provide a risk rating (Low/Medium/High/Critical) for each category.`,
+    color: "#9b2c2c",
+    prompt: `You are a risk analyst. Key disqualifiers: large active ATM + SBC dilution, single-customer concentration, China export-control binary risk, pre-revenue with no qualification path. Analyze: business model risks, financial/dilution risks, market risks, tail risks, risk-adjusted sizing. Rate each: LOW/MEDIUM/HIGH. Respond in Chinese. Structure: business risks → financial risks → market risks → tail risks → sizing implication. End with disclaimer.`,
   },
 ];
 
-// ─── Sub-tabs for visualization ──────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────
 
-type SubTab = "analysis" | "chain" | "matrix" | "calibration";
+const YEARS = [1, 2, 3, 5, 10];
 
-const SUB_TABS: { id: SubTab; label: string; icon: typeof Zap }[] = [
-  { id: "analysis", label: "Analysis", icon: Zap },
-  { id: "chain", label: "Supply Chain", icon: GitBranch },
-  { id: "matrix", label: "Conviction", icon: Grid3X3 },
-  { id: "calibration", label: "Win Rate", icon: TrendingUp },
+const QUICK_EXAMPLES = [
+  { skill: "serenity", text: "$SIVE CPO激光供应链", query: "$SIVE Sivers Semiconductors CPO激光瓶颈深度分析" },
+  { skill: "serenity", text: "$AXTI InP基板控制", query: "$AXTI InP基板 Strait of AXTI 供应链控制分析" },
+  { skill: "serenity", text: "$NBIS Neocloud质量", query: "$NBIS Neocloud融资质量对比分析" },
+  { skill: "fundamental", text: "$AAOI 基本面深度", query: "$AAOI 美国制造转录器基本面分析" },
+  { skill: "macro", text: "CPO板块资本轮动", query: "AI光子学CPO板块宏观叙事和资本轮动" },
+  { skill: "risk", text: "Neocloud稀释风险", query: "$IREN $CRWV 稀释/ATM风险矩阵对比" },
 ];
 
-// ─── Main Component ──────────────────────────────────────────────
+const RECENT = [
+  "$SIVE CPO激光瓶颈",
+  "$AXTI InP供应链",
+  "$NBIS Neocloud质量",
+  "$AAOI 美国制造转录器",
+];
 
-interface SkillResult {
+type SubTab = "examples" | "chain" | "matrix" | "calibration";
+
+const SUB_TABS: { id: SubTab; label: string }[] = [
+  { id: "examples", label: "快速开始" },
+  { id: "chain", label: "供应链图谱" },
+  { id: "matrix", label: "持仓矩阵" },
+  { id: "calibration", label: "胜率数据" },
+];
+
+// ─── Component ───────────────────────────────────────────────────
+
+interface AnalysisResult {
   skillId: string;
+  query: string;
   content: string;
   status: "loading" | "done" | "error";
   error?: string;
+  timestamp: string;
 }
 
 export const SerenityTerminal = () => {
   const [ticker, setTicker] = useState("");
+  const [year, setYear] = useState(3);
   const [multiMode, setMultiMode] = useState(false);
-  const [selectedSkills, setSelectedSkills] = useState<Set<string>>(
-    new Set(["serenity"]),
-  );
   const [activeSkill, setActiveSkill] = useState("serenity");
-  const [subTab, setSubTab] = useState<SubTab>("analysis");
-  const [results, setResults] = useState<Map<string, SkillResult>>(new Map());
+  const [checkedSkills, setCheckedSkills] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<SubTab>("examples");
+  const [results, setResults] = useState<AnalysisResult[]>([]);
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState("deepseek-v4-flash");
   const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com");
+  const [running, setRunning] = useState(false);
   const abortRef = useRef<AbortController[]>([]);
 
-  const isLoading = Array.from(results.values()).some(
-    (r) => r.status === "loading",
-  );
-
-  const toggleSkill = useCallback(
+  const handleSkillClick = useCallback(
     (skillId: string) => {
       if (multiMode) {
-        setSelectedSkills((prev) => {
+        setCheckedSkills((prev) => {
           const next = new Set(prev);
-          if (next.has(skillId)) {
-            next.delete(skillId);
-          } else {
-            next.add(skillId);
-          }
+          if (next.has(skillId)) next.delete(skillId);
+          else next.add(skillId);
           return next;
         });
       } else {
         setActiveSkill(skillId);
-        setSelectedSkills(new Set([skillId]));
       }
     },
     [multiMode],
   );
 
-  const runAnalysis = useCallback(
-    async (skill: Skill, ticker: string) => {
+  const runSingle = useCallback(
+    async (query: string, skillId: string) => {
       if (!apiKey) return;
 
-      setResults(
-        (prev) =>
-          new Map(
-            prev.set(skill.id, {
-              skillId: skill.id,
-              content: "",
-              status: "loading",
-            }),
-          ),
-      );
+      const skill = SKILLS.find((s) => s.id === skillId);
+      if (!skill) return;
+
+      const ts = new Date().toLocaleTimeString("zh", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const result: AnalysisResult = {
+        skillId,
+        query,
+        content: "",
+        status: "loading",
+        timestamp: ts,
+      };
+
+      setResults((prev) => [result, ...prev]);
 
       const controller = new AbortController();
       abortRef.current.push(controller);
@@ -239,13 +198,13 @@ export const SerenityTerminal = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ticker,
+            ticker: query.split(" ")[0],
             mode: "single",
-            language: "en",
+            language: "zh-CN",
             api_key: apiKey,
             base_url: baseUrl,
             model,
-            skill_prompt: skill.systemPrompt,
+            skill_prompt: skill.prompt,
           }),
           signal: controller.signal,
         });
@@ -262,41 +221,39 @@ export const SerenityTerminal = () => {
           const { done, value } = await reader.read();
           if (done) break;
           content += decoder.decode(value, { stream: true });
-          setResults(
-            (prev) =>
-              new Map(
-                prev.set(skill.id, {
-                  skillId: skill.id,
-                  content,
-                  status: "loading",
-                }),
-              ),
-          );
+          setResults((prev) => {
+            const next = [...prev];
+            const idx = next.findIndex(
+              (r) => r.skillId === skillId && r.timestamp === ts,
+            );
+            if (idx >= 0) next[idx] = { ...next[idx], content };
+            return next;
+          });
         }
 
-        setResults(
-          (prev) =>
-            new Map(
-              prev.set(skill.id, {
-                skillId: skill.id,
-                content,
-                status: "done",
-              }),
-            ),
-        );
+        setResults((prev) => {
+          const next = [...prev];
+          const idx = next.findIndex(
+            (r) => r.skillId === skillId && r.timestamp === ts,
+          );
+          if (idx >= 0) next[idx] = { ...next[idx], content, status: "done" };
+          return next;
+        });
       } catch (err: unknown) {
         if (err instanceof Error && err.name === "AbortError") return;
-        setResults(
-          (prev) =>
-            new Map(
-              prev.set(skill.id, {
-                skillId: skill.id,
-                content: "",
-                status: "error",
-                error: err instanceof Error ? err.message : "Unknown error",
-              }),
-            ),
-        );
+        setResults((prev) => {
+          const next = [...prev];
+          const idx = next.findIndex(
+            (r) => r.skillId === skillId && r.timestamp === ts,
+          );
+          if (idx >= 0)
+            next[idx] = {
+              ...next[idx],
+              status: "error",
+              error: err instanceof Error ? err.message : "Unknown error",
+            };
+          return next;
+        });
       }
     },
     [apiKey, baseUrl, model],
@@ -305,339 +262,445 @@ export const SerenityTerminal = () => {
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
-      if (!ticker.trim() || !apiKey) return;
+      if (!ticker.trim() || !apiKey || running) return;
 
-      setSubTab("analysis");
+      setRunning(true);
+      setActiveTab("examples");
       abortRef.current = [];
 
-      const skillsToRun = SKILLS.filter((s) => selectedSkills.has(s.id));
-
-      if (multiMode) {
-        await Promise.all(skillsToRun.map((s) => runAnalysis(s, ticker)));
+      if (multiMode && checkedSkills.size > 0) {
+        await Promise.all(
+          Array.from(checkedSkills).map((sid) => runSingle(ticker, sid)),
+        );
       } else {
-        const skill = skillsToRun[0];
-        if (skill) await runAnalysis(skill, ticker);
+        await runSingle(ticker, activeSkill);
       }
+
+      setRunning(false);
     },
-    [ticker, apiKey, multiMode, selectedSkills, runAnalysis],
+    [ticker, apiKey, running, multiMode, checkedSkills, activeSkill, runSingle],
+  );
+
+  const handleQuickRun = useCallback(
+    (query: string, skillId: string) => {
+      if (!apiKey) return;
+      setTicker(query);
+      setActiveTab("examples");
+      runSingle(query, skillId);
+    },
+    [apiKey, runSingle],
   );
 
   const handleStop = () => {
     abortRef.current.forEach((c) => c.abort());
     abortRef.current = [];
-    setResults(new Map());
+    setRunning(false);
   };
 
-  const handleTickerFromTab = useCallback((t: string) => {
-    setTicker(t);
-    setSubTab("analysis");
-  }, []);
+  const formatContent = (text: string) => {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
+      .replace(/`(.+?)`/g, "<code>$1</code>")
+      .split(/\n\n+/)
+      .map((p) =>
+        p.trim()
+          ? `<p>${p.replace(/\n/g, "<br>")}</p>`
+          : "",
+      )
+      .join("");
+  };
 
-  const activeResults = multiMode
-    ? Array.from(results.values()).filter((r) => r.status !== "loading" || r.content)
-    : results.has(activeSkill)
-      ? [results.get(activeSkill)!]
-      : [];
-
-  const gridCols =
-    activeResults.length <= 1
-      ? "grid-cols-1"
-      : activeResults.length === 2
-        ? "grid-cols-2"
-        : "grid-cols-3";
+  const currentSkills = multiMode ? Array.from(checkedSkills) : [activeSkill];
 
   return (
-    <div className="flex h-[calc(100vh-200px)] gap-0 overflow-hidden rounded-lg border bg-[#0a0e17]">
-      {/* Left sidebar — Skill selector */}
-      <div className="w-56 shrink-0 border-r border-white/10 bg-[#0d1220] p-4">
-        <div className="mb-4">
-          <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-green-400">
-            Skills
-          </h3>
-        </div>
-
-        {/* Multi-mode toggle */}
-        <button
-          type="button"
-          onClick={() => setMultiMode(!multiMode)}
-          className="mb-4 flex w-full items-center justify-between rounded border border-white/10 px-3 py-2 text-xs transition-colors hover:border-white/20"
-        >
-          <span className="text-white/70">Multi-Skill</span>
-          {multiMode ? (
-            <ToggleRight className="size-4 text-green-400" />
-          ) : (
-            <ToggleLeft className="size-4 text-white/30" />
-          )}
-        </button>
-
-        {/* Skill list */}
-        <div className="space-y-1">
-          {SKILLS.map((skill) => {
-            const isActive = multiMode
-              ? selectedSkills.has(skill.id)
-              : activeSkill === skill.id;
-            return (
-              <button
-                key={skill.id}
-                type="button"
-                onClick={() => toggleSkill(skill.id)}
-                className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-xs transition-all ${
-                  isActive
-                    ? "bg-white/10 text-white"
-                    : "text-white/50 hover:bg-white/5 hover:text-white/70"
-                }`}
-              >
-                {multiMode && (
-                  <input
-                    type="checkbox"
-                    checked={selectedSkills.has(skill.id)}
-                    onChange={() => toggleSkill(skill.id)}
-                    className="accent-green-500"
-                  />
-                )}
-                <skill.icon
-                  className="size-3.5 shrink-0"
-                  style={{ color: isActive ? skill.color : undefined }}
-                />
-                <span className="font-mono font-medium">{skill.shortName}</span>
-                <span className="text-white/30">{skill.name}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Input form */}
-        <form onSubmit={handleSubmit} className="mt-6 space-y-3">
+    <div className="flex min-h-[calc(100vh-56px)]">
+      {/* Left Panel */}
+      <aside className="w-[280px] shrink-0 border-r border-[#e0dbd2] bg-[#faf9f6] p-6">
+        <div className="space-y-6">
+          {/* Ticker Input */}
           <div>
-            <Label className="font-mono text-[10px] uppercase text-white/40">
-              Ticker
-            </Label>
-            <Input
-              placeholder="NVDA"
+            <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
+              分析目标
+            </div>
+            <input
+              placeholder="代码 / 行业 / 问题"
               value={ticker}
-              onChange={(e) => setTicker(e.target.value.toUpperCase())}
-              disabled={isLoading}
-              className="mt-1 border-white/10 bg-white/5 font-mono text-white placeholder:text-white/20"
+              onChange={(e) => setTicker(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit(e as never)}
+              disabled={running}
+              className="w-full border-b border-[#ccc8be] bg-transparent pb-1.5 font-serif text-xl font-light text-[#1a1814] outline-none transition-colors focus:border-[#1a3a5c]"
             />
           </div>
 
+          {/* Year Grid */}
           <div>
-            <Label className="font-mono text-[10px] uppercase text-white/40">
+            <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
+              分析年限
+            </div>
+            <div className="grid grid-cols-5 gap-1.5">
+              {YEARS.map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  onClick={() => setYear(y)}
+                  className={`flex h-8 items-center justify-center rounded border font-mono text-xs transition-all ${
+                    year === y
+                      ? "border-[#1a1814] bg-[#1a1814] text-[#faf9f6]"
+                      : "border-[#ccc8be] text-[#5a5650] hover:border-[#5a5650]"
+                  }`}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Skills */}
+          <div>
+            <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
+              分析视角 · Skill
+            </div>
+            <div className="space-y-0.5">
+              {SKILLS.map((skill) => {
+                const isActive = multiMode
+                  ? checkedSkills.has(skill.id)
+                  : activeSkill === skill.id;
+                return (
+                  <button
+                    key={skill.id}
+                    type="button"
+                    onClick={() => handleSkillClick(skill.id)}
+                    className={`flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left transition-all ${
+                      isActive
+                        ? skill.id === "serenity"
+                          ? "border border-[#b8cedd] bg-[#e8eef5]"
+                          : "border border-[#e0dbd2] bg-[#f4f2ee]"
+                        : "border border-transparent hover:bg-[#f4f2ee]"
+                    }`}
+                  >
+                    {multiMode && (
+                      <div
+                        className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${
+                          checkedSkills.has(skill.id)
+                            ? "border-[#1a5c3a] bg-[#1a5c3a] text-white"
+                            : "border-[#ccc8be]"
+                        }`}
+                      >
+                        {checkedSkills.has(skill.id) && "✓"}
+                      </div>
+                    )}
+                    <div
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: skill.color }}
+                    />
+                    <span className="flex-1 text-[13px] text-[#1a1814]">
+                      {skill.name}
+                    </span>
+                    <span className="font-mono text-[11px] text-[#9a9690]">
+                      {skill.sub}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Parallel toggle */}
+            <div
+              className={`mt-3 flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 transition-all ${
+                multiMode
+                  ? "border-[#9dcfb8] bg-[#edf7f2]"
+                  : "border-[#e0dbd2] bg-[#f4f2ee]"
+              }`}
+              onClick={() => {
+                setMultiMode(!multiMode);
+                if (multiMode) setCheckedSkills(new Set());
+              }}
+            >
+              <span className="text-xs text-[#5a5650]">多 Skill 并行分析</span>
+              <div
+                className={`relative h-[18px] w-[34px] rounded-full transition-colors ${
+                  multiMode ? "bg-[#1a5c3a]" : "bg-[#ccc8be]"
+                }`}
+              >
+                <div
+                  className="absolute left-[3px] top-[3px] h-3 w-3 rounded-full bg-white shadow-sm transition-all"
+                  style={{ left: multiMode ? 19 : 3 }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Run Button */}
+          <button
+            type="button"
+            onClick={running ? handleStop : handleSubmit}
+            disabled={!ticker.trim() || !apiKey}
+            className={`w-full rounded py-3 font-mono text-xs tracking-[.08em] transition-all ${
+              running
+                ? "border border-[#1a1814] bg-[#faf9f6] text-[#1a1814]"
+                : "bg-[#1a1814] text-[#faf9f6] hover:bg-[#2d2b28] disabled:bg-[#9a9690]"
+            }`}
+          >
+            {running ? "分析中…" : "开始分析"}
+          </button>
+
+          {/* API Key */}
+          <div>
+            <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
               API Key
-            </Label>
+            </div>
             <Input
               type="password"
               placeholder="sk-..."
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              disabled={isLoading}
-              className="mt-1 border-white/10 bg-white/5 font-mono text-white placeholder:text-white/20"
+              className="border-[#ccc8be] bg-transparent font-mono text-xs"
             />
           </div>
 
+          {/* Model */}
           <div>
-            <Label className="font-mono text-[10px] uppercase text-white/40">
+            <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
               Model
-            </Label>
+            </div>
             <Input
-              placeholder="deepseek-v4-flash"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              disabled={isLoading}
-              className="mt-1 border-white/10 bg-white/5 font-mono text-white placeholder:text-white/20"
+              className="border-[#ccc8be] bg-transparent font-mono text-xs"
             />
           </div>
 
+          {/* Base URL */}
           <div>
-            <Label className="font-mono text-[10px] uppercase text-white/40">
+            <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
               Base URL
-            </Label>
+            </div>
             <Input
-              placeholder="https://api.deepseek.com"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
-              disabled={isLoading}
-              className="mt-1 border-white/10 bg-white/5 font-mono text-white placeholder:text-white/20"
+              className="border-[#ccc8be] bg-transparent font-mono text-xs"
             />
           </div>
 
-          <div className="flex gap-2">
-            {isLoading ? (
-              <Button
-                type="button"
-                variant="destructive"
-                className="flex-1 font-mono text-xs"
-                onClick={handleStop}
-              >
-                <Square className="mr-1 size-3" /> STOP
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                className="flex-1 bg-green-600 font-mono text-xs hover:bg-green-700"
-                disabled={!ticker.trim() || !apiKey || selectedSkills.size === 0}
-              >
-                <Play className="mr-1 size-3" /> RUN
-              </Button>
-            )}
-          </div>
-        </form>
-
-        {/* Status */}
-        <div className="mt-4 border-t border-white/10 pt-3">
-          <div className="font-mono text-[10px] text-white/30">
-            <div>
-              MODE: {multiMode ? "MULTI" : "SINGLE"}
+          {/* Recent */}
+          <div>
+            <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
+              最近查询
             </div>
-            <div>TICKER: {ticker || "—"}</div>
-            <div>SKILLS: {selectedSkills.size}</div>
+            <div className="space-y-1">
+              {RECENT.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setTicker(r)}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[#f4f2ee]"
+                >
+                  <div className="h-1 w-1 rounded-full bg-[#9a9690]" />
+                  <span className="font-mono text-xs text-[#5a5650]">{r}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </aside>
 
-      {/* Right side — Sub-tabs + content */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Sub-tab bar */}
-        <div className="flex gap-0 border-b border-white/10 bg-[#0d1220]">
+      {/* Right Panel */}
+      <main className="flex-1 overflow-y-auto bg-[#faf9f6] p-10">
+        {/* Hero / Tabs */}
+        {results.length === 0 && (
+          <div>
+            <h1 className="mb-2 font-serif text-[30px] font-light leading-tight text-[#1a1814]">
+              供应链瓶颈分析
+              <br />
+              AI · 半导体 · 光子学
+            </h1>
+            <p className="mb-7 font-mono text-[13px] text-[#9a9690]">
+              <span className="text-[#5a5650]">Serenity (@aleabitoreddit) 框架</span> · 5,582
+              tweets · 4 长文蒸馏 · 仅供决策参考，非投资建议
+            </p>
+          </div>
+        )}
+
+        {/* Sub-tabs */}
+        <div className="mb-7 flex gap-0 border-b border-[#e0dbd2]">
           {SUB_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              onClick={() => setSubTab(tab.id)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 font-mono text-xs transition-colors ${
-                subTab === tab.id
-                  ? "border-b-2 border-green-400 bg-white/5 text-green-400"
-                  : "text-white/40 hover:text-white/60"
+              onClick={() => setActiveTab(tab.id)}
+              className={`mr-4 border-b-2 pb-2.5 font-mono text-[11px] tracking-[.06em] transition-all ${
+                activeTab === tab.id
+                  ? "border-[#1a1814] text-[#1a1814]"
+                  : "border-transparent text-[#9a9690] hover:text-[#5a5650]"
               }`}
             >
-              <tab.icon className="size-3" />
               {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Content area */}
-        <div className="flex-1 overflow-auto p-4">
-          {/* Visualization tabs */}
-          {subTab === "chain" && (
-            <div className="text-white">
-              <SupplyChainMap onTickerClick={handleTickerFromTab} />
-            </div>
-          )}
-          {subTab === "matrix" && (
-            <div className="text-white">
-              <ConvictionMatrix onTickerClick={handleTickerFromTab} />
-            </div>
-          )}
-          {subTab === "calibration" && (
-            <div className="text-white">
-              <CalibrationChart />
-            </div>
-          )}
-
-          {/* Analysis tab */}
-          {subTab === "analysis" && (
-            <>
-              {/* Empty state */}
-              {results.size === 0 && (
-                <div className="flex h-full items-center justify-center">
-                  <div className="text-center">
-                    <div className="mb-2 font-mono text-2xl text-green-400/20">
-                      ▮
+        {/* Tab: Quick Start */}
+        {activeTab === "examples" && results.length === 0 && (
+          <div>
+            {/* Serenity Info Card */}
+            <div className="mb-7 rounded-lg border border-[#b8cedd] bg-[#e8eef5] p-4">
+              <div className="mb-2.5 font-mono text-[10px] tracking-[.1em] text-[#1a3a5c] uppercase">
+                Serenity 核心供应链
+              </div>
+              <div className="mb-2.5 font-mono text-[11px] leading-[2] text-[#1a3a5c]">
+                超大规模资本 (GOOGL/MSFT/META/AMZN)
+                <span className="text-[#9a9690]"> → </span>ASIC/TPU
+                <span className="text-[#9a9690]"> → </span>光学转发器 (LITE/AAOI/COHR)
+                <span className="text-[#9a9690]"> → </span>CW/DFB激光 (SIVE)
+                <span className="text-[#9a9690]"> → </span>InP外延 (IQE)
+                <span className="text-[#9a9690]"> → </span>
+                <strong>InP基板 (AXTI)</strong> ← 瓶颈
+                <span className="text-[#9a9690]"> → </span>铟原料 (Vital)
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {[
+                  { label: "数据来源", value: "5,582 tweets" },
+                  { label: "30天方向准确率", value: "~61%" },
+                  { label: "成熟供应链论点", value: "~75-85%" },
+                ].map((s) => (
+                  <div
+                    key={s.label}
+                    className="rounded border border-[#b8cedd] bg-white px-2.5 py-2"
+                  >
+                    <div className="font-mono text-[9px] tracking-[.06em] text-[#9a9690] uppercase">
+                      {s.label}
                     </div>
-                    <p className="font-mono text-sm text-white/30">
-                      Enter a ticker and click RUN
-                    </p>
-                    <p className="mt-1 font-mono text-xs text-white/20">
-                      {multiMode
-                        ? "Select skills on the left, results will appear in grid"
-                        : "Click a skill on the left, then RUN"}
-                    </p>
+                    <div className="font-mono text-[13px] font-medium text-[#1a3a5c]">
+                      {s.value}
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Examples */}
+            <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
+              快速分析示例
+            </div>
+            <div className="mb-8 grid grid-cols-3 gap-2.5">
+              {QUICK_EXAMPLES.map((ex) => (
+                <button
+                  key={ex.query}
+                  type="button"
+                  onClick={() => handleQuickRun(ex.query, ex.skill)}
+                  className="group rounded-lg border border-[#e0dbd2] bg-[#faf9f6] p-3.5 text-left transition-all hover:border-[#ccc8be] hover:bg-[#f4f2ee]"
+                >
+                  <div className="mb-1.5 font-mono text-[9px] tracking-[.1em] text-[#9a9690] uppercase">
+                    {SKILLS.find((s) => s.id === ex.skill)?.name} · {SKILLS.find((s) => s.id === ex.skill)?.sub}
+                  </div>
+                  <div className="font-serif text-[13px] text-[#1a1814]">
+                    {ex.text}
+                  </div>
+                  <span className="mt-1 block text-[11px] text-[#9a9690] opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100">
+                    →
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Supply Chain */}
+        {activeTab === "chain" && (
+          <SupplyChainMap
+            onTickerClick={(t) => {
+              setTicker(t);
+              setActiveTab("examples");
+            }}
+          />
+        )}
+
+        {/* Tab: Conviction Matrix */}
+        {activeTab === "matrix" && (
+          <ConvictionMatrix
+            onTickerClick={(t) => {
+              setTicker(t);
+              setActiveTab("examples");
+            }}
+          />
+        )}
+
+        {/* Tab: Calibration */}
+        {activeTab === "calibration" && <CalibrationChart />}
+
+        {/* Results */}
+        {results.map((result, idx) => {
+          const skill = SKILLS.find((s) => s.id === result.skillId);
+          if (!skill) return null;
+
+          return (
+            <div key={`${result.skillId}-${result.timestamp}`} className="mb-8">
+              <div className="mb-1 flex flex-wrap items-center gap-3">
+                <span
+                  className="rounded-full px-2.5 py-0.5 font-mono text-[10px] tracking-[.05em]"
+                  style={{
+                    backgroundColor:
+                      skill.id === "serenity" ? "#e8eef5" : "#f4f2ee",
+                    color: skill.color,
+                  }}
+                >
+                  {skill.name}
+                </span>
+                <span className="font-serif text-[13px] text-[#5a5650]">
+                  {result.query}
+                </span>
+                <span className="ml-auto font-mono text-[10px] text-[#9a9690]">
+                  {result.timestamp} · {year}Y
+                </span>
+              </div>
+
+              {result.status === "loading" && !result.content && (
+                <div className="space-y-2.5 py-4">
+                  {[100, 90, 95, 80].map((w, i) => (
+                    <div
+                      key={i}
+                      className="h-3.5 animate-pulse rounded"
+                      style={{
+                        width: `${w}%`,
+                        background: `linear-gradient(90deg, #edeae3 25%, #f4f2ee 50%, #edeae3 75%)`,
+                        backgroundSize: "200% 100%",
+                      }}
+                    />
+                  ))}
                 </div>
               )}
 
-              {/* Results grid */}
-              {results.size > 0 && (
-                <div className={`grid gap-4 ${gridCols}`}>
-                  {SKILLS.filter((s) => results.has(s.id)).map((skill) => {
-                    const result = results.get(skill.id)!;
-                    return (
-                      <div
-                        key={skill.id}
-                        className="rounded border border-white/10 bg-[#0d1220]"
-                      >
-                        {/* Header */}
-                        <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
-                          <skill.icon
-                            className="size-3.5"
-                            style={{ color: skill.color }}
-                          />
-                          <span className="font-mono text-xs font-bold text-white/80">
-                            {skill.shortName}
-                          </span>
-                          <span className="font-mono text-[10px] text-white/30">
-                            {skill.name}
-                          </span>
-                          {result.status === "loading" && (
-                            <Loader2 className="ml-auto size-3 animate-spin text-green-400" />
-                          )}
-                          {result.status === "done" && (
-                            <Badge className="ml-auto bg-green-600 font-mono text-[10px]">
-                              DONE
-                            </Badge>
-                          )}
-                          {result.status === "error" && (
-                            <Badge className="ml-auto bg-red-600 font-mono text-[10px]">
-                              ERR
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Content */}
-                        <div className="max-h-[500px] overflow-auto p-3">
-                          {result.error && (
-                            <p className="font-mono text-xs text-red-400">
-                              {result.error}
-                            </p>
-                          )}
-                          {result.content && (
-                            <div className="prose prose-invert prose-xs max-w-none font-mono text-xs leading-relaxed text-white/70">
-                              {result.content.split("\n").map((line, i) => (
-                                <p key={i} className="mb-1">
-                                  {line}
-                                </p>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+              {result.error && (
+                <div className="rounded bg-[#fdf0f0] p-3 font-mono text-xs text-[#9b2c2c]">
+                  {result.error}
                 </div>
               )}
-            </>
-          )}
-        </div>
 
-        {/* Bottom status bar */}
-        <div className="flex items-center justify-between border-t border-white/10 bg-[#0d1220] px-4 py-1.5">
-          <div className="flex gap-4 font-mono text-[10px] text-white/30">
-            <span>
-              SERENITY TERMINAL v1.0
-            </span>
-            <span>
-              {new Date().toLocaleTimeString("en-US", { hour12: false })}
-            </span>
-          </div>
-          <div className="flex gap-4 font-mono text-[10px] text-white/30">
-            <span>SKILLS: {SKILLS.length}</span>
-            <span>
-              MODE: {multiMode ? "PARALLEL" : "SINGLE"}
-            </span>
-          </div>
-        </div>
-      </div>
+              {result.content && (
+                <div
+                  className={`mt-4 border-l-2 py-1 pl-5 font-serif text-sm leading-[1.9] text-[#1a1814] [&_code]:rounded [&_code]:bg-[#edeae3] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-[#0a5c5c] [&_em]:font-mono [&_em]:text-sm [&_em]:text-[#7a4f00] [&_em]:not-italic [&_p]:mb-3 [&_strong]:font-medium ${
+                    result.skillId === "serenity"
+                      ? "border-[#b8cedd]"
+                      : "border-[#ccc8be]"
+                  }`}
+                  dangerouslySetInnerHTML={{ __html: formatContent(result.content) }}
+                />
+              )}
+
+              {result.status === "done" && result.skillId === "serenity" && (
+                <div className="mt-3 rounded border-l-[3px] border-[#7a4f00] bg-[#fdf5e8] px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-[#7a4f00]">
+                  ⚠️ 这是框架分析，不是投资建议。论点有时效性，请自行确认当前价格和基本面。DYOR。
+                </div>
+              )}
+
+              {idx < results.length - 1 && (
+                <div className="my-8 h-px bg-[#e0dbd2]" />
+              )}
+            </div>
+          );
+        })}
+      </main>
     </div>
   );
 };
