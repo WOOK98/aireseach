@@ -1,24 +1,33 @@
-import { getTranslation } from "@workspace/i18n/server";
+/* oxlint-disable i18next/no-literal-string */
+
+import dynamic from "next/dynamic";
 
 import { getMetadata } from "~/lib/metadata";
-import { ReportGenerator } from "~/modules/report/report-generator";
+
+const SerenityTerminal = dynamic(
+  () => import("~/modules/report/serenity-terminal").then((mod) => mod.SerenityTerminal),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[600px] items-center justify-center rounded-lg border border-[#e0dbd2] bg-[#faf9f6]">
+        <div className="text-center">
+          <div className="mb-2 font-mono text-2xl text-[#9a9690]/20">▮</div>
+          <p className="font-mono text-sm text-[#9a9690]">Loading Terminal...</p>
+        </div>
+      </div>
+    ),
+  },
+);
 
 export const generateMetadata = getMetadata({
   title: "marketing:report.title",
   description: "marketing:report.description",
 });
 
-export default async function ReportPage() {
-  const { t } = await getTranslation({ ns: "marketing" });
-
+export default function ReportPage() {
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">
-          {t("report.title")}
-        </h2>
-      </div>
-      <ReportGenerator />
+    <div className="flex-1">
+      <SerenityTerminal />
     </div>
   );
 }
