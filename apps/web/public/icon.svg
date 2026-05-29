@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#16a34a"/>
+  <!-- Magnifying glass -->
+  <circle cx="220" cy="220" r="100" stroke="white" stroke-width="32" fill="none"/>
+  <line x1="290" y1="290" x2="380" y2="380" stroke="white" stroke-width="40" stroke-linecap="round"/>
+  <!-- Four-pointed sparkle -->
+  <path d="M220 160 L230 210 L280 220 L230 230 L220 280 L210 230 L160 220 L210 210 Z" fill="white"/>
+</svg>
