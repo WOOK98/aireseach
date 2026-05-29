@@ -11,8 +11,12 @@ import {
   Network,
   Search,
   BarChart3,
+  GitBranch,
+  Grid3X3,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 
 import { Badge } from "@workspace/ui-web/badge";
 import { Button } from "@workspace/ui-web/button";
@@ -27,6 +31,9 @@ import {
   SelectValue,
 } from "@workspace/ui-web/select";
 
+import { CalibrationChart } from "./serenity-tabs/calibration-chart";
+import { ConvictionMatrix } from "./serenity-tabs/conviction-matrix";
+import { SupplyChainMap } from "./serenity-tabs/supply-chain-map";
 import { ReportViewer } from "./report-viewer";
 
 import type { FormEvent } from "react";
@@ -88,29 +95,10 @@ const REPORT_LANGUAGES = [
 ];
 
 const TICKER_UNIVERSE = [
-  "NBIS",
-  "AXTI",
-  "LITE",
-  "SIVE",
-  "COHR",
-  "AAOI",
-  "IREN",
-  "CRWV",
-  "MU",
-  "SNDK",
-  "NVDA",
-  "TSM",
-  "MRVL",
-  "AVGO",
-  "INTC",
-  "SOI",
-  "IQE",
-  "TSEM",
-  "CIFR",
-  "XLU",
-  "VST",
-  "CEG",
-  "EWY",
+  "NBIS", "AXTI", "LITE", "SIVE", "COHR", "AAOI",
+  "IREN", "CRWV", "MU", "SNDK", "NVDA", "TSM",
+  "MRVL", "AVGO", "INTC", "SOI", "IQE", "TSEM",
+  "CIFR", "XLU", "VST", "CEG", "EWY",
 ];
 
 interface AnalysisState {
@@ -120,6 +108,14 @@ interface AnalysisState {
 }
 
 type ModeValue = (typeof ANALYSIS_MODES)[number]["value"];
+type TabId = "quick" | "chain" | "matrix" | "calibration";
+
+const TABS: { id: TabId; label: string; icon: typeof Zap }[] = [
+  { id: "quick", label: "Quick Start", icon: Zap },
+  { id: "chain", label: "Supply Chain", icon: GitBranch },
+  { id: "matrix", label: "Conviction", icon: Grid3X3 },
+  { id: "calibration", label: "Win Rate", icon: TrendingUp },
+];
 
 export const SerenityAnalyzer = () => {
   const [ticker, setTicker] = useState("");
@@ -130,6 +126,7 @@ export const SerenityAnalyzer = () => {
   const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com/v1");
   const [model, setModel] = useState("deepseek-chat");
   const [language, setLanguage] = useState("en");
+  const [activeTab, setActiveTab] = useState<TabId>("quick");
   const [analysis, setAnalysis] = useState<AnalysisState>({
     status: "idle",
     content: "",
@@ -149,15 +146,14 @@ export const SerenityAnalyzer = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
     const primaryTicker =
       mode === "portfolio"
         ? portfolioTickers.split(/[,\s]+/).find(Boolean) || ticker.trim()
         : ticker.trim();
-
     if (!primaryTicker) return;
 
     setAnalysis({ status: "loading", content: "", error: "" });
+    setActiveTab("quick");
     abortRef.current = new AbortController();
 
     try {
@@ -169,7 +165,6 @@ export const SerenityAnalyzer = () => {
         ...(baseUrl && { base_url: baseUrl }),
         ...(model && { model }),
       };
-
       if (mode === "portfolio") {
         body.tickers = portfolioTickers
           .split(/[,\s]+/)
@@ -198,14 +193,12 @@ export const SerenityAnalyzer = () => {
 
       const decoder = new TextDecoder();
       let content = "";
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         content += decoder.decode(value, { stream: true });
         setAnalysis({ status: "loading", content, error: "" });
       }
-
       setAnalysis({ status: "done", content, error: "" });
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;
@@ -234,10 +227,14 @@ export const SerenityAnalyzer = () => {
 
   const handleQuickTicker = (t: string) => {
     setTicker(t);
-    if (mode === "portfolio") {
-      setPortfolioTickers(t);
-    }
+    if (mode === "portfolio") setPortfolioTickers(t);
   };
+
+  const handleTickerFromTab = useCallback((t: string) => {
+    setTicker(t);
+    setMode("single");
+    setActiveTab("quick");
+  }, []);
 
   const isLoading = analysis.status === "loading";
 
@@ -281,9 +278,7 @@ export const SerenityAnalyzer = () => {
               </Label>
               <Input
                 id="ticker"
-                placeholder={
-                  mode === "sector" ? "photonics / memory / power" : "NVDA"
-                }
+                placeholder={mode === "sector" ? "photonics / memory / power" : "NVDA"}
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value.toUpperCase())}
                 disabled={isLoading}
@@ -291,9 +286,7 @@ export const SerenityAnalyzer = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="portfolio">
-                Tickers (comma or space separated)
-              </Label>
+              <Label htmlFor="portfolio">Tickers (comma or space separated)</Label>
               <Input
                 id="portfolio"
                 placeholder="NVDA, AXTI, LITE, MU"
@@ -304,7 +297,7 @@ export const SerenityAnalyzer = () => {
             </div>
           )}
 
-          {/* Quick ticker chips (single mode) */}
+          {/* Quick ticker chips */}
           {mode === "single" && (
             <div className="space-y-1.5">
               <Label className="text-xs">Serenity Universe</Label>
@@ -327,14 +320,10 @@ export const SerenityAnalyzer = () => {
           <div className="space-y-2">
             <Label>Language</Label>
             <Select value={language} onValueChange={(v) => v && setLanguage(v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {REPORT_LANGUAGES.map((lang) => (
-                  <SelectItem key={lang.value} value={lang.value}>
-                    {lang.label}
-                  </SelectItem>
+                  <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -344,14 +333,10 @@ export const SerenityAnalyzer = () => {
           <div className="space-y-2">
             <Label>AI Provider</Label>
             <Select value={provider} onValueChange={handleProviderChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {MODEL_PROVIDERS.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
+                  <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -360,67 +345,31 @@ export const SerenityAnalyzer = () => {
           {/* API Key */}
           <div className="space-y-2">
             <Label htmlFor="apiKey">API Key</Label>
-            <Input
-              id="apiKey"
-              type="password"
-              placeholder="Only used for this request"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              disabled={isLoading}
-            />
-            <p className="text-muted-foreground text-xs">
-              Sent only with this request, never stored.
-            </p>
+            <Input id="apiKey" type="password" placeholder="Only used for this request" value={apiKey} onChange={(e) => setApiKey(e.target.value)} disabled={isLoading} />
+            <p className="text-muted-foreground text-xs">Sent only with this request, never stored.</p>
           </div>
 
           {/* Model */}
           <div className="space-y-2">
             <Label htmlFor="model">Model</Label>
-            <Input
-              id="model"
-              placeholder="deepseek-chat"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              disabled={isLoading}
-            />
+            <Input id="model" placeholder="deepseek-chat" value={model} onChange={(e) => setModel(e.target.value)} disabled={isLoading} />
           </div>
 
           {/* Base URL */}
           <div className="space-y-2">
             <Label htmlFor="baseUrl">Base URL</Label>
-            <Input
-              id="baseUrl"
-              placeholder="https://api.deepseek.com/v1"
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              disabled={isLoading}
-            />
+            <Input id="baseUrl" placeholder="https://api.deepseek.com/v1" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} disabled={isLoading} />
           </div>
 
           {/* Submit */}
           <div className="flex gap-2">
             {isLoading ? (
-              <Button
-                type="button"
-                variant="destructive"
-                className="flex-1"
-                onClick={handleStop}
-              >
-                <Square className="mr-2 size-4" />
-                Stop
+              <Button type="button" variant="destructive" className="flex-1" onClick={handleStop}>
+                <Square className="mr-2 size-4" /> Stop
               </Button>
             ) : (
-              <Button
-                type="submit"
-                className="flex-1"
-                disabled={
-                  mode === "portfolio"
-                    ? !portfolioTickers.trim()
-                    : !ticker.trim()
-                }
-              >
-                <Sparkles className="mr-2 size-4" />
-                Analyze
+              <Button type="submit" className="flex-1" disabled={mode === "portfolio" ? !portfolioTickers.trim() : !ticker.trim()}>
+                <Sparkles className="mr-2 size-4" /> Analyze
               </Button>
             )}
           </div>
@@ -430,73 +379,92 @@ export const SerenityAnalyzer = () => {
         <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
           <CardContent className="pt-4">
             <p className="text-xs text-amber-800 dark:text-amber-300">
-              <strong>Disclaimer:</strong> This is decision-support analysis
-              only. Not financial advice. Serenity&apos;s returns are
-              self-reported and unverified. Always confirm prices and
-              fundamentals yourself.
+              <strong>Disclaimer:</strong> Decision-support analysis only. Not financial advice. Serenity&apos;s returns are self-reported and unverified.
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Right side: analysis display */}
+      {/* Right side: tabs + content */}
       <div className="min-w-0 flex-1">
-        {analysis.status === "idle" && (
-          <Card className="flex h-[600px] items-center justify-center">
-            <CardContent className="text-center">
-              <Microscope className="text-muted-foreground mx-auto mb-4 size-12" />
-              <p className="text-muted-foreground text-lg font-medium">
-                Enter a ticker and run Serenity&apos;s supply-chain analysis
-              </p>
-              <p className="text-muted-foreground/60 mt-2 text-sm">
-                Evaluates stocks through upstream bottleneck identification, not
-                traditional fundamentals alone.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {/* Tab bar */}
+        <div className="mb-4 flex gap-1 rounded-lg border bg-muted/30 p-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <tab.icon className="size-3.5" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-        {analysis.status === "loading" && !analysis.content && (
-          <Card className="flex h-[600px] items-center justify-center">
-            <CardContent className="text-center">
-              <Loader2 className="text-primary mx-auto mb-4 size-10 animate-spin" />
-              <p className="text-muted-foreground font-medium">
-                Running supply-chain analysis...
-              </p>
-              <p className="text-muted-foreground/60 mt-2 text-sm">
-                Mapping the chain, identifying bottlenecks, cross-referencing
-                Serenity&apos;s theses.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {/* Tab content */}
+        {activeTab === "chain" && <SupplyChainMap onTickerClick={handleTickerFromTab} />}
+        {activeTab === "matrix" && <ConvictionMatrix onTickerClick={handleTickerFromTab} />}
+        {activeTab === "calibration" && <CalibrationChart />}
 
-        {analysis.error && (
-          <div className="border-destructive bg-destructive/10 rounded-lg border p-4 text-sm text-red-600">
-            {analysis.error}
-          </div>
-        )}
-
-        {analysis.content && (
+        {activeTab === "quick" && (
           <>
-            {isLoading && (
-              <div className="mb-3 flex items-center gap-2">
-                <Badge variant="secondary" className="animate-pulse">
-                  <Loader2 className="mr-1 size-3 animate-spin" />
-                  Streaming...
-                </Badge>
+            {analysis.status === "idle" && (
+              <Card className="flex h-[600px] items-center justify-center">
+                <CardContent className="text-center">
+                  <Microscope className="text-muted-foreground mx-auto mb-4 size-12" />
+                  <p className="text-muted-foreground text-lg font-medium">
+                    Enter a ticker and run Serenity&apos;s supply-chain analysis
+                  </p>
+                  <p className="text-muted-foreground/60 mt-2 text-sm">
+                    Or explore the Supply Chain, Conviction, and Win Rate tabs.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {analysis.status === "loading" && !analysis.content && (
+              <Card className="flex h-[600px] items-center justify-center">
+                <CardContent className="text-center">
+                  <Loader2 className="text-primary mx-auto mb-4 size-10 animate-spin" />
+                  <p className="text-muted-foreground font-medium">Running supply-chain analysis...</p>
+                  <p className="text-muted-foreground/60 mt-2 text-sm">
+                    Mapping the chain, identifying bottlenecks, cross-referencing Serenity&apos;s theses.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {analysis.error && (
+              <div className="border-destructive bg-destructive/10 rounded-lg border p-4 text-sm text-red-600">
+                {analysis.error}
               </div>
             )}
-            <ReportViewer content={analysis.content} />
-          </>
-        )}
 
-        {/* Download */}
-        {analysis.status === "done" && analysis.content && (
-          <Button variant="outline" className="mt-4" onClick={handleDownload}>
-            <Download className="mr-2 size-4" />
-            Download Markdown
-          </Button>
+            {analysis.content && (
+              <>
+                {isLoading && (
+                  <div className="mb-3 flex items-center gap-2">
+                    <Badge variant="secondary" className="animate-pulse">
+                      <Loader2 className="mr-1 size-3 animate-spin" />
+                      Streaming...
+                    </Badge>
+                  </div>
+                )}
+                <ReportViewer content={analysis.content} />
+              </>
+            )}
+
+            {analysis.status === "done" && analysis.content && (
+              <Button variant="outline" className="mt-4" onClick={handleDownload}>
+                <Download className="mr-2 size-4" /> Download Markdown
+              </Button>
+            )}
+          </>
         )}
       </div>
     </div>
