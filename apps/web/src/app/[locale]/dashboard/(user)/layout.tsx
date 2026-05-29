@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { FileText } from "lucide-react";
+import { FileText, Microscope } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { getBillingSummaryResponseSchema } from "@workspace/api/schema";
@@ -34,6 +34,11 @@ const menu = [
         title: "report",
         href: pathsConfig.dashboard.user.report,
         icon: <FileText />,
+      },
+      {
+        title: "Serenity",
+        href: pathsConfig.dashboard.user.serenity,
+        icon: <Microscope />,
       },
     ],
   },

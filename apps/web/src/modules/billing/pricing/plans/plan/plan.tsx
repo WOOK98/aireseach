@@ -194,6 +194,38 @@ const Price = ({
     );
   }
 
+  // Show compareAtPrice with strikethrough if present
+  if (
+    !variant.custom &&
+    "compareAtPrice" in variant &&
+    variant.compareAtPrice &&
+    variant.compareAtPrice > 0
+  ) {
+    return (
+      <p className="relative flex w-fit items-end gap-1 py-2">
+        <span className="text-muted-foreground mr-2 text-lg line-through md:text-xl">
+          {formatPrice(
+            {
+              amount: variant.compareAtPrice,
+              currency: "currency" in variant ? variant.currency : "usd",
+            },
+            i18n.language,
+          )}
+        </span>
+        <span className="text-4xl font-bold tracking-tighter md:text-5xl">
+          {formatPrice(
+            {
+              amount: getVariantInitialCost(variant),
+              currency: "currency" in variant ? variant.currency : "usd",
+            },
+            i18n.language,
+          )}
+        </span>
+        {suffix}
+      </p>
+    );
+  }
+
   return (
     <p className="relative flex items-end gap-1 py-2">
       <span className="text-4xl font-bold tracking-tighter md:text-5xl">
