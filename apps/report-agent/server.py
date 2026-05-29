@@ -58,6 +58,7 @@ class SerenityRequest(BaseModel):
     base_url: Optional[str] = Field(None, description="OpenAI-compatible API base URL")
     model: Optional[str] = Field(None, description="Model name")
     language: Optional[str] = Field("en", description="Output language")
+    skill_prompt: Optional[str] = Field(None, description="Custom system prompt for the skill")
 
 
 SYSTEM_PROMPT = """
@@ -346,6 +347,7 @@ def build_serenity_messages(
     tickers: list[str] | None,
     refs: dict[str, str],
     language: str = "en",
+    custom_prompt: str | None = None,
 ) -> list[dict[str, str]]:
     """Build messages for Serenity supply-chain analysis."""
     # Truncate theses to fit context window (keep first 30k chars)
@@ -418,8 +420,11 @@ def build_serenity_messages(
             f"--- REFERENCE DATA ---\n{context}"
         )
 
+    # Use custom prompt if provided, otherwise use default Serenity system prompt
+    system_prompt = custom_prompt if custom_prompt else SERENITY_SYSTEM_PROMPT
+
     return [
-        {"role": "system", "content": SERENITY_SYSTEM_PROMPT + lang_instruction},
+        {"role": "system", "content": system_prompt + lang_instruction},
         {"role": "user", "content": user_content},
     ]
 
@@ -442,7 +447,12 @@ async def analyze_serenity(request: SerenityRequest):
 
     refs = load_serenity_references()
     tickers = request.tickers if request.mode == "portfolio" and request.tickers else None
-    messages = build_serenity_messages(ticker, request.mode, tickers, refs, language)
+
+    # Use custom skill_prompt if provided, otherwise use default Serenity prompt
+    if request.skill_prompt:
+        messages = build_serenity_messages(ticker, request.mode, tickers, refs, language, custom_prompt=request.skill_prompt)
+    else:
+        messages = build_serenity_messages(ticker, request.mode, tickers, refs, language)
 
     def stream():
         try:

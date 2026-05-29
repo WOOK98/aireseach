@@ -2,7 +2,7 @@
 
 import { Microscope } from "lucide-react";
 
-import { SerenityAnalyzer } from "~/modules/report/serenity-analyzer";
+import { SerenityTerminal } from "~/modules/report/serenity-terminal";
 
 export const metadata = {
   title: "Serenity Supply-Chain Analysis",
@@ -17,10 +17,10 @@ export default function SerenityPage() {
         <Microscope className="text-primary size-8" />
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
-            Serenity Supply-Chain Analysis
+            AI Research Terminal
           </h2>
           <p className="text-muted-foreground text-sm">
-            AI/semiconductor bottleneck lens by{" "}
+            Multi-skill analysis engine powered by{" "}
             <a
               href="https://x.com/aleabitoreddit"
               target="_blank"
@@ -28,12 +28,12 @@ export default function SerenityPage() {
               className="text-primary underline"
             >
               @aleabitoreddit
-            </a>{" "}
-            — ~450k followers, ~40k subscribers
+            </a>
+            {" "}framework
           </p>
         </div>
       </div>
-      <SerenityAnalyzer />
+      <SerenityTerminal />
     </div>
   );
 }
