@@ -1,8 +1,22 @@
 /* oxlint-disable i18next/no-literal-string */
 
+import dynamic from "next/dynamic";
 import { Microscope } from "lucide-react";
 
-import { SerenityTerminal } from "~/modules/report/serenity-terminal";
+const SerenityTerminal = dynamic(
+  () => import("~/modules/report/serenity-terminal").then((mod) => mod.SerenityTerminal),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[600px] items-center justify-center rounded-lg border bg-[#0a0e17]">
+        <div className="text-center">
+          <div className="mb-2 font-mono text-2xl text-green-400/20">▮</div>
+          <p className="font-mono text-sm text-white/30">Loading Terminal...</p>
+        </div>
+      </div>
+    ),
+  },
+);
 
 export const metadata = {
   title: "Serenity Supply-Chain Analysis",
