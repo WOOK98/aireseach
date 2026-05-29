@@ -1,7 +1,7 @@
 {
   "product": {
     "title": "Informes de investigación empresarial con IA en minutos",
-    "description": "Aireseach convierte búsqueda web en vivo y tu propia clave de modelo en informes estructurados de mercado, competencia, riesgo e inversión.",
+    "description": "Airesearch convierte búsqueda web en vivo y tu propia clave de modelo en informes estructurados de mercado, competencia, riesgo e inversión.",
     "preview": {
       "badge": "Investigación en vivo",
       "title": "Flujo de informes basado en búsqueda",
@@ -32,7 +32,7 @@
     "pricing": "Ver precios",
     "buy": {
       "question": "¿Listo para escalar tu investigación?",
-      "description": "Usa Aireseach para estandarizar fuentes, estructura analítica e informes empresariales exportables.",
+      "description": "Usa Airesearch para estandarizar fuentes, estructura analítica e informes empresariales exportables.",
       "button": "Empezar a investigar",
       "join": {
         "description": "Únete a analistas, fundadores y operadores que construyen mejores hábitos de investigación con IA.",
@@ -47,7 +47,7 @@
   },
   "useCases": {
     "label": "Diseñado para",
-    "title": "¿Quién usa Aireseach?",
+    "title": "¿Quién usa Airesearch?",
     "description": "Para fundadores, analistas, consultores e inversores que necesitan investigación empresarial creíble sin partir de una página en blanco.",
     "items": {
       "founders": {
@@ -138,20 +138,20 @@
   "faq": {
     "label": "Preguntas frecuentes",
     "title": "Preguntas frecuentes",
-    "description": "Todo lo que necesitas saber sobre Aireseach.",
+    "description": "Todo lo que necesitas saber sobre Airesearch.",
     "cta": "Contáctanos",
     "question": {
       "whatDoesOurPlatformDo": {
-        "question": "¿Qué es Aireseach?",
-        "answer": "Aireseach genera informes estructurados de investigación empresarial a partir de fuentes web en vivo. Usa búsqueda Jina para recopilar datos públicos y el modelo que elijas para producir análisis de mercado, competencia, riesgo e inversión."
+        "question": "¿Qué es Airesearch?",
+        "answer": "Airesearch genera informes estructurados de investigación empresarial a partir de fuentes web en vivo. Usa búsqueda Jina para recopilar datos públicos y el modelo que elijas para producir análisis de mercado, competencia, riesgo e inversión."
       },
       "howWillThisBenefitMyBusiness": {
-        "question": "¿Para quién es Aireseach?",
+        "question": "¿Para quién es Airesearch?",
         "answer": "Para fundadores que validan mercados, analistas de due diligence, consultores que preparan entregables para clientes e inversores que dimensionan oportunidades."
       },
       "isMyDataSafe": {
         "question": "¿Mi clave API está segura?",
-        "answer": "Sí. Tu clave del modelo solo se usa para la solicitud actual y no se almacena en nuestros servidores. Aireseach gestiona la búsqueda; la inferencia va al proveedor que elijas."
+        "answer": "Sí. Tu clave del modelo solo se usa para la solicitud actual y no se almacena en nuestros servidores. Airesearch gestiona la búsqueda; la inferencia va al proveedor que elijas."
       },
       "whatKindOfIntegrationsAreAvailable": {
         "question": "¿Qué tipo de integraciones están disponibles?",
@@ -163,7 +163,7 @@
       },
       "whatTypesOfBusinessesCanUseThis": {
         "question": "¿Qué tipos de empresas pueden usar esto?",
-        "answer": "Fundadores, analistas, consultores, inversores y operadores pueden usar Aireseach para acelerar investigación repetible de mercados y empresas."
+        "answer": "Fundadores, analistas, consultores, inversores y operadores pueden usar Airesearch para acelerar investigación repetible de mercados y empresas."
       },
       "canICustomizeThisToFitMyBusinessNeeds": {
         "question": "¿Puedo exportar y compartir informes?",
@@ -222,7 +222,7 @@
   },
   "docs": {
     "title": "Cómo funciona",
-    "description": "Aprende a usar Aireseach"
+    "description": "Aprende a usar Airesearch"
   },
   "ai": {
     "description": "Haz preguntas enfocadas, explora un mercado y convierte contexto público en decisiones empresariales más claras.",
@@ -280,7 +280,7 @@
     }
   },
   "buyCta": {
-    "title": "Investiga más rápido con Aireseach.",
+    "title": "Investiga más rápido con Airesearch.",
     "description": "Genera informes empresariales basados en búsqueda con tu proveedor de modelo preferido.",
     "link": "Generar informe"
   }

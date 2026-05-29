@@ -40,7 +40,7 @@ const links = [
   },
 ] as const;
 
-const BRAND_NAME = "Aireseach";
+const BRAND_NAME = "Airesearch";
 
 export const Header = () => {
   const { t } = useTranslation("common");
