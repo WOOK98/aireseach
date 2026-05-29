@@ -188,8 +188,8 @@ export const SerenityTerminal = () => {
   const [subTab, setSubTab] = useState<SubTab>("analysis");
   const [results, setResults] = useState<Map<string, SkillResult>>(new Map());
   const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("deepseek-v4");
-  const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com/v1");
+  const [model, setModel] = useState("deepseek-v4-flash");
+  const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com");
   const abortRef = useRef<AbortController[]>([]);
 
   const isLoading = Array.from(results.values()).some(
@@ -440,7 +440,7 @@ export const SerenityTerminal = () => {
               Model
             </Label>
             <Input
-              placeholder="deepseek-v4"
+              placeholder="deepseek-v4-flash"
               value={model}
               onChange={(e) => setModel(e.target.value)}
               disabled={isLoading}
@@ -453,7 +453,7 @@ export const SerenityTerminal = () => {
               Base URL
             </Label>
             <Input
-              placeholder="https://api.deepseek.com/v1"
+              placeholder="https://api.deepseek.com"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               disabled={isLoading}

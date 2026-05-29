@@ -63,8 +63,8 @@ const MODEL_PROVIDERS = [
   {
     value: "deepseek",
     label: "DeepSeek V4",
-    baseUrl: "https://api.deepseek.com/v1",
-    model: "deepseek-v4",
+    baseUrl: "https://api.deepseek.com",
+    model: "deepseek-v4-flash",
   },
   {
     value: "openai",
