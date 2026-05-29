@@ -188,7 +188,7 @@ export const SerenityTerminal = () => {
   const [subTab, setSubTab] = useState<SubTab>("analysis");
   const [results, setResults] = useState<Map<string, SkillResult>>(new Map());
   const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("deepseek-chat");
+  const [model, setModel] = useState("deepseek-v4");
   const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com/v1");
   const abortRef = useRef<AbortController[]>([]);
 
@@ -440,7 +440,7 @@ export const SerenityTerminal = () => {
               Model
             </Label>
             <Input
-              placeholder="deepseek-chat"
+              placeholder="deepseek-v4"
               value={model}
               onChange={(e) => setModel(e.target.value)}
               disabled={isLoading}

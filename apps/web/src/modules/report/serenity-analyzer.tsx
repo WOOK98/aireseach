@@ -62,9 +62,9 @@ const ANALYSIS_MODES = [
 const MODEL_PROVIDERS = [
   {
     value: "deepseek",
-    label: "DeepSeek",
+    label: "DeepSeek V4",
     baseUrl: "https://api.deepseek.com/v1",
-    model: "deepseek-chat",
+    model: "deepseek-v4",
   },
   {
     value: "openai",
