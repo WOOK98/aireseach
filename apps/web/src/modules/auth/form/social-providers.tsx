@@ -12,6 +12,7 @@ import { Icons } from "@workspace/ui-web/icons";
 import { pathsConfig } from "~/config/paths";
 import { authClient } from "~/lib/auth/client";
 
+import envConfig from "../../../../env.config";
 import { auth } from "../lib/api";
 
 import type { Icon } from "@workspace/ui-web/icons";
@@ -45,11 +46,18 @@ const SocialProvider = ({
   const Icon = SocialIcons[provider];
 
   useEffect(() => {
-    if (provider === SocialProviderType.GOOGLE) {
-      void authClient.oneTap({
-        context,
-        callbackURL: redirectTo,
-      });
+    if (
+      provider === SocialProviderType.GOOGLE &&
+      envConfig.NEXT_PUBLIC_GOOGLE_ONE_TAP_CLIENT_ID
+    ) {
+      void authClient
+        .oneTap({
+          context,
+          callbackURL: redirectTo,
+        })
+        .catch(() => {
+          // One Tap not available — silently ignore
+        });
     }
   }, [provider, context, redirectTo]);
 
