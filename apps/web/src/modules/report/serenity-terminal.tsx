@@ -10,12 +10,9 @@ import {
   MessageSquare,
   Shield,
   GitBranch,
-  Grid3X3,
 } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 
-import { Badge } from "@workspace/ui-web/badge";
-import { Button } from "@workspace/ui-web/button";
 import { Input } from "@workspace/ui-web/input";
 
 import { CalibrationChart } from "./serenity-tabs/calibration-chart";
@@ -103,12 +100,36 @@ Respond in Chinese. Structure: 供应链位置 → 瓶颈测试 → Serenity已�
 const YEARS = [1, 2, 3, 5, 10];
 
 const QUICK_EXAMPLES = [
-  { skill: "serenity", text: "$SIVE CPO激光供应链", query: "$SIVE Sivers Semiconductors CPO激光瓶颈深度分析" },
-  { skill: "serenity", text: "$AXTI InP基板控制", query: "$AXTI InP基板 Strait of AXTI 供应链控制分析" },
-  { skill: "serenity", text: "$NBIS Neocloud质量", query: "$NBIS Neocloud融资质量对比分析" },
-  { skill: "fundamental", text: "$AAOI 基本面深度", query: "$AAOI 美国制造转录器基本面分析" },
-  { skill: "macro", text: "CPO板块资本轮动", query: "AI光子学CPO板块宏观叙事和资本轮动" },
-  { skill: "risk", text: "Neocloud稀释风险", query: "$IREN $CRWV 稀释/ATM风险矩阵对比" },
+  {
+    skill: "serenity",
+    text: "$SIVE CPO激光供应链",
+    query: "$SIVE Sivers Semiconductors CPO激光瓶颈深度分析",
+  },
+  {
+    skill: "serenity",
+    text: "$AXTI InP基板控制",
+    query: "$AXTI InP基板 Strait of AXTI 供应链控制分析",
+  },
+  {
+    skill: "serenity",
+    text: "$NBIS Neocloud质量",
+    query: "$NBIS Neocloud融资质量对比分析",
+  },
+  {
+    skill: "fundamental",
+    text: "$AAOI 基本面深度",
+    query: "$AAOI 美国制造转录器基本面分析",
+  },
+  {
+    skill: "macro",
+    text: "CPO板块资本轮动",
+    query: "AI光子学CPO板块宏观叙事和资本轮动",
+  },
+  {
+    skill: "risk",
+    text: "Neocloud稀释风险",
+    query: "$IREN $CRWV 稀释/ATM风险矩阵对比",
+  },
 ];
 
 const RECENT = [
@@ -126,6 +147,18 @@ const SUB_TABS: { id: SubTab; label: string }[] = [
   { id: "matrix", label: "持仓矩阵" },
   { id: "calibration", label: "胜率数据" },
 ];
+
+// ─── Helpers ────────────────────────────────────────────────────
+
+function formatContent(text: string) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
+    .replace(/`(.+?)`/g, "<code>$1</code>")
+    .split(/\n\n+/)
+    .map((p) => (p.trim() ? `<p>${p.replace(/\n/g, "<br>")}</p>` : ""))
+    .join("");
+}
 
 // ─── Component ───────────────────────────────────────────────────
 
@@ -226,7 +259,8 @@ export const SerenityTerminal = () => {
             const idx = next.findIndex(
               (r) => r.skillId === skillId && r.timestamp === ts,
             );
-            if (idx >= 0) next[idx] = { ...next[idx], content };
+            if (idx >= 0)
+              next[idx] = { ...next[idx], content } as AnalysisResult;
             return next;
           });
         }
@@ -236,7 +270,12 @@ export const SerenityTerminal = () => {
           const idx = next.findIndex(
             (r) => r.skillId === skillId && r.timestamp === ts,
           );
-          if (idx >= 0) next[idx] = { ...next[idx], content, status: "done" };
+          if (idx >= 0)
+            next[idx] = {
+              ...next[idx],
+              content,
+              status: "done",
+            } as AnalysisResult;
           return next;
         });
       } catch (err: unknown) {
@@ -251,7 +290,7 @@ export const SerenityTerminal = () => {
               ...next[idx],
               status: "error",
               error: err instanceof Error ? err.message : "Unknown error",
-            };
+            } as AnalysisResult;
           return next;
         });
       }
@@ -286,7 +325,7 @@ export const SerenityTerminal = () => {
       if (!apiKey) return;
       setTicker(query);
       setActiveTab("examples");
-      runSingle(query, skillId);
+      void runSingle(query, skillId);
     },
     [apiKey, runSingle],
   );
@@ -296,22 +335,6 @@ export const SerenityTerminal = () => {
     abortRef.current = [];
     setRunning(false);
   };
-
-  const formatContent = (text: string) => {
-    return text
-      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
-      .replace(/`(.+?)`/g, "<code>$1</code>")
-      .split(/\n\n+/)
-      .map((p) =>
-        p.trim()
-          ? `<p>${p.replace(/\n/g, "<br>")}</p>`
-          : "",
-      )
-      .join("");
-  };
-
-  const currentSkills = multiMode ? Array.from(checkedSkills) : [activeSkill];
 
   return (
     <div className="flex min-h-[calc(100vh-56px)]">
@@ -329,7 +352,7 @@ export const SerenityTerminal = () => {
               onChange={(e) => setTicker(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit(e as never)}
               disabled={running}
-              className="w-full border-b border-[#ccc8be] bg-transparent pb-1.5 font-serif text-xl font-light text-[#1a1814] outline-none transition-colors focus:border-[#1a3a5c]"
+              className="w-full border-b border-[#ccc8be] bg-transparent pb-1.5 font-serif text-xl font-light text-[#1a1814] transition-colors outline-none focus:border-[#1a3a5c]"
             />
           </div>
 
@@ -412,9 +435,17 @@ export const SerenityTerminal = () => {
                   ? "border-[#9dcfb8] bg-[#edf7f2]"
                   : "border-[#e0dbd2] bg-[#f4f2ee]"
               }`}
+              role="button"
+              tabIndex={0}
               onClick={() => {
                 setMultiMode(!multiMode);
                 if (multiMode) setCheckedSkills(new Set());
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  setMultiMode(!multiMode);
+                  if (multiMode) setCheckedSkills(new Set());
+                }
               }}
             >
               <span className="text-xs text-[#5a5650]">多 Skill 并行分析</span>
@@ -424,7 +455,7 @@ export const SerenityTerminal = () => {
                 }`}
               >
                 <div
-                  className="absolute left-[3px] top-[3px] h-3 w-3 rounded-full bg-white shadow-sm transition-all"
+                  className="absolute top-[3px] left-[3px] h-3 w-3 rounded-full bg-white shadow-sm transition-all"
                   style={{ left: multiMode ? 19 : 3 }}
                 />
               </div>
@@ -510,14 +541,16 @@ export const SerenityTerminal = () => {
         {/* Hero / Tabs */}
         {results.length === 0 && (
           <div>
-            <h1 className="mb-2 font-serif text-[30px] font-light leading-tight text-[#1a1814]">
+            <h1 className="mb-2 font-serif text-[30px] leading-tight font-light text-[#1a1814]">
               供应链瓶颈分析
               <br />
               AI · 半导体 · 光子学
             </h1>
             <p className="mb-7 font-mono text-[13px] text-[#9a9690]">
-              <span className="text-[#5a5650]">Serenity (@aleabitoreddit) 框架</span> · 5,582
-              tweets · 4 长文蒸馏 · 仅供决策参考，非投资建议
+              <span className="text-[#5a5650]">
+                Serenity (@aleabitoreddit) 框架
+              </span>{" "}
+              · 5,582 tweets · 4 长文蒸馏 · 仅供决策参考，非投资建议
             </p>
           </div>
         )}
@@ -551,7 +584,8 @@ export const SerenityTerminal = () => {
               <div className="mb-2.5 font-mono text-[11px] leading-[2] text-[#1a3a5c]">
                 超大规模资本 (GOOGL/MSFT/META/AMZN)
                 <span className="text-[#9a9690]"> → </span>ASIC/TPU
-                <span className="text-[#9a9690]"> → </span>光学转发器 (LITE/AAOI/COHR)
+                <span className="text-[#9a9690]"> → </span>光学转发器
+                (LITE/AAOI/COHR)
                 <span className="text-[#9a9690]"> → </span>CW/DFB激光 (SIVE)
                 <span className="text-[#9a9690]"> → </span>InP外延 (IQE)
                 <span className="text-[#9a9690]"> → </span>
@@ -592,7 +626,8 @@ export const SerenityTerminal = () => {
                   className="group rounded-lg border border-[#e0dbd2] bg-[#faf9f6] p-3.5 text-left transition-all hover:border-[#ccc8be] hover:bg-[#f4f2ee]"
                 >
                   <div className="mb-1.5 font-mono text-[9px] tracking-[.1em] text-[#9a9690] uppercase">
-                    {SKILLS.find((s) => s.id === ex.skill)?.name} · {SKILLS.find((s) => s.id === ex.skill)?.sub}
+                    {SKILLS.find((s) => s.id === ex.skill)?.name} ·{" "}
+                    {SKILLS.find((s) => s.id === ex.skill)?.sub}
                   </div>
                   <div className="font-serif text-[13px] text-[#1a1814]">
                     {ex.text}
@@ -684,13 +719,16 @@ export const SerenityTerminal = () => {
                       ? "border-[#b8cedd]"
                       : "border-[#ccc8be]"
                   }`}
-                  dangerouslySetInnerHTML={{ __html: formatContent(result.content) }}
+                  dangerouslySetInnerHTML={{
+                    __html: formatContent(result.content),
+                  }}
                 />
               )}
 
               {result.status === "done" && result.skillId === "serenity" && (
                 <div className="mt-3 rounded border-l-[3px] border-[#7a4f00] bg-[#fdf5e8] px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-[#7a4f00]">
-                  ⚠️ 这是框架分析，不是投资建议。论点有时效性，请自行确认当前价格和基本面。DYOR。
+                  ⚠️
+                  这是框架分析，不是投资建议。论点有时效性，请自行确认当前价格和基本面。DYOR。
                 </div>
               )}
 

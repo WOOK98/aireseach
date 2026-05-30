@@ -8,7 +8,22 @@ interface SupplyChainMapProps {
   onTickerClick: (ticker: string) => void;
 }
 
-const CHAIN_LAYERS = [
+interface ChainNode {
+  id: string;
+  label: string;
+  sub: string;
+  highlight?: boolean;
+  chokepoint?: boolean;
+  noTicker?: boolean;
+  tier?: "bull" | "bear" | "neutral";
+}
+
+interface ChainLayer {
+  label: string;
+  nodes: ChainNode[];
+}
+
+const CHAIN_LAYERS: ChainLayer[] = [
   {
     label: "Hyperscaler Capex",
     nodes: [
@@ -51,11 +66,13 @@ const CHAIN_LAYERS = [
   },
   {
     label: "Raw Materials",
-    nodes: [{ id: "INDIUM", label: "Indium", sub: "Feedstock", noTicker: true }],
+    nodes: [
+      { id: "INDIUM", label: "Indium", sub: "Feedstock", noTicker: true },
+    ],
   },
 ];
 
-const NEOCLOUD_LAYER = {
+const NEOCLOUD_LAYER: ChainLayer = {
   label: "Neocloud / AI Datacenter",
   nodes: [
     { id: "NBIS", label: "NBIS", sub: "S-tier", tier: "bull" },
@@ -67,7 +84,7 @@ const NEOCLOUD_LAYER = {
 
 export const SupplyChainMap = ({ onTickerClick }: SupplyChainMapProps) => {
   const handleNodeClick = useCallback(
-    (node: (typeof CHAIN_LAYERS)[0]["nodes"][0]) => {
+    (node: ChainNode) => {
       if (!node.noTicker) {
         onTickerClick(node.label);
       }
@@ -94,7 +111,7 @@ export const SupplyChainMap = ({ onTickerClick }: SupplyChainMapProps) => {
           <div key={layer.label}>
             {/* Layer label */}
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+              <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                 {layer.label}
               </span>
               {layerIdx < CHAIN_LAYERS.length - 1 && (
@@ -112,7 +129,7 @@ export const SupplyChainMap = ({ onTickerClick }: SupplyChainMapProps) => {
                   disabled={node.noTicker}
                   className={`group relative flex flex-col items-center rounded-lg border px-4 py-3 transition-all ${
                     node.chokepoint
-                      ? "border-red-500 border-dashed bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50"
+                      ? "border-dashed border-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50"
                       : node.highlight
                         ? "border-primary bg-primary/5 hover:bg-primary/10"
                         : "border-border bg-card hover:border-primary/50 hover:bg-accent/50"
@@ -168,7 +185,7 @@ export const SupplyChainMap = ({ onTickerClick }: SupplyChainMapProps) => {
       {/* Neocloud Layer */}
       <div className="border-t pt-4">
         <div className="mb-2 flex items-center gap-2">
-          <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+          <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
             {NEOCLOUD_LAYER.label}
           </span>
           <div className="border-border/50 flex-1 border-b border-dashed" />
@@ -209,7 +226,7 @@ export const SupplyChainMap = ({ onTickerClick }: SupplyChainMapProps) => {
       {/* Legend */}
       <div className="flex flex-wrap gap-4 border-t pt-3 text-[10px]">
         <div className="flex items-center gap-1.5">
-          <div className="size-3 rounded border border-red-500 border-dashed bg-red-50" />
+          <div className="size-3 rounded border border-dashed border-red-500 bg-red-50" />
           <span className="text-muted-foreground">Chokepoint</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -221,7 +238,7 @@ export const SupplyChainMap = ({ onTickerClick }: SupplyChainMapProps) => {
           <span className="text-muted-foreground">Bear / Reversed</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="size-3 rounded border border-primary bg-primary/5" />
+          <div className="border-primary bg-primary/5 size-3 rounded border" />
           <span className="text-muted-foreground">High conviction</span>
         </div>
       </div>
