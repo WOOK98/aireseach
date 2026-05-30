@@ -11,7 +11,7 @@ import {
   Shield,
   GitBranch,
 } from "lucide-react";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useLayoutEffect } from "react";
 
 import { Input } from "@workspace/ui-web/input";
 
@@ -171,7 +171,7 @@ function StreamingContent({
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (ref.current) {
       ref.current.innerHTML = html;
     }
@@ -689,6 +689,12 @@ export const SerenityTerminal = () => {
           const skill = SKILLS.find((s) => s.id === result.skillId);
           if (!skill) return null;
 
+          const isLoading = result.status === "loading" && !result.content;
+          const isError = !!result.error;
+          const isDone =
+            result.status === "done" && result.skillId === "serenity";
+          const separator = idx < results.length - 1;
+
           return (
             <div key={`${result.skillId}-${result.timestamp}`} className="mb-8">
               <div className="mb-1 flex flex-wrap items-center gap-3">
@@ -710,7 +716,7 @@ export const SerenityTerminal = () => {
                 </span>
               </div>
 
-              {result.status === "loading" && !result.content && (
+              {isLoading && (
                 <div className="space-y-2.5 py-4">
                   {[100, 90, 95, 80].map((w, i) => (
                     <div
@@ -726,33 +732,29 @@ export const SerenityTerminal = () => {
                 </div>
               )}
 
-              {result.error && (
+              {isError && (
                 <div className="rounded bg-[#fdf0f0] p-3 font-mono text-xs text-[#9b2c2c]">
                   {result.error}
                 </div>
               )}
 
-              {result.content && (
-                <StreamingContent
-                  html={formatContent(result.content)}
-                  className={`mt-4 border-l-2 py-1 pl-5 font-serif text-sm leading-[1.9] text-[#1a1814] [&_code]:rounded [&_code]:bg-[#edeae3] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-[#0a5c5c] [&_em]:font-mono [&_em]:text-sm [&_em]:text-[#7a4f00] [&_em]:not-italic [&_p]:mb-3 [&_strong]:font-medium ${
-                    result.skillId === "serenity"
-                      ? "border-[#b8cedd]"
-                      : "border-[#ccc8be]"
-                  }`}
-                />
-              )}
+              <StreamingContent
+                html={formatContent(result.content)}
+                className={`mt-4 border-l-2 py-1 pl-5 font-serif text-sm leading-[1.9] text-[#1a1814] [&_code]:rounded [&_code]:bg-[#edeae3] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-[#0a5c5c] [&_em]:font-mono [&_em]:text-sm [&_em]:text-[#7a4f00] [&_em]:not-italic [&_p]:mb-3 [&_strong]:font-medium ${
+                  result.skillId === "serenity"
+                    ? "border-[#b8cedd]"
+                    : "border-[#ccc8be]"
+                } ${result.content ? "" : "hidden"}`}
+              />
 
-              {result.status === "done" && result.skillId === "serenity" && (
+              {isDone && (
                 <div className="mt-3 rounded border-l-[3px] border-[#7a4f00] bg-[#fdf5e8] px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-[#7a4f00]">
                   ⚠️
                   这是框架分析，不是投资建议。论点有时效性，请自行确认当前价格和基本面。DYOR。
                 </div>
               )}
 
-              {idx < results.length - 1 && (
-                <div className="my-8 h-px bg-[#e0dbd2]" />
-              )}
+              {separator && <div className="my-8 h-px bg-[#e0dbd2]" />}
             </div>
           );
         })}
