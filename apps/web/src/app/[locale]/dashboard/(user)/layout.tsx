@@ -21,19 +21,14 @@ const menu = [
     label: "platform",
     items: [
       {
-        title: "home",
-        href: pathsConfig.dashboard.user.index,
-        icon: <Icons.Home />,
+        title: "report.title",
+        href: pathsConfig.dashboard.user.report,
+        icon: <FileText />,
       },
       {
         title: "ai",
         href: pathsConfig.dashboard.user.ai,
         icon: <Icons.Brain />,
-      },
-      {
-        title: "report.title",
-        href: pathsConfig.dashboard.user.report,
-        icon: <FileText />,
       },
     ],
   },
