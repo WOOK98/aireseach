@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Research Terminal v2 Preview</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #faf9f6;
+        --bg2: #f4f2ee;
+        --bg3: #edeae3;
+        --ink: #1a1814;
+        --ink2: #5a5650;
+        --ink3: #9a9690;
+        --rule: #e0dbd2;
+        --rule2: #ccc8be;
+        --accent: #1a3a5c;
+        --accent-l: #e8eef5;
+        --red: #9b2c2c;
+        --red-l: #fdf0f0;
+        --grn: #1a5c3a;
+        --grn-l: #edf7f2;
+        --amb: #7a4f00;
+        --amb-l: #fdf5e8;
+        --purp: #4a1e8a;
+        --purp-l: #f2eefb;
+        --teal: #0a5c5c;
+        --teal-l: #e8f5f5;
+        --serif: "Noto Serif SC", serif;
+        --sans: "Noto Sans SC", sans-serif;
+        --mono: "DM Mono", monospace;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--sans);
+        min-height: 100vh;
+        font-size: 15px;
+        -webkit-font-smoothing: antialiased;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        height: 48px;
+        border-bottom: 1px solid var(--rule);
+        background: var(--bg);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .logo-mark {
+        width: 24px;
+        height: 24px;
+        background: var(--ink);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--bg);
+        font-weight: 500;
+      }
+      .logo-name {
+        font-size: 15px;
+        font-weight: 500;
+      }
+      .header-tags {
+        display: flex;
+        gap: 6px;
+      }
+      .tag {
+        font-family: var(--mono);
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 20px;
+        border: 1px solid;
+      }
+      .tag-serenity {
+        background: var(--accent-l);
+        color: var(--accent);
+        border-color: #b8cedd;
+      }
+      .tag-mode {
+        background: var(--bg2);
+        color: var(--ink2);
+        border-color: var(--rule2);
+      }
+      .page {
+        display: flex;
+        min-height: calc(100vh - 48px);
+      }
+      .panel {
+        width: 240px;
+        flex-shrink: 0;
+        border-right: 1px solid var(--rule);
+        padding: 20px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        overflow-y: auto;
+        position: sticky;
+        top: 48px;
+        max-height: calc(100vh - 48px);
+      }
+      .section-title {
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        color: var(--ink3);
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      input[type="text"] {
+        font-family: var(--serif);
+        font-size: 18px;
+        font-weight: 300;
+        background: transparent;
+        border: none;
+        border-bottom: 1.5px solid var(--rule2);
+        outline: none;
+        padding: 4px 0;
+        width: 100%;
+        color: var(--ink);
+      }
+      input[type="text"]::placeholder {
+        color: var(--ink3);
+      }
+      .year-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+      }
+      .year-btn {
+        height: 28px;
+        border: 1px solid var(--rule2);
+        border-radius: 3px;
+        background: transparent;
+        color: var(--ink2);
+        font-family: var(--mono);
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .year-btn.active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--bg);
+      }
+      .skill-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        margin-bottom: 2px;
+      }
+      .skill-row:hover {
+        background: var(--bg2);
+      }
+      .skill-row.active {
+        background: var(--bg2);
+        border-color: var(--rule2);
+      }
+      .skill-pip {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .skill-name {
+        font-size: 12px;
+        flex: 1;
+      }
+      .skill-sub {
+        font-family: var(--mono);
+        font-size: 9px;
+      }
+      .par-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--rule);
+        background: var(--bg2);
+        cursor: pointer;
+        margin-top: 7px;
+      }
+      .par-label {
+        font-size: 12px;
+        color: var(--ink2);
+      }
+      .par-switch {
+        width: 30px;
+        height: 16px;
+        background: var(--rule2);
+        border-radius: 8px;
+        position: relative;
+      }
+      .par-switch::after {
+        content: "";
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: white;
+        border-radius: 50%;
+        top: 3px;
+        left: 3px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+      .run-btn {
+        width: 100%;
+        height: 40px;
+        background: var(--ink);
+        color: var(--bg);
+        border: none;
+        border-radius: 4px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+      }
+      .run-btn:hover {
+        background: #2d2b28;
+      }
+      .recent-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 4px 5px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 11px;
+        color: var(--ink2);
+        font-family: var(--mono);
+      }
+      .recent-item:hover {
+        background: var(--bg2);
+      }
+      .recent-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--ink3);
+      }
+      main {
+        flex: 1;
+        padding: 28px 36px;
+        overflow-y: auto;
+      }
+      h1 {
+        font-family: var(--serif);
+        font-size: 24px;
+        font-weight: 300;
+        margin-bottom: 6px;
+      }
+      .hero-sub {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink3);
+        margin-bottom: 18px;
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--rule);
+        margin-bottom: 20px;
+      }
+      .tab {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        padding: 6px 14px 7px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        color: var(--ink3);
+      }
+      .tab.active {
+        color: var(--ink);
+        border-bottom-color: var(--ink);
+      }
+      .serenity-card {
+        border: 1px solid #b8cedd;
+        border-radius: 8px;
+        padding: 14px 16px;
+        background: var(--accent-l);
+        margin-bottom: 18px;
+      }
+      .sc-title {
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin-bottom: 7px;
+      }
+      .sc-chain {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--accent);
+        line-height: 2.2;
+      }
+      .sc-chain strong {
+        font-weight: 600;
+      }
+      .sc-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .stat {
+        background: white;
+        border-radius: 4px;
+        padding: 6px 10px;
+        border: 1px solid #b8cedd;
+      }
+      .stat-label {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--ink3);
+        margin-bottom: 2px;
+      }
+      .stat-val {
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--accent);
+      }
+      .examples {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 9px;
+      }
+      .ex-card {
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 12px 13px;
+        cursor: pointer;
+        background: var(--bg);
+        transition: background 0.15s;
+      }
+      .ex-card:hover {
+        background: var(--bg2);
+      }
+      .ex-skill {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--ink3);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+      .ex-text {
+        font-size: 12px;
+        color: var(--ink);
+      }
+      .ex-arrow {
+        font-size: 11px;
+        color: var(--ink3);
+        margin-top: 4px;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .ex-card:hover .ex-arrow {
+        opacity: 1;
+      }
+      .footer {
+        border-top: 1px solid var(--rule);
+        padding: 7px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg);
+        position: sticky;
+        bottom: 0;
+      }
+      .footer-tags {
+        display: flex;
+        gap: 5px;
+      }
+      .footer-info {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--ink3);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        <div class="logo-mark">RT</div>
+        <span class="logo-name">Research Terminal</span>
+      </div>
+      <div class="header-tags">
+        <span class="tag tag-serenity">Serenity Skill v2</span
+        ><span class="tag tag-mode">单 Skill</span>
+      </div>
+    </header>
+    <div class="page">
+      <div class="panel">
+        <div>
+          <div class="section-title">分析目标</div>
+          <input type="text" placeholder="代码 / 行业 / 问题" />
+        </div>
+        <div>
+          <div class="section-title">分析年限</div>
+          <div class="year-grid">
+            <button class="year-btn">1</button
+            ><button class="year-btn">2</button
+            ><button class="year-btn active">3</button
+            ><button class="year-btn">5</button
+            ><button class="year-btn">10</button>
+          </div>
+        </div>
+        <div>
+          <div class="section-title">分析视角 · Skill</div>
+          <div class="skill-row active">
+            <div class="skill-pip" style="background: #1a3a5c"></div>
+            <span class="skill-name">Serenity</span
+            ><span class="skill-sub" style="color: #1a3a5c">供应链</span>
+          </div>
+          <div class="skill-row">
+            <div class="skill-pip" style="background: #1a5c3a"></div>
+            <span class="skill-name">Fundamental</span
+            ><span class="skill-sub" style="color: #1a5c3a">基本面</span>
+          </div>
+          <div class="skill-row">
+            <div class="skill-pip" style="background: #7a4f00"></div>
+            <span class="skill-name">Macro</span
+            ><span class="skill-sub" style="color: #7a4f00">宏观</span>
+          </div>
+          <div class="skill-row">
+            <div class="skill-pip" style="background: #4a1e8a"></div>
+            <span class="skill-name">Technical</span
+            ><span class="skill-sub" style="color: #4a1e8a">技术面</span>
+          </div>
+          <div class="skill-row">
+            <div class="skill-pip" style="background: #0a5c5c"></div>
+            <span class="skill-name">Sentiment</span
+            ><span class="skill-sub" style="color: #0a5c5c">市场情绪</span>
+          </div>
+          <div class="skill-row">
+            <div class="skill-pip" style="background: #9b2c2c"></div>
+            <span class="skill-name">Risk</span
+            ><span class="skill-sub" style="color: #9b2c2c">风险矩阵</span>
+          </div>
+          <div class="par-wrap">
+            <span class="par-label">多 Skill 并行</span>
+            <div class="par-switch"></div>
+          </div>
+        </div>
+        <button class="run-btn">开始分析</button>
+        <div>
+          <div class="section-title">最近查询</div>
+          <div class="recent-item">
+            <div class="recent-dot"></div>
+            $SIVE CPO激光瓶颈分析
+          </div>
+          <div class="recent-item">
+            <div class="recent-dot"></div>
+            $AXTI InP基板供应链
+          </div>
+          <div class="recent-item">
+            <div class="recent-dot"></div>
+            $NBIS Neocloud融资质量
+          </div>
+          <div class="recent-item">
+            <div class="recent-dot"></div>
+            $AAOI 美国制造转录器
+          </div>
+        </div>
+      </div>
+      <main>
+        <h1>供应链瓶颈分析 · AI · 半导体 · 光子学</h1>
+        <p class="hero-sub">
+          Serenity (@aleabitoreddit) 框架 · 5,582 tweets · 非投资建议
+        </p>
+        <div class="tabs">
+          <div class="tab active">快速开始</div>
+          <div class="tab">供应链图谱</div>
+          <div class="tab">持仓矩阵</div>
+          <div class="tab">胜率数据</div>
+        </div>
+        <div class="serenity-card">
+          <div class="sc-title">核心供应链</div>
+          <div class="sc-chain">
+            超大规模资本 → ASIC/TPU → 光学转发器 (LITE/AAOI/COHR) → CW/DFB激光
+            <strong>(SIVE)</strong> → InP外延 (IQE) →
+            <strong style="color: #9b2c2c">InP基板 (AXTI) ← ⚡ 瓶颈</strong> →
+            铟原料
+          </div>
+          <div class="sc-stats">
+            <div class="stat">
+              <div class="stat-label">数据来源</div>
+              <div class="stat-val">5,582 tweets</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">30天方向准确率</div>
+              <div class="stat-val">~61%</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">成熟供应链论点</div>
+              <div class="stat-val">~75-85%</div>
+            </div>
+          </div>
+        </div>
+        <div class="examples">
+          <div class="ex-card">
+            <div class="ex-skill">Serenity · #1 conviction</div>
+            <div class="ex-text">$SIVE CPO激光瓶颈深度分析</div>
+            <div class="ex-arrow">→</div>
+          </div>
+          <div class="ex-card">
+            <div class="ex-skill">Serenity · 旗舰瓶颈</div>
+            <div class="ex-text">$AXTI Strait of AXTI InP基板分析</div>
+            <div class="ex-arrow">→</div>
+          </div>
+          <div class="ex-card">
+            <div class="ex-skill">Serenity · 融资质量谱</div>
+            <div class="ex-text">$NBIS Neocloud融资质量对比</div>
+            <div class="ex-arrow">→</div>
+          </div>
+          <div class="ex-card">
+            <div class="ex-skill">Fundamental</div>
+            <div class="ex-text">$AAOI 美国制造转录器基本面</div>
+            <div class="ex-arrow">→</div>
+          </div>
+          <div class="ex-card">
+            <div class="ex-skill">Macro</div>
+            <div class="ex-text">AI光子学CPO宏观资本轮动</div>
+            <div class="ex-arrow">→</div>
+          </div>
+          <div class="ex-card">
+            <div class="ex-skill">Risk · ATM稀释</div>
+            <div class="ex-text">$IREN $CRWV ATM稀释风险矩阵</div>
+            <div class="ex-arrow">→</div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div class="footer">
+      <div class="footer-tags">
+        <span class="tag tag-serenity"
+          ><span
+            class="skill-pip"
+            style="
+              background: #1a3a5c;
+              display: inline-block;
+              vertical-align: middle;
+              margin-right: 4px;
+            "
+          ></span
+          >Serenity</span
+        >
+      </div>
+      <span class="footer-info">Claude Sonnet 4 · Serenity · 3Y</span>
+    </div>
+  </body>
+</html>
