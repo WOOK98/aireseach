@@ -31,7 +31,7 @@ const menu = [
         icon: <Icons.Brain />,
       },
       {
-        title: "report",
+        title: "report.title",
         href: pathsConfig.dashboard.user.report,
         icon: <FileText />,
       },
