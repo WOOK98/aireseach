@@ -604,8 +604,8 @@ type SubTab = "examples" | "chain" | "matrix" | "calibration";
 
 const SUB_TABS: { id: SubTab; label: string }[] = [
   { id: "examples", label: "快速开始" },
-  { id: "chain", label: "供应链图谱" },
-  { id: "matrix", label: "持仓矩阵" },
+  { id: "chain", label: "供应链图谱（固定）" },
+  { id: "matrix", label: "持仓矩阵（固定）" },
   { id: "calibration", label: "胜率数据" },
 ];
 
@@ -1413,6 +1413,25 @@ export const SerenityTerminal = () => {
         {/* ── Tab: Supply Chain (SVG inline) ────────────────── */}
         {activeTab === "chain" && (
           <div>
+            {ticker.trim() && (
+              <div className="mb-4 flex items-center justify-between rounded-lg border border-[#e8c87a] bg-[#fdf5e8] px-4 py-3">
+                <span className="font-mono text-[11px] text-[#7a4f00]">
+                  ⚠️ 下图是 Serenity 的 AI/半导体固定宇宙，不是「{ticker.trim()}」的供应链
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const q = `${ticker.trim()} 供应链瓶颈分析`;
+                    setTicker(q);
+                    setActiveTab("examples");
+                    void runSingle(q, "serenity", Date.now());
+                  }}
+                  className="shrink-0 rounded-md bg-[#7a4f00] px-3 py-1.5 font-mono text-[11px] text-white transition-colors hover:bg-[#5a3a00]"
+                >
+                  用 AI 分析 {ticker.trim()} 供应链 →
+                </button>
+              </div>
+            )}
             <div className="mb-4 rounded-lg border border-[#e0dbd2] bg-[#faf9f6] p-4">
               <div className="mb-3 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
                 AI 光子学供应链 · 点击节点填入分析框
@@ -1677,6 +1696,25 @@ export const SerenityTerminal = () => {
         {/* ── Tab: Conviction Matrix (inline) ───────────────── */}
         {activeTab === "matrix" && (
           <div>
+            {ticker.trim() && (
+              <div className="mb-4 flex items-center justify-between rounded-lg border border-[#e8c87a] bg-[#fdf5e8] px-4 py-3">
+                <span className="font-mono text-[11px] text-[#7a4f00]">
+                  ⚠️ 下图是 Serenity 的固定持仓矩阵，不是「{ticker.trim()}」的相关标的
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const q = `${ticker.trim()} 竞争格局分析`;
+                    setTicker(q);
+                    setActiveTab("examples");
+                    void runSingle(q, "serenity", Date.now());
+                  }}
+                  className="shrink-0 rounded-md bg-[#7a4f00] px-3 py-1.5 font-mono text-[11px] text-white transition-colors hover:bg-[#5a3a00]"
+                >
+                  用 AI 分析 {ticker.trim()} 竞争格局 →
+                </button>
+              </div>
+            )}
             <p className="mb-4 font-mono text-[10px] text-[#9a9690]">
               点击标的 → 填入输入框 · 截至 2026年5月 · 论点有时效性
             </p>
