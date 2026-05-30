@@ -11,7 +11,7 @@ import {
   Shield,
   GitBranch,
 } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 import { Input } from "@workspace/ui-web/input";
 
@@ -158,6 +158,26 @@ function formatContent(text: string) {
     .split(/\n\n+/)
     .map((p) => (p.trim() ? `<p>${p.replace(/\n/g, "<br>")}</p>` : ""))
     .join("");
+}
+
+// ─── Streaming content renderer (ref-based, skips React reconciliation) ──
+
+function StreamingContent({
+  html,
+  className,
+}: {
+  html: string;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.innerHTML = html;
+    }
+  }, [html]);
+
+  return <div ref={ref} className={className} />;
 }
 
 // ─── Component ───────────────────────────────────────────────────
@@ -713,15 +733,13 @@ export const SerenityTerminal = () => {
               )}
 
               {result.content && (
-                <div
+                <StreamingContent
+                  html={formatContent(result.content)}
                   className={`mt-4 border-l-2 py-1 pl-5 font-serif text-sm leading-[1.9] text-[#1a1814] [&_code]:rounded [&_code]:bg-[#edeae3] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-[#0a5c5c] [&_em]:font-mono [&_em]:text-sm [&_em]:text-[#7a4f00] [&_em]:not-italic [&_p]:mb-3 [&_strong]:font-medium ${
                     result.skillId === "serenity"
                       ? "border-[#b8cedd]"
                       : "border-[#ccc8be]"
                   }`}
-                  dangerouslySetInnerHTML={{
-                    __html: formatContent(result.content),
-                  }}
                 />
               )}
 
