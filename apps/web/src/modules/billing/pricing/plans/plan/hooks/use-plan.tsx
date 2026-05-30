@@ -29,6 +29,10 @@ export const usePlan = ({
 }) => {
   const { t } = useTranslation("billing");
   const controls = usePricingControls((c) => c.controls);
+
+  // Client-side session as backup — props-based user can be stale
+  const { data: clientSession } = authClient.useSession();
+  const isAuthenticated = !!clientSession?.user || !!user;
   const member = useQuery({
     ...organization.queries.members.getByUserId({
       organizationId: controls.referenceId ?? "",
@@ -87,7 +91,7 @@ export const usePlan = ({
       "redirect" | "referenceId"
     >,
   ) => {
-    if (!user) {
+    if (!isAuthenticated) {
       const url = new URL(pathsConfig.auth.login, appConfig.url);
       url.searchParams.set("redirectTo", pathsConfig.marketing.pricing);
       return router.push(url.toString());
@@ -105,7 +109,8 @@ export const usePlan = ({
     checkout.mutate({
       json: {
         ...params,
-        referenceId: controls.referenceId ?? user.id,
+        referenceId:
+          controls.referenceId ?? clientSession?.user?.id ?? user?.id ?? "",
         redirect: {
           success: success.toString(),
           cancel: cancel.toString(),
@@ -115,7 +120,7 @@ export const usePlan = ({
   };
 
   const handleOpenPortal = () => {
-    if (!user) {
+    if (!isAuthenticated) {
       const url = new URL(pathsConfig.auth.login, appConfig.url);
       url.searchParams.set("redirectTo", pathsConfig.marketing.pricing);
       return router.push(url.toString());
@@ -126,14 +131,15 @@ export const usePlan = ({
     getPortal.mutate({
       query: {
         redirectUrl: redirectUrl.toString(),
-        referenceId: controls.referenceId ?? user.id,
+        referenceId:
+          controls.referenceId ?? clientSession?.user?.id ?? user?.id ?? "",
       },
     });
   };
 
   const can = useCallback(
     (permission: NonNullable<Permissions["billing"]>[number]) =>
-      !user ||
+      !isAuthenticated ||
       controls.referenceType === BillingReference.USER ||
       authClient.organization.checkRolePermission({
         permissions: {
@@ -141,7 +147,7 @@ export const usePlan = ({
         },
         role: toMemberRole(member.data?.role),
       }),
-    [member.data?.role, controls.referenceType, user],
+    [member.data?.role, controls.referenceType, isAuthenticated],
   );
 
   return {
