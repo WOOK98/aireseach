@@ -1,112 +1,107 @@
 import Link from "next/link";
-import { StarField } from "~/modules/marketing/home/star-field";
+
+import { ParticleField } from "~/modules/marketing/home/particle-field";
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050510]">
-      <StarField />
+    <div className="relative min-h-screen overflow-hidden bg-[#f3f4f6]">
+      <ParticleField />
 
-      {/* Green glow top */}
-      <div
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2"
-        style={{
-          width: 900,
-          height: 450,
-          background:
-            "radial-gradient(ellipse at 50% 0%, rgba(34,197,94,.12) 0%, transparent 70%)",
-        }}
-      />
+      {/* Hero */}
+      <section className="relative z-10 px-8 pt-24 pb-16 md:px-16 lg:px-24">
+        <p className="mb-4 text-sm font-medium tracking-widest text-gray-400 uppercase">
+          Supply-chain intelligence powered by Serenity Framework
+        </p>
+        <h1 className="max-w-3xl text-[clamp(2.2rem,5.5vw,4.5rem)] font-extrabold leading-[1.08] tracking-tight text-gray-900">
+          研究效率，如虎添翼。
+          <br />
+          <span className="text-gray-400">Analysts take days. We take seconds.</span>
+        </h1>
+      </section>
 
-      <div className="relative z-10 mx-auto max-w-3xl px-6 py-28 text-center">
-        {/* Badge row */}
-        <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
+      {/* Action cards */}
+      <section className="relative z-10 px-8 pb-20 md:px-16 lg:px-24">
+        <div className="grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            "Serenity Framework",
-            "5,582 tweets distilled",
-            "Supply-chain intelligence",
-          ].map((label) => (
-            <span
-              key={label}
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-white/60"
+            {
+              title: "生成研究报告",
+              desc: "输入目标，一键生成结构化分析",
+              href: "/dashboard/report",
+              icon: "📄",
+            },
+            {
+              title: "供应链瓶颈分析",
+              desc: "Serenity 14点清单 · 多跳 BOM 映射",
+              href: "/dashboard/report",
+              icon: "🔗",
+            },
+            {
+              title: "AI 对话助手",
+              desc: "DeepSeek 驱动，即时回答研究问题",
+              href: "/dashboard/ai",
+              icon: "💬",
+            },
+            {
+              title: "定价方案",
+              desc: "免费开始，Pro 解锁更多次数",
+              href: "/pricing",
+              icon: "💎",
+            },
+          ].map((card) => (
+            <Link
+              key={card.title}
+              href={card.href}
+              className="group rounded-xl border border-gray-200 bg-white/80 p-5 backdrop-blur-sm transition-all hover:border-gray-300 hover:shadow-lg"
             >
-              {label}
-            </span>
+              <div className="mb-3 text-2xl">{card.icon}</div>
+              <div className="mb-1 font-semibold text-gray-900">
+                {card.title}
+              </div>
+              <div className="text-sm leading-relaxed text-gray-500">
+                {card.desc}
+              </div>
+              <span className="mt-3 inline-block text-sm font-medium text-green-600 opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100">
+                开始 →
+              </span>
+            </Link>
           ))}
         </div>
+      </section>
 
-        {/* Headline */}
-        <h1 className="mb-6 text-[clamp(2rem,6vw,4.5rem)] font-extrabold leading-[1.05] tracking-tight">
-          <span className="text-white/25">Analysts take days.</span>
-          <br />
-          <span className="text-white">We take seconds.</span>
-        </h1>
-
-        <p className="mx-auto mb-12 max-w-xl text-base leading-relaxed text-white/40">
-          Turn any company, market, or industry into a structured analysis —
-          with live sources, supply-chain mapping, and exportable reports.
-        </p>
-
-        {/* Search box */}
-        <div className="mx-auto mb-5 max-w-xl rounded-xl border border-white/10 bg-white/5 p-1.5 backdrop-blur-sm">
-          <form
-            action="/dashboard/report"
-            className="flex items-center gap-2"
-          >
-            <div className="flex items-center gap-2.5 pl-4 text-white/30">
-              <svg
-                width="18"
-                height="18"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                viewBox="0 0 24 24"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <span id="typed" className="text-sm" />
-              <span className="animate-blink ml-0.5 h-[18px] w-[2px] bg-white/30" />
-            </div>
-            <button
-              type="submit"
-              className="ml-auto shrink-0 rounded-lg bg-green-500 px-5 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-green-400"
-            >
-              Start Research
-            </button>
-          </form>
-        </div>
-
-        <div className="mb-14 text-xs text-white/20">
-          try: NVDA supply chain · AXTI InP bottleneck · NBIS neocloud quality
-        </div>
-
-        {/* Metrics */}
-        <div className="mx-auto grid max-w-lg grid-cols-3 gap-6 rounded-xl border border-white/5 bg-white/[.02] p-6">
+      {/* Metrics strip */}
+      <section className="relative z-10 px-8 pb-20 md:px-16 lg:px-24">
+        <div className="flex max-w-4xl flex-wrap gap-8 rounded-xl border border-gray-200 bg-white/60 px-8 py-6 backdrop-blur-sm">
           {[
             ["5,582", "Tweets analyzed"],
             ["~61%", "30-day accuracy"],
             ["~80%", "Mature thesis rate"],
+            ["14", "Point checklist"],
           ].map(([value, label]) => (
-            <div key={label}>
-              <div className="mb-1 text-2xl font-bold text-white">{value}</div>
-              <div className="text-xs text-white/30">{label}</div>
+            <div key={label} className="flex-1 text-center">
+              <div className="text-2xl font-bold text-gray-900">{value}</div>
+              <div className="mt-1 text-xs text-gray-400">{label}</div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Bottom glow */}
-      <div
-        className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2"
-        style={{
-          width: 900,
-          height: 450,
-          background:
-            "radial-gradient(ellipse at 50% 100%, rgba(34,197,94,.08) 0%, transparent 70%)",
-        }}
-      />
+      {/* Bottom CTA strip */}
+      <section className="relative z-10">
+        <div className="mx-4 mb-8 rounded-xl bg-gray-900 px-8 py-10 text-center md:mx-16 lg:mx-24">
+          <h2 className="mb-3 text-2xl font-bold text-white">
+            免费开始你的第一份研究报告
+          </h2>
+          <p className="mx-auto mb-6 max-w-md text-sm text-gray-400">
+            无需注册即可体验基础报告。创建账号保存历史、解锁更多分析次数。
+          </p>
+          <Link
+            href="/dashboard/report"
+            className="inline-block rounded-lg bg-green-500 px-8 py-3 text-sm font-semibold text-black transition-colors hover:bg-green-400"
+          >
+            开始研究 →
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }
