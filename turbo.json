@@ -56,7 +56,8 @@
     "NODEMAILER_HOST",
     "NODEMAILER_PORT",
     "NODEMAILER_USER",
-    "NODEMAILER_PASSWORD"
+    "NODEMAILER_PASSWORD",
+    "DEEPSEEK_API_KEY"
   ],
   "globalPassThroughEnv": [
     "NODE_ENV",
