@@ -11,16 +11,15 @@ import {
   Shield,
   GitBranch,
 } from "lucide-react";
-import {
-  useState,
-  useRef,
-  useCallback,
-  useLayoutEffect,
-  useEffect,
-  memo,
-} from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 import { Input } from "@workspace/ui-web/input";
+
+import { MarkdownRenderer } from "~/components/report/MarkdownRenderer";
+import {
+  VisualReport,
+  type ReportData,
+} from "~/components/report/VisualReport";
 
 import { useUserPlan } from "./use-user-plan";
 
@@ -617,67 +616,31 @@ function getSkillById(id: string): Skill | undefined {
   return SKILLS.find((s) => s.id === id);
 }
 
-function formatContent(text: string): string {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, "<code>$1</code>")
-    .split(/\n\n+/)
-    .map((p) => (p.trim() ? `<p>${p.replace(/\n/g, "<br>")}</p>` : ""))
-    .join("");
-}
-
 function mcStyle(dir: "bull" | "bear") {
   return dir === "bear"
     ? { bg: "#fdf0f0", bd: "#f5b8b8", c: "#9b2c2c" }
     : { bg: "#edf7f2", bd: "#9dcfb8", c: "#1a5c3a" };
 }
 
-// ─── Streaming Content Renderer (useLayoutEffect) ────────────────
-
-function StreamingContent({
-  html,
-  className,
-}: {
-  html: string;
-  className?: string;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    if (ref.current) {
-      ref.current.innerHTML = html;
+function tryParseReportData(text: string): ReportData | null {
+  try {
+    const cleaned = text.replace(/```json|```/g, "").trim();
+    const parsed: unknown = JSON.parse(cleaned);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "target" in parsed &&
+      "summary" in parsed &&
+      "sections" in parsed &&
+      Array.isArray((parsed as ReportData).sections)
+    ) {
+      return parsed as ReportData;
     }
-  }, [html]);
-
-  return <div ref={ref} className={className} />;
+    return null;
+  } catch {
+    return null;
+  }
 }
-
-// ─── SafeHTML (memo + useLayoutEffect) ───────────────────────────
-
-const SafeHTML = memo(function SafeHTML({
-  html,
-  className,
-}: {
-  html: string;
-  className?: string;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    if (ref.current) {
-      ref.current.innerHTML = html || "";
-    }
-  }, [html]);
-
-  return (
-    <div
-      ref={ref}
-      className={className}
-      style={{ fontSize: 13.5, lineHeight: 1.85, color: "#1a1814" }}
-    />
-  );
-});
 
 // ─── Skeleton Loader ─────────────────────────────────────────────
 
@@ -1881,14 +1844,28 @@ export const SerenityTerminal = () => {
                   </div>
                 )}
 
-                <StreamingContent
-                  html={formatContent(result.content)}
-                  className={`mt-4 border-l-2 py-1 pl-5 font-serif text-sm leading-[1.9] text-[#1a1814] [&_code]:rounded [&_code]:bg-[#edeae3] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-[#0a5c5c] [&_em]:font-mono [&_em]:text-sm [&_em]:text-[#7a4f00] [&_em]:not-italic [&_p]:mb-3 [&_strong]:font-medium ${
-                    result.skillId === "serenity"
-                      ? "border-[#b8cedd]"
-                      : "border-[#ccc8be]"
-                  } ${result.content ? "" : "hidden"}`}
-                />
+                {(() => {
+                  const reportData = isDone
+                    ? tryParseReportData(result.content)
+                    : null;
+                  if (reportData) {
+                    return (
+                      <div className="mt-4">
+                        <VisualReport data={reportData} />
+                      </div>
+                    );
+                  }
+                  return (
+                    <MarkdownRenderer
+                      content={result.content}
+                      className={`mt-4 border-l-2 py-1 pl-5 font-serif text-sm leading-[1.9] text-[#1a1814] ${
+                        result.skillId === "serenity"
+                          ? "border-[#b8cedd]"
+                          : "border-[#ccc8be]"
+                      } ${result.content ? "" : "hidden"}`}
+                    />
+                  );
+                })()}
 
                 {isDone && (
                   <div className="mt-3 rounded border-l-[3px] border-[#7a4f00] bg-[#fdf5e8] px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-[#7a4f00]">
@@ -1951,10 +1928,24 @@ export const SerenityTerminal = () => {
                             Error: {cell.error}
                           </p>
                         ) : hasText ? (
-                          <SafeHTML
-                            html={formatContent(cell.text ?? "")}
-                            className="font-serif text-[13px] leading-[1.85] text-[#1a1814] [&_code]:rounded [&_code]:bg-[#edeae3] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-[#0a5c5c] [&_em]:font-mono [&_em]:text-sm [&_em]:text-[#7a4f00] [&_em]:not-italic [&_p]:mb-3 [&_strong]:font-medium"
-                          />
+                          (() => {
+                            const reportData = tryParseReportData(
+                              cell.text ?? "",
+                            );
+                            if (reportData) {
+                              return (
+                                <div className="mt-2">
+                                  <VisualReport data={reportData} />
+                                </div>
+                              );
+                            }
+                            return (
+                              <MarkdownRenderer
+                                content={cell.text ?? ""}
+                                className="font-serif text-[13px] leading-[1.85] text-[#1a1814]"
+                              />
+                            );
+                          })()
                         ) : (
                           <Skeleton />
                         )}
