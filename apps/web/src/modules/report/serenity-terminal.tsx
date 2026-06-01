@@ -15,7 +15,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 
 import { Input } from "@workspace/ui-web/input";
 
-import { MarkdownRenderer } from "~/components/report/MarkdownRenderer";
+import { MarkdownReport } from "~/components/report/MarkdownReport";
 import {
   VisualReport,
   type ReportData,
@@ -1856,14 +1856,15 @@ export const SerenityTerminal = () => {
                     );
                   }
                   return (
-                    <MarkdownRenderer
-                      content={result.content}
-                      className={`mt-4 border-l-2 py-1 pl-5 font-serif text-sm leading-[1.9] text-[#1a1814] ${
-                        result.skillId === "serenity"
-                          ? "border-[#b8cedd]"
-                          : "border-[#ccc8be]"
-                      } ${result.content ? "" : "hidden"}`}
-                    />
+                    <div className="mt-4">
+                      <MarkdownReport
+                        text={result.content}
+                        skill={result.skillId}
+                        query={result.query}
+                        timestamp={result.timestamp}
+                        year={result.year}
+                      />
+                    </div>
                   );
                 })()}
 
@@ -1940,9 +1941,10 @@ export const SerenityTerminal = () => {
                               );
                             }
                             return (
-                              <MarkdownRenderer
-                                content={cell.text ?? ""}
-                                className="font-serif text-[13px] leading-[1.85] text-[#1a1814]"
+                              <MarkdownReport
+                                text={cell.text ?? ""}
+                                skill={sid}
+                                query={result.query}
                               />
                             );
                           })()
