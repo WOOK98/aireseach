@@ -30,6 +30,7 @@ import {
 } from "@workspace/ui-web/select";
 
 import { ReportViewer } from "./report-viewer";
+import { useUserPlan } from "./use-user-plan";
 
 import type { FormEvent } from "react";
 
@@ -150,6 +151,7 @@ interface ReportGeneratorProps {
 export const ReportGenerator = ({
   initialTarget = "",
 }: ReportGeneratorProps) => {
+  const { plan, isPaid } = useUserPlan();
   const [target, setTarget] = useState(initialTarget);
   const [analysisYears, setAnalysisYears] = useState("5");
   const [analysisLens, setAnalysisLens] = useState("Comprehensive");
@@ -390,18 +392,30 @@ export const ReportGenerator = ({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="apiKey">{TEXT.apiKeyLabel}</Label>
-            <Input
-              id="apiKey"
-              type="password"
-              placeholder={TEXT.apiKeyPlaceholder}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              disabled={isLoading}
-            />
-            <p className="text-muted-foreground text-xs">{TEXT.apiKeyHelp}</p>
-          </div>
+          {isPaid ? (
+            <div className="space-y-2">
+              <Label>{TEXT.apiKeyLabel}</Label>
+              <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2">
+                <span className="text-sm text-green-700">
+                  {/* oxlint-disable-next-line i18next/no-literal-string */}✓
+                  Using hosted {plan === "business" ? "Business" : "Pro"} key
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="apiKey">{TEXT.apiKeyLabel}</Label>
+              <Input
+                id="apiKey"
+                type="password"
+                placeholder={TEXT.apiKeyPlaceholder}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                disabled={isLoading}
+              />
+              <p className="text-muted-foreground text-xs">{TEXT.apiKeyHelp}</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="model">{TEXT.modelLabel}</Label>

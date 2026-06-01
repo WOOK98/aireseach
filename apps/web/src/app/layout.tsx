@@ -1,8 +1,18 @@
 import "~/assets/styles/globals.css";
 import { DEFAULT_VIEWPORT, DEFAULT_METADATA } from "~/lib/metadata";
 
+import type { Metadata } from "next";
+
 export const viewport = DEFAULT_VIEWPORT;
-export const metadata = DEFAULT_METADATA;
+
+export const metadata: Metadata = {
+  ...DEFAULT_METADATA,
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
+};
 
 // Since we have a `not-found.tsx` page on the root, a layout file
 // is required, even if it's just passing children through.
