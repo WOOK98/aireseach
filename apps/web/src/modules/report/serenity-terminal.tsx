@@ -16,6 +16,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Input } from "@workspace/ui-web/input";
 
 import { MarkdownReport } from "~/components/report/MarkdownReport";
+import { ParallelReport } from "~/components/report/ParallelReport";
 import {
   VisualReport,
   type ReportData,
@@ -1892,70 +1893,17 @@ export const SerenityTerminal = () => {
               <div className="mb-3 font-serif text-[17px] font-light">
                 {result.query}
               </div>
-              <div
-                className="grid gap-3.5"
-                style={{
-                  gridTemplateColumns:
-                    skills.length >= 3 ? "1fr 1fr 1fr" : "1fr 1fr",
+              <ParallelReport
+                r={{
+                  type: "parallel",
+                  skills,
+                  query: result.query,
+                  cells: result.cells ?? {},
+                  ts: result.timestamp,
+                  year: result.year,
+                  status: result.status,
                 }}
-              >
-                {skills.map((sid) => {
-                  const skill = getSkillById(sid);
-                  if (!skill) return null;
-                  const cell = result.cells?.[sid];
-                  const hasError = !!cell?.error;
-                  const hasText = !!cell?.text;
-
-                  return (
-                    <div
-                      key={sid}
-                      className="overflow-hidden rounded-lg border border-[#e0dbd2]"
-                    >
-                      <div className="flex items-center gap-2 border-b border-[#e0dbd2] bg-[#f4f2ee] px-3 py-2">
-                        <div
-                          className="h-[7px] w-[7px] shrink-0 rounded-full"
-                          style={{ backgroundColor: skill.color }}
-                        />
-                        <span
-                          className="font-mono text-[10px] font-medium tracking-[.05em]"
-                          style={{ color: skill.color }}
-                        >
-                          {skill.name.toUpperCase()} · {skill.sub}
-                        </span>
-                      </div>
-                      <div className="p-3">
-                        {hasError ? (
-                          <p className="text-xs text-[#9b2c2c]">
-                            Error: {cell.error}
-                          </p>
-                        ) : hasText ? (
-                          (() => {
-                            const reportData = tryParseReportData(
-                              cell.text ?? "",
-                            );
-                            if (reportData) {
-                              return (
-                                <div className="mt-2">
-                                  <VisualReport data={reportData} />
-                                </div>
-                              );
-                            }
-                            return (
-                              <MarkdownReport
-                                text={cell.text ?? ""}
-                                skill={sid}
-                                query={result.query}
-                              />
-                            );
-                          })()
-                        ) : (
-                          <Skeleton />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              />
               {separator && <div className="my-8 h-px bg-[#e0dbd2]" />}
             </div>
           );
