@@ -51,12 +51,6 @@ const REPORT_MODES = [
 const REPORT_LANGUAGES = [
   { value: "en", label: "English" },
   { value: "zh-TW", label: "繁體中文" },
-  { value: "zh-CN", label: "简体中文" },
-  { value: "ja", label: "日本語" },
-  { value: "ko", label: "한국어" },
-  { value: "es", label: "Español" },
-  { value: "de", label: "Deutsch" },
-  { value: "fr", label: "Français" },
 ];
 
 const TEXT = {

@@ -31,10 +31,10 @@ import {
   SelectValue,
 } from "@workspace/ui-web/select";
 
+import { ReportViewer } from "./report-viewer";
 import { CalibrationChart } from "./serenity-tabs/calibration-chart";
 import { ConvictionMatrix } from "./serenity-tabs/conviction-matrix";
 import { SupplyChainMap } from "./serenity-tabs/supply-chain-map";
-import { ReportViewer } from "./report-viewer";
 
 import type { FormEvent } from "react";
 
@@ -89,16 +89,32 @@ const MODEL_PROVIDERS = [
 const REPORT_LANGUAGES = [
   { value: "en", label: "English" },
   { value: "zh-TW", label: "繁體中文" },
-  { value: "zh-CN", label: "简体中文" },
-  { value: "ja", label: "日本語" },
-  { value: "ko", label: "한국어" },
 ];
 
 const TICKER_UNIVERSE = [
-  "NBIS", "AXTI", "LITE", "SIVE", "COHR", "AAOI",
-  "IREN", "CRWV", "MU", "SNDK", "NVDA", "TSM",
-  "MRVL", "AVGO", "INTC", "SOI", "IQE", "TSEM",
-  "CIFR", "XLU", "VST", "CEG", "EWY",
+  "NBIS",
+  "AXTI",
+  "LITE",
+  "SIVE",
+  "COHR",
+  "AAOI",
+  "IREN",
+  "CRWV",
+  "MU",
+  "SNDK",
+  "NVDA",
+  "TSM",
+  "MRVL",
+  "AVGO",
+  "INTC",
+  "SOI",
+  "IQE",
+  "TSEM",
+  "CIFR",
+  "XLU",
+  "VST",
+  "CEG",
+  "EWY",
 ];
 
 interface AnalysisState {
@@ -278,7 +294,9 @@ export const SerenityAnalyzer = () => {
               </Label>
               <Input
                 id="ticker"
-                placeholder={mode === "sector" ? "photonics / memory / power" : "NVDA"}
+                placeholder={
+                  mode === "sector" ? "photonics / memory / power" : "NVDA"
+                }
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value.toUpperCase())}
                 disabled={isLoading}
@@ -286,7 +304,9 @@ export const SerenityAnalyzer = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="portfolio">Tickers (comma or space separated)</Label>
+              <Label htmlFor="portfolio">
+                Tickers (comma or space separated)
+              </Label>
               <Input
                 id="portfolio"
                 placeholder="NVDA, AXTI, LITE, MU"
@@ -320,10 +340,14 @@ export const SerenityAnalyzer = () => {
           <div className="space-y-2">
             <Label>Language</Label>
             <Select value={language} onValueChange={(v) => v && setLanguage(v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {REPORT_LANGUAGES.map((lang) => (
-                  <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                  <SelectItem key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -333,10 +357,14 @@ export const SerenityAnalyzer = () => {
           <div className="space-y-2">
             <Label>AI Provider</Label>
             <Select value={provider} onValueChange={handleProviderChange}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {MODEL_PROVIDERS.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  <SelectItem key={p.value} value={p.value}>
+                    {p.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -345,30 +373,64 @@ export const SerenityAnalyzer = () => {
           {/* API Key */}
           <div className="space-y-2">
             <Label htmlFor="apiKey">API Key</Label>
-            <Input id="apiKey" type="password" placeholder="Only used for this request" value={apiKey} onChange={(e) => setApiKey(e.target.value)} disabled={isLoading} />
-            <p className="text-muted-foreground text-xs">Sent only with this request, never stored.</p>
+            <Input
+              id="apiKey"
+              type="password"
+              placeholder="Only used for this request"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              disabled={isLoading}
+            />
+            <p className="text-muted-foreground text-xs">
+              Sent only with this request, never stored.
+            </p>
           </div>
 
           {/* Model */}
           <div className="space-y-2">
             <Label htmlFor="model">Model</Label>
-            <Input id="model" placeholder="deepseek-chat" value={model} onChange={(e) => setModel(e.target.value)} disabled={isLoading} />
+            <Input
+              id="model"
+              placeholder="deepseek-chat"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              disabled={isLoading}
+            />
           </div>
 
           {/* Base URL */}
           <div className="space-y-2">
             <Label htmlFor="baseUrl">Base URL</Label>
-            <Input id="baseUrl" placeholder="https://api.deepseek.com/v1" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} disabled={isLoading} />
+            <Input
+              id="baseUrl"
+              placeholder="https://api.deepseek.com/v1"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              disabled={isLoading}
+            />
           </div>
 
           {/* Submit */}
           <div className="flex gap-2">
             {isLoading ? (
-              <Button type="button" variant="destructive" className="flex-1" onClick={handleStop}>
+              <Button
+                type="button"
+                variant="destructive"
+                className="flex-1"
+                onClick={handleStop}
+              >
                 <Square className="mr-2 size-4" /> Stop
               </Button>
             ) : (
-              <Button type="submit" className="flex-1" disabled={mode === "portfolio" ? !portfolioTickers.trim() : !ticker.trim()}>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={
+                  mode === "portfolio"
+                    ? !portfolioTickers.trim()
+                    : !ticker.trim()
+                }
+              >
                 <Sparkles className="mr-2 size-4" /> Analyze
               </Button>
             )}
@@ -379,7 +441,9 @@ export const SerenityAnalyzer = () => {
         <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
           <CardContent className="pt-4">
             <p className="text-xs text-amber-800 dark:text-amber-300">
-              <strong>Disclaimer:</strong> Decision-support analysis only. Not financial advice. Serenity&apos;s returns are self-reported and unverified.
+              <strong>Disclaimer:</strong> Decision-support analysis only. Not
+              financial advice. Serenity&apos;s returns are self-reported and
+              unverified.
             </p>
           </CardContent>
         </Card>
@@ -388,7 +452,7 @@ export const SerenityAnalyzer = () => {
       {/* Right side: tabs + content */}
       <div className="min-w-0 flex-1">
         {/* Tab bar */}
-        <div className="mb-4 flex gap-1 rounded-lg border bg-muted/30 p-1">
+        <div className="bg-muted/30 mb-4 flex gap-1 rounded-lg border p-1">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -407,8 +471,12 @@ export const SerenityAnalyzer = () => {
         </div>
 
         {/* Tab content */}
-        {activeTab === "chain" && <SupplyChainMap onTickerClick={handleTickerFromTab} />}
-        {activeTab === "matrix" && <ConvictionMatrix onTickerClick={handleTickerFromTab} />}
+        {activeTab === "chain" && (
+          <SupplyChainMap onTickerClick={handleTickerFromTab} />
+        )}
+        {activeTab === "matrix" && (
+          <ConvictionMatrix onTickerClick={handleTickerFromTab} />
+        )}
         {activeTab === "calibration" && <CalibrationChart />}
 
         {activeTab === "quick" && (
@@ -431,9 +499,12 @@ export const SerenityAnalyzer = () => {
               <Card className="flex h-[600px] items-center justify-center">
                 <CardContent className="text-center">
                   <Loader2 className="text-primary mx-auto mb-4 size-10 animate-spin" />
-                  <p className="text-muted-foreground font-medium">Running supply-chain analysis...</p>
+                  <p className="text-muted-foreground font-medium">
+                    Running supply-chain analysis...
+                  </p>
                   <p className="text-muted-foreground/60 mt-2 text-sm">
-                    Mapping the chain, identifying bottlenecks, cross-referencing Serenity&apos;s theses.
+                    Mapping the chain, identifying bottlenecks,
+                    cross-referencing Serenity&apos;s theses.
                   </p>
                 </CardContent>
               </Card>
@@ -460,7 +531,11 @@ export const SerenityAnalyzer = () => {
             )}
 
             {analysis.status === "done" && analysis.content && (
-              <Button variant="outline" className="mt-4" onClick={handleDownload}>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={handleDownload}
+              >
                 <Download className="mr-2 size-4" /> Download Markdown
               </Button>
             )}

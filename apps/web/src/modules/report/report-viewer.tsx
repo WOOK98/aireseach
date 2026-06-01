@@ -179,7 +179,7 @@ const normalizeCell = (value: string) =>
 const isSeparatorCell = (value: string) => /^[-—–\s]+$/.test(value.trim());
 
 const sectionHeadingPattern =
-  /(?:核心指標儀表板|核心指标仪表板|核心指標|核心指标|Key Metrics|Metric Dashboard|KPI Dashboard|Evidence List|Evidence|Sources?|References?|證據列表|证据列表|證據|证据|來源|来源|參考|参考)/i;
+  /(?:核心指標儀表板|核心指標|Key Metrics|Metric Dashboard|KPI Dashboard|Evidence List|Evidence|Sources?|References?|證據列表|證據|來源|參考)/i;
 
 const getSignalIcon = (signal: TechIndicator["signal"]) => {
   if (signal === "bullish") {
@@ -253,34 +253,34 @@ function parseMetricsFromMarkdown(content: string): MetricItem[] {
 
   const metricKeywords = [
     "market share",
-    "市场份额",
+    "市場份額",
     "growth",
-    "增长",
+    "增長",
     "competitive",
-    "竞争",
+    "競爭",
     "antifragility",
     "抗脆弱",
     "risk",
-    "风险",
+    "風險",
     "valuation",
     "估值",
     "revenue",
     "收入",
-    "营收",
+    "營收",
     "margin",
-    "利润率",
+    "利潤率",
     "profit",
-    "利润",
+    "利潤",
     "cash flow",
-    "现金流",
+    "現金流",
     "moat",
-    "护城河",
+    "護城河",
     "pressure",
-    "压力",
+    "壓力",
     "quality",
-    "质量",
+    "質量",
     "intensity",
-    "强度",
+    "強度",
   ];
 
   for (const pattern of patterns) {
@@ -340,7 +340,7 @@ function extractSection(content: string, heading: RegExp) {
 function parseStructuredMetrics(content: string): StructuredMetric[] {
   const section = extractSection(
     content,
-    /(?:核心指標儀表板|核心指标仪表板|核心指標|核心指标|Key Metrics|Metric Dashboard|KPI Dashboard)/i,
+    /(?:核心指標儀表板|核心指標|Key Metrics|Metric Dashboard|KPI Dashboard)/i,
   );
 
   if (!section) {
@@ -364,8 +364,7 @@ function parseStructuredMetrics(content: string): StructuredMetric[] {
       cells.length >= 4 &&
       !headerText.includes("indicator") &&
       !headerText.includes("current") &&
-      !headerText.includes("資料可信度") &&
-      !headerText.includes("资料可信度")
+      !headerText.includes("資料可信度")
     ) {
       rows.push({
         indicator: cells[0] ?? "",
@@ -388,16 +387,12 @@ function parseStructuredMetrics(content: string): StructuredMetric[] {
   const dataCells = cells.filter((cell) => {
     const lower = cell.toLowerCase();
     return ![
-      "指标",
       "指標",
       "indicator",
-      "当前数值",
       "當前數值",
       "current value",
-      "趋势",
       "趨勢",
       "trend",
-      "资料可信度",
       "資料可信度",
       "confidence",
     ].includes(lower);
@@ -425,7 +420,7 @@ function stripGeneratedSections(content: string) {
       /^#{1,3}\s+/.test(line) || /^\s*\*\*[^*]+\*\*\s*$/.test(line);
     const shouldSkip =
       isHeading &&
-      /(?:核心指標儀表板|核心指标仪表板|核心指標|核心指标|Key Metrics|Metric Dashboard|KPI Dashboard|Evidence List|Evidence|Sources?|References?|證據列表|证据列表|證據|证据|來源|来源|參考|参考)/i.test(
+      /(?:核心指標儀表板|核心指標|Key Metrics|Metric Dashboard|KPI Dashboard|Evidence List|Evidence|Sources?|References?|證據列表|證據|來源|參考)/i.test(
         line,
       );
 
@@ -495,7 +490,7 @@ const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
     patterns: [
       /(?:50[-\s]?day|MA50|MA\s*50|SMA\s*50)[^\n|]*?(?:above|below|golden|death|cross)[^\n]*/i,
       /(?:moving\s*average|MA)[^\n|]*(?:50|200)[^\n]*/i,
-      /(?:均线|均線|移动平均|移動平均|MA\s*50|MA\s*200)[^\n|]*(?:上方|下方|金叉|死叉|交叉|突破)[^\n]*/i,
+      /(?:均線|移動平均|MA\s*50|MA\s*200)[^\n|]*(?:上方|下方|金叉|死叉|交叉|突破)[^\n]*/i,
     ],
   },
   {
@@ -504,7 +499,7 @@ const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
     patterns: [
       /RSI[^\n|]*?(?:\d{1,3}(?:\.\d+)?)[^\n]*/i,
       /(?:relative\s*strength)[^\n|]*?\d{1,3}[^\n]*/i,
-      /(?:相对强弱|相對強弱|强弱指标|強弱指標|RSI)[^\n|]*?\d{1,3}[^\n]*/i,
+      /(?:相對強弱|強弱指標|RSI)[^\n|]*?\d{1,3}[^\n]*/i,
     ],
   },
   {
@@ -512,7 +507,7 @@ const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
     icon: "🔀",
     patterns: [
       /MACD[^\n|]*?(?:bullish|bearish|signal|crossover|above|below|positive|negative)[^\n]*/i,
-      /MACD[^\n|]*(?:看涨|看漲|看跌|金叉|死叉|信号线|訊號線|正值|负值|負值)[^\n]*/i,
+      /MACD[^\n|]*(?:看漲|看跌|金叉|死叉|訊號線|正值|負值)[^\n]*/i,
     ],
   },
   {
@@ -520,7 +515,7 @@ const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
     icon: "📊",
     patterns: [
       /(?:bollinger|BB)[^\n|]*(?:upper|lower|squeeze|band|expand)[^\n]*/i,
-      /(?:布林|BOLL|BB)[^\n|]*(?:上轨|上軌|下轨|下軌|收窄|扩张|擴張|突破)[^\n]*/i,
+      /(?:布林|BOLL|BB)[^\n|]*(?:上軌|下軌|收窄|擴張|突破)[^\n]*/i,
     ],
   },
   {
@@ -528,7 +523,7 @@ const TECH_PATTERNS: { name: string; icon: string; patterns: RegExp[] }[] = [
     icon: "📶",
     patterns: [
       /(?:volume|trading\s*volume)[^\n|]*(?:increase|decrease|surge|drop|average|above|below)[^\n]*/i,
-      /(?:成交量|交易量|量能)[^\n|]*(?:放大|萎缩|萎縮|高于|高於|低于|低於|平均)[^\n]*/i,
+      /(?:成交量|交易量|量能)[^\n|]*(?:放大|萎縮|高於|低於|平均)[^\n]*/i,
     ],
   },
 ];
@@ -548,13 +543,11 @@ function parseTechIndicators(content: string): TechIndicator[] {
           lower.includes("golden") ||
           lower.includes("positive") ||
           lower.includes("buy") ||
-          text.includes("看涨") ||
           text.includes("看漲") ||
           text.includes("金叉") ||
           text.includes("上方") ||
           text.includes("突破") ||
           text.includes("放大") ||
-          text.includes("高于") ||
           text.includes("高於")
             ? ("bullish" as const)
             : lower.includes("bearish") ||
@@ -562,19 +555,17 @@ function parseTechIndicators(content: string): TechIndicator[] {
                 lower.includes("death") ||
                 lower.includes("negative") ||
                 lower.includes("sell") ||
-                text.includes("看跌") ||
                 text.includes("死叉") ||
+                text.includes("看跌") ||
                 text.includes("下方") ||
-                text.includes("萎缩") ||
                 text.includes("萎縮") ||
-                text.includes("低于") ||
                 text.includes("低於")
               ? ("bearish" as const)
               : ("neutral" as const);
 
         // Extract a short value from the match
         const valueMatch = text.match(
-          /(?:\d{1,3}(?:\.\d+)?%?|above|below|bullish|bearish|neutral|positive|negative|金叉|死叉|上方|下方|看涨|看漲|看跌)/i,
+          /(?:\d{1,3}(?:\.\d+)?%?|above|below|bullish|bearish|neutral|positive|negative|金叉|死叉|上方|下方|看漲|看跌)/i,
         );
         const value = valueMatch?.[0] || text.slice(0, 30);
         const numericValue = valueMatch?.[0]?.match(/\d/)
@@ -1328,7 +1319,7 @@ function parseEvidenceList(content: string): EvidenceItem[] {
   // - ## Evidence List / ## Sources / ## References (heading)
   // - **Evidence List** (bold text)
   const evidenceSection = content.match(
-    /(?:^|\n)(?:#+\s*(?:Evidence|Sources?|References?|證據列表|证据列表|證據|证据|來源|来源|參考|参考)[^\n]*|\*\*(?:Evidence|Sources?|References?|證據列表|证据列表|證據|证据|來源|来源|參考|参考)[^*]*\*\*)\n([\s\S]*?)(?=\n(?:#{1,3}\s|\*\*(?!(?:Evidence|Sources?|References?|證據|证据|來源|来源|參考|参考)))|$)/i,
+    /(?:^|\n)(?:#+\s*(?:Evidence|Sources?|References?|證據列表|證據|來源|參考)[^\n]*|\*\*(?:Evidence|Sources?|References?|證據列表|證據|來源|參考)[^*]*\*\*)\n([\s\S]*?)(?=\n(?:#{1,3}\s|\*\*(?!(?:Evidence|Sources?|References?|證據|來源|參考)))|$)/i,
   );
 
   if (!evidenceSection?.[1]) return items;

@@ -103,7 +103,7 @@ const SKILLS: Skill[] = [
   {
     id: "serenity",
     name: "Serenity",
-    sub: "供应链",
+    sub: "Supply Chain",
     icon: GitBranch,
     color: "#1a3a5c",
     bgColor: "#e8eef5",
@@ -136,57 +136,57 @@ BEARISH: IREN (flipped bear, $6B ATM, 51% dilution), CRWV (F-tier, heavy debt, O
 
 CALIBRATION: ~61% 30-day directional accuracy. ~75-85% for mature supply-chain theses. Returns self-reported, unverified, survivorship bias.
 
-Respond in Chinese. Structure: 供应链位置 → 瓶颈测试 → Serenity已知立场 → 牛熊论点 → 不确定性声明. End with disclaimer.`,
+Respond in English. Structure: Supply Chain Position → Bottleneck Test → Serenity Known Stance → Bull/Bear Arguments → Uncertainty Statement. End with disclaimer.`,
   },
   {
     id: "fundamental",
     name: "Fundamental",
-    sub: "基本面",
+    sub: "Fundamentals",
     icon: BarChart3,
     color: "#1a5c3a",
     bgColor: "#edf7f2",
     borderColor: "#9dcfb8",
-    prompt: `You are a rigorous fundamental analyst. Analyze: revenue/earnings quality and trends, balance sheet strength, valuation multiples vs peers (P/E, EV/EBITDA, P/S), moat analysis, management quality and capital allocation. Respond in Chinese. Use specific numbers. Bold key metrics. Structure: summary → financials → valuation → moat → verdict. End with disclaimer.`,
+    prompt: `You are a rigorous fundamental analyst. Analyze: revenue/earnings quality and trends, balance sheet strength, valuation multiples vs peers (P/E, EV/EBITDA, P/S), moat analysis, management quality and capital allocation. Respond in English. Use specific numbers. Bold key metrics. Structure: summary → financials → valuation → moat → verdict. End with disclaimer.`,
   },
   {
     id: "macro",
     name: "Macro",
-    sub: "宏观",
+    sub: "Macro",
     icon: Globe,
     color: "#7a4f00",
     bgColor: "#fdf5e8",
     borderColor: "#e8c87a",
-    prompt: `You are a macro analyst. Analyze: interest rate sensitivity and Fed policy impact, dollar/FX effects, sector rotation and capital flow dynamics, geopolitical risk exposure (tariffs, export controls), inflation/deflation regime impact. Respond in Chinese. Structure: macro backdrop → rate sensitivity → sector rotation → geopolitical overlay → positioning implication. End with disclaimer.`,
+    prompt: `You are a macro analyst. Analyze: interest rate sensitivity and Fed policy impact, dollar/FX effects, sector rotation and capital flow dynamics, geopolitical risk exposure (tariffs, export controls), inflation/deflation regime impact. Respond in English. Structure: macro backdrop → rate sensitivity → sector rotation → geopolitical overlay → positioning implication. End with disclaimer.`,
   },
   {
     id: "technical",
     name: "Technical",
-    sub: "技术面",
+    sub: "Technicals",
     icon: TrendingUp,
     color: "#4a1e8a",
     bgColor: "#f2eefb",
     borderColor: "#c8b3f0",
-    prompt: `You are a technical analyst. Serenity's view: "TA is snake oil without fundamentals" — so frame technical as a COMPLEMENT to fundamental. Analyze: trend structure, key support/resistance levels, momentum (RSI, MACD), volume signals, chart patterns. Respond in Chinese. Structure: trend → key levels → momentum → volume → setup trigger. End with disclaimer.`,
+    prompt: `You are a technical analyst. Serenity's view: "TA is snake oil without fundamentals" — so frame technical as a COMPLEMENT to fundamental. Analyze: trend structure, key support/resistance levels, momentum (RSI, MACD), volume signals, chart patterns. Respond in English. Structure: trend → key levels → momentum → volume → setup trigger. End with disclaimer.`,
   },
   {
     id: "sentiment",
     name: "Sentiment",
-    sub: "市场情绪",
+    sub: "Sentiment",
     icon: MessageSquare,
     color: "#0a5c5c",
     bgColor: "#e8f5f5",
     borderColor: "#80cbc4",
-    prompt: `You are a market sentiment analyst. Key principle: "IGNORE Reddit/X sentiment — usually wrong." Focus on: institutional vs retail positioning divergence, options market signals, analyst consensus and revision trends, dark-pool/block-trade patterns, insider activity. Respond in Chinese. Structure: retail sentiment → institutional flow → options positioning → analyst lag → contrarian opportunity. End with disclaimer.`,
+    prompt: `You are a market sentiment analyst. Key principle: "IGNORE Reddit/X sentiment — usually wrong." Focus on: institutional vs retail positioning divergence, options market signals, analyst consensus and revision trends, dark-pool/block-trade patterns, insider activity. Respond in English. Structure: retail sentiment → institutional flow → options positioning → analyst lag → contrarian opportunity. End with disclaimer.`,
   },
   {
     id: "risk",
     name: "Risk",
-    sub: "风险矩阵",
+    sub: "Risk Matrix",
     icon: Shield,
     color: "#9b2c2c",
     bgColor: "#fdf0f0",
     borderColor: "#f5b8b8",
-    prompt: `You are a risk analyst. Key disqualifiers: large active ATM + SBC dilution, single-customer concentration, China export-control binary risk, pre-revenue with no qualification path. Analyze: business model risks, financial/dilution risks, market risks, tail risks, risk-adjusted sizing. Rate each: LOW/MEDIUM/HIGH. Respond in Chinese. Structure: business risks → financial risks → market risks → tail risks → sizing implication. End with disclaimer.`,
+    prompt: `You are a risk analyst. Key disqualifiers: large active ATM + SBC dilution, single-customer concentration, China export-control binary risk, pre-revenue with no qualification path. Analyze: business model risks, financial/dilution risks, market risks, tail risks, risk-adjusted sizing. Rate each: LOW/MEDIUM/HIGH. Respond in English. Structure: business risks → financial risks → market risks → tail risks → sizing implication. End with disclaimer.`,
   },
 ];
 
@@ -197,101 +197,101 @@ const YEARS = [1, 2, 3, 5, 10];
 const QUICK_EXAMPLES: QuickExample[] = [
   {
     skill: "serenity",
-    text: "$SIVE CPO激光供应链",
-    query: "$SIVE Sivers Semiconductors CPO激光瓶颈深度分析",
+    text: "$SIVE CPO laser supply chain",
+    query: "$SIVE Sivers Semiconductors CPO laser bottleneck deep dive",
     label: "Serenity · #1 conviction",
   },
   {
     skill: "serenity",
-    text: "$AXTI InP基板控制",
-    query: "$AXTI Strait of AXTI InP基板分析",
-    label: "Serenity · 旗舰瓶颈",
+    text: "$AXTI InP substrate control",
+    query: "$AXTI Strait of AXTI InP substrate analysis",
+    label: "Serenity · Flagship bottleneck",
   },
   {
     skill: "serenity",
-    text: "$NBIS Neocloud质量",
-    query: "$NBIS Neocloud融资质量对比分析",
-    label: "Serenity · 融资质量谱",
+    text: "$NBIS Neocloud quality",
+    query: "$NBIS Neocloud financing quality comparison",
+    label: "Serenity · Financing spectrum",
   },
   {
     skill: "fundamental",
-    text: "$AAOI 基本面深度",
-    query: "$AAOI 美国制造转录器基本面分析",
+    text: "$AAOI fundamental deep dive",
+    query: "$AAOI US-manufactured transceiver fundamentals",
     label: "Fundamental",
   },
   {
     skill: "macro",
-    text: "CPO板块资本轮动",
-    query: "AI光子学CPO板块宏观叙事和资本轮动",
+    text: "CPO sector capital rotation",
+    query: "AI photonics CPO sector macro narrative and capital rotation",
     label: "Macro",
   },
   {
     skill: "risk",
-    text: "Neocloud稀释风险",
-    query: "$IREN $CRWV ATM稀释风险矩阵对比",
-    label: "Risk · ATM稀释",
+    text: "Neocloud dilution risk",
+    query: "$IREN $CRWV ATM dilution risk matrix comparison",
+    label: "Risk · ATM dilution",
   },
 ];
 
 const RECENT = [
-  "$SIVE CPO激光瓶颈分析",
-  "$AXTI InP基板供应链",
-  "$NBIS Neocloud融资质量",
-  "$AAOI 美国制造转录器",
+  "$SIVE CPO laser bottleneck analysis",
+  "$AXTI InP substrate supply chain",
+  "$NBIS Neocloud financing quality",
+  "$AAOI US-manufactured transceiver",
 ];
 
 // ─── Conviction Matrix ───────────────────────────────────────────
 
 const MATRIX: Record<string, MatrixTicker[]> = {
-  "光子学 / CPO": [
+  "Photonics / CPO": [
     {
       t: "SIVE",
       tier: "S",
       dir: "bull",
-      desc: "CW/DFB激光 · #1",
-      q: "$SIVE CPO激光瓶颈分析",
+      desc: "CW/DFB laser · #1",
+      q: "$SIVE CPO laser bottleneck analysis",
     },
     {
       t: "AXTI",
       tier: "S",
       dir: "bull",
-      desc: "InP基板 · 40%份额",
-      q: "$AXTI InP基板供应链分析",
+      desc: "InP substrate · 40% share",
+      q: "$AXTI InP substrate supply chain analysis",
     },
     {
       t: "AAOI",
       tier: "A",
       dir: "bull",
-      desc: "美国1.6T转录器",
-      q: "$AAOI 美国制造转录器分析",
+      desc: "US 1.6T transceiver",
+      q: "$AAOI US-manufactured transceiver analysis",
     },
     {
       t: "LITE",
       tier: "A",
       dir: "bull",
-      desc: "OCS近垄断",
-      q: "$LITE Lumentum OCS分析",
+      desc: "OCS near-monopoly",
+      q: "$LITE Lumentum OCS analysis",
     },
     {
       t: "COHR",
       tier: "B",
       dir: "bull",
-      desc: "多元化光子学",
-      q: "$COHR Coherent分析",
+      desc: "Diversified photonics",
+      q: "$COHR Coherent analysis",
     },
     {
       t: "IQE",
       tier: "B",
       dir: "bull",
-      desc: "外延代工",
-      q: "$IQE 外延晶圆代工分析",
+      desc: "Epiwafer foundry",
+      q: "$IQE epiwafer foundry analysis",
     },
     {
       t: "POET",
       tier: "D",
       dir: "bear",
-      desc: "MRVL终止 ⚠️",
-      q: "$POET MRVL终止风险分析",
+      desc: "MRVL terminated ⚠️",
+      q: "$POET MRVL termination risk analysis",
     },
   ],
   Neocloud: [
@@ -299,80 +299,80 @@ const MATRIX: Record<string, MatrixTicker[]> = {
       t: "NBIS",
       tier: "S",
       dir: "bull",
-      desc: "NVDA融资 · 71% GM",
-      q: "$NBIS Nebius S-tier分析",
+      desc: "NVDA financing · 71% GM",
+      q: "$NBIS Nebius S-tier analysis",
     },
     {
       t: "CIFR",
       tier: "B",
       dir: "bull",
-      desc: "GOOGL合同背书",
-      q: "$CIFR neocloud分析",
+      desc: "GOOGL contract endorsement",
+      q: "$CIFR neocloud analysis",
     },
     {
       t: "WULF",
       tier: "B",
       dir: "bull",
-      desc: "核能+水电",
-      q: "$WULF TeraWulf分析",
+      desc: "Nuclear + hydro",
+      q: "$WULF TeraWulf analysis",
     },
     {
       t: "IREN",
       tier: "D",
       dir: "bear",
-      desc: "$6B ATM ⚠️ 翻空",
-      q: "$IREN ATM稀释风险分析",
+      desc: "$6B ATM ⚠️ Flipped bear",
+      q: "$IREN ATM dilution risk analysis",
     },
     {
       t: "CRWV",
       tier: "F",
       dir: "bear",
       desc: "F-tier · Avoid",
-      q: "$CRWV F-tier风险分析",
+      q: "$CRWV F-tier risk analysis",
     },
   ],
-  "AI算力 / 其他": [
+  "AI Compute / Other": [
     {
       t: "TSM",
       tier: "A",
       dir: "bull",
-      desc: "最安全复利",
-      q: "$TSM 台积电分析",
+      desc: "Safest compounder",
+      q: "$TSM TSMC analysis",
     },
     {
       t: "SNDK",
       tier: "A",
       dir: "bull",
-      desc: "纯NAND复利",
-      q: "$SNDK NAND内存分析",
+      desc: "Pure NAND compounder",
+      q: "$SNDK NAND memory analysis",
     },
     {
       t: "EWY",
       tier: "A",
       dir: "bull",
-      desc: "2028 LEAPS IV错价",
-      q: "$EWY 韩国ETF LEAPS分析",
+      desc: "2028 LEAPS IV mispriced",
+      q: "$EWY Korea ETF LEAPS analysis",
     },
     {
       t: "XLU",
       tier: "A",
       dir: "bull",
-      desc: "AI电力LEAPS",
-      q: "$XLU AI电力需求分析",
+      desc: "AI power LEAPS",
+      q: "$XLU AI power demand analysis",
     },
     {
       t: "PLTR",
       tier: "D",
       dir: "bear",
-      desc: "利润=利息 · Short",
-      q: "$PLTR Palantir利润质量分析",
+      desc: "Profit = interest · Short",
+      q: "$PLTR Palantir profit quality analysis",
     },
     {
       t: "ORCL",
       tier: "D",
       dir: "bear",
-      desc: "OpenAI传染 · Avoid",
-      q: "$ORCL Oracle风险分析",
+      desc: "OpenAI contagion · Avoid",
+      q: "$ORCL Oracle risk analysis",
     },
   ],
 };
@@ -380,55 +380,55 @@ const MATRIX: Record<string, MatrixTicker[]> = {
 // ─── Calibration Data ────────────────────────────────────────────
 
 const ACCURACY_METRICS = [
-  { label: "30天方向准确率", pct: 61, color: "#1a3a5c" },
-  { label: "严格30天 ±10% 命中率", pct: 41, color: "#4a1e8a" },
-  { label: "60天内20%+ 回报率", pct: 54, color: "#0a5c5c" },
-  { label: "成熟供应链论点验证率", pct: 80, color: "#1a5c3a" },
-  { label: "CPO/光子/InP 子集", pct: 83, color: "#1a5c3a" },
+  { label: "30-day directional accuracy", pct: 61, color: "#1a3a5c" },
+  { label: "Strict 30-day ±10% hit rate", pct: 41, color: "#4a1e8a" },
+  { label: "60-day 20%+ return rate", pct: 54, color: "#0a5c5c" },
+  { label: "Mature supply chain thesis validation", pct: 80, color: "#1a5c3a" },
+  { label: "CPO/Photonics/InP subset", pct: 83, color: "#1a5c3a" },
 ];
 
 const DONUT_SECTORS = [
-  { label: "光子学/CPO", pct: 35, color: "#1a3a5c" },
-  { label: "AI算力/半导体", pct: 18, color: "#4a1e8a" },
+  { label: "Photonics/CPO", pct: 35, color: "#1a3a5c" },
+  { label: "AI Compute/Semi", pct: 18, color: "#4a1e8a" },
   { label: "Neocloud", pct: 18, color: "#1a5c3a" },
-  { label: "内存/HBM", pct: 12, color: "#0a5c5c" },
-  { label: "电力/电网", pct: 10, color: "#7a4f00" },
-  { label: "其他", pct: 7, color: "#9a9690" },
+  { label: "Memory/HBM", pct: 12, color: "#0a5c5c" },
+  { label: "Power/Grid", pct: 10, color: "#7a4f00" },
+  { label: "Other", pct: 7, color: "#9a9690" },
 ];
 
 const CALLS: CallRecord[] = [
   {
     date: "25-07-21",
     t: "ALAB",
-    desc: "Long ~$96，「$50B+ moonshot」",
+    desc: "Long ~$96, '$50B+ moonshot'",
     r: "+154%",
     w: true,
   },
   {
     date: "25-09-25",
     t: "CIFR",
-    desc: "「下跌17%是好买点」",
+    desc: "'17% dip is a buy'",
     r: "+250%",
     w: true,
   },
   {
     date: "25-12-21",
     t: "CRCL",
-    desc: "「1000%+论点」~$70入场",
+    desc: "'1000%+ thesis' ~$70 entry",
     r: "+148%",
     w: true,
   },
   {
     date: "25-12-26",
     t: "AXTI",
-    desc: "旗舰瓶颈发布 (570万浏览)",
+    desc: "Flagship bottleneck post (5.7M views)",
     r: "+310%",
     w: true,
   },
   {
     date: "26-03-14",
     t: "SIVE",
-    desc: "#1 conviction，~$140M MC",
+    desc: "#1 conviction, ~$140M MC",
     r: "→$2.6B",
     w: true,
   },
@@ -442,8 +442,8 @@ const CALLS: CallRecord[] = [
   {
     date: "25-09-26",
     t: "IREN",
-    desc: "Long $40.13，后翻空",
-    r: "⚠️ 翻空",
+    desc: "Long $40.13, later flipped bear",
+    r: "⚠️ Flipped",
     w: false,
   },
 ];
@@ -461,7 +461,7 @@ const CHAIN_NODES: ChainNode[] = [
     lines: ["GOOGL·MSFT", "META·AMZN"],
     sub: "$10T+ capex",
     c: "#1a3a5c",
-    q: "GOOGL MSFT META AMZN AI算力投资",
+    q: "GOOGL MSFT META AMZN AI compute investment",
   },
   {
     x: 147,
@@ -471,9 +471,9 @@ const CHAIN_NODES: ChainNode[] = [
     fi: "#e8eef5",
     st: "#b8cedd",
     lines: ["NVDA·TSM", "MRVL·AVGO"],
-    sub: "数万亿 TAM",
+    sub: "$T TAM",
     c: "#1a3a5c",
-    q: "NVDA TSM MRVL AVGO AI芯片分析",
+    q: "NVDA TSM MRVL AVGO AI chip analysis",
   },
   {
     x: 287,
@@ -483,9 +483,9 @@ const CHAIN_NODES: ChainNode[] = [
     fi: "#edf7f2",
     st: "#9dcfb8",
     lines: ["LITE"],
-    sub: "OCS近垄断",
+    sub: "OCS near-monopoly",
     c: "#1a5c3a",
-    q: "$LITE OCS光学转发器分析",
+    q: "$LITE OCS optical transceiver analysis",
   },
   {
     x: 287,
@@ -495,9 +495,9 @@ const CHAIN_NODES: ChainNode[] = [
     fi: "#edf7f2",
     st: "#9dcfb8",
     lines: ["AAOI"],
-    sub: "美国制造",
+    sub: "US made",
     c: "#1a5c3a",
-    q: "$AAOI 美国制造转录器分析",
+    q: "$AAOI US-manufactured transceiver analysis",
   },
   {
     x: 287,
@@ -507,9 +507,9 @@ const CHAIN_NODES: ChainNode[] = [
     fi: "#edf7f2",
     st: "#9dcfb8",
     lines: ["COHR"],
-    sub: "多元化",
+    sub: "Diversified",
     c: "#1a5c3a",
-    q: "$COHR Coherent光子学分析",
+    q: "$COHR Coherent photonics analysis",
   },
   {
     x: 422,
@@ -521,7 +521,7 @@ const CHAIN_NODES: ChainNode[] = [
     lines: ["SIVE"],
     sub: "~$2.6B · #1",
     c: "#1a5c3a",
-    q: "$SIVE CPO激光瓶颈分析",
+    q: "$SIVE CPO laser bottleneck analysis",
   },
   {
     x: 556,
@@ -531,9 +531,9 @@ const CHAIN_NODES: ChainNode[] = [
     fi: "#edf7f2",
     st: "#9dcfb8",
     lines: ["IQE"],
-    sub: "外延晶圆代工",
+    sub: "Epiwafer foundry",
     c: "#1a5c3a",
-    q: "$IQE 外延晶圆代工分析",
+    q: "$IQE epiwafer foundry analysis",
   },
   {
     x: 674,
@@ -543,9 +543,9 @@ const CHAIN_NODES: ChainNode[] = [
     fi: "#fdf0f0",
     st: "#f5b8b8",
     lines: ["AXTI"],
-    sub: "InP基板 40%",
+    sub: "InP substrate 40%",
     c: "#9b2c2c",
-    q: "$AXTI Strait of AXTI InP基板瓶颈分析",
+    q: "$AXTI Strait of AXTI InP substrate bottleneck analysis",
   },
   {
     x: 794,
@@ -555,9 +555,9 @@ const CHAIN_NODES: ChainNode[] = [
     fi: "#f2eefb",
     st: "#c8b3f0",
     lines: ["Vital"],
-    sub: "铟原料",
+    sub: "Indium feedstock",
     c: "#4a1e8a",
-    q: "铟原料 Vital Materials 分析",
+    q: "Indium feedstock Vital Materials analysis",
   },
 ];
 
@@ -569,16 +569,16 @@ const NEOCLOUD_NODES: NeocloudNode[] = [
     fi: "#edf7f2",
     st: "#9dcfb8",
     c: "#1a5c3a",
-    q: "$NBIS Nebius S-tier neocloud分析",
+    q: "$NBIS Nebius S-tier neocloud analysis",
   },
   {
     x: 130,
     t: "CIFR",
-    sub: "GOOGL背书",
+    sub: "GOOGL endorsement",
     fi: "#edf7f2",
     st: "#9dcfb8",
     c: "#1a5c3a",
-    q: "$CIFR neocloud分析",
+    q: "$CIFR neocloud analysis",
   },
   {
     x: 250,
@@ -587,7 +587,7 @@ const NEOCLOUD_NODES: NeocloudNode[] = [
     fi: "#fdf0f0",
     st: "#f5b8b8",
     c: "#9b2c2c",
-    q: "$IREN ATM稀释风险分析",
+    q: "$IREN ATM dilution risk analysis",
   },
   {
     x: 370,
@@ -596,17 +596,17 @@ const NEOCLOUD_NODES: NeocloudNode[] = [
     fi: "#fdf0f0",
     st: "#f5b8b8",
     c: "#9b2c2c",
-    q: "$CRWV F-tier风险分析",
+    q: "$CRWV F-tier risk analysis",
   },
 ];
 
 type SubTab = "examples" | "chain" | "matrix" | "calibration";
 
 const SUB_TABS: { id: SubTab; label: string }[] = [
-  { id: "examples", label: "快速开始" },
-  { id: "chain", label: "供应链图谱（固定）" },
-  { id: "matrix", label: "持仓矩阵（固定）" },
-  { id: "calibration", label: "胜率数据" },
+  { id: "examples", label: "Quick Start" },
+  { id: "chain", label: "Supply Chain (Fixed)" },
+  { id: "matrix", label: "Conviction Matrix (Fixed)" },
+  { id: "calibration", label: "Track Record" },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -846,7 +846,7 @@ export const SerenityTerminal = () => {
           body: JSON.stringify({
             ticker: query.split(" ")[0],
             mode: "single",
-            language: "zh-CN",
+            language: "en-US",
             api_key: apiKey,
             base_url: baseUrl,
             model,
@@ -953,7 +953,7 @@ export const SerenityTerminal = () => {
                 body: JSON.stringify({
                   ticker: ticker.split(" ")[0],
                   mode: "single",
-                  language: "zh-CN",
+                  language: "en-US",
                   api_key: apiKey,
                   base_url: baseUrl,
                   model,
@@ -1114,10 +1114,10 @@ export const SerenityTerminal = () => {
           {/* Ticker Input */}
           <div>
             <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-              分析目标
+              Research target
             </div>
             <input
-              placeholder="代码 / 行业 / 问题"
+              placeholder="Ticker / Sector / Question"
               value={ticker}
               onChange={(e) => setTicker(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit(e as never)}
@@ -1129,7 +1129,7 @@ export const SerenityTerminal = () => {
           {/* Year Grid */}
           <div>
             <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-              分析年限
+              Lookback window
             </div>
             <div className="grid grid-cols-5 gap-1.5">
               {YEARS.map((y) => (
@@ -1152,7 +1152,7 @@ export const SerenityTerminal = () => {
           {/* Skills */}
           <div>
             <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-              分析视角 · Skill
+              Analysis Lens · Skill
             </div>
             <div className="space-y-0.5">
               {SKILLS.map((skill) => {
@@ -1218,7 +1218,9 @@ export const SerenityTerminal = () => {
                 }
               }}
             >
-              <span className="text-xs text-[#5a5650]">多 Skill 并行分析</span>
+              <span className="text-xs text-[#5a5650]">
+                Multi-Skill Parallel
+              </span>
               <div
                 className={`relative h-[18px] w-[34px] rounded-full transition-colors ${
                   multiMode ? "bg-[#1a5c3a]" : "bg-[#ccc8be]"
@@ -1243,7 +1245,7 @@ export const SerenityTerminal = () => {
                 : "bg-[#1a1814] text-[#faf9f6] hover:bg-[#2d2b28] disabled:bg-[#9a9690]"
             }`}
           >
-            {running ? "分析中…" : "开始分析"}
+            {running ? "Analyzing…" : "Run Analysis"}
           </button>
 
           {/* API Key */}
@@ -1287,7 +1289,7 @@ export const SerenityTerminal = () => {
           {/* Recent */}
           <div>
             <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-              最近查询
+              Recent
             </div>
             <div className="space-y-1">
               {RECENT.map((r) => (
@@ -1312,15 +1314,16 @@ export const SerenityTerminal = () => {
         {results.length === 0 && (
           <div>
             <h1 className="mb-2 font-serif text-[30px] leading-tight font-light text-[#1a1814]">
-              供应链瓶颈分析
+              Supply Chain Bottleneck Analysis
               <br />
-              AI · 半导体 · 光子学
+              AI · Semiconductors · Photonics
             </h1>
             <p className="mb-7 font-mono text-[13px] text-[#9a9690]">
               <span className="text-[#5a5650]">
-                Serenity (@aleabitoreddit) 框架
+                Serenity (@aleabitoreddit) framework
               </span>{" "}
-              · 5,582 tweets · 4 长文蒸馏 · 仅供决策参考，非投资建议
+              · 5,582 tweets · 4 articles distilled · For decision support only,
+              not investment advice
             </p>
           </div>
         )}
@@ -1349,24 +1352,25 @@ export const SerenityTerminal = () => {
             {/* Serenity Info Card */}
             <div className="mb-7 rounded-lg border border-[#b8cedd] bg-[#e8eef5] p-4">
               <div className="mb-2.5 font-mono text-[10px] tracking-[.1em] text-[#1a3a5c] uppercase">
-                Serenity 核心供应链
+                Serenity Core Supply Chain
               </div>
               <div className="mb-2.5 font-mono text-[11px] leading-[2] text-[#1a3a5c]">
-                超大规模资本 (GOOGL/MSFT/META/AMZN)
+                Hyperscaler CapEx (GOOGL/MSFT/META/AMZN)
                 <span className="text-[#9a9690]"> → </span>ASIC/TPU
-                <span className="text-[#9a9690]"> → </span>光学转发器
+                <span className="text-[#9a9690]"> → </span>Optical Transceivers
                 (LITE/AAOI/COHR)
-                <span className="text-[#9a9690]"> → </span>CW/DFB激光 (SIVE)
-                <span className="text-[#9a9690]"> → </span>InP外延 (IQE)
+                <span className="text-[#9a9690]"> → </span>CW/DFB Laser (SIVE)
+                <span className="text-[#9a9690]"> → </span>InP Epi (IQE)
                 <span className="text-[#9a9690]"> → </span>
-                <strong>InP基板 (AXTI)</strong> ← 瓶颈
-                <span className="text-[#9a9690]"> → </span>铟原料 (Vital)
+                <strong>InP Substrate (AXTI)</strong> ← Bottleneck
+                <span className="text-[#9a9690]"> → </span>Indium Feedstock
+                (Vital)
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {[
-                  { label: "数据来源", value: "5,582 tweets" },
-                  { label: "30天方向准确率", value: "~61%" },
-                  { label: "成熟供应链论点", value: "~75-85%" },
+                  { label: "Data source", value: "5,582 tweets" },
+                  { label: "30-day directional accuracy", value: "~61%" },
+                  { label: "Mature supply chain theses", value: "~75-85%" },
                 ].map((s) => (
                   <div
                     key={s.label}
@@ -1385,7 +1389,7 @@ export const SerenityTerminal = () => {
 
             {/* Quick Examples */}
             <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-              快速分析示例
+              Quick Analysis Examples
             </div>
             <div className="mb-8 grid grid-cols-3 gap-2.5">
               {QUICK_EXAMPLES.map((ex) => (
@@ -1416,25 +1420,26 @@ export const SerenityTerminal = () => {
             {ticker.trim() && (
               <div className="mb-4 flex items-center justify-between rounded-lg border border-[#e8c87a] bg-[#fdf5e8] px-4 py-3">
                 <span className="font-mono text-[11px] text-[#7a4f00]">
-                  ⚠️ 下图是 Serenity 的 AI/半导体固定宇宙，不是「{ticker.trim()}」的供应链
+                  ⚠️ Below is Serenity's AI/semiconductor fixed universe, not
+                  the supply chain for "{ticker.trim()}"
                 </span>
                 <button
                   type="button"
                   onClick={() => {
-                    const q = `${ticker.trim()} 供应链瓶颈分析`;
+                    const q = `${ticker.trim()} supply chain bottleneck analysis`;
                     setTicker(q);
                     setActiveTab("examples");
                     void runSingle(q, "serenity", Date.now());
                   }}
                   className="shrink-0 rounded-md bg-[#7a4f00] px-3 py-1.5 font-mono text-[11px] text-white transition-colors hover:bg-[#5a3a00]"
                 >
-                  用 AI 分析 {ticker.trim()} 供应链 →
+                  Analyze {ticker.trim()} Supply Chain with AI →
                 </button>
               </div>
             )}
             <div className="mb-4 rounded-lg border border-[#e0dbd2] bg-[#faf9f6] p-4">
               <div className="mb-3 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-                AI 光子学供应链 · 点击节点填入分析框
+                AI Photonics Supply Chain · Click node to fill analysis box
               </div>
               <div className="overflow-x-auto">
                 <svg
@@ -1465,13 +1470,13 @@ export const SerenityTerminal = () => {
                   {/* Layer labels */}
                   {(
                     [
-                      ["超大规模", 60],
+                      ["Hyperscaler", 60],
                       ["ASIC/TPU", 206],
-                      ["光学转发器", 348],
-                      ["CW/DFB激光", 494],
-                      ["InP外延", 606],
-                      ["⚡ 瓶颈", 716],
-                      ["铟原料", 814],
+                      ["Optical Transceivers", 348],
+                      ["CW/DFB Laser", 494],
+                      ["InP Epi", 606],
+                      ["⚡ Bottleneck", 716],
+                      ["Indium Feedstock", 814],
                     ] as [string, number][]
                   ).map(([l, x]) => (
                     <text
@@ -1617,7 +1622,7 @@ export const SerenityTerminal = () => {
                       fill: "#9a9690",
                     }}
                   >
-                    资本流向 →
+                    Capital flow →
                   </text>
                   <text
                     x={655}
@@ -1628,7 +1633,7 @@ export const SerenityTerminal = () => {
                       fill: "#9b2c2c",
                     }}
                   >
-                    定价权在此
+                    Pricing power here
                   </text>
                   <text
                     x={10}
@@ -1640,7 +1645,7 @@ export const SerenityTerminal = () => {
                       letterSpacing: ".06em",
                     }}
                   >
-                    NEOCLOUD 层
+                    NEOCLOUD LAYER
                   </text>
 
                   {/* Neocloud nodes */}
@@ -1699,24 +1704,26 @@ export const SerenityTerminal = () => {
             {ticker.trim() && (
               <div className="mb-4 flex items-center justify-between rounded-lg border border-[#e8c87a] bg-[#fdf5e8] px-4 py-3">
                 <span className="font-mono text-[11px] text-[#7a4f00]">
-                  ⚠️ 下图是 Serenity 的固定持仓矩阵，不是「{ticker.trim()}」的相关标的
+                  ⚠️ Below is Serenity's fixed conviction matrix, not related
+                  tickers for "{ticker.trim()}"
                 </span>
                 <button
                   type="button"
                   onClick={() => {
-                    const q = `${ticker.trim()} 竞争格局分析`;
+                    const q = `${ticker.trim()} competitive landscape analysis`;
                     setTicker(q);
                     setActiveTab("examples");
                     void runSingle(q, "serenity", Date.now());
                   }}
                   className="shrink-0 rounded-md bg-[#7a4f00] px-3 py-1.5 font-mono text-[11px] text-white transition-colors hover:bg-[#5a3a00]"
                 >
-                  用 AI 分析 {ticker.trim()} 竞争格局 →
+                  Analyze {ticker.trim()} Competitive Landscape with AI →
                 </button>
               </div>
             )}
             <p className="mb-4 font-mono text-[10px] text-[#9a9690]">
-              点击标的 → 填入输入框 · 截至 2026年5月 · 论点有时效性
+              Click ticker → fills input box · As of May 2026 · Theses have time
+              decay
             </p>
             {Object.entries(MATRIX).map(([sec, tickers]) => (
               <div key={sec} className="mb-4">
@@ -1761,13 +1768,13 @@ export const SerenityTerminal = () => {
             <div className="mb-4 grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-[#e0dbd2] p-4">
                 <div className="mb-3 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-                  预测准确率校准
+                  Prediction Accuracy Calibration
                 </div>
                 <AccBars />
               </div>
               <div className="rounded-lg border border-[#e0dbd2] p-4">
                 <div className="mb-3 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-                  覆盖板块分布
+                  Sector Coverage Distribution
                 </div>
                 <DonutChart />
               </div>
@@ -1776,7 +1783,7 @@ export const SerenityTerminal = () => {
             {/* Representative Calls */}
             <div className="mb-3 rounded-lg border border-[#e0dbd2] p-4">
               <div className="mb-2.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-                代表性记录
+                Representative Calls
               </div>
               {CALLS.map((c) => (
                 <div
@@ -1803,8 +1810,9 @@ export const SerenityTerminal = () => {
 
             {/* Disclaimer */}
             <div className="rounded-md border-l-[3px] border-[#e8c87a] bg-[#fdf5e8] px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-[#7a4f00]">
-              ⚠️
-              所有回报数据均为自报告，未经第三方核实。61%准确率来自49个有记录的公开预测。成熟供应链论点(75-85%)≠可复制的交易回报。
+              ⚠️ All return data is self-reported, unverified by third parties.
+              61% accuracy from 49 recorded public predictions. Mature supply
+              chain theses (75-85%) ≠ replicable trading returns.
             </div>
           </div>
         )}
@@ -1867,8 +1875,9 @@ export const SerenityTerminal = () => {
 
                 {isDone && (
                   <div className="mt-3 rounded border-l-[3px] border-[#7a4f00] bg-[#fdf5e8] px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-[#7a4f00]">
-                    ⚠️
-                    这是框架分析，不是投资建议。论点有时效性，请自行确认当前价格和基本面。DYOR。
+                    ⚠️ This is framework analysis, not investment advice. Theses
+                    have time decay — confirm current prices and fundamentals
+                    yourself. DYOR.
                   </div>
                 )}
 
@@ -1922,7 +1931,7 @@ export const SerenityTerminal = () => {
                       <div className="p-3">
                         {hasError ? (
                           <p className="text-xs text-[#9b2c2c]">
-                            错误：{cell.error}
+                            Error: {cell.error}
                           </p>
                         ) : hasText ? (
                           <SafeHTML
