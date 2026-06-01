@@ -22,6 +22,8 @@ import {
 
 import { Input } from "@workspace/ui-web/input";
 
+import { useUserPlan } from "./use-user-plan";
+
 import type { FormEvent } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -795,6 +797,7 @@ function DonutChart() {
 // ─── Component ───────────────────────────────────────────────────
 
 export const SerenityTerminal = () => {
+  const { plan, isPaid } = useUserPlan();
   const [ticker, setTicker] = useState("");
   const [year, setYear] = useState(3);
   const [multiMode, setMultiMode] = useState(false);
@@ -831,7 +834,7 @@ export const SerenityTerminal = () => {
 
   const runSingle = useCallback(
     async (query: string, skillId: string, resultId: number) => {
-      if (!apiKey) return;
+      if (!apiKey && !isPaid) return;
 
       const skill = getSkillById(skillId);
       if (!skill) return;
@@ -902,7 +905,7 @@ export const SerenityTerminal = () => {
         });
       }
     },
-    [apiKey, baseUrl, model],
+    [apiKey, isPaid, baseUrl, model],
   );
 
   // ─── Submit handler ──────────────────────────────────────────
@@ -910,7 +913,7 @@ export const SerenityTerminal = () => {
   const handleSubmit = useCallback(
     async (e?: FormEvent) => {
       if (e) e.preventDefault();
-      if (!ticker.trim() || !apiKey || running) return;
+      if (!ticker.trim() || (!apiKey && !isPaid) || running) return;
 
       setRunning(true);
       abortRef.current = [];
@@ -1048,6 +1051,7 @@ export const SerenityTerminal = () => {
     [
       ticker,
       apiKey,
+      isPaid,
       running,
       multiMode,
       checkedSkills,
@@ -1063,7 +1067,7 @@ export const SerenityTerminal = () => {
 
   const handleQuickRun = useCallback(
     (query: string, skillId: string) => {
-      if (!apiKey) return;
+      if (!apiKey && !isPaid) return;
       setTicker(query);
       if (!multiMode) setActiveSkill(skillId);
       // Run directly
@@ -1087,7 +1091,7 @@ export const SerenityTerminal = () => {
       ]);
       void runSingle(query, skillId, id);
     },
-    [apiKey, multiMode, year, runSingle],
+    [apiKey, isPaid, multiMode, year, runSingle],
   );
 
   // ─── Fill ticker (from matrix/chain) ─────────────────────────
@@ -1238,7 +1242,7 @@ export const SerenityTerminal = () => {
           <button
             type="button"
             onClick={running ? handleStop : handleSubmit}
-            disabled={!ticker.trim() || !apiKey}
+            disabled={!ticker.trim() || (!apiKey && !isPaid)}
             className={`w-full rounded py-3 font-mono text-xs tracking-[.08em] transition-all ${
               running
                 ? "border border-[#1a1814] bg-[#faf9f6] text-[#1a1814]"
@@ -1249,18 +1253,31 @@ export const SerenityTerminal = () => {
           </button>
 
           {/* API Key */}
-          <div>
-            <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-              API Key
+          {isPaid ? (
+            <div>
+              <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
+                API Key
+              </div>
+              <div className="flex items-center gap-2 rounded border border-green-200 bg-green-50 px-3 py-2">
+                <span className="font-mono text-xs text-green-700">
+                  ✓ Using hosted {plan === "business" ? "Business" : "Pro"} key
+                </span>
+              </div>
             </div>
-            <Input
-              type="password"
-              placeholder="sk-..."
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="border-[#ccc8be] bg-transparent font-mono text-xs"
-            />
-          </div>
+          ) : (
+            <div>
+              <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
+                API Key
+              </div>
+              <Input
+                type="password"
+                placeholder="sk-..."
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="border-[#ccc8be] bg-transparent font-mono text-xs"
+              />
+            </div>
+          )}
 
           {/* Model */}
           <div>

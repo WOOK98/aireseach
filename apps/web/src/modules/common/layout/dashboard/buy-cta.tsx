@@ -11,9 +11,7 @@ export const BuyCta = ({
   const { t } = useTranslation("marketing");
   return (
     <TurboLink
-      href="https://turbostarter.lemonsqueezy.com/buy/b4a3d6cd-bf86-4cf0-af3f-78fa10f9636c?enabled=542201"
-      target="_blank"
-      rel="noopener noreferrer"
+      href="/dashboard/report"
       className={cn(
         "relative m-1 overflow-hidden transition-[height] delay-200 duration-200 ease-out",
         "h-[160px]",

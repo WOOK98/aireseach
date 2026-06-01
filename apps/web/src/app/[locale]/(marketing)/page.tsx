@@ -1,3 +1,4 @@
+/* oxlint-disable i18next/no-literal-string */
 import Link from "next/link";
 
 import { ParticleField } from "~/modules/marketing/home/particle-field";
@@ -12,10 +13,12 @@ export default function HomePage() {
         <p className="mb-4 text-sm font-medium tracking-widest text-gray-400 uppercase">
           Supply-chain intelligence powered by Serenity Framework
         </p>
-        <h1 className="max-w-3xl text-[clamp(2.2rem,5.5vw,4.5rem)] font-extrabold leading-[1.08] tracking-tight text-gray-900">
-          研究效率，如虎添翼。
+        <h1 className="max-w-3xl text-[clamp(2.2rem,5.5vw,4.5rem)] leading-[1.08] font-extrabold tracking-tight text-gray-900">
+          Research at the speed of thought.
           <br />
-          <span className="text-gray-400">Analysts take days. We take seconds.</span>
+          <span className="text-gray-400">
+            Analysts take days. We take seconds.
+          </span>
         </h1>
       </section>
 
@@ -24,26 +27,26 @@ export default function HomePage() {
         <div className="grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              title: "生成研究报告",
-              desc: "输入目标，一键生成结构化分析",
+              title: "Research Reports",
+              desc: "Enter a target, generate structured analysis in one click",
               href: "/dashboard/report",
               icon: "📄",
             },
             {
-              title: "供应链瓶颈分析",
-              desc: "Serenity 14点清单 · 多跳 BOM 映射",
+              title: "Supply Chain Analysis",
+              desc: "Serenity 14-point checklist · Multi-hop BOM mapping",
               href: "/dashboard/report",
               icon: "🔗",
             },
             {
-              title: "AI 对话助手",
-              desc: "DeepSeek 驱动，即时回答研究问题",
+              title: "AI Chat Assistant",
+              desc: "DeepSeek powered, instant answers to research questions",
               href: "/dashboard/ai",
               icon: "💬",
             },
             {
-              title: "定价方案",
-              desc: "免费开始，Pro 解锁更多次数",
+              title: "Pricing",
+              desc: "Start free, unlock more with Pro",
               href: "/pricing",
               icon: "💎",
             },
@@ -61,7 +64,7 @@ export default function HomePage() {
                 {card.desc}
               </div>
               <span className="mt-3 inline-block text-sm font-medium text-green-600 opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100">
-                开始 →
+                Get started →
               </span>
             </Link>
           ))}
@@ -89,16 +92,17 @@ export default function HomePage() {
       <section className="relative z-10">
         <div className="mx-4 mb-8 rounded-xl bg-gray-900 px-8 py-10 text-center md:mx-16 lg:mx-24">
           <h2 className="mb-3 text-2xl font-bold text-white">
-            免费开始你的第一份研究报告
+            Start your first research report for free
           </h2>
           <p className="mx-auto mb-6 max-w-md text-sm text-gray-400">
-            无需注册即可体验基础报告。创建账号保存历史、解锁更多分析次数。
+            No sign-up required for basic reports. Create an account to save
+            history and unlock more analyses.
           </p>
           <Link
             href="/dashboard/report"
             className="inline-block rounded-lg bg-green-500 px-8 py-3 text-sm font-semibold text-black transition-colors hover:bg-green-400"
           >
-            开始研究 →
+            Start researching →
           </Link>
         </div>
       </section>
