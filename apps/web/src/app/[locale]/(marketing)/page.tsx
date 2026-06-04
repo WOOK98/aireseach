@@ -2,10 +2,35 @@
 import Link from "next/link";
 
 import { ParticleField } from "~/modules/marketing/home/particle-field";
+import { FaqJsonLd } from "~/modules/marketing/layout/json-ld";
+
+const FAQ_ITEMS = [
+  {
+    question: "What is AI Research?",
+    answer:
+      "AI Research is a supply-chain intelligence platform powered by Serenity Framework. It generates structured research reports in seconds, analyzes supply chains with a 14-point checklist, and provides AI-powered chat assistance.",
+  },
+  {
+    question: "How accurate are the research reports?",
+    answer:
+      "Our platform achieves approximately 61% accuracy over a 30-day window, with a mature thesis rate of approximately 80%. We analyze over 5,500 data points per report.",
+  },
+  {
+    question: "Is AI Research free to use?",
+    answer:
+      "Yes, you can start generating basic research reports for free without signing up. Create an account to save your history and unlock additional analyses with the Pro plan.",
+  },
+  {
+    question: "What kind of analysis does AI Research provide?",
+    answer:
+      "AI Research provides research reports, supply chain analysis with multi-hop BOM mapping, and an AI chat assistant powered by DeepSeek for instant answers to research questions.",
+  },
+];
 
 export default function HomePage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#f3f4f6]">
+      <FaqJsonLd items={FAQ_ITEMS} />
       <ParticleField />
 
       {/* Hero */}

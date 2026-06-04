@@ -10,7 +10,7 @@ import { TurboLink } from "~/modules/common/turbo-link";
 const socials = [
   {
     id: "x",
-    href: "#",
+    href: "https://x.com/ZHENGWOOK",
     icon: Icons.Twitter,
   },
   {
@@ -18,16 +18,15 @@ const socials = [
     href: "https://github.com/WOOK98/aireseach",
     icon: Icons.Github,
   },
-
   {
     id: "facebook",
-    href: "#",
+    href: "https://www.facebook.com/profile.php?id=100013239642815",
     icon: Icons.Facebook,
   },
   {
-    id: "linkedin",
-    href: "#",
-    icon: Icons.Linkedin,
+    id: "blogger",
+    href: "https://www.blogger.com/blog/posts/239043436833803416",
+    icon: Icons.Globe2,
   },
 ];
 
