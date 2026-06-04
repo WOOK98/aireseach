@@ -19,10 +19,13 @@
   "devDependencies": {
     "@content-collections/cli": "0.1.9",
     "@content-collections/mdx": "0.2.2",
+    "@google-cloud/local-auth": "3.0.1",
     "@shikijs/rehype": "4.0.2",
     "@types/node": "catalog:node24",
     "@workspace/tsconfig": "workspace:*",
     "concurrently": "9.2.1",
+    "front-matter": "4.0.2",
+    "googleapis": "173.0.0",
     "typescript": "catalog:"
   }
 }
