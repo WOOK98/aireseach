@@ -28,6 +28,10 @@ next-env.d.ts
 .DS_Store
 *.pem
 
+# Blogger credentials
+scripts/blogger/credentials.json
+scripts/blogger/token.json
+
 # logs
 npm-debug.log*
 yarn-debug.log*
