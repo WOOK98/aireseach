@@ -1,5 +1,9 @@
 import "~/assets/styles/globals.css";
 import { DEFAULT_VIEWPORT, DEFAULT_METADATA } from "~/lib/metadata";
+import {
+  OrganizationJsonLd,
+  WebsiteJsonLd,
+} from "~/modules/marketing/layout/json-ld";
 
 import type { Metadata } from "next";
 
@@ -21,5 +25,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      <OrganizationJsonLd />
+      <WebsiteJsonLd />
+      {children}
+    </>
+  );
 }

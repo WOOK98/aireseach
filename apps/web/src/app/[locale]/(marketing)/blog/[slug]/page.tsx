@@ -8,10 +8,12 @@ import { CollectionType } from "@workspace/cms";
 import { getTranslation } from "@workspace/i18n/server";
 import { badgeVariants } from "@workspace/ui-web/badge";
 
+import { appConfig } from "~/config/app";
 import { BLOG_PREFIX } from "~/config/paths";
 import { getMetadata } from "~/lib/metadata";
 import { Mdx } from "~/modules/common/mdx";
 import { TurboLink } from "~/modules/common/turbo-link";
+import { ArticleJsonLd } from "~/modules/marketing/layout/json-ld";
 import {
   Section,
   SectionDescription,
@@ -39,6 +41,15 @@ export default async function Page({
 
   return (
     <Section>
+      <ArticleJsonLd
+        title={item.title}
+        description={item.description}
+        publishedAt={item.publishedAt.toISOString()}
+        modifiedAt={item.lastModifiedAt}
+        thumbnail={item.thumbnail}
+        slug={item.slug}
+        tags={item.tags}
+      />
       <SectionHeader className="max-w-3xl">
         <div className="mr-auto flex flex-wrap gap-1 md:gap-1.5">
           {item.tags.map((tag) => (
@@ -117,5 +128,8 @@ export async function generateMetadata({
   return getMetadata({
     title: item.title,
     description: item.description,
+    image: item.thumbnail,
+    type: "article",
+    canonical: `${appConfig.url}/blog/${item.slug}`,
   })({ params });
 }
