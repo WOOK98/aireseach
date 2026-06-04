@@ -14,6 +14,13 @@ export const ContentTag = {
   DEVELOPMENT: "development",
   PROTOTYPE: "prototype",
   LAUNCH: "launch",
+  AI_TOOLS: "ai-tools",
+  COMPARISON: "comparison",
+  RESEARCH: "research",
+  SEO: "seo",
+  GEO: "geo",
+  LLM: "llm",
+  TUTORIAL: "tutorial",
 } as const;
 
 export type ContentStatus = (typeof ContentStatus)[keyof typeof ContentStatus];
