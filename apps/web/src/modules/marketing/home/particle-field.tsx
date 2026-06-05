@@ -3,12 +3,12 @@
 import { useEffect, useRef } from "react";
 
 const COLORS = [
-  "22,163,74",   // green
-  "234,88,12",   // orange
-  "220,38,38",   // red
-  "37,99,235",   // blue
-  "147,51,234",  // purple
-  "6,182,212",   // cyan
+  "22,163,74", // green
+  "234,88,12", // orange
+  "220,38,38", // red
+  "37,99,235", // blue
+  "147,51,234", // purple
+  "6,182,212", // cyan
 ];
 
 export function ParticleField() {
@@ -20,10 +20,19 @@ export function ParticleField() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Reduce particles on mobile
+    const isMobile = window.innerWidth < 768;
+    const count = isMobile ? 80 : 160;
+
     const dots: {
-      x: number; y: number; r: number;
-      vx: number; vy: number;
-      color: string; a: number; da: number;
+      x: number;
+      y: number;
+      r: number;
+      vx: number;
+      vy: number;
+      color: string;
+      a: number;
+      da: number;
     }[] = [];
 
     const resize = () => {
@@ -33,7 +42,7 @@ export function ParticleField() {
     resize();
     window.addEventListener("resize", resize);
 
-    for (let i = 0; i < 320; i++) {
+    for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const radius = 80 + Math.random() * 260;
       const cx = canvas.width * 0.72;
