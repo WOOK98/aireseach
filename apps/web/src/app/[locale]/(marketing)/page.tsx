@@ -1,17 +1,9 @@
-import dynamic from "next/dynamic";
 /* oxlint-disable i18next/no-literal-string */
 import Link from "next/link";
 
 import { getMetadata } from "~/lib/metadata";
+import { ParticleFieldWrapper } from "~/modules/marketing/home/particle-field-wrapper";
 import { FaqJsonLd } from "~/modules/marketing/layout/json-ld";
-
-const ParticleField = dynamic(
-  () =>
-    import("~/modules/marketing/home/particle-field").then(
-      (mod) => mod.ParticleField,
-    ),
-  { ssr: false },
-);
 
 export const revalidate = 3600; // ISR: revalidate every hour
 
@@ -48,7 +40,7 @@ export default function HomePage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#f3f4f6]">
       <FaqJsonLd items={FAQ_ITEMS} />
-      <ParticleField />
+      <ParticleFieldWrapper />
 
       {/* Hero */}
       <section className="relative z-10 px-8 pt-24 pb-16 md:px-16 lg:px-24">
