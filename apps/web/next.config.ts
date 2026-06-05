@@ -20,6 +20,17 @@ const INTERNAL_PACKAGES = [
 
 const config: NextConfig = {
   reactStrictMode: true,
+
+  // Performance: compress responses
+  compress: true,
+
+  // Performance: experimental optimizations
+  experimental: {
+    optimizePackageImports: INTERNAL_PACKAGES,
+    // Optimize CSS delivery
+    optimizeCss: true,
+  },
+
   turbopack: {
     rules: {
       "*.svg": {
@@ -39,9 +50,6 @@ const config: NextConfig = {
 
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: INTERNAL_PACKAGES,
-  experimental: {
-    optimizePackageImports: INTERNAL_PACKAGES,
-  },
 
   /** We already do linting and typechecking as separate tasks in CI */
   typescript: { ignoreBuildErrors: true },

@@ -29,11 +29,24 @@ export default function RootLayout({
 }) {
   return (
     <>
+      {/* Preconnect to critical third-party origins */}
+      <link
+        rel="preconnect"
+        href="https://www.googletagmanager.com"
+        crossOrigin="anonymous"
+      />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossOrigin="anonymous"
+      />
+      {/* GA4 — lazy load to avoid blocking render */}
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-9TWC725PD2"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
       />
-      <Script id="google-analytics" strategy="afterInteractive">
+      <Script id="google-analytics" strategy="lazyOnload">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
