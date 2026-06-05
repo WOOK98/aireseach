@@ -22,8 +22,8 @@
   },
   "announcement": "No lock-in. Bring your own API key.",
   "report": {
-    "title": "AI Business Research Report",
-    "description": "Generate structured market, competitor, and investment analysis from live sources."
+    "title": "AI Research Report — Free Stock & Market Analysis",
+    "description": "Generate structured stock research reports with real-time data, financial metrics, and AI-powered analysis. Free tier available, no sign-up required."
   },
   "shippedWith": "Built for market research, strategy, and investment workflows",
   "cta": {
@@ -175,7 +175,7 @@
     "label": "Contact",
     "title": "Get in touch with us today for support",
     "cta": "Talk to sales",
-    "description": "Reach us for assistance or feedback",
+    "description": "Get in touch with the Airesearch team for support, partnerships, or feedback. We respond within 24 hours.",
     "form": {
       "name": {
         "placeholder": "John Doe"
@@ -199,8 +199,8 @@
   },
   "blog": {
     "label": "Blog",
-    "title": "News and updates about the platform",
-    "description": "Stay up to date with the latest news, insights, and updates from our platform. Discover new features, best practices, and industry trends.",
+    "title": "AI Research Insights — Market Analysis & Platform Updates",
+    "description": "Expert market analysis, AI research methodology insights, and platform updates. Learn how to use AI-powered tools for better investment decisions.",
     "timeToRead": "{{time}} min read",
     "tag": {
       "learning": "market research",

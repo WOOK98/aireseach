@@ -2,7 +2,7 @@
   "pricing": {
     "label": "Pricing",
     "title": "Simple pricing for business research",
-    "description": "Start free with your own model key. Upgrade when you want hosted DeepSeek usage and unlimited Jina search.",
+    "description": "Start free with basic research reports. Upgrade to Pro for unlimited analyses, supply chain mapping, and priority AI processing.",
     "disclaimer": "Free users get 3 total report generations with their own API key. Paid plans include hosted DeepSeek usage and unlimited Jina search under fair use."
   },
   "settings": {

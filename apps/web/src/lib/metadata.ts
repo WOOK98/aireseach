@@ -101,7 +101,7 @@ export const DEFAULT_METADATA: Metadata = {
   })),
   title: {
     template: SITE_NAME_TEMPLATE,
-    default: appConfig.name,
+    default: `${appConfig.name} — AI Stock Research & Market Intelligence`,
   },
   metadataBase: appConfig.url ? new URL(appConfig.url) : null,
 };

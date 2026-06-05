@@ -13,7 +13,10 @@ import { BLOG_PREFIX } from "~/config/paths";
 import { getMetadata } from "~/lib/metadata";
 import { Mdx } from "~/modules/common/mdx";
 import { TurboLink } from "~/modules/common/turbo-link";
-import { ArticleJsonLd } from "~/modules/marketing/layout/json-ld";
+import {
+  ArticleJsonLd,
+  BreadcrumbJsonLd,
+} from "~/modules/marketing/layout/json-ld";
 import {
   Section,
   SectionDescription,
@@ -49,6 +52,13 @@ export default async function Page({
         thumbnail={item.thumbnail}
         slug={item.slug}
         tags={item.tags}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: appConfig.url },
+          { name: "Blog", url: `${appConfig.url}/blog` },
+          { name: item.title, url: `${appConfig.url}/blog/${item.slug}` },
+        ]}
       />
       <SectionHeader className="max-w-3xl">
         <div className="mr-auto flex flex-wrap gap-1 md:gap-1.5">
