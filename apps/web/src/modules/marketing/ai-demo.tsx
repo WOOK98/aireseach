@@ -41,6 +41,14 @@ export const AIDemo = () => {
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: api.ai.chat.$url().toString(),
+      credentials: "include",
+      prepareSendMessagesRequest: ({ messages }) => ({
+        body: { messages },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
     }),
   });
 
@@ -51,15 +59,18 @@ export const AIDemo = () => {
   const isLoading = ["submitted", "streaming"].includes(status);
   const canSubmit = input.trim().length > 0 && !isLoading;
 
-  const submitMessage = () => {
-    const text = input.trim();
+  const submitMessage = (value = input) => {
+    const text = value.trim();
 
     if (!text) {
       return;
     }
 
     void sendMessage({ text });
-    setInput("");
+
+    if (value === input) {
+      setInput("");
+    }
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -111,7 +122,7 @@ export const AIDemo = () => {
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
           {EXAMPLES.map((example) => (
             <Button
-              onClick={() => sendMessage({ text: t(example.prompt) })}
+              onClick={() => submitMessage(t(example.prompt))}
               key={example.prompt}
               variant="outline"
               className="text-muted-foreground h-auto grow flex-col items-start gap-2 py-3 text-left whitespace-normal"
