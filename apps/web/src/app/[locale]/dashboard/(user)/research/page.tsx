@@ -198,11 +198,9 @@ export default function ResearchPage() {
                 <FileText className="text-muted-foreground h-6 w-6" />
               </div>
               <div className="space-y-1">
-                <p className="text-foreground text-sm font-medium">
-                  AI Business Research Report
-                </p>
+                <p className="text-foreground text-sm font-medium">Snapshot</p>
                 <p className="text-muted-foreground max-w-[200px] text-xs leading-relaxed">
-                  输入股票代码，基于真实财务数据生成专业研报
+                  输入股票代码，3秒生成一份快速研报
                 </p>
               </div>
             </motion.div>
