@@ -1,15 +1,26 @@
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { zValidator } from "@hono/zod-validator";
 import { streamText } from "ai";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { stream } from "hono/streaming";
 import { z } from "zod";
 
+import { env } from "../../env";
 import { fetchYahooFinance } from "./yahoo-finance";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
 
 export const reportRoute = new Hono();
+
+const openaiProvider = createOpenAI({
+  apiKey: env.OPENAI_API_KEY,
+});
+
+const deepseekProvider = createOpenAI({
+  apiKey: env.DEEPSEEK_API_KEY || env.LLM_API_KEY,
+  baseURL: "https://api.deepseek.com/v1",
+});
 
 const fmt = (n: number | null | undefined, decimals = 1) =>
   n == null || n === 0 ? "N/A" : n.toFixed(decimals);
@@ -51,6 +62,16 @@ reportRoute.post(
   zValidator("json", generateSchema),
   async (c) => {
     const { ticker, metrics: m, language } = c.req.valid("json");
+    const model = env.OPENAI_API_KEY
+      ? openaiProvider("gpt-4o-mini")
+      : deepseekProvider("deepseek-chat");
+
+    if (!env.OPENAI_API_KEY && !env.DEEPSEEK_API_KEY && !env.LLM_API_KEY) {
+      throw new HTTPException(500, {
+        message:
+          "Finance report generation is not configured. Set OPENAI_API_KEY or DEEPSEEK_API_KEY.",
+      });
+    }
 
     const isZh = language === "zh";
     const hasFundamentals =
@@ -124,7 +145,7 @@ Return ONLY this JSON structure (${isZh ? "所有文字用中文" : "all text in
 
     return stream(c, async (s) => {
       const result = streamText({
-        model: openai("gpt-4o-mini"),
+        model,
         system: systemPrompt,
         prompt: userPrompt,
         temperature: 0.3,
