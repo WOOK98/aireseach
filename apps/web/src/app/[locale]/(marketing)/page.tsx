@@ -1,8 +1,17 @@
 /* oxlint-disable i18next/no-literal-string */
 import Link from "next/link";
 
+import { getMetadata } from "~/lib/metadata";
 import { ParticleField } from "~/modules/marketing/home/particle-field";
 import { FaqJsonLd } from "~/modules/marketing/layout/json-ld";
+
+export const revalidate = 3600; // ISR: revalidate every hour
+
+export const generateMetadata = getMetadata({
+  title: "Airesearch — Supply-chain intelligence powered by AI",
+  description:
+    "Turn any company, market, or industry into a structured analysis — with live sources, your own model key, and exportable reports in minutes.",
+});
 
 const FAQ_ITEMS = [
   {

@@ -11,6 +11,8 @@ import {
   SectionTitle,
 } from "~/modules/marketing/layout/section";
 
+export const revalidate = 3600; // ISR
+
 export const generateMetadata = getMetadata({
   title: "marketing:contact.label",
   description: "marketing:contact.description",
