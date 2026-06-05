@@ -8,9 +8,9 @@ import { FaqJsonLd } from "~/modules/marketing/layout/json-ld";
 export const revalidate = 3600; // ISR: revalidate every hour
 
 export const generateMetadata = getMetadata({
-  title: "Airesearch — Supply-chain intelligence powered by AI",
+  title: "Free AI Stock Research Reports & Market Analysis",
   description:
-    "Turn any company, market, or industry into a structured analysis — with live sources, your own model key, and exportable reports in minutes.",
+    "Generate structured stock research reports with real-time financial data, supply chain analysis, and AI-powered insights. Free tier available — no sign-up required.",
 });
 
 const FAQ_ITEMS = [
