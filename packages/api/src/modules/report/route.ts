@@ -50,6 +50,12 @@ reportRoute.post("/generate", zValidator("json", generateSchema), async (c) => {
   const { ticker, metrics: m, language } = c.req.valid("json");
 
   const isZh = language === "zh";
+  const hasFundamentals =
+    m.revenue > 0 ||
+    m.marketCap > 0 ||
+    m.grossMargin > 0 ||
+    m.eps !== 0 ||
+    m.revenueHistory.length > 0;
 
   const systemPrompt = isZh
     ? `你是一名专业的股票研究分析师，擅长撰写机构级研究报告。
@@ -65,6 +71,8 @@ Output strict JSON only — no markdown fences.`;
 
   const userPrompt = `
 Analyze ${m.companyName} (${ticker}) and generate a research report based on the following REAL financial data:
+
+${hasFundamentals ? "" : "Important: Yahoo Finance fundamentals are temporarily unavailable for this request. Base the report on the live price data below, clearly state that full fundamentals are unavailable, and avoid inventing revenue, margin, EPS, cash flow, or valuation metrics."}
 
 ## Company
 - Sector: ${m.sector} / ${m.industry}
@@ -134,22 +142,28 @@ reportRoute.get(
   async (c) => {
     const { ticker } = c.req.valid("param");
     try {
-      const url = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${ticker}&fields=shortName,regularMarketPrice`;
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
       const res = await fetch(url, {
         headers: { "User-Agent": "Mozilla/5.0" },
         signal: AbortSignal.timeout(5000),
       });
       const json = (await res.json()) as {
-        quoteResponse?: {
-          result?: Array<{ shortName?: string; regularMarketPrice?: number }>;
+        chart?: {
+          result?: Array<{
+            meta?: {
+              shortName?: string;
+              longName?: string;
+              regularMarketPrice?: number;
+            };
+          }>;
         };
       };
-      const quote = json?.quoteResponse?.result?.[0];
-      if (!quote) return c.json({ valid: false });
+      const meta = json?.chart?.result?.[0]?.meta;
+      if (!meta) return c.json({ valid: false });
       return c.json({
         valid: true,
-        name: quote.shortName,
-        price: quote.regularMarketPrice,
+        name: meta.longName ?? meta.shortName,
+        price: meta.regularMarketPrice,
       });
     } catch {
       return c.json({ valid: false });
