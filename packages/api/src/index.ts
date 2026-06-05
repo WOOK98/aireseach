@@ -17,6 +17,7 @@ import { aiRouter } from "./modules/ai/router";
 import { authRouter } from "./modules/auth/router";
 import { billingRouter } from "./modules/billing/router";
 import { organizationRouter } from "./modules/organization/router";
+import { reportRoute } from "./modules/report/route";
 import { storageRouter } from "./modules/storage/router";
 import { onError } from "./utils/on-error";
 
@@ -66,6 +67,7 @@ const appRouter = new Hono()
   .route("/billing", billingRouter)
   .route("/organizations", organizationRouter)
   .route("/storage", storageRouter)
+  .route("/report", reportRoute)
   .onError(onError);
 
 type AppRouter = typeof appRouter;

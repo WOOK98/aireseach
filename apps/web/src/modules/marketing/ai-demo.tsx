@@ -38,7 +38,7 @@ const EXAMPLES = [
 export const AIDemo = () => {
   const { t } = useTranslation("marketing");
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: api.ai.chat.$url().toString(),
     }),
@@ -49,12 +49,23 @@ export const AIDemo = () => {
   );
 
   const isLoading = ["submitted", "streaming"].includes(status);
+  const canSubmit = input.trim().length > 0 && !isLoading;
+
+  const submitMessage = () => {
+    const text = input.trim();
+
+    if (!text) {
+      return;
+    }
+
+    void sendMessage({ text });
+    setInput("");
+  };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      void sendMessage({ text: input });
-      setInput("");
+      submitMessage();
     }
   };
 
@@ -87,6 +98,12 @@ export const AIDemo = () => {
           {isLoading && (
             <Icons.Loader className="text-muted-foreground size-5 animate-spin" />
           )}
+          {error && (
+            <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-sm">
+              {error.message ||
+                "AI chat failed to respond. Please try again later."}
+            </div>
+          )}
         </div>
       </ScrollArea>
 
@@ -109,8 +126,7 @@ export const AIDemo = () => {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void sendMessage({ text: input });
-          setInput("");
+          submitMessage();
         }}
         className="bg-background sticky bottom-4 w-full md:bottom-6"
       >
@@ -129,7 +145,7 @@ export const AIDemo = () => {
           className="absolute right-2 bottom-3 size-8 rounded-full"
           size="icon"
           type="submit"
-          disabled={isLoading}
+          disabled={!canSubmit}
           aria-label={t("ai.cta")}
         >
           <Icons.ArrowUp className="size-5" />
