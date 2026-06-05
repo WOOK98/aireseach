@@ -1,7 +1,5 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { useState } from "react";
 import { Streamdown } from "streamdown";
 
@@ -11,8 +9,6 @@ import { Button } from "@workspace/ui-web/button";
 import { Icons } from "@workspace/ui-web/icons";
 import { ScrollArea } from "@workspace/ui-web/scroll-area";
 import { Textarea } from "@workspace/ui-web/textarea";
-
-import { api } from "~/lib/api/client";
 
 import type { KeyboardEvent } from "react";
 
@@ -35,48 +31,112 @@ const EXAMPLES = [
   },
 ] as const;
 
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+};
+
+const createMessageId = () =>
+  globalThis.crypto?.randomUUID?.() ?? `message-${Date.now()}`;
+
 export const AIDemo = () => {
   const { t } = useTranslation("marketing");
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: api.ai.chat.$url().toString(),
-      credentials: "include",
-      prepareSendMessagesRequest: ({ messages }) => ({
-        body: { messages },
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }),
-    }),
-  });
-
-  const messagesToDisplay = messages.filter((message) =>
-    ["assistant", "user"].includes(message.role),
-  );
-
-  const isLoading = ["submitted", "streaming"].includes(status);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const canSubmit = input.trim().length > 0 && !isLoading;
 
-  const submitMessage = (value = input) => {
+  const submitMessage = async (value = input) => {
     const text = value.trim();
 
     if (!text) {
       return;
     }
 
-    void sendMessage({ text });
+    const userMessage: ChatMessage = {
+      id: createMessageId(),
+      role: "user",
+      text,
+    };
+    const assistantMessage: ChatMessage = {
+      id: createMessageId(),
+      role: "assistant",
+      text: "",
+    };
+
+    const nextMessages = [...messages, userMessage];
+
+    setMessages([...nextMessages, assistantMessage]);
+    setError(null);
+    setIsLoading(true);
 
     if (value === input) {
       setInput("");
+    }
+
+    try {
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messages: nextMessages }),
+      });
+
+      if (!response.ok) {
+        const fallback = `AI request failed with status ${response.status}.`;
+        const detail = await response.text().catch(() => "");
+        throw new Error(detail || fallback);
+      }
+
+      if (!response.body) {
+        throw new Error("AI response did not include a readable stream.");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantText = "";
+
+      while (true) {
+        const { done, value: chunk } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        assistantText += decoder.decode(chunk, { stream: true });
+        setMessages((currentMessages) =>
+          currentMessages.map((message) =>
+            message.id === assistantMessage.id
+              ? { ...message, text: assistantText }
+              : message,
+          ),
+        );
+      }
+
+      assistantText += decoder.decode();
+      setMessages((currentMessages) =>
+        currentMessages.map((message) =>
+          message.id === assistantMessage.id
+            ? { ...message, text: assistantText }
+            : message,
+        ),
+      );
+    } catch (err) {
+      setMessages(nextMessages);
+      setError(err instanceof Error ? err.message : "AI chat failed.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      submitMessage();
+      void submitMessage();
     }
   };
 
@@ -84,7 +144,7 @@ export const AIDemo = () => {
     <div className="mx-auto flex w-full max-w-2xl grow flex-col items-center justify-between gap-4 self-stretch">
       <ScrollArea className="w-full grow">
         <div className="flex flex-col gap-4 lg:gap-6">
-          {messagesToDisplay.map((message) => (
+          {messages.map((message) => (
             <article
               key={message.id}
               className={cn("max-w-full", {
@@ -92,18 +152,11 @@ export const AIDemo = () => {
                   message.role === "user",
               })}
             >
-              {message.parts.map((part, i) => {
-                switch (part.type) {
-                  case "text":
-                    return message.role === "assistant" ? (
-                      <Streamdown key={`${message.id}-${i}`}>
-                        {part.text}
-                      </Streamdown>
-                    ) : (
-                      <div key={`${message.id}-${i}`}>{part.text}</div>
-                    );
-                }
-              })}
+              {message.role === "assistant" ? (
+                <Streamdown>{message.text}</Streamdown>
+              ) : (
+                <div>{message.text}</div>
+              )}
             </article>
           ))}
           {isLoading && (
@@ -111,14 +164,13 @@ export const AIDemo = () => {
           )}
           {error && (
             <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-sm">
-              {error.message ||
-                "AI chat failed to respond. Please try again later."}
+              {error || "AI chat failed to respond. Please try again later."}
             </div>
           )}
         </div>
       </ScrollArea>
 
-      {!messagesToDisplay.length && !isLoading && (
+      {!messages.length && !isLoading && (
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
           {EXAMPLES.map((example) => (
             <Button
@@ -137,7 +189,7 @@ export const AIDemo = () => {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          submitMessage();
+          void submitMessage();
         }}
         className="bg-background sticky bottom-4 w-full md:bottom-6"
       >
