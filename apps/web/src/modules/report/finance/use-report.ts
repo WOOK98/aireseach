@@ -69,7 +69,7 @@ export function useReportStream() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE}/report/generate`, {
+      const res = await fetch(`${API_BASE}/report/finance/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ticker, metrics, language }),

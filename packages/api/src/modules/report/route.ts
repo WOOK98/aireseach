@@ -38,7 +38,7 @@ reportRoute.get(
   },
 );
 
-// ─── POST /api/report/generate ───────────────────────────────────────────────
+// ─── POST /api/report/finance/generate ───────────────────────────────────────
 // Accepts pre-fetched metrics, streams AI analysis back
 const generateSchema = z.object({
   ticker: z.string().min(1).max(10),
@@ -46,30 +46,33 @@ const generateSchema = z.object({
   language: z.enum(["zh", "en"]).default("zh"),
 });
 
-reportRoute.post("/generate", zValidator("json", generateSchema), async (c) => {
-  const { ticker, metrics: m, language } = c.req.valid("json");
+reportRoute.post(
+  "/finance/generate",
+  zValidator("json", generateSchema),
+  async (c) => {
+    const { ticker, metrics: m, language } = c.req.valid("json");
 
-  const isZh = language === "zh";
-  const hasFundamentals =
-    m.revenue > 0 ||
-    m.marketCap > 0 ||
-    m.grossMargin > 0 ||
-    m.eps !== 0 ||
-    m.revenueHistory.length > 0;
+    const isZh = language === "zh";
+    const hasFundamentals =
+      m.revenue > 0 ||
+      m.marketCap > 0 ||
+      m.grossMargin > 0 ||
+      m.eps !== 0 ||
+      m.revenueHistory.length > 0;
 
-  const systemPrompt = isZh
-    ? `你是一名专业的股票研究分析师，擅长撰写机构级研究报告。
+    const systemPrompt = isZh
+      ? `你是一名专业的股票研究分析师，擅长撰写机构级研究报告。
 风格要求：
 - 数据驱动，每个论点都要引用真实财务数据
 - 客观中立，同时呈现多空两方观点
 - 专业但易读，避免过于学术化
 - 结论明确，给出明确的投资评级理由
 请严格按照 JSON 格式输出，不要输出任何 markdown 代码块标记。`
-    : `You are a professional equity research analyst. Write institutional-quality research reports.
+      : `You are a professional equity research analyst. Write institutional-quality research reports.
 Style: data-driven (cite actual figures), balanced bull/bear, professional yet readable.
 Output strict JSON only — no markdown fences.`;
 
-  const userPrompt = `
+    const userPrompt = `
 Analyze ${m.companyName} (${ticker}) and generate a research report based on the following REAL financial data:
 
 ${hasFundamentals ? "" : "Important: Yahoo Finance fundamentals are temporarily unavailable for this request. Base the report on the live price data below, clearly state that full fundamentals are unavailable, and avoid inventing revenue, margin, EPS, cash flow, or valuation metrics."}
@@ -119,20 +122,21 @@ Return ONLY this JSON structure (${isZh ? "所有文字用中文" : "all text in
 }
 `;
 
-  return stream(c, async (s) => {
-    const result = streamText({
-      model: openai("gpt-4o-mini"),
-      system: systemPrompt,
-      prompt: userPrompt,
-      temperature: 0.3,
-      maxOutputTokens: 1200,
-    });
+    return stream(c, async (s) => {
+      const result = streamText({
+        model: openai("gpt-4o-mini"),
+        system: systemPrompt,
+        prompt: userPrompt,
+        temperature: 0.3,
+        maxOutputTokens: 1200,
+      });
 
-    for await (const chunk of result.textStream) {
-      await s.write(chunk);
-    }
-  });
-});
+      for await (const chunk of result.textStream) {
+        await s.write(chunk);
+      }
+    });
+  },
+);
 
 // ─── GET /api/report/financials/:ticker/validate ─────────────────────────────
 // Quick check if ticker exists before full report generation
