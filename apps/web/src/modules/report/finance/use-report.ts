@@ -76,7 +76,20 @@ export function useReportStream() {
         signal: ctrl.signal,
       });
 
-      if (!res.ok || !res.body) throw new Error(`API error ${res.status}`);
+      if (!res.ok || !res.body) {
+        const detail = await res.text().catch(() => "");
+        let message = detail || `API error ${res.status}`;
+
+        try {
+          const json = JSON.parse(detail) as {
+            message?: string;
+            detail?: string;
+          };
+          message = json.message ?? json.detail ?? message;
+        } catch {}
+
+        throw new Error(message);
+      }
 
       setStatus("streaming");
 

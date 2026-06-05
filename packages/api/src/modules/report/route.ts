@@ -22,6 +22,32 @@ const deepseekProvider = createOpenAI({
   baseURL: "https://api.deepseek.com/v1",
 });
 
+const getReportModelConfig = () => {
+  const providerName = env.OPENAI_API_KEY ? "OpenAI" : "DeepSeek";
+  const apiKey = env.OPENAI_API_KEY || env.DEEPSEEK_API_KEY || env.LLM_API_KEY;
+
+  if (!apiKey) {
+    throw new HTTPException(500, {
+      message:
+        "Finance report generation is not configured. Set OPENAI_API_KEY or DEEPSEEK_API_KEY.",
+    });
+  }
+
+  const invalidCharacter = Array.from(apiKey).find(
+    (character) => character.charCodeAt(0) > 255,
+  );
+
+  if (invalidCharacter) {
+    throw new HTTPException(500, {
+      message: `${providerName} API key contains an invalid character (${invalidCharacter}). Replace the Vercel environment variable with the full raw API key, not a shortened or masked value.`,
+    });
+  }
+
+  return env.OPENAI_API_KEY
+    ? openaiProvider("gpt-4o-mini")
+    : deepseekProvider("deepseek-chat");
+};
+
 const fmt = (n: number | null | undefined, decimals = 1) =>
   n == null || n === 0 ? "N/A" : n.toFixed(decimals);
 
@@ -62,16 +88,7 @@ reportRoute.post(
   zValidator("json", generateSchema),
   async (c) => {
     const { ticker, metrics: m, language } = c.req.valid("json");
-    const model = env.OPENAI_API_KEY
-      ? openaiProvider("gpt-4o-mini")
-      : deepseekProvider("deepseek-chat");
-
-    if (!env.OPENAI_API_KEY && !env.DEEPSEEK_API_KEY && !env.LLM_API_KEY) {
-      throw new HTTPException(500, {
-        message:
-          "Finance report generation is not configured. Set OPENAI_API_KEY or DEEPSEEK_API_KEY.",
-      });
-    }
+    const model = getReportModelConfig();
 
     const isZh = language === "zh";
     const hasFundamentals =
