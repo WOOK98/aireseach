@@ -1,9 +1,17 @@
+import dynamic from "next/dynamic";
 /* oxlint-disable i18next/no-literal-string */
 import Link from "next/link";
 
 import { getMetadata } from "~/lib/metadata";
-import { ParticleField } from "~/modules/marketing/home/particle-field";
 import { FaqJsonLd } from "~/modules/marketing/layout/json-ld";
+
+const ParticleField = dynamic(
+  () =>
+    import("~/modules/marketing/home/particle-field").then(
+      (mod) => mod.ParticleField,
+    ),
+  { ssr: false },
+);
 
 export const revalidate = 3600; // ISR: revalidate every hour
 
