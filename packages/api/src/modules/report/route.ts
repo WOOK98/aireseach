@@ -81,13 +81,16 @@ const generateSchema = z.object({
   ticker: z.string().min(1).max(10),
   metrics: z.custom<FinancialMetrics>(),
   language: z.enum(["zh", "en"]).default("zh"),
+  mode: z
+    .enum(["snapshot", "earnings", "competition", "risk", "poc"])
+    .default("snapshot"),
 });
 
 reportRoute.post(
   "/finance/generate",
   zValidator("json", generateSchema),
   async (c) => {
-    const { ticker, metrics: m, language } = c.req.valid("json");
+    const { ticker, metrics: m, language, mode } = c.req.valid("json");
     const model = getReportModelConfig();
 
     const isZh = language === "zh";
@@ -105,13 +108,36 @@ reportRoute.post(
 - 客观中立，同时呈现多空两方观点
 - 专业但易读，避免过于学术化
 - 结论明确，给出明确的投资评级理由
+- 借鉴售前方案专家工作流：先给决策摘要，再给情景推演、角色化解读、可跟踪指标和下一步动作
 请严格按照 JSON 格式输出，不要输出任何 markdown 代码块标记。`
       : `You are a professional equity research analyst. Write institutional-quality research reports.
 Style: data-driven (cite actual figures), balanced bull/bear, professional yet readable.
+Use a solution-consulting workflow: decision brief first, then scenarios, role-based takeaways, monitorable metrics, and next actions.
 Output strict JSON only — no markdown fences.`;
+
+    const modeLabel = {
+      snapshot: isZh
+        ? "快速投资快照：适合3分钟内判断是否值得继续研究"
+        : "Investment snapshot: decide in 3 minutes whether the stock deserves deeper work",
+      earnings: isZh
+        ? "财报复盘：聚焦增长质量、利润率、现金流与管理层执行"
+        : "Earnings review: focus on growth quality, margins, cash flow, and execution",
+      competition: isZh
+        ? "竞争格局：聚焦护城河、替代风险、定价权与行业位置"
+        : "Competitive landscape: moat, substitution risk, pricing power, and industry position",
+      risk: isZh
+        ? "风险排雷：聚焦估值、资产负债表、现金流、周期和叙事过热"
+        : "Risk scan: valuation, balance sheet, cash flow, cyclicality, and crowded narrative risk",
+      poc: isZh
+        ? "跟踪计划：把投资假设转成未来30-90天可验证指标"
+        : "Tracking plan: convert the thesis into 30-90 day measurable validation points",
+    }[mode];
 
     const userPrompt = `
 Analyze ${m.companyName} (${ticker}) and generate a research report based on the following REAL financial data:
+
+## Analysis Mode
+${modeLabel}
 
 ${hasFundamentals ? "" : "Important: Yahoo Finance fundamentals are temporarily unavailable for this request. Base the report on the live price data below, clearly state that full fundamentals are unavailable, and avoid inventing revenue, margin, EPS, cash flow, or valuation metrics."}
 
@@ -156,7 +182,50 @@ Return ONLY this JSON structure (${isZh ? "所有文字用中文" : "all text in
     "risks": ["<risk 1>", "<risk 2>", "<risk 3>"],
     "valuation": "<2 sentences on valuation vs peers>",
     "catalysts": "<2 sentences on near-term catalysts>"
-  }
+  },
+  "decisionBrief": {
+    "action": "<one clear action: start research / wait / avoid / monitor>",
+    "confidence": "Low" | "Medium" | "High",
+    "timeHorizon": "<time horizon>",
+    "keyQuestion": "<the one question that decides whether the thesis works>"
+  },
+  "scenarioMatrix": [
+    {
+      "scenario": "Bull",
+      "probability": <number 0-100>,
+      "targetPrice": <number>,
+      "drivers": ["<driver 1>", "<driver 2>"]
+    },
+    {
+      "scenario": "Base",
+      "probability": <number 0-100>,
+      "targetPrice": <number>,
+      "drivers": ["<driver 1>", "<driver 2>"]
+    },
+    {
+      "scenario": "Bear",
+      "probability": <number 0-100>,
+      "targetPrice": <number>,
+      "drivers": ["<driver 1>", "<driver 2>"]
+    }
+  ],
+  "roleBriefs": [
+    {
+      "role": "<Founder / Analyst / Investor / CFO or equivalent>",
+      "takeaway": "<role-specific takeaway>",
+      "concern": "<role-specific concern>"
+    }
+  ],
+  "watchlist": [
+    {
+      "metric": "<metric to monitor>",
+      "current": "<current value from data or N/A>",
+      "threshold": "<threshold that changes the view>",
+      "whyItMatters": "<why this metric matters>"
+    }
+  ],
+  "nextSteps": ["<concrete next action 1>", "<concrete next action 2>", "<concrete next action 3>"],
+  "evidenceNeeds": ["<source or evidence needed to verify claim 1>", "<source or evidence needed to verify claim 2>"]
 }
 `;
 
