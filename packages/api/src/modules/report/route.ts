@@ -235,7 +235,7 @@ Return ONLY this JSON structure (${isZh ? "所有文字用中文" : "all text in
         system: systemPrompt,
         prompt: userPrompt,
         temperature: 0.3,
-        maxOutputTokens: 1200,
+        maxOutputTokens: 2600,
       });
 
       for await (const chunk of result.textStream) {
