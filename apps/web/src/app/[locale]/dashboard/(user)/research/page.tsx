@@ -56,31 +56,31 @@ const analysisModes: Array<{
   {
     id: "snapshot",
     label: "Snapshot",
-    description: "3分钟判断是否值得深挖",
+    description: "Decide whether it deserves deeper work",
     icon: Sparkles,
   },
   {
     id: "earnings",
     label: "Earnings",
-    description: "增长、利润率、现金流复盘",
+    description: "Growth, margins, and cash flow review",
     icon: BarChart3,
   },
   {
     id: "competition",
     label: "Competition",
-    description: "护城河、替代风险、定价权",
+    description: "Moat, substitution risk, and pricing power",
     icon: BriefcaseBusiness,
   },
   {
     id: "risk",
     label: "Risk Scan",
-    description: "估值、负债、叙事过热排雷",
+    description: "Valuation, debt, and narrative risk",
     icon: Shield,
   },
   {
     id: "poc",
     label: "Tracking Plan",
-    description: "30-90天可验证指标",
+    description: "30-90 day validation metrics",
     icon: ListChecks,
   },
 ];
@@ -140,9 +140,9 @@ function StreamingIndicator({ text }: { text: string }) {
   return (
     <div className="border-border bg-muted/30 space-y-2 rounded-lg border border-dashed px-4 py-8 text-center">
       <Sparkles className="text-primary mx-auto h-5 w-5 animate-pulse" />
-      <p className="text-muted-foreground text-sm">AI 正在分析数据...</p>
+      <p className="text-muted-foreground text-sm">AI is analyzing data...</p>
       <p className="text-muted-foreground/60 font-mono text-[11px]">
-        已接收 {charCount} 字符
+        {charCount} characters received
       </p>
     </div>
   );
@@ -150,7 +150,7 @@ function StreamingIndicator({ text }: { text: string }) {
 
 function getFriendlyAnalysisError(rawMessage?: string | null) {
   if (!rawMessage) {
-    return "AI 分析暂时没有返回结果，请稍后重试。";
+    return "AI analysis did not return a result. Please try again.";
   }
 
   if (
@@ -158,7 +158,7 @@ function getFriendlyAnalysisError(rawMessage?: string | null) {
       rawMessage,
     )
   ) {
-    return "基础财务数据已加载；AI 文字研报暂不可用，需要管理员更新模型 API Key 后恢复。";
+    return "Base financial data is loaded, but the AI narrative is unavailable. The model API key needs to be updated.";
   }
 
   return rawMessage;
@@ -181,7 +181,7 @@ function AnalysisNotice({
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
       <div className="space-y-2">
         <div>
-          <p className="text-sm font-medium">AI 分析暂不可用</p>
+          <p className="text-sm font-medium">AI analysis unavailable</p>
           <p className="text-xs leading-relaxed opacity-80">{message}</p>
         </div>
         <Button
@@ -190,7 +190,7 @@ function AnalysisNotice({
           className="h-7 gap-1 px-2 text-xs text-amber-950 hover:bg-amber-100 dark:text-amber-100 dark:hover:bg-amber-900/40"
           onClick={onRetry}
         >
-          <RotateCcw className="h-3 w-3" /> 重新生成
+          <RotateCcw className="h-3 w-3" /> Regenerate
         </Button>
       </div>
     </motion.div>
@@ -293,7 +293,7 @@ function WorkBuddyGrid({
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {report.roleBriefs && report.roleBriefs.length > 0 && (
-        <Section label="角色化解读" icon={Users}>
+        <Section label="Role Briefs" icon={Users}>
           <div className="space-y-2">
             {report.roleBriefs.slice(0, 4).map((item) => (
               <div key={item.role} className="rounded-lg border px-3 py-3">
@@ -316,7 +316,7 @@ function WorkBuddyGrid({
       )}
 
       {report.watchlist && report.watchlist.length > 0 && (
-        <Section label="观察指标" icon={Activity}>
+        <Section label="Watchlist" icon={Activity}>
           <div className="space-y-2">
             {report.watchlist.slice(0, 5).map((item) => (
               <div
@@ -353,7 +353,7 @@ export default function ResearchPage() {
   const [inputVal, setInputVal] = useState("");
   const [activeTicker, setActiveTicker] = useState<string | null>(null);
   const [activeMode, setActiveMode] = useState<ResearchMode>("snapshot");
-  const [language] = useState<"zh" | "en">("zh");
+  const [language] = useState<"zh" | "en">("en");
 
   const validate = useValidateTicker();
   const financials = useFinancials(activeTicker);
@@ -369,7 +369,9 @@ export default function ResearchPage() {
       valid: false,
     }));
     if (!result.valid) {
-      toast.error(`找不到股票代码 "${ticker}"，请检查后重试`);
+      toast.error(
+        `Ticker "${ticker}" was not found. Please check and try again.`,
+      );
       return;
     }
 
@@ -415,7 +417,7 @@ export default function ResearchPage() {
                 onKeyDown={(e: KeyboardEvent<HTMLInputElement>) =>
                   e.key === "Enter" && handleSearch()
                 }
-                placeholder="输入股票代码（TSLA、AAPL）"
+                placeholder="Enter a ticker symbol (TSLA, AAPL)"
                 className="pl-9 font-mono text-sm uppercase placeholder:font-sans placeholder:normal-case"
                 maxLength={10}
               />
@@ -432,7 +434,7 @@ export default function ResearchPage() {
               className="shrink-0 gap-1.5"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              生成
+              Generate
             </Button>
           </div>
           <div className="grid gap-2 md:grid-cols-5">
@@ -504,7 +506,7 @@ export default function ResearchPage() {
                     Snapshot
                   </p>
                   <p className="text-muted-foreground max-w-[200px] text-xs leading-relaxed">
-                    输入股票代码，3秒生成一份快速研报
+                    Enter a ticker symbol to generate a fast research snapshot.
                   </p>
                 </div>
               </motion.div>
@@ -533,10 +535,10 @@ export default function ResearchPage() {
                 <AlertCircle className="text-destructive mt-0.5 h-4 w-4 shrink-0" />
                 <div className="space-y-1">
                   <p className="text-destructive text-sm font-medium">
-                    加载失败
+                    Loading failed
                   </p>
                   <p className="text-muted-foreground text-xs">
-                    {financialError ?? "请稍后重试"}
+                    {financialError ?? "Please try again later."}
                   </p>
                   <Button
                     variant="ghost"
@@ -548,7 +550,7 @@ export default function ResearchPage() {
                       setInputVal("");
                     }}
                   >
-                    <RotateCcw className="h-3 w-3" /> 重置
+                    <RotateCcw className="h-3 w-3" /> Reset
                   </Button>
                 </div>
               </motion.div>
@@ -582,7 +584,7 @@ export default function ResearchPage() {
                         <RatingBadge rating={report.rating} />
                         <div className="text-right">
                           <p className="text-muted-foreground text-[10px]">
-                            目标价
+                            Target price
                           </p>
                           <p className="font-mono text-sm font-medium">
                             ${report.targetPrice}{" "}
@@ -612,7 +614,7 @@ export default function ResearchPage() {
                 )}
 
                 {/* Metrics grid */}
-                <Section label="关键指标" icon={BarChart3}>
+                <Section label="Key Metrics" icon={BarChart3}>
                   <MetricsGrid m={financials.data} />
                 </Section>
 
@@ -649,7 +651,7 @@ export default function ResearchPage() {
                     {/* Investment thesis */}
                     <div className="border-primary bg-primary/5 rounded-lg border-l-2 px-4 py-3">
                       <p className="text-primary mb-1.5 font-mono text-[10px] tracking-widest uppercase">
-                        核心投资逻辑
+                        Investment Thesis
                       </p>
                       <p className="text-foreground text-sm leading-relaxed">
                         {report.sections.overview}
@@ -667,36 +669,36 @@ export default function ResearchPage() {
 
                     {report.scenarioMatrix &&
                       report.scenarioMatrix.length > 0 && (
-                        <Section label="情景推演" icon={Target}>
+                        <Section label="Scenario Matrix" icon={Target}>
                           <ScenarioMatrix scenarios={report.scenarioMatrix} />
                         </Section>
                       )}
 
-                    <Section label="增长驱动" icon={TrendingUp}>
+                    <Section label="Growth Drivers" icon={TrendingUp}>
                       <p className="text-foreground/90 text-sm leading-relaxed">
                         {report.sections.growthDrivers}
                       </p>
                     </Section>
 
-                    <Section label="盈利分析" icon={BarChart3}>
+                    <Section label="Profitability" icon={BarChart3}>
                       <p className="text-foreground/90 text-sm leading-relaxed">
                         {report.sections.profitability}
                       </p>
                     </Section>
 
-                    <Section label="近期催化剂" icon={Zap}>
+                    <Section label="Near-Term Catalysts" icon={Zap}>
                       <p className="text-foreground/90 text-sm leading-relaxed">
                         {report.sections.catalysts}
                       </p>
                     </Section>
 
-                    <Section label="估值" icon={BarChart3}>
+                    <Section label="Valuation" icon={BarChart3}>
                       <p className="text-foreground/90 text-sm leading-relaxed">
                         {report.sections.valuation}
                       </p>
                     </Section>
 
-                    <Section label="主要风险" icon={Shield}>
+                    <Section label="Key Risks" icon={Shield}>
                       <ul className="space-y-2">
                         {report.sections.risks.map((risk, i) => (
                           <li
@@ -713,7 +715,7 @@ export default function ResearchPage() {
                     <WorkBuddyGrid report={report} />
 
                     {report.nextSteps && report.nextSteps.length > 0 && (
-                      <Section label="下一步动作" icon={ListChecks}>
+                      <Section label="Next Steps" icon={ListChecks}>
                         <div className="grid gap-2 md:grid-cols-3">
                           {report.nextSteps.slice(0, 3).map((step, index) => (
                             <div
@@ -732,7 +734,7 @@ export default function ResearchPage() {
 
                     {report.evidenceNeeds &&
                       report.evidenceNeeds.length > 0 && (
-                        <Section label="待验证证据" icon={FileText}>
+                        <Section label="Evidence To Verify" icon={FileText}>
                           <div className="bg-muted/20 rounded-lg border p-3">
                             <ul className="space-y-2">
                               {report.evidenceNeeds
@@ -753,9 +755,9 @@ export default function ResearchPage() {
 
                     {/* Footer */}
                     <p className="text-muted-foreground/60 border-border border-t pt-2 text-[10px]">
-                      由 AI 生成 ·{" "}
-                      {new Date(report.generatedAt).toLocaleString("zh-CN")} ·
-                      仅供参考，不构成投资建议
+                      Generated by AI ·{" "}
+                      {new Date(report.generatedAt).toLocaleString("en-US")} ·
+                      For research only. Not investment advice.
                     </p>
                   </motion.div>
                 )}

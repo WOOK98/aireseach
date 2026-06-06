@@ -88,7 +88,7 @@ const MODEL_PROVIDERS = [
 
 const REPORT_LANGUAGES = [
   { value: "en", label: "English" },
-  { value: "zh-TW", label: "繁體中文" },
+  { value: "zh-TW", label: "Traditional Chinese" },
 ];
 
 const TICKER_UNIVERSE = [

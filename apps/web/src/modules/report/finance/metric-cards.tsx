@@ -10,19 +10,19 @@ import type {
 // ─── Rating Badge ─────────────────────────────────────────────────────────────
 const RATING_MAP = {
   Buy: {
-    label: "买入",
+    label: "Buy",
     variant: "default" as const,
     className:
       "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
   },
   Hold: {
-    label: "持有",
+    label: "Hold",
     variant: "secondary" as const,
     className:
       "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
   },
   Sell: {
-    label: "卖出",
+    label: "Sell",
     variant: "destructive" as const,
     className: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
   },
@@ -40,7 +40,7 @@ export function RatingBadge({ rating }: { rating: ReportData["rating"] }) {
       {rating === "Buy" && <TrendingUp className="h-3 w-3" />}
       {rating === "Sell" && <TrendingDown className="h-3 w-3" />}
       {rating === "Hold" && <Minus className="h-3 w-3" />}
-      {r.label} / {rating}
+      {r.label}
     </span>
   );
 }
@@ -107,48 +107,48 @@ function fmtB(n: number): string {
 export function MetricsGrid({ m }: { m: FinancialMetrics }) {
   const metrics: MetricCardProps[] = [
     {
-      label: "营收增速 YoY",
+      label: "Revenue Growth YoY",
       value: fmt(m.revenueGrowthYoy, 1, "%"),
       trend: m.revenueGrowthYoy > 0 ? "up" : "down",
     },
     {
-      label: "毛利率",
+      label: "Gross Margin",
       value: fmt(m.grossMargin, 1, "%"),
-      sub: `经营利润率 ${fmt(m.operatingMargin, 1)}%`,
+      sub: `Operating margin ${fmt(m.operatingMargin, 1)}%`,
     },
     {
-      label: "净利率",
+      label: "Net Margin",
       value: fmt(m.netMargin, 1, "%"),
       trend: m.netMargin > 0 ? "up" : "down",
     },
     {
       label: "EPS (TTM)",
       value: `$${fmt(m.eps, 2)}`,
-      sub: `增速 ${fmt(m.epsGrowthYoy, 1)}%`,
+      sub: `Growth ${fmt(m.epsGrowthYoy, 1)}%`,
       trend: m.epsGrowthYoy > 0 ? "up" : "down",
     },
     {
       label: "P/E (TTM)",
       value: m.peRatio ? `${fmt(m.peRatio, 1)}x` : "N/A",
-      sub: m.forwardPE ? `远期 ${fmt(m.forwardPE, 1)}x` : undefined,
+      sub: m.forwardPE ? `Forward ${fmt(m.forwardPE, 1)}x` : undefined,
     },
     {
       label: "EV/EBITDA",
       value: m.evEbitda ? `${fmt(m.evEbitda, 1)}x` : "N/A",
     },
     {
-      label: "自由现金流",
+      label: "Free Cash Flow",
       value: fmtB(m.freeCashFlow),
-      sub: `FCF率 ${fmt(m.fcfMargin, 1)}%`,
+      sub: `FCF margin ${fmt(m.fcfMargin, 1)}%`,
       trend: m.freeCashFlow > 0 ? "up" : "down",
     },
     {
-      label: "净现金",
+      label: "Net Cash",
       value: fmtB(m.netCash),
       trend: m.netCash > 0 ? "up" : "down",
     },
     {
-      label: "市值",
+      label: "Market Cap",
       value: fmtB(m.marketCap),
       sub: `P/S ${fmt(m.psRatio, 1)}x`,
     },
