@@ -1,10 +1,26 @@
 import { openai } from "@ai-sdk/openai";
-import { convertToModelMessages, streamText } from "ai";
+import { streamText } from "ai";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 
 import { enforceAuth } from "../../middleware";
 
-import type { UIMessage } from "ai";
+type NormalizedChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type RawMessagePart = {
+  type?: string;
+  text?: string;
+};
+
+type RawChatMessage = {
+  role?: string;
+  text?: string;
+  content?: string;
+  parts?: RawMessagePart[];
+};
 
 const SYSTEM_PROMPT = `You are an expert financial analyst and stock research assistant for Airesearch, a professional investment research platform.
 
@@ -24,12 +40,54 @@ When analyzing a company, cover:
 
 Keep responses concise but substantive. Use bullet points and structure for clarity.`;
 
+const extractMessageText = (message: RawChatMessage) => {
+  if (typeof message.text === "string") return message.text;
+  if (typeof message.content === "string") return message.content;
+
+  if (Array.isArray(message.parts)) {
+    return message.parts
+      .filter((part) => part.type === "text" && typeof part.text === "string")
+      .map((part) => part.text)
+      .join("");
+  }
+
+  return "";
+};
+
+const normalizeMessage = (value: unknown): NormalizedChatMessage | null => {
+  if (!value || typeof value !== "object") return null;
+
+  const message = value as RawChatMessage;
+  if (message.role !== "user" && message.role !== "assistant") return null;
+
+  const content = extractMessageText(message).trim();
+  if (!content) return null;
+
+  return {
+    role: message.role,
+    content,
+  };
+};
+
 export const aiRouter = new Hono().post("/chat", enforceAuth, async (c) => {
-  const { messages }: { messages: UIMessage[] } = await c.req.json();
+  const body = (await c.req.json().catch(() => ({}))) as {
+    messages?: unknown;
+  };
+  const messages = Array.isArray(body.messages)
+    ? body.messages
+        .map(normalizeMessage)
+        .filter((message): message is NormalizedChatMessage => !!message)
+    : [];
+
+  if (!messages.length) {
+    throw new HTTPException(400, {
+      message: "No chat messages were provided.",
+    });
+  }
 
   return streamText({
     model: openai.responses("gpt-4.1-nano"),
     system: SYSTEM_PROMPT,
-    messages: await convertToModelMessages(messages),
-  }).toUIMessageStreamResponse();
+    messages,
+  }).toTextStreamResponse();
 });

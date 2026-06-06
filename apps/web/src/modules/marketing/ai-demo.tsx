@@ -66,6 +66,17 @@ const getFriendlyAiError = (rawMessage: string) => {
   return message || "AI chat failed to respond. Please try again later.";
 };
 
+const toApiMessages = (items: ChatMessage[]) =>
+  items
+    .filter(
+      (message) => message.role === "user" || message.role === "assistant",
+    )
+    .map((message) => ({
+      role: message.role,
+      text: message.text ?? "",
+    }))
+    .filter((message) => message.text.trim().length > 0);
+
 export const AIDemo = () => {
   const { t } = useTranslation("marketing");
   const [input, setInput] = useState("");
@@ -109,7 +120,7 @@ export const AIDemo = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: toApiMessages(nextMessages) }),
       });
 
       if (!response.ok) {
