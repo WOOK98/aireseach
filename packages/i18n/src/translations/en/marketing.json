@@ -225,14 +225,14 @@
     "description": "Learn how to use Aireseach"
   },
   "ai": {
-    "description": "Ask focused questions, explore a market, and turn public context into clearer business decisions.",
+    "description": "Ask your AI stock analyst anything about markets, companies, and investment theses.",
     "prompt": {
-      "history": "Tell the history of the internet",
-      "capitals": "Quiz me on the world capitals",
-      "quantum": "Explain quantum computing",
-      "realWorld": "Describe a real-world AI case"
+      "history": "Explain TSLA's moat and competitive position",
+      "capitals": "Compare NVDA vs AMD — who wins the AI chip race?",
+      "quantum": "What are the biggest risks facing AAPL in 2025?",
+      "realWorld": "Break down MSFT's revenue streams and growth drivers"
     },
-    "placeholder": "Ask a question...",
+    "placeholder": "Ask about any stock, sector, or market trend...",
     "cta": "Submit"
   },
   "setup": {
