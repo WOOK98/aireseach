@@ -45,6 +45,12 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
+  "browserslist": [
+    "> 0.5%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ],
   "engines": {
     "node": ">=24.0.0"
   },
