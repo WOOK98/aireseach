@@ -1,5 +1,5 @@
-import type { NextConfig } from "next";
 import "./env.config";
+import type { NextConfig } from "next";
 
 const INTERNAL_PACKAGES = [
   "@workspace/analytics-web",
@@ -32,6 +32,10 @@ const config: NextConfig = {
   },
 
   turbopack: {
+    resolveAlias: {
+      "../build/polyfills/polyfill-module": "./src/lib/noop-polyfill.ts",
+      "next/dist/build/polyfills/polyfill-module": "./src/lib/noop-polyfill.ts",
+    },
     rules: {
       "*.svg": {
         loaders: ["@svgr/webpack"],
