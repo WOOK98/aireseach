@@ -37,9 +37,13 @@ export const authClient = createAuthClient({
     }),
     passkeyClient(),
     lastLoginMethodClient(),
-    oneTapClient({
-      clientId: envConfig.NEXT_PUBLIC_GOOGLE_ONE_TAP_CLIENT_ID,
-    }),
+    ...(envConfig.NEXT_PUBLIC_GOOGLE_ONE_TAP_CLIENT_ID
+      ? [
+          oneTapClient({
+            clientId: envConfig.NEXT_PUBLIC_GOOGLE_ONE_TAP_CLIENT_ID,
+          }),
+        ]
+      : []),
     inferAdditionalFields<typeof auth>(),
   ],
 });

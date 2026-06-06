@@ -26,13 +26,16 @@ DEEP_RESEARCH_BASE_URL = os.getenv("AGENT_BASE_URL", "https://api.perplexity.ai"
 DEEP_RESEARCH_MODEL = os.getenv("AGENT_MODEL", "sonar-deep-research")
 
 LLM_API_KEY = os.getenv("LLM_API_KEY") or os.getenv("DEEPSEEK_API_KEY")
-LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
-LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-chat")
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
+LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-v4-flash")
 
 JINA_API_KEY = os.getenv("JINA_API_KEY", "")
 JINA_SEARCH_BASE_URL = os.getenv("JINA_SEARCH_BASE_URL", "https://s.jina.ai/")
 SEARCH_TIMEOUT_SECONDS = int(os.getenv("SEARCH_TIMEOUT_SECONDS", "20"))
 SEARCH_CONTEXT_CHARS = int(os.getenv("SEARCH_CONTEXT_CHARS", "12000"))
+
+# Serenity reference files
+SERENITY_REF_DIR = os.path.join(os.path.dirname(__file__), "references")
 
 
 class ReportRequest(BaseModel):
@@ -45,6 +48,17 @@ class ReportRequest(BaseModel):
     model: Optional[str] = Field(None, description="Model name")
     jina_api_key: Optional[str] = Field(None, description="Optional Jina AI API key")
     language: Optional[str] = Field("en", description="Report output language code (en, zh-TW, zh-CN, ja, ko, etc.)")
+
+
+class SerenityRequest(BaseModel):
+    ticker: str = Field(..., min_length=1, max_length=10, description="Stock ticker symbol, e.g. NVDA, AXTI, LITE")
+    mode: str = Field("single", description="single, portfolio, or sector")
+    tickers: Optional[list[str]] = Field(None, description="List of tickers for portfolio mode")
+    api_key: Optional[str] = Field(None, description="Model API key")
+    base_url: Optional[str] = Field(None, description="OpenAI-compatible API base URL")
+    model: Optional[str] = Field(None, description="Model name")
+    language: Optional[str] = Field("en", description="Output language")
+    skill_prompt: Optional[str] = Field(None, description="Custom system prompt for the skill")
 
 
 SYSTEM_PROMPT = """
@@ -286,6 +300,176 @@ def build_report_request(request: ReportRequest):
         build_messages(target, analysis_years, analysis_lens, search_context, search_warning, request.language or "en"),
         search_warning,
     )
+
+
+# ──────────────────────────────────────────────
+# Serenity Supply-Chain Analysis
+# ──────────────────────────────────────────────
+
+def load_serenity_references() -> dict[str, str]:
+    """Load Serenity reference files from disk."""
+    refs = {}
+    for name in ["methodology.md", "theses.md", "track-record.md", "articles.md"]:
+        path = os.path.join(SERENITY_REF_DIR, name)
+        try:
+            with open(path, encoding="utf-8") as f:
+                refs[name] = f.read()
+        except FileNotFoundError:
+            refs[name] = ""
+    return refs
+
+
+SERENITY_SYSTEM_PROMPT = """You are Serenity's AI analytical assistant — a supply-chain bottleneck analyst modeled after @aleabitoreddit's methodology.
+
+Your job: evaluate stocks through the lens of upstream supply-chain chokepoints, NOT through traditional fundamental or technical analysis alone.
+
+CORE PRINCIPLE: Don't buy the obvious "shovel seller" (NVDA). Trace the supply chain as far upstream as possible and find the single point of failure that a hyperscaler will pay *anything* to keep flowing. The further upstream and the smaller the market cap, the more underpriced the chokepoint.
+
+ANALYSIS STRUCTURE:
+1. Supply Chain Map — Map the full chain from end-demand (hyperscaler capex, AI infra) down to raw materials/feedstock. Identify every hop.
+2. Bottleneck Identification — At each hop: "if this layer stopped shipping, what breaks downstream, and is there a second source?"
+3. Serenity's 14-Point Checklist — Evaluate: Bottleneck?, Upstream & cheap?, Chain fluency?, Demand driver?, Contracts & counterparty?, Real margins?, Financing quality?, Stage?, Catalyst?, Market cap headroom?, Validation lag?, Risk & sizing?, Macro overlay?, Position?
+4. Thesis Assessment — Cross-reference against Serenity's known theses and track record.
+5. Investment View — Strong Buy / Hold / Watch / Avoid / High Risk, with bull/bear cases.
+
+CRITICAL RULES:
+- This is DECISION-SUPPORT ONLY. Never auto-trade, never place orders.
+- Always state disclaimers: self-reported returns, survivorship bias, thesis decay.
+- Flag if Serenity has a known view on this ticker (check the theses provided).
+- If Serenity never covered it, run the 14-point checklist on a fresh name.
+- Write professionally, no emoji, evidence-led.
+"""
+
+
+def build_serenity_messages(
+    ticker: str,
+    mode: str,
+    tickers: list[str] | None,
+    refs: dict[str, str],
+    language: str = "en",
+    custom_prompt: str | None = None,
+) -> list[dict[str, str]]:
+    """Build messages for Serenity supply-chain analysis."""
+    # Truncate theses to fit context window (keep first 30k chars)
+    theses_context = refs.get("theses.md", "")[:30000]
+    methodology_context = refs.get("methodology.md", "")[:15000]
+    articles_context = refs.get("articles.md", "")[:8000]
+    track_record_context = refs.get("track-record.md", "")[:8000]
+
+    context = f"""
+## Serenity's Known Theses (merged knowledge base)
+{theses_context}
+
+## Serenity's Methodology & 14-Point Checklist
+{methodology_context}
+
+## Serenity's Long-Form Articles
+{articles_context}
+
+## Serenity's Track Record & Calibration
+{track_record_context}
+"""
+
+    lang_instruction = ""
+    lang_names = {
+        "zh-TW": "Traditional Chinese (繁體中文)",
+        "zh-CN": "Simplified Chinese (简体中文)",
+        "ja": "Japanese (日本語)",
+        "ko": "Korean (한국어)",
+        "es": "Spanish",
+        "de": "German",
+        "fr": "French",
+        "en": "English",
+    }
+    if language and language != "en":
+        lang_name = lang_names.get(language, language)
+        lang_instruction = f"\n\nIMPORTANT: Write the ENTIRE analysis in {lang_name}."
+
+    if mode == "portfolio" and tickers:
+        user_content = (
+            f"Analyze the following portfolio through Serenity's supply-chain lens:\n\n"
+            f"Tickers: {', '.join(tickers)}\n\n"
+            f"For each ticker:\n"
+            f"1. Check if Serenity has a known thesis (reference the knowledge base below)\n"
+            f"2. Map its position in the AI/semiconductor supply chain\n"
+            f"3. Rate bottleneck strength (Strong / Moderate / Weak / None)\n"
+            f"4. Flag agreements and conflicts with Serenity's views\n\n"
+            f"Then provide a summary: which names have the strongest bottleneck thesis, "
+            f"which are missing from the portfolio, and prioritized discussion list.\n\n"
+            f"--- REFERENCE DATA ---\n{context}"
+        )
+    elif mode == "sector":
+        user_content = (
+            f"Form a forward sector view on the AI/semiconductor supply chain, "
+            f"focusing on: {ticker}\n\n"
+            f"Use Serenity's thematic threads: photonics/CPO, memory/HBM supercycle, "
+            f"neocloud financing quality, power/grid, defense, AI-agent hardware.\n\n"
+            f"Pull relevant theses from the knowledge base. Note leading indicators. "
+            f"State the view with confidence level and dated evidence.\n\n"
+            f"--- REFERENCE DATA ---\n{context}"
+        )
+    else:
+        user_content = (
+            f"Evaluate **{ticker}** through Serenity's supply-chain bottleneck lens.\n\n"
+            f"Steps:\n"
+            f"1. Look up {ticker} in Serenity's known theses below. Note his stance, conviction tier, how it evolved.\n"
+            f"2. If he never covered it, run the 14-point checklist from methodology.md on this fresh name.\n"
+            f"3. Map its position in the AI/semiconductor supply chain.\n"
+            f"4. Sanity-check timeliness — flag if his view is dated.\n"
+            f"5. Present: Serenity's view (if any), supply-chain read, bull/bear case, risks.\n\n"
+            f"--- REFERENCE DATA ---\n{context}"
+        )
+
+    # Use custom prompt if provided, otherwise use default Serenity system prompt
+    system_prompt = custom_prompt if custom_prompt else SERENITY_SYSTEM_PROMPT
+
+    return [
+        {"role": "system", "content": system_prompt + lang_instruction},
+        {"role": "user", "content": user_content},
+    ]
+
+
+@app.post("/api/analyze_serenity")
+async def analyze_serenity(request: SerenityRequest):
+    ticker = request.ticker.strip().upper()
+    if not ticker:
+        raise HTTPException(status_code=400, detail="Enter a ticker symbol.")
+
+    api_key = validate_header_value(clean_optional_text(request.api_key), "API Key")
+    if not api_key:
+        api_key = LLM_API_KEY
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Enter your model API key.")
+
+    base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
+    model = clean_optional_text(request.model) or LLM_MODEL
+    language = request.language or "en"
+
+    refs = load_serenity_references()
+    tickers = request.tickers if request.mode == "portfolio" and request.tickers else None
+
+    # Use custom skill_prompt if provided, otherwise use default Serenity prompt
+    if request.skill_prompt:
+        messages = build_serenity_messages(ticker, request.mode, tickers, refs, language, custom_prompt=request.skill_prompt)
+    else:
+        messages = build_serenity_messages(ticker, request.mode, tickers, refs, language)
+
+    def stream():
+        try:
+            client = OpenAI(api_key=api_key, base_url=base_url)
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=True,
+            )
+            for chunk in response:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+        except Exception as exc:
+            yield f"\n\nAnalysis failed: {exc}"
+
+    return StreamingResponse(stream(), media_type="text/markdown; charset=utf-8")
 
 
 @app.post("/api/generate_report")

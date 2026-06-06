@@ -1,17 +1,7 @@
-import { getMetadata } from "~/lib/metadata";
-import { UserOrganizationInvitationsBanner } from "~/modules/organization/invitations/user/user-organization-invitations";
-import { OrganizationPicker } from "~/modules/organization/organization-picker";
+import { redirect } from "next/navigation";
 
-export const generateMetadata = getMetadata({
-  title: "common:home",
-  description: "dashboard:user.home.description",
-});
+import { pathsConfig } from "~/config/paths";
 
 export default function UserPage() {
-  return (
-    <>
-      <UserOrganizationInvitationsBanner />
-      <OrganizationPicker />
-    </>
-  );
+  redirect(pathsConfig.dashboard.user.report);
 }

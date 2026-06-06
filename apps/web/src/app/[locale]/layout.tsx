@@ -1,12 +1,18 @@
 import { notFound } from "next/navigation";
+import { lazy, Suspense } from "react";
 
 import { config, isLocaleSupported } from "@workspace/i18n";
 
 import { getMetadata } from "~/lib/metadata";
 import { Providers } from "~/lib/providers/providers";
-import { ImpersonatingBanner } from "~/modules/admin/users/user/impersonating-banner";
 import { BaseLayout } from "~/modules/common/layout/base";
 import { Toaster } from "~/modules/common/toast";
+
+const ImpersonatingBanner = lazy(() =>
+  import("~/modules/admin/users/user/impersonating-banner").then((m) => ({
+    default: m.ImpersonatingBanner,
+  })),
+);
 
 export function generateStaticParams() {
   return config.locales.map((locale) => ({ locale }));
@@ -30,7 +36,9 @@ export default async function RootLayout({
   return (
     <BaseLayout locale={locale}>
       <Providers locale={locale}>
-        <ImpersonatingBanner />
+        <Suspense fallback={null}>
+          <ImpersonatingBanner />
+        </Suspense>
         {children}
 
         <Toaster />

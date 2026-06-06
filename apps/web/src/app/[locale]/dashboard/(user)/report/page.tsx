@@ -1,24 +1,17 @@
-import { getTranslation } from "@workspace/i18n/server";
+/* oxlint-disable i18next/no-literal-string */
 
 import { getMetadata } from "~/lib/metadata";
-import { ReportGenerator } from "~/modules/report/report-generator";
+import { SerenityTerminalWrapper } from "~/modules/report/serenity-terminal-wrapper";
 
 export const generateMetadata = getMetadata({
   title: "marketing:report.title",
   description: "marketing:report.description",
 });
 
-export default async function ReportPage() {
-  const { t } = await getTranslation({ ns: "marketing" });
-
+export default function ReportPage() {
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">
-          {t("report.title")}
-        </h2>
-      </div>
-      <ReportGenerator />
+    <div className="flex-1">
+      <SerenityTerminalWrapper />
     </div>
   );
 }

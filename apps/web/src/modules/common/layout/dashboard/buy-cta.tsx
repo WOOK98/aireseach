@@ -1,26 +1,20 @@
+import Link from "next/link";
+
 import { useTranslation } from "@workspace/i18n";
 import { cn } from "@workspace/ui";
 import { buttonVariants } from "@workspace/ui-web/button";
 
-import { TurboLink } from "~/modules/common/turbo-link";
-
-export const BuyCta = ({
-  className,
-  ...props
-}: Omit<React.ComponentProps<typeof TurboLink>, "href">) => {
+export const BuyCta = ({ className }: { className?: string }) => {
   const { t } = useTranslation("marketing");
   return (
-    <TurboLink
-      href="https://turbostarter.lemonsqueezy.com/buy/b4a3d6cd-bf86-4cf0-af3f-78fa10f9636c?enabled=542201"
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href="/dashboard/report"
       className={cn(
         "relative m-1 overflow-hidden transition-[height] delay-200 duration-200 ease-out",
         "h-[160px]",
         "group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:delay-0",
         className,
       )}
-      {...props}
     >
       <div
         className={cn(
@@ -35,6 +29,6 @@ export const BuyCta = ({
           {t("buyCta.link")}
         </div>
       </div>
-    </TurboLink>
+    </Link>
   );
 };

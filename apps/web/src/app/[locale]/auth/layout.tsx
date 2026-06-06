@@ -1,10 +1,9 @@
-import Image from "next/image";
-
 import { getTranslation } from "@workspace/i18n/server";
 import { Icons } from "@workspace/ui-web/icons";
 
 import { pathsConfig } from "~/config/paths";
 import { TurboLink } from "~/modules/common/turbo-link";
+import { AuthMarketingPanel } from "~/modules/auth/layout/marketing-panel";
 
 export default async function AuthLayout({
   children,
@@ -31,13 +30,8 @@ export default async function AuthLayout({
         </div>
       </section>
 
-      <aside className="relative hidden flex-1 lg:block">
-        <Image
-          src="/images/auth-background.jpg"
-          alt="Auth Background"
-          className="h-full w-full object-cover"
-          fill
-        />
+      <aside className="relative hidden lg:block">
+        <AuthMarketingPanel />
       </aside>
     </main>
   );

@@ -16,6 +16,8 @@ export const preset = {
   id: "api",
   server: {
     OPENAI_API_KEY: z.string().optional(), // change it to your provider API key (e.g. ANTHROPIC_API_KEY if you use Anthropic)
+    DEEPSEEK_API_KEY: z.string().optional(),
+    LLM_API_KEY: z.string().optional(),
   },
   extends: [auth, billingWeb, billingMobile, db, email, storage, monitoring],
 } as const satisfies Preset;
