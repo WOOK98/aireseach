@@ -35,7 +35,13 @@
     "PRODUCT_NAME",
     "URL",
     "DEFAULT_LOCALE",
-    "REPORT_AGENT_URL"
+    "REPORT_AGENT_URL",
+    "BETTER_AUTH_SECRET",
+    "GITHUB_CLIENT_ID",
+    "GITHUB_CLIENT_SECRET",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "CONTACT_EMAIL"
   ],
   "globalPassThroughEnv": [
     "NODE_ENV",
