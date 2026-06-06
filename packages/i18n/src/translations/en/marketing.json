@@ -233,7 +233,11 @@
       "realWorld": "Break down MSFT's revenue streams and growth drivers"
     },
     "placeholder": "Ask about any stock, sector, or market trend...",
-    "cta": "Submit"
+    "cta": "Submit",
+    "empty": {
+      "title": "Your AI Stock Analyst",
+      "description": "Ask about any company, sector, or market trend. Get structured, research-grade analysis instantly."
+    }
   },
   "setup": {
     "steps": {
