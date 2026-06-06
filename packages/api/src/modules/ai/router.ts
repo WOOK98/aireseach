@@ -1,8 +1,9 @@
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
+import { env } from "../../env";
 import { enforceAuth } from "../../middleware";
 
 type NormalizedChatMessage = {
@@ -39,6 +40,30 @@ When analyzing a company, cover:
 5. Recent developments worth noting
 
 Keep responses concise but substantive. Use bullet points and structure for clarity.`;
+
+const openaiProvider = createOpenAI({
+  apiKey: env.OPENAI_API_KEY,
+});
+
+const deepseekProvider = createOpenAI({
+  apiKey: env.DEEPSEEK_API_KEY || env.LLM_API_KEY,
+  baseURL: "https://api.deepseek.com/v1",
+});
+
+const getChatModel = () => {
+  const apiKey = env.OPENAI_API_KEY || env.DEEPSEEK_API_KEY || env.LLM_API_KEY;
+
+  if (!apiKey) {
+    throw new HTTPException(500, {
+      message:
+        "AI chat is not configured. Set OPENAI_API_KEY or DEEPSEEK_API_KEY.",
+    });
+  }
+
+  return env.OPENAI_API_KEY
+    ? openaiProvider.responses("gpt-4.1-nano")
+    : deepseekProvider("deepseek-chat");
+};
 
 const extractMessageText = (message: RawChatMessage) => {
   if (typeof message.text === "string") return message.text;
@@ -86,7 +111,7 @@ export const aiRouter = new Hono().post("/chat", enforceAuth, async (c) => {
   }
 
   return streamText({
-    model: openai.responses("gpt-4.1-nano"),
+    model: getChatModel(),
     system: SYSTEM_PROMPT,
     messages,
   }).toTextStreamResponse();
