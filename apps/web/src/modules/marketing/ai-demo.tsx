@@ -35,10 +35,36 @@ type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   text: string;
+  status?: "error";
 };
 
 const createMessageId = () =>
   globalThis.crypto?.randomUUID?.() ?? `message-${Date.now()}`;
+
+const getFriendlyAiError = (rawMessage: string) => {
+  let message = rawMessage;
+
+  try {
+    const parsed = JSON.parse(rawMessage) as {
+      message?: string;
+      error?: string;
+      detail?: string;
+    };
+    message = parsed.message ?? parsed.error ?? parsed.detail ?? rawMessage;
+  } catch {
+    // Keep the original plain text response.
+  }
+
+  if (
+    /api key|deepseek|invalid character|bytestring|not configured/i.test(
+      message,
+    )
+  ) {
+    return "AI service is temporarily unavailable because the model provider is not configured correctly. Please try again later.";
+  }
+
+  return message || "AI chat failed to respond. Please try again later.";
+};
 
 export const AIDemo = () => {
   const { t } = useTranslation("marketing");
@@ -126,8 +152,17 @@ export const AIDemo = () => {
         ),
       );
     } catch (err) {
-      setMessages(nextMessages);
-      setError(err instanceof Error ? err.message : "AI chat failed.");
+      const friendlyError = getFriendlyAiError(
+        err instanceof Error ? err.message : "AI chat failed.",
+      );
+      setMessages((currentMessages) =>
+        currentMessages.map((message) =>
+          message.id === assistantMessage.id
+            ? { ...message, status: "error", text: friendlyError }
+            : message,
+        ),
+      );
+      setError(null);
     } finally {
       setIsLoading(false);
     }
@@ -141,27 +176,36 @@ export const AIDemo = () => {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl grow flex-col items-center justify-between gap-4 self-stretch">
+    <div className="mx-auto flex w-full max-w-3xl grow flex-col items-center justify-between gap-4 self-stretch">
       <ScrollArea className="w-full grow">
         <div className="flex flex-col gap-4 lg:gap-6">
           {messages.map((message) => (
             <article
               key={message.id}
-              className={cn("max-w-full", {
-                "bg-muted max-w-4/5 self-end rounded-lg px-5 py-2.5":
-                  message.role === "user",
-              })}
+              className={cn(
+                "max-w-full",
+                message.role === "user" &&
+                  "bg-muted max-w-4/5 self-end rounded-lg px-5 py-2.5",
+                message.role === "assistant" &&
+                  "border-border bg-background/80 rounded-xl border px-5 py-4 shadow-sm",
+                message.status === "error" &&
+                  "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100",
+              )}
             >
               {message.role === "assistant" ? (
-                <Streamdown>{message.text}</Streamdown>
+                message.text ? (
+                  <Streamdown>{message.text}</Streamdown>
+                ) : (
+                  <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                    <Icons.Loader className="size-4 animate-spin" />
+                    Thinking through your question...
+                  </div>
+                )
               ) : (
                 <div>{message.text}</div>
               )}
             </article>
           ))}
-          {isLoading && (
-            <Icons.Loader className="text-muted-foreground size-5 animate-spin" />
-          )}
           {error && (
             <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-sm">
               {error || "AI chat failed to respond. Please try again later."}
@@ -171,18 +215,28 @@ export const AIDemo = () => {
       </ScrollArea>
 
       {!messages.length && !isLoading && (
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-          {EXAMPLES.map((example) => (
-            <Button
-              onClick={() => submitMessage(t(example.prompt))}
-              key={example.prompt}
-              variant="outline"
-              className="text-muted-foreground h-auto grow flex-col items-start gap-2 py-3 text-left whitespace-normal"
-            >
-              <example.icon className="size-5 shrink-0" />
-              {t(example.prompt)}
-            </Button>
-          ))}
+        <div className="w-full space-y-4 pb-2">
+          <div className="space-y-1 text-center">
+            <h2 className="text-xl font-semibold tracking-tight">
+              {t("ai.empty.title")}
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              {t("ai.empty.description")}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {EXAMPLES.map((example) => (
+              <Button
+                onClick={() => submitMessage(t(example.prompt))}
+                key={example.prompt}
+                variant="outline"
+                className="text-muted-foreground hover:text-foreground h-auto grow flex-col items-start gap-2 py-3 text-left whitespace-normal"
+              >
+                <example.icon className="size-5 shrink-0" />
+                {t(example.prompt)}
+              </Button>
+            ))}
+          </div>
         </div>
       )}
 

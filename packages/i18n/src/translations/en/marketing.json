@@ -233,6 +233,10 @@
   },
   "ai": {
     "description": "Ask focused questions, explore a market, and turn public context into clearer business decisions.",
+    "empty": {
+      "title": "Ask Aireseach AI",
+      "description": "Explore markets, compare companies, or turn a rough question into a research plan."
+    },
     "prompt": {
       "history": "Tell the history of the internet",
       "capitals": "Quiz me on the world capitals",
