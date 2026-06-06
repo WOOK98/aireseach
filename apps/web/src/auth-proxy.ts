@@ -24,8 +24,8 @@ export const getAuthRedirectResponse = (request: NextRequest) => {
   const { pathname } = request.nextUrl;
   const normalizedPathname = normalizePathname(pathname);
   const sessionCookie =
-    request.cookies.get("better-auth.session_token") ||
-    request.cookies.get("__Secure-better-auth.session_token");
+    request.cookies.get("turbostarter.session_token") ||
+    request.cookies.get("__Secure-turbostarter.session_token");
   const isAuthenticated = !!sessionCookie?.value;
 
   if (

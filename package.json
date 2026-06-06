@@ -20,6 +20,10 @@
     "test": "turbo run test",
     "test:projects": "vitest run",
     "test:projects:watch": "vitest --watch",
+    "blogger:setup": "node scripts/blogger/setup.mjs",
+    "blogger:publish": "node scripts/blogger/publish.mjs",
+    "blogger:sync": "node scripts/blogger/publish.mjs --sync",
+    "blogger:list": "node scripts/blogger/publish.mjs --list",
     "with-env": "dotenv -c --"
   },
   "dependencies": {
@@ -27,16 +31,26 @@
     "recharts": "2.15.4"
   },
   "devDependencies": {
+    "@google-cloud/local-auth": "3.0.1",
     "@turbo/gen": "catalog:turbo",
     "@workspace/oxfmt": "workspace:*",
     "@workspace/oxlint": "workspace:*",
     "cross-env": "10.1.0",
     "dotenv-cli": "11.0.0",
+    "front-matter": "4.0.2",
+    "googleapis": "173.0.0",
     "lefthook": "2.1.6",
+    "open": "11.0.0",
     "turbo": "catalog:turbo",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
+  "browserslist": [
+    "> 0.5%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ],
   "engines": {
     "node": ">=24.0.0"
   },

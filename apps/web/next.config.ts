@@ -1,5 +1,5 @@
-import type { NextConfig } from "next";
 import "./env.config";
+import type { NextConfig } from "next";
 
 const INTERNAL_PACKAGES = [
   "@workspace/analytics-web",
@@ -20,7 +20,22 @@ const INTERNAL_PACKAGES = [
 
 const config: NextConfig = {
   reactStrictMode: true,
+
+  // Performance: compress responses
+  compress: true,
+
+  // Performance: experimental optimizations
+  experimental: {
+    optimizePackageImports: INTERNAL_PACKAGES,
+    // Optimize CSS delivery
+    optimizeCss: true,
+  },
+
   turbopack: {
+    resolveAlias: {
+      "../build/polyfills/polyfill-module": "./src/lib/noop-polyfill.ts",
+      "next/dist/build/polyfills/polyfill-module": "./src/lib/noop-polyfill.ts",
+    },
     rules: {
       "*.svg": {
         loaders: ["@svgr/webpack"],
@@ -39,9 +54,6 @@ const config: NextConfig = {
 
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: INTERNAL_PACKAGES,
-  experimental: {
-    optimizePackageImports: INTERNAL_PACKAGES,
-  },
 
   /** We already do linting and typechecking as separate tasks in CI */
   typescript: { ignoreBuildErrors: true },

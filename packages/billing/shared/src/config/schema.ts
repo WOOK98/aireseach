@@ -92,6 +92,7 @@ const sharedVariantSchema = z.intersection(
   z.object({
     id: z.string(),
     hidden: z.boolean().optional().default(false),
+    compareAtPrice: z.number().optional(),
   }),
 );
 

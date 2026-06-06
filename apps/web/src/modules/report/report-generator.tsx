@@ -30,6 +30,7 @@ import {
 } from "@workspace/ui-web/select";
 
 import { ReportViewer } from "./report-viewer";
+import { useUserPlan } from "./use-user-plan";
 
 import type { FormEvent } from "react";
 
@@ -44,19 +45,13 @@ const ANALYSIS_LENSES = [
 ];
 
 const REPORT_MODES = [
-  { value: "jina_llm", label: "Aireseach Search + your model" },
+  { value: "jina_llm", label: "Airesearch Search + your model" },
   { value: "deep_research", label: "Perplexity Deep Research" },
 ];
 
 const REPORT_LANGUAGES = [
   { value: "en", label: "English" },
-  { value: "zh-TW", label: "繁體中文" },
-  { value: "zh-CN", label: "简体中文" },
-  { value: "ja", label: "日本語" },
-  { value: "ko", label: "한국어" },
-  { value: "es", label: "Español" },
-  { value: "de", label: "Deutsch" },
-  { value: "fr", label: "Français" },
+  { value: "zh-TW", label: "Traditional Chinese" },
 ];
 
 const TEXT = {
@@ -70,7 +65,7 @@ const TEXT = {
   apiKeyLabel: "Model API key",
   apiKeyPlaceholder: "Only used for this request, never stored",
   apiKeyHelp:
-    "Your key is sent only with this request and is not stored by Aireseach.",
+    "Your key is sent only with this request and is not stored by Airesearch.",
   modelLabel: "Model",
   modelPlaceholder: "gpt-4o-mini / deepseek-chat / openai/gpt-4o-mini",
   baseUrlLabel: "Base URL",
@@ -156,6 +151,7 @@ interface ReportGeneratorProps {
 export const ReportGenerator = ({
   initialTarget = "",
 }: ReportGeneratorProps) => {
+  const { plan, isPaid } = useUserPlan();
   const [target, setTarget] = useState(initialTarget);
   const [analysisYears, setAnalysisYears] = useState("5");
   const [analysisLens, setAnalysisLens] = useState("Comprehensive");
@@ -396,18 +392,30 @@ export const ReportGenerator = ({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="apiKey">{TEXT.apiKeyLabel}</Label>
-            <Input
-              id="apiKey"
-              type="password"
-              placeholder={TEXT.apiKeyPlaceholder}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              disabled={isLoading}
-            />
-            <p className="text-muted-foreground text-xs">{TEXT.apiKeyHelp}</p>
-          </div>
+          {isPaid ? (
+            <div className="space-y-2">
+              <Label>{TEXT.apiKeyLabel}</Label>
+              <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2">
+                <span className="text-sm text-green-700">
+                  {/* oxlint-disable-next-line i18next/no-literal-string */}✓
+                  Using hosted {plan === "business" ? "Business" : "Pro"} key
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="apiKey">{TEXT.apiKeyLabel}</Label>
+              <Input
+                id="apiKey"
+                type="password"
+                placeholder={TEXT.apiKeyPlaceholder}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                disabled={isLoading}
+              />
+              <p className="text-muted-foreground text-xs">{TEXT.apiKeyHelp}</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="model">{TEXT.modelLabel}</Label>
