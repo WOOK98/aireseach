@@ -50,7 +50,7 @@ export function RevenueChart({ data, className }: ChartProps) {
   return (
     <div className={cn("w-full", className)}>
       <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
-        季度营收（百万美元）
+        Quarterly Revenue (USD millions)
       </p>
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -75,7 +75,7 @@ export function RevenueChart({ data, className }: ChartProps) {
           <Tooltip content={<CustomTooltip unit="M" />} />
           <Bar
             dataKey="value"
-            name="营收"
+            name="Revenue"
             fill="hsl(var(--primary))"
             radius={[3, 3, 0, 0]}
             opacity={0.85}
@@ -109,7 +109,7 @@ export function MarginChart({
   return (
     <div className={cn("w-full", className)}>
       <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
-        毛利率 / 经营利润率（%）
+        Gross Margin / Operating Margin (%)
       </p>
       <ResponsiveContainer width="100%" height={180}>
         <LineChart
@@ -139,7 +139,7 @@ export function MarginChart({
           <Line
             type="monotone"
             dataKey="gross"
-            name="毛利率"
+            name="Gross Margin"
             stroke="hsl(var(--primary))"
             strokeWidth={2}
             dot={{ r: 3, fill: "hsl(var(--primary))" }}
@@ -149,7 +149,7 @@ export function MarginChart({
           <Line
             type="monotone"
             dataKey="operating"
-            name="经营利润率"
+            name="Operating Margin"
             stroke="hsl(var(--chart-2, 220 70% 50%))"
             strokeWidth={2}
             strokeDasharray="4 2"
@@ -168,7 +168,7 @@ export function FCFChart({ data, className }: ChartProps) {
   return (
     <div className={cn("w-full", className)}>
       <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
-        自由现金流（百万美元）
+        Free Cash Flow (USD millions)
       </p>
       <ResponsiveContainer width="100%" height={160}>
         <AreaChart

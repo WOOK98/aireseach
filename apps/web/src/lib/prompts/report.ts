@@ -1,5 +1,5 @@
-// ── 放到你的报告生成逻辑里 ──────────────────────────────────────────────────
-// 替换掉原有的 system prompt，AI 会输出结构化 JSON
+// ── Drop into the report generation flow ────────────────────────────────────
+// Replaces the original system prompt so the model returns structured JSON.
 
 export const REPORT_SYSTEM_PROMPT = `You are an expert AI business research analyst.
 Analyze the given target and return a SINGLE valid JSON object — no markdown fences, no extra text before or after.
@@ -67,7 +67,7 @@ Rules:
 - Do NOT include any text outside the JSON object
 - Do NOT wrap the JSON in markdown code blocks`;
 
-// ── Serenity Supply Chain 版本 (替换上面用于供应链分析) ──────────────────────
+// ── Serenity Supply Chain version for supply-chain analysis ─────────────────
 export const SERENITY_REPORT_PROMPT = `You are an AI analyst applying Serenity (@aleabitoreddit)'s supply-chain framework.
 Distilled from 5,582 tweets + 4 long-form articles. For decision support only — not investment advice.
 
