@@ -3,14 +3,20 @@
 /* oxlint-disable i18next/no-literal-string */
 
 import {
+  Activity,
   AlertCircle,
   BarChart3,
+  BriefcaseBusiness,
+  CheckCircle2,
   FileText,
+  ListChecks,
   RotateCcw,
   Search,
   Shield,
   Sparkles,
+  Target,
   TrendingUp,
+  Users,
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -39,6 +45,45 @@ import {
 } from "~/modules/report/finance/use-report";
 
 import type { ChangeEvent, ElementType, KeyboardEvent, ReactNode } from "react";
+import type { ResearchMode } from "~/modules/report/finance/use-report";
+
+const analysisModes: Array<{
+  id: ResearchMode;
+  label: string;
+  description: string;
+  icon: ElementType;
+}> = [
+  {
+    id: "snapshot",
+    label: "Snapshot",
+    description: "3分钟判断是否值得深挖",
+    icon: Sparkles,
+  },
+  {
+    id: "earnings",
+    label: "Earnings",
+    description: "增长、利润率、现金流复盘",
+    icon: BarChart3,
+  },
+  {
+    id: "competition",
+    label: "Competition",
+    description: "护城河、替代风险、定价权",
+    icon: BriefcaseBusiness,
+  },
+  {
+    id: "risk",
+    label: "Risk Scan",
+    description: "估值、负债、叙事过热排雷",
+    icon: Shield,
+  },
+  {
+    id: "poc",
+    label: "Tracking Plan",
+    description: "30-90天可验证指标",
+    icon: ListChecks,
+  },
+];
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Section({
@@ -152,10 +197,162 @@ function AnalysisNotice({
   );
 }
 
+function DecisionBrief({
+  action,
+  confidence,
+  timeHorizon,
+  keyQuestion,
+}: {
+  action: string;
+  confidence: string;
+  timeHorizon: string;
+  keyQuestion: string;
+}) {
+  return (
+    <div className="border-primary/30 bg-primary/5 grid gap-4 rounded-xl border p-4 md:grid-cols-[1fr_1.2fr]">
+      <div>
+        <p className="text-primary mb-2 font-mono text-[10px] tracking-widest uppercase">
+          Decision Brief
+        </p>
+        <h3 className="text-foreground text-lg font-semibold">{action}</h3>
+        <div className="text-muted-foreground mt-3 flex flex-wrap gap-2 text-xs">
+          <span className="bg-background rounded-full border px-2.5 py-1">
+            Confidence: {confidence}
+          </span>
+          <span className="bg-background rounded-full border px-2.5 py-1">
+            Horizon: {timeHorizon}
+          </span>
+        </div>
+      </div>
+      <div className="bg-background/80 rounded-lg border px-3 py-3">
+        <div className="mb-1 flex items-center gap-2">
+          <Target className="text-primary h-3.5 w-3.5" />
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
+            Key Question
+          </p>
+        </div>
+        <p className="text-sm leading-relaxed">{keyQuestion}</p>
+      </div>
+    </div>
+  );
+}
+
+function ScenarioMatrix({
+  scenarios,
+}: {
+  scenarios: NonNullable<
+    import("@workspace/shared/types/report").ReportData["scenarioMatrix"]
+  >;
+}) {
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      {scenarios.map((scenario) => (
+        <div
+          key={`${scenario.scenario}-${scenario.targetPrice}`}
+          className="bg-muted/30 rounded-xl border p-4"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold">{scenario.scenario}</p>
+              <p className="text-muted-foreground text-xs">
+                Probability {scenario.probability}%
+              </p>
+            </div>
+            <p className="font-mono text-sm font-semibold">
+              ${scenario.targetPrice}
+            </p>
+          </div>
+          <div className="bg-background mt-3 h-1.5 overflow-hidden rounded-full">
+            <div
+              className="bg-primary h-full rounded-full"
+              style={{ width: `${Math.max(4, scenario.probability)}%` }}
+            />
+          </div>
+          <ul className="mt-3 space-y-1.5">
+            {scenario.drivers.slice(0, 3).map((driver) => (
+              <li
+                key={driver}
+                className="text-muted-foreground flex gap-2 text-xs leading-relaxed"
+              >
+                <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-emerald-500" />
+                {driver}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WorkBuddyGrid({
+  report,
+}: {
+  report: import("@workspace/shared/types/report").ReportData;
+}) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {report.roleBriefs && report.roleBriefs.length > 0 && (
+        <Section label="角色化解读" icon={Users}>
+          <div className="space-y-2">
+            {report.roleBriefs.slice(0, 4).map((item) => (
+              <div key={item.role} className="rounded-lg border px-3 py-3">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium">{item.role}</p>
+                  <span className="text-muted-foreground text-[10px] uppercase">
+                    Concern
+                  </span>
+                </div>
+                <p className="text-foreground/90 text-xs leading-relaxed">
+                  {item.takeaway}
+                </p>
+                <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
+                  {item.concern}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {report.watchlist && report.watchlist.length > 0 && (
+        <Section label="观察指标" icon={Activity}>
+          <div className="space-y-2">
+            {report.watchlist.slice(0, 5).map((item) => (
+              <div
+                key={item.metric}
+                className="bg-muted/20 rounded-lg border p-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">{item.metric}</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {item.whyItMatters}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-xs font-semibold">
+                      {item.current}
+                    </p>
+                    <p className="text-muted-foreground text-[10px]">
+                      {item.threshold}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ResearchPage() {
   const [inputVal, setInputVal] = useState("");
   const [activeTicker, setActiveTicker] = useState<string | null>(null);
+  const [activeMode, setActiveMode] = useState<ResearchMode>("snapshot");
   const [language] = useState<"zh" | "en">("zh");
 
   const validate = useValidateTicker();
@@ -189,7 +386,7 @@ export default function ResearchPage() {
     status === "idle"
   ) {
     prevTickerRef.current = activeTicker;
-    void generate(activeTicker, financials.data, language);
+    void generate(activeTicker, financials.data, language, activeMode);
   }
 
   const isLoading = financials.isLoading || status === "loading";
@@ -205,34 +402,84 @@ export default function ResearchPage() {
     <div className="flex h-full flex-col">
       {/* ── Search bar ── */}
       <div className="border-border border-b px-4 py-4">
-        <div className="mx-auto flex w-full max-w-5xl gap-2">
-          <div className="relative flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
-            <Input
-              ref={inputRef}
-              value={inputVal}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setInputVal(e.target.value.toUpperCase())
+        <div className="mx-auto w-full max-w-5xl space-y-3">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+              <Input
+                ref={inputRef}
+                value={inputVal}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setInputVal(e.target.value.toUpperCase())
+                }
+                onKeyDown={(e: KeyboardEvent<HTMLInputElement>) =>
+                  e.key === "Enter" && handleSearch()
+                }
+                placeholder="输入股票代码（TSLA、AAPL）"
+                className="pl-9 font-mono text-sm uppercase placeholder:font-sans placeholder:normal-case"
+                maxLength={10}
+              />
+            </div>
+            <Button
+              onClick={handleSearch}
+              disabled={
+                !inputVal.trim() ||
+                isLoading ||
+                isStreaming ||
+                validate.isPending
               }
-              onKeyDown={(e: KeyboardEvent<HTMLInputElement>) =>
-                e.key === "Enter" && handleSearch()
-              }
-              placeholder="输入股票代码（TSLA、AAPL）"
-              className="pl-9 font-mono text-sm uppercase placeholder:font-sans placeholder:normal-case"
-              maxLength={10}
-            />
+              size="sm"
+              className="shrink-0 gap-1.5"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              生成
+            </Button>
           </div>
-          <Button
-            onClick={handleSearch}
-            disabled={
-              !inputVal.trim() || isLoading || isStreaming || validate.isPending
-            }
-            size="sm"
-            className="shrink-0 gap-1.5"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            生成
-          </Button>
+          <div className="grid gap-2 md:grid-cols-5">
+            {analysisModes.map((mode) => {
+              const Icon = mode.icon;
+              const selected = activeMode === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveMode(mode.id);
+                    if (
+                      financials.data &&
+                      activeTicker &&
+                      status !== "loading"
+                    ) {
+                      reset();
+                      void generate(
+                        activeTicker,
+                        financials.data,
+                        language,
+                        mode.id,
+                      );
+                    }
+                  }}
+                  className={`rounded-lg border px-3 py-2 text-left transition ${
+                    selected
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border hover:bg-muted/50"
+                  }`}
+                >
+                  <div className="mb-1 flex items-center gap-1.5">
+                    <Icon
+                      className={`h-3.5 w-3.5 ${
+                        selected ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    />
+                    <span className="text-xs font-semibold">{mode.label}</span>
+                  </div>
+                  <p className="text-muted-foreground text-[11px] leading-snug">
+                    {mode.description}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -358,6 +605,7 @@ export default function ResearchPage() {
                         activeTicker ?? financials.data.ticker,
                         financials.data,
                         language,
+                        activeMode,
                       );
                     }}
                   />
@@ -408,6 +656,22 @@ export default function ResearchPage() {
                       </p>
                     </div>
 
+                    {report.decisionBrief && (
+                      <DecisionBrief
+                        action={report.decisionBrief.action}
+                        confidence={report.decisionBrief.confidence}
+                        timeHorizon={report.decisionBrief.timeHorizon}
+                        keyQuestion={report.decisionBrief.keyQuestion}
+                      />
+                    )}
+
+                    {report.scenarioMatrix &&
+                      report.scenarioMatrix.length > 0 && (
+                        <Section label="情景推演" icon={Target}>
+                          <ScenarioMatrix scenarios={report.scenarioMatrix} />
+                        </Section>
+                      )}
+
                     <Section label="增长驱动" icon={TrendingUp}>
                       <p className="text-foreground/90 text-sm leading-relaxed">
                         {report.sections.growthDrivers}
@@ -445,6 +709,47 @@ export default function ResearchPage() {
                         ))}
                       </ul>
                     </Section>
+
+                    <WorkBuddyGrid report={report} />
+
+                    {report.nextSteps && report.nextSteps.length > 0 && (
+                      <Section label="下一步动作" icon={ListChecks}>
+                        <div className="grid gap-2 md:grid-cols-3">
+                          {report.nextSteps.slice(0, 3).map((step, index) => (
+                            <div
+                              key={step}
+                              className="rounded-lg border px-3 py-3"
+                            >
+                              <p className="text-primary mb-2 font-mono text-[10px] font-semibold">
+                                STEP {index + 1}
+                              </p>
+                              <p className="text-sm leading-relaxed">{step}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </Section>
+                    )}
+
+                    {report.evidenceNeeds &&
+                      report.evidenceNeeds.length > 0 && (
+                        <Section label="待验证证据" icon={FileText}>
+                          <div className="bg-muted/20 rounded-lg border p-3">
+                            <ul className="space-y-2">
+                              {report.evidenceNeeds
+                                .slice(0, 4)
+                                .map((evidence) => (
+                                  <li
+                                    key={evidence}
+                                    className="text-muted-foreground flex gap-2 text-xs leading-relaxed"
+                                  >
+                                    <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+                                    {evidence}
+                                  </li>
+                                ))}
+                            </ul>
+                          </div>
+                        </Section>
+                      )}
 
                     {/* Footer */}
                     <p className="text-muted-foreground/60 border-border border-t pt-2 text-[10px]">

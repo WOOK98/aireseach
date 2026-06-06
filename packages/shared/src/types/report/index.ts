@@ -74,5 +74,30 @@ export interface ReportData {
     valuation: string;
     catalysts: string;
   };
+  decisionBrief?: {
+    action: string;
+    confidence: "Low" | "Medium" | "High";
+    timeHorizon: string;
+    keyQuestion: string;
+  };
+  scenarioMatrix?: Array<{
+    scenario: string;
+    probability: number;
+    targetPrice: number;
+    drivers: string[];
+  }>;
+  roleBriefs?: Array<{
+    role: string;
+    takeaway: string;
+    concern: string;
+  }>;
+  watchlist?: Array<{
+    metric: string;
+    current: string;
+    threshold: string;
+    whyItMatters: string;
+  }>;
+  nextSteps?: string[];
+  evidenceNeeds?: string[];
   generatedAt: string;
 }

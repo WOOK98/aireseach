@@ -45,6 +45,12 @@ export function useValidateTicker() {
 
 // ─── Stream AI report generation ─────────────────────────────────────────────
 export type StreamStatus = "idle" | "loading" | "streaming" | "done" | "error";
+export type ResearchMode =
+  | "snapshot"
+  | "earnings"
+  | "competition"
+  | "risk"
+  | "poc";
 
 export function useReportStream() {
   const [status, setStatus] = useState<StreamStatus>("idle");
@@ -57,6 +63,7 @@ export function useReportStream() {
     ticker: string,
     metrics: FinancialMetrics,
     language: "zh" | "en" = "zh",
+    mode: ResearchMode = "snapshot",
   ) {
     // Cancel any in-flight request
     abortRef.current?.abort();
@@ -72,7 +79,7 @@ export function useReportStream() {
       const res = await fetch(`${API_BASE}/report/finance/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticker, metrics, language }),
+        body: JSON.stringify({ ticker, metrics, language, mode }),
         signal: ctrl.signal,
       });
 
