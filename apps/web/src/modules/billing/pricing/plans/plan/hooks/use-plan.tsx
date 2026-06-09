@@ -58,6 +58,9 @@ export const usePlan = ({
       }
       return router.push(data.url);
     },
+    onError: () => {
+      toast.error(t("error.checkoutConfiguration"));
+    },
   });
 
   const getPortal = useMutation({

@@ -82,6 +82,7 @@
   },
   "error": {
     "checkout": "An error occurred while checking out.",
+    "checkoutConfiguration": "Checkout is not available yet. Please contact support to upgrade.",
     "checkoutRetrieve": "An error occurred while retrieving the checkout session.",
     "portal": "An error occurred while getting the portal URL.",
     "invalidProvider": "Invalid billing provider!",
