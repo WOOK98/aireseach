@@ -29,11 +29,11 @@ export default defineEnv({
    */
   clientPrefix: "NEXT_PUBLIC_",
   client: {
-    NEXT_PUBLIC_AUTH_PASSWORD: castStringToBool.optional().default(true),
+    NEXT_PUBLIC_AUTH_PASSWORD: castStringToBool.optional().default(false),
     NEXT_PUBLIC_AUTH_MAGIC_LINK: castStringToBool.optional().default(false),
-    NEXT_PUBLIC_AUTH_EMAIL_OTP: castStringToBool.optional().default(false),
-    NEXT_PUBLIC_AUTH_PASSKEY: castStringToBool.optional().default(true),
-    NEXT_PUBLIC_AUTH_ANONYMOUS: castStringToBool.optional().default(true),
+    NEXT_PUBLIC_AUTH_EMAIL_OTP: castStringToBool.optional().default(true),
+    NEXT_PUBLIC_AUTH_PASSKEY: castStringToBool.optional().default(false),
+    NEXT_PUBLIC_AUTH_ANONYMOUS: castStringToBool.optional().default(false),
     NEXT_PUBLIC_GOOGLE_ONE_TAP_CLIENT_ID: z.string().optional().default(""),
 
     NEXT_PUBLIC_PRODUCT_NAME: z.string(),

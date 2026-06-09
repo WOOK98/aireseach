@@ -105,7 +105,7 @@ const Login = memo<LoginProps>(
           {authConfig.providers.anonymous && <AnonymousLogin />}
         </div>
 
-        <RegisterCta />
+        {authConfig.providers.password && <RegisterCta />}
       </>
     );
   },
