@@ -43,7 +43,7 @@ export const config = billingConfigSchema.parse({
       features: Object.values(FEATURES[BillingPlan.PRO]),
       variants: [
         {
-          id: "price_1TcJTj9rITy4RArVzlsqcKWf",
+          id: "price_1TgTqv9BkhhBd0VnMd89cCYv",
           cost: 990,
           compareAtPrice: 1_900,
           type: BillingType.FLAT,
@@ -51,7 +51,7 @@ export const config = billingConfigSchema.parse({
           interval: RecurringInterval.MONTH,
         },
         {
-          id: "price_1TcJTl9rITy4RArVLszmFENu",
+          id: "price_1TgTqw9BkhhBd0VnyDns1vOB",
           cost: 9_900,
           compareAtPrice: 19_000,
           type: BillingType.FLAT,
@@ -68,7 +68,7 @@ export const config = billingConfigSchema.parse({
       features: Object.values(FEATURES[BillingPlan.BUSINESS]),
       variants: [
         {
-          id: "price_1TcJTm9rITy4RArVaKJZofx6",
+          id: "price_1TgTqw9BkhhBd0VnOKVOGvgl",
           cost: 2_990,
           compareAtPrice: 4_900,
           type: BillingType.FLAT,
@@ -76,7 +76,7 @@ export const config = billingConfigSchema.parse({
           interval: RecurringInterval.MONTH,
         },
         {
-          id: "price_1TcJTo9rITy4RArVGlc5EWWT",
+          id: "price_1TgTqx9BkhhBd0VnUkFdh3hE",
           cost: 29_900,
           compareAtPrice: 49_000,
           type: BillingType.FLAT,
