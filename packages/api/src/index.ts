@@ -19,6 +19,7 @@ import { billingRouter } from "./modules/billing/router";
 import { organizationRouter } from "./modules/organization/router";
 import { reportRoute } from "./modules/report/route";
 import { storageRouter } from "./modules/storage/router";
+import { webhooksRouter } from "./modules/webhooks/router";
 import { onError } from "./utils/on-error";
 
 import type { Context } from "hono";
@@ -68,6 +69,7 @@ const appRouter = new Hono()
   .route("/organizations", organizationRouter)
   .route("/storage", storageRouter)
   .route("/report", reportRoute)
+  .route("/webhooks", webhooksRouter)
   .onError(onError);
 
 type AppRouter = typeof appRouter;
