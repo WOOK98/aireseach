@@ -11,6 +11,7 @@ export const strategy = {
     const transporter = nodemailer.createTransport({
       host: env.NODEMAILER_HOST,
       port: env.NODEMAILER_PORT,
+      secure: env.NODEMAILER_PORT === 465,
       auth: {
         user: env.NODEMAILER_USER,
         pass: env.NODEMAILER_PASSWORD,
