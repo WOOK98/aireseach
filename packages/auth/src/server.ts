@@ -76,6 +76,8 @@ export const auth = betterAuth({
   trustedOrigins: [
     "chrome-extension://",
     "turbostarter://",
+    "https://airesearchs.com",
+    "https://www.airesearchs.com",
     /* Needed only for Apple ID authentication */
     "https://appleid.apple.com",
     ...(env.NODE_ENV === NodeEnv.DEVELOPMENT
