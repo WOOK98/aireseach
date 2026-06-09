@@ -284,8 +284,8 @@
     }
   },
   "buyCta": {
-    "title": "Business research reports, powered by AI.",
-    "description": "Generate search-grounded business reports with your preferred model provider.",
-    "link": "Generate a report"
+    "title": "Upgrade your research workflow.",
+    "description": "Unlock hosted DeepSeek usage, unlimited Jina searches, and saved reports.",
+    "link": "Upgrade subscription"
   }
 }

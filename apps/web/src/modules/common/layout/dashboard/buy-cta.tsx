@@ -4,11 +4,13 @@ import { useTranslation } from "@workspace/i18n";
 import { cn } from "@workspace/ui";
 import { buttonVariants } from "@workspace/ui-web/button";
 
+import { pathsConfig } from "~/config/paths";
+
 export const BuyCta = ({ className }: { className?: string }) => {
   const { t } = useTranslation("marketing");
   return (
     <Link
-      href="/dashboard/report"
+      href={pathsConfig.marketing.pricing}
       className={cn(
         "relative m-1 overflow-hidden transition-[height] delay-200 duration-200 ease-out",
         "h-[160px]",
