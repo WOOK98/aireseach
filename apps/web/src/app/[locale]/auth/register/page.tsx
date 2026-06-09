@@ -1,7 +1,10 @@
+import { redirect } from "next/navigation";
+
 import { getTranslation } from "@workspace/i18n/server";
 import { FieldSeparator } from "@workspace/ui-web/field";
 
 import { authConfig } from "~/config/auth";
+import { pathsConfig } from "~/config/paths";
 import { getMetadata } from "~/lib/metadata";
 import { AnonymousLogin } from "~/modules/auth/form/anonymous";
 import { LoginCta } from "~/modules/auth/form/login/form";
@@ -25,6 +28,25 @@ const Register = async ({
 }) => {
   const { redirectTo, invitationId, email } = await searchParams;
   const { t } = await getTranslation({ ns: "auth" });
+
+  if (!authConfig.providers.password) {
+    const params = new URLSearchParams();
+    if (redirectTo) {
+      params.set("redirectTo", redirectTo);
+    }
+    if (invitationId) {
+      params.set("invitationId", invitationId);
+    }
+    if (email) {
+      params.set("email", email);
+    }
+
+    redirect(
+      params.size > 0
+        ? `${pathsConfig.auth.login}?${params.toString()}`
+        : pathsConfig.auth.login,
+    );
+  }
 
   return (
     <>

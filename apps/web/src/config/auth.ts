@@ -1,4 +1,4 @@
-import { SocialProvider, authConfigSchema } from "@workspace/auth";
+import { authConfigSchema } from "@workspace/auth";
 
 import env from "../../env.config";
 
@@ -14,6 +14,6 @@ export const authConfig = authConfigSchema.parse({
     emailOtp: toBool(env.NEXT_PUBLIC_AUTH_EMAIL_OTP),
     passkey: toBool(env.NEXT_PUBLIC_AUTH_PASSKEY),
     anonymous: toBool(env.NEXT_PUBLIC_AUTH_ANONYMOUS),
-    oAuth: [SocialProvider.APPLE, SocialProvider.GOOGLE, SocialProvider.GITHUB],
+    oAuth: [],
   },
 }) satisfies AuthConfig;
