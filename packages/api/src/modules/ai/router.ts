@@ -2,6 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { stream } from "hono/streaming";
 
 import { env } from "../../env";
 import { enforceAuth } from "../../middleware";
@@ -110,9 +111,15 @@ export const aiRouter = new Hono().post("/chat", enforceAuth, async (c) => {
     });
   }
 
-  return streamText({
-    model: getChatModel(),
-    system: SYSTEM_PROMPT,
-    messages,
-  }).toTextStreamResponse();
+  return stream(c, async (s) => {
+    const result = streamText({
+      model: getChatModel(),
+      system: SYSTEM_PROMPT,
+      messages,
+    });
+
+    for await (const chunk of result.textStream) {
+      await s.write(chunk);
+    }
+  });
 });
