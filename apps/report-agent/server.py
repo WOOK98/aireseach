@@ -26,8 +26,8 @@ DEEP_RESEARCH_BASE_URL = os.getenv("AGENT_BASE_URL", "https://api.perplexity.ai"
 DEEP_RESEARCH_MODEL = os.getenv("AGENT_MODEL", "sonar-deep-research")
 
 LLM_API_KEY = os.getenv("LLM_API_KEY") or os.getenv("DEEPSEEK_API_KEY")
-LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
-LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-v4-flash")
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
+LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-chat")
 
 JINA_API_KEY = os.getenv("JINA_API_KEY", "")
 JINA_SEARCH_BASE_URL = os.getenv("JINA_SEARCH_BASE_URL", "https://s.jina.ai/")
