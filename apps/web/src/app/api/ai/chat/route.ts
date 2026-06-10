@@ -66,6 +66,8 @@ function getChatModel() {
   }).chat("deepseek-chat");
 }
 
+const CHAT_MAX_OUTPUT_TOKENS = 2048;
+
 export async function POST(request: Request) {
   const apiKey =
     process.env.OPENAI_API_KEY ||
@@ -120,9 +122,30 @@ export async function POST(request: Request) {
     );
   }
 
+  const reserveRes = await fetch(`${origin}/api/ai/chat/reserve`, {
+    method: "POST",
+    headers: { cookie: request.headers.get("cookie") ?? "" },
+  });
+
+  if (!reserveRes.ok) {
+    const fallbackMessage =
+      reserveRes.status === 429
+        ? "Daily chat limit reached (20/day). Try again tomorrow."
+        : "Unable to reserve AI chat usage.";
+    const error = (await reserveRes.json().catch(() => null)) as {
+      message?: string;
+    } | null;
+
+    return Response.json(
+      { message: error?.message ?? fallbackMessage },
+      { status: reserveRes.status },
+    );
+  }
+
   return streamText({
     model: getChatModel(),
     system: SYSTEM_PROMPT,
     messages,
+    maxOutputTokens: CHAT_MAX_OUTPUT_TOKENS,
   }).toTextStreamResponse();
 }

@@ -6,6 +6,17 @@ import { HTTPException } from "hono/http-exception";
 import { stream } from "hono/streaming";
 import { z } from "zod";
 
+import { auth } from "@workspace/auth/server";
+import {
+  ACTIVE_SUBSCRIPTION_STATUSES,
+  BillingPlan,
+  config as billingConfig,
+} from "@workspace/billing";
+import { getCustomersWithPurchasesByReferenceId } from "@workspace/billing/server";
+import { and, count, eq, gte } from "@workspace/db";
+import { aiUsageLog } from "@workspace/db/schema";
+import { db } from "@workspace/db/server";
+
 import { env } from "../../env";
 import { fetchYahooFinance } from "./yahoo-finance";
 
@@ -21,6 +32,24 @@ const deepseekProvider = createOpenAI({
   apiKey: env.DEEPSEEK_API_KEY || env.LLM_API_KEY,
   baseURL: "https://api.deepseek.com/v1",
 });
+
+const FREE_REPORT_MONTHLY_LIMIT = 3;
+const REPORT_MAX_OUTPUT_TOKENS = 2600;
+
+const PRO_PLAN_VARIANTS: string[] =
+  billingConfig.plans
+    .find((p: { id: string }) => p.id === BillingPlan.PRO)
+    ?.variants.map((v: { id: string }) => v.id) ?? [];
+
+const BUSINESS_PLAN_VARIANTS: string[] =
+  billingConfig.plans
+    .find((p: { id: string }) => p.id === BillingPlan.BUSINESS)
+    ?.variants.map((v: { id: string }) => v.id) ?? [];
+
+const PAID_VARIANTS = new Set([
+  ...PRO_PLAN_VARIANTS,
+  ...BUSINESS_PLAN_VARIANTS,
+]);
 
 const getReportModelConfig = () => {
   const providerName = env.OPENAI_API_KEY ? "OpenAI" : "DeepSeek";
@@ -45,8 +74,11 @@ const getReportModelConfig = () => {
 
   return env.OPENAI_API_KEY
     ? openaiProvider("gpt-4o-mini")
-    : deepseekProvider("deepseek-chat");
+    : deepseekProvider.chat("deepseek-chat");
 };
+
+const getReportModelName = () =>
+  env.OPENAI_API_KEY ? "gpt-4o-mini" : "deepseek-chat";
 
 const fmt = (n: number | null | undefined, decimals = 1) =>
   n == null || n === 0 ? "N/A" : n.toFixed(decimals);
@@ -90,6 +122,63 @@ reportRoute.post(
   "/finance/generate",
   zValidator("json", generateSchema),
   async (c) => {
+    // Auth check: require login
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    const user = session?.user ?? null;
+
+    if (!user) {
+      throw new HTTPException(401, { message: "Authentication required." });
+    }
+
+    // Subscription check: free users are limited to 3 reports/month
+    let isPaidUser = false;
+    try {
+      const customers = await getCustomersWithPurchasesByReferenceId(user.id);
+      for (const customer of customers) {
+        for (const sub of customer.subscriptions) {
+          if (
+            ACTIVE_SUBSCRIPTION_STATUSES.includes(sub.status as never) &&
+            PAID_VARIANTS.has(sub.variantId)
+          ) {
+            isPaidUser = true;
+            break;
+          }
+        }
+        if (isPaidUser) break;
+      }
+    } catch {
+      // Treat as free on billing lookup failure
+    }
+
+    if (!isPaidUser) {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      let reportCount: number | null = null;
+      try {
+        const countResult = await db
+          .select({ value: count() })
+          .from(aiUsageLog)
+          .where(
+            and(
+              eq(aiUsageLog.userId, user.id),
+              eq(aiUsageLog.feature, "report"),
+              gte(aiUsageLog.createdAt, monthStart),
+            ),
+          );
+        reportCount = countResult[0]?.value ?? 0;
+      } catch {
+        // Usage tracking activates after the ai_usage_log migration is applied.
+      }
+
+      if (reportCount !== null && reportCount >= FREE_REPORT_MONTHLY_LIMIT) {
+        throw new HTTPException(429, {
+          message: `Free plan limit reached (${FREE_REPORT_MONTHLY_LIMIT} reports/month). Upgrade to Pro for unlimited reports.`,
+        });
+      }
+    }
+
     const { ticker, metrics: m, mode } = c.req.valid("json");
     const model = getReportModelConfig();
 
@@ -218,11 +307,28 @@ Return ONLY this JSON structure (all text in English):
         system: systemPrompt,
         prompt: userPrompt,
         temperature: 0.3,
-        maxOutputTokens: 2600,
+        maxOutputTokens: REPORT_MAX_OUTPUT_TOKENS,
       });
 
       for await (const chunk of result.textStream) {
         await s.write(chunk);
+      }
+
+      // Log usage after stream completes (best-effort)
+      try {
+        const usage = await result.usage;
+        const inputTokens = usage?.inputTokens ?? 0;
+        const outputTokens = usage?.outputTokens ?? 0;
+        await db.insert(aiUsageLog).values({
+          userId: user.id,
+          feature: "report",
+          model: getReportModelName(),
+          promptTokens: inputTokens,
+          completionTokens: outputTokens,
+          totalTokens: inputTokens + outputTokens,
+        });
+      } catch {
+        // ignore logging failures
       }
     });
   },

@@ -770,8 +770,8 @@ export const SerenityTerminal = () => {
   const [activeTab, setActiveTab] = useState<SubTab>("examples");
   const [results, setResults] = useState<AnalysisResult[]>([]);
   const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("deepseek-v4-flash");
-  const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com");
+  const [model, setModel] = useState("deepseek-chat");
+  const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com/v1");
   const [running, setRunning] = useState(false);
   const abortRef = useRef<AbortController[]>([]);
   const resultIdRef = useRef(0);
