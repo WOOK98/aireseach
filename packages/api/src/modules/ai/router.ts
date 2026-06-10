@@ -62,7 +62,7 @@ const getChatModel = () => {
 
   return env.OPENAI_API_KEY
     ? openaiProvider.responses("gpt-4.1-nano")
-    : deepseekProvider("deepseek-chat");
+    : deepseekProvider.chat("deepseek-chat");
 };
 
 const extractMessageText = (message: RawChatMessage) => {
