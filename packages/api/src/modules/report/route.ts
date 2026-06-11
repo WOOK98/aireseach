@@ -18,6 +18,7 @@ import { aiUsageLog } from "@workspace/db/schema";
 import { db } from "@workspace/db/server";
 
 import { env } from "../../env";
+import { formatImaKnowledgeForPrompt, searchImaKnowledge } from "./knowledge";
 import { fetchYahooFinance } from "./yahoo-finance";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
@@ -181,6 +182,11 @@ reportRoute.post(
 
     const { ticker, metrics: m, mode } = c.req.valid("json");
     const model = getReportModelConfig();
+    const imaKnowledge = await searchImaKnowledge(ticker.toUpperCase(), {
+      limit: 6,
+      market: ticker.match(/^\d{6}$/) ? "a-stocks" : "us-stocks",
+    });
+    const imaKnowledgeContext = formatImaKnowledgeForPrompt(imaKnowledge);
 
     const hasFundamentals =
       m.revenue > 0 ||
@@ -239,6 +245,10 @@ ${m.revenueHistory.map((p) => `${p.period}: $${p.value}M`).join(" | ")}
 
 ## Quarterly Gross Margin Trend
 ${m.grossMarginHistory.map((p) => `${p.period}: ${p.value}%`).join(" | ")}
+
+## Relevant ima Knowledge Base Evidence
+Use these snippets as supporting context when relevant. Cite the Source path in catalysts, risks, or evidence fields when you use a claim.
+${imaKnowledgeContext || "No matching ima knowledge excerpts found."}
 
 Return ONLY this JSON structure (all text in English):
 {

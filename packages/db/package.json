@@ -19,7 +19,8 @@
     "db:seed": "pnpm dlx tsx ./src/scripts/seed.ts",
     "db:setup": "turbo db:migrate && turbo db:seed",
     "db:status": "pnpm dlx tsx ./src/scripts/status.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "knowledge:import:ima": "pnpm dlx tsx ./src/scripts/import-ima-knowledge.ts"
   },
   "dependencies": {
     "@workspace/shared": "workspace:*",
