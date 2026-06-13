@@ -13,3 +13,7 @@ node_modules
 **/.cache
 apps/extension/.wxt
 **/*.log
+knowledge
+knowledge/**
+.claude
+.claude/**
