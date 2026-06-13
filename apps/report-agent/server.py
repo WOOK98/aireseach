@@ -37,6 +37,25 @@ SEARCH_CONTEXT_CHARS = int(os.getenv("SEARCH_CONTEXT_CHARS", "12000"))
 # Serenity reference files
 SERENITY_REF_DIR = os.path.join(os.path.dirname(__file__), "references")
 
+HOSTED_KEY_BALANCE_ERROR = (
+    "Hosted model credits are temporarily unavailable. Recharge the platform key "
+    "or enter your own compatible API key, then run the analysis again."
+)
+
+
+def normalize_model_error(exc: Exception) -> str:
+    message = str(exc)
+    lowered = message.lower()
+    if (
+        "insufficient balance" in lowered
+        or "402" in lowered
+        or "quota" in lowered
+        or "billing" in lowered
+        or "credit" in lowered
+    ):
+        return HOSTED_KEY_BALANCE_ERROR
+    return message
+
 
 class ReportRequest(BaseModel):
     target: str = Field(..., min_length=1, description="Company, asset, or industry to analyze")
@@ -467,7 +486,7 @@ async def analyze_serenity(request: SerenityRequest):
                 if delta:
                     yield delta
         except Exception as exc:
-            yield f"\n\nAnalysis failed: {exc}"
+            yield f"\n\nAnalysis failed: {normalize_model_error(exc)}"
 
     return StreamingResponse(stream(), media_type="text/markdown; charset=utf-8")
 

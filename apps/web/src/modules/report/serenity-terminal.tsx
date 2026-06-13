@@ -60,6 +60,28 @@ interface QuickExample {
   label: string;
 }
 
+const HOSTED_KEY_BALANCE_ERROR =
+  "Hosted model credits are temporarily unavailable. Recharge the platform key or enter your own compatible API key below, then run the analysis again.";
+
+const extractSerenityError = (text: string) => {
+  if (!text.includes("Analysis failed:")) return null;
+
+  if (/insufficient balance|402|quota|billing|credit/i.test(text)) {
+    return HOSTED_KEY_BALANCE_ERROR;
+  }
+
+  return text.replace(/^.*Analysis failed:\s*/s, "").trim();
+};
+
+const readSerenityError = async (response: Response) => {
+  const data = await response.json().catch(() => null);
+  if (data && typeof data === "object" && "detail" in data) {
+    const detail = (data as { detail?: unknown }).detail;
+    if (typeof detail === "string") return detail;
+  }
+  return `Serenity analysis error: HTTP ${response.status}`;
+};
+
 interface MatrixTicker {
   t: string;
   tier: string;
@@ -822,7 +844,7 @@ export const SerenityTerminal = () => {
           signal: controller.signal,
         });
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) throw new Error(await readSerenityError(response));
 
         const reader = response.body?.getReader();
         if (!reader) throw new Error("No reader");
@@ -843,6 +865,7 @@ export const SerenityTerminal = () => {
           });
         }
 
+        const streamedError = extractSerenityError(content);
         setResults((prev) => {
           const next = [...prev];
           const idx = next.findIndex((r) => r.id === resultId);
@@ -850,7 +873,8 @@ export const SerenityTerminal = () => {
             next[idx] = {
               ...next[idx],
               content,
-              status: "done",
+              status: streamedError ? "error" : "done",
+              error: streamedError ?? undefined,
             } as AnalysisResult;
           return next;
         });
@@ -929,7 +953,8 @@ export const SerenityTerminal = () => {
                 signal: controller.signal,
               });
 
-              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              if (!response.ok)
+                throw new Error(await readSerenityError(response));
               const reader = response.body?.getReader();
               if (!reader) throw new Error("No reader");
 
@@ -952,13 +977,19 @@ export const SerenityTerminal = () => {
                 });
               }
 
+              const streamedError = extractSerenityError(text);
               setResults((prev) => {
                 const next = [...prev];
                 const idx = next.findIndex((r) => r.id === id);
                 if (idx >= 0)
                   next[idx] = {
                     ...next[idx],
-                    cells: { ...next[idx]!.cells, [sid]: { text } },
+                    cells: {
+                      ...next[idx]!.cells,
+                      [sid]: streamedError
+                        ? { text, error: streamedError }
+                        : { text },
+                    },
                   } as AnalysisResult;
                 return next;
               });
@@ -1222,11 +1253,24 @@ export const SerenityTerminal = () => {
               <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
                 API Key
               </div>
-              <div className="flex items-center gap-2 rounded border border-green-200 bg-green-50 px-3 py-2">
+              <div className="mb-2 flex items-center gap-2 rounded border border-green-200 bg-green-50 px-3 py-2">
                 <span className="font-mono text-xs text-green-700">
-                  ✓ Using hosted {plan === "business" ? "Business" : "Pro"} key
+                  {apiKey
+                    ? "Using your request key"
+                    : `Using hosted ${plan === "business" ? "Business" : "Pro"} key`}
                 </span>
               </div>
+              <Input
+                type="password"
+                placeholder="Optional fallback key, e.g. sk-..."
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="border-[#ccc8be] bg-transparent font-mono text-xs"
+              />
+              <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-[#9a9690]">
+                Leave blank to use the hosted key. Add your own key only when
+                the hosted provider is temporarily unavailable.
+              </p>
             </div>
           ) : (
             <div>
