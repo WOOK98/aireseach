@@ -273,14 +273,11 @@ const downloadMarkdown = (result: AnalysisResult) => {
 const printReportPdf = (result: AnalysisResult) => {
   if (!result.content.trim()) return;
 
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!printWindow) return;
-
   const title = escapeHtml(result.query || "Airesearch Report");
   const filename = getSafeReportFilename(result, "pdf");
   const body = renderPrintableMarkdown(result.content);
 
-  printWindow.document.write(`<!doctype html>
+  const printableHtml = `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -424,11 +421,18 @@ const printReportPdf = (result: AnalysisResult) => {
     <script>
       window.addEventListener("load", () => {
         setTimeout(() => window.print(), 250);
+        setTimeout(() => URL.revokeObjectURL(window.location.href), 5000);
       });
     </script>
   </body>
-</html>`);
-  printWindow.document.close();
+</html>`;
+  const blob = new Blob([printableHtml], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const printWindow = window.open(url, "_blank");
+
+  if (!printWindow) {
+    URL.revokeObjectURL(url);
+  }
 };
 
 interface MatrixTicker {
