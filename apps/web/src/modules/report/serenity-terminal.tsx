@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Shield,
   GitBranch,
+  Download,
 } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 
@@ -80,6 +81,28 @@ const readSerenityError = async (response: Response) => {
     if (typeof detail === "string") return detail;
   }
   return `Serenity analysis error: HTTP ${response.status}`;
+};
+
+const downloadMarkdown = (result: AnalysisResult) => {
+  if (!result.content.trim()) return;
+
+  const safeQuery = result.query
+    .trim()
+    .replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  const filename = `${safeQuery || "airesearch-report"}-${result.timestamp.replace(/[:\s]/g, "")}.md`;
+  const blob = new Blob([result.content], {
+    type: "text/markdown;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 };
 
 interface MatrixTicker {
@@ -1876,9 +1899,21 @@ export const SerenityTerminal = () => {
                   <span className="font-serif text-[13px] text-[#5a5650]">
                     {result.query}
                   </span>
-                  <span className="ml-auto font-mono text-[10px] text-[#9a9690]">
-                    {result.timestamp} · {result.year}Y
-                  </span>
+                  <div className="ml-auto flex items-center gap-2">
+                    {result.content.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => downloadMarkdown(result)}
+                        className="inline-flex items-center gap-1 rounded border border-[#d8d2c8] bg-[#fffdf8] px-2 py-1 font-mono text-[10px] text-[#5a5650] transition-colors hover:border-[#1a1814] hover:text-[#1a1814]"
+                      >
+                        <Download className="size-3" />
+                        保存 Markdown
+                      </button>
+                    )}
+                    <span className="font-mono text-[10px] text-[#9a9690]">
+                      {result.timestamp} · {result.year}Y
+                    </span>
+                  </div>
                 </div>
 
                 {isLoading && <Skeleton />}
