@@ -988,6 +988,29 @@ function getSkillById(id: string): Skill | undefined {
   return SKILLS.find((s) => s.id === id);
 }
 
+function buildParallelExportMarkdown(
+  result: AnalysisResult,
+  skillIds: string[],
+) {
+  const sections = skillIds.map((skillId) => {
+    const skill = getSkillById(skillId);
+    const cell = result.cells?.[skillId];
+    const body =
+      cell?.text?.trim() ||
+      (cell?.error ? `Analysis failed: ${cell.error}` : "No output yet.");
+
+    return `## ${skill?.name ?? skillId}\n\n${body}`;
+  });
+
+  return [
+    `# ${result.query}`,
+    "",
+    `Parallel analysis · ${skillIds.length} skills · ${result.timestamp} · ${result.year}Y`,
+    "",
+    ...sections,
+  ].join("\n\n");
+}
+
 function mcStyle(dir: "bull" | "bear") {
   return dir === "bear"
     ? { bg: "#fdf0f0", bd: "#f5b8b8", c: "#9b2c2c" }
@@ -2299,11 +2322,41 @@ export const SerenityTerminal = () => {
 
           // Parallel mode result
           const skills = result.skills || [];
+          const exportableParallelResult = {
+            ...result,
+            content: buildParallelExportMarkdown(result, skills),
+          };
+          const hasParallelOutput = Object.values(result.cells ?? {}).some(
+            (cell) => cell.text?.trim() || cell.error?.trim(),
+          );
+
           return (
             <div key={result.id} className="mb-8">
-              <div className="mb-1.5 font-mono text-[10px] tracking-[.08em] text-[#9a9690]">
-                PARALLEL · {skills.length} SKILLS · {result.timestamp} ·{" "}
-                {result.year}Y
+              <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                <div className="font-mono text-[10px] tracking-[.08em] text-[#9a9690]">
+                  PARALLEL · {skills.length} SKILLS · {result.timestamp} ·{" "}
+                  {result.year}Y
+                </div>
+                {hasParallelOutput && (
+                  <div className="ml-auto flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => printReportPdf(exportableParallelResult)}
+                      className="inline-flex items-center gap-1 rounded border border-[#d8d2c8] bg-[#fffdf8] px-2 py-1 font-mono text-[10px] text-[#5a5650] transition-colors hover:border-[#1a1814] hover:text-[#1a1814]"
+                    >
+                      <FileDown className="size-3" />
+                      保存 PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => downloadMarkdown(exportableParallelResult)}
+                      className="inline-flex items-center gap-1 rounded border border-[#d8d2c8] bg-[#fffdf8] px-2 py-1 font-mono text-[10px] text-[#5a5650] transition-colors hover:border-[#1a1814] hover:text-[#1a1814]"
+                    >
+                      <Download className="size-3" />
+                      保存 Markdown
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="mb-3 font-serif text-[17px] font-light">
                 {result.query}
