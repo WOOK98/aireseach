@@ -11,6 +11,7 @@ import {
   Shield,
   GitBranch,
   Download,
+  FileDown,
 } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 
@@ -83,15 +84,179 @@ const readSerenityError = async (response: Response) => {
   return `Serenity analysis error: HTTP ${response.status}`;
 };
 
-const downloadMarkdown = (result: AnalysisResult) => {
-  if (!result.content.trim()) return;
-
+const getSafeReportFilename = (result: AnalysisResult, extension: string) => {
   const safeQuery = result.query
     .trim()
     .replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
-  const filename = `${safeQuery || "airesearch-report"}-${result.timestamp.replace(/[:\s]/g, "")}.md`;
+
+  return `${safeQuery || "airesearch-report"}-${result.timestamp.replace(/[:\s]/g, "")}.${extension}`;
+};
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const renderInlineMarkdown = (value: string) => {
+  const links: string[] = [];
+  const withMarkdownLinks = escapeHtml(value).replace(
+    /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+    (_match, label: string, href: string) => {
+      const token = `__AIRESEARCH_LINK_${links.length}__`;
+      links.push(
+        `<a href="${href}" target="_blank" rel="noreferrer">${label}</a>`,
+      );
+      return token;
+    },
+  );
+
+  return withMarkdownLinks
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(
+      /(https?:\/\/[^\s<]+)/g,
+      '<a href="$1" target="_blank" rel="noreferrer">$1</a>',
+    )
+    .replace(/__AIRESEARCH_LINK_(\d+)__/g, (_match, index: string) => {
+      return links[Number(index)] ?? "";
+    });
+};
+
+const renderMarkdownTable = (rows: string[]) => {
+  const cells = rows
+    .filter((row) => !/^\|\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(row))
+    .map((row) =>
+      row
+        .trim()
+        .replace(/^\||\|$/g, "")
+        .split("|")
+        .map((cell) => renderInlineMarkdown(cell.trim())),
+    );
+
+  if (!cells.length) return "";
+
+  const [head, ...body] = cells;
+  return `<table><thead><tr>${(head ?? [])
+    .map((cell) => `<th>${cell}</th>`)
+    .join("")}</tr></thead><tbody>${body
+    .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
+    .join("")}</tbody></table>`;
+};
+
+const renderPrintableMarkdown = (markdown: string) => {
+  const lines = markdown.split(/\r?\n/);
+  const html: string[] = [];
+  let paragraph: string[] = [];
+  let list: string[] = [];
+  let table: string[] = [];
+  let code: string[] = [];
+  let inCode = false;
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    html.push(`<p>${renderInlineMarkdown(paragraph.join(" "))}</p>`);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (!list.length) return;
+    html.push(
+      `<ul>${list.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join("")}</ul>`,
+    );
+    list = [];
+  };
+  const flushTable = () => {
+    if (!table.length) return;
+    html.push(renderMarkdownTable(table));
+    table = [];
+  };
+
+  for (const line of lines) {
+    if (line.trim().startsWith("```")) {
+      if (inCode) {
+        html.push(`<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`);
+        code = [];
+        inCode = false;
+      } else {
+        flushParagraph();
+        flushList();
+        flushTable();
+        inCode = true;
+      }
+      continue;
+    }
+
+    if (inCode) {
+      code.push(line);
+      continue;
+    }
+
+    if (line.trim().startsWith("|")) {
+      flushParagraph();
+      flushList();
+      table.push(line);
+      continue;
+    }
+
+    flushTable();
+
+    const heading = line.match(/^(#{1,4})\s+(.+)$/);
+    if (heading) {
+      flushParagraph();
+      flushList();
+      const level = Math.min(heading[1]?.length ?? 2, 4);
+      html.push(
+        `<h${level}>${renderInlineMarkdown(heading[2] ?? "")}</h${level}>`,
+      );
+      continue;
+    }
+
+    const listItem = line.match(/^\s*[-*]\s+(.+)$/);
+    if (listItem) {
+      flushParagraph();
+      list.push(listItem[1] ?? "");
+      continue;
+    }
+
+    const orderedItem = line.match(/^\s*\d+\.\s+(.+)$/);
+    if (orderedItem) {
+      flushParagraph();
+      list.push(orderedItem[1] ?? "");
+      continue;
+    }
+
+    if (line.trim().startsWith(">")) {
+      flushParagraph();
+      flushList();
+      html.push(
+        `<blockquote>${renderInlineMarkdown(line.replace(/^>\s*/, ""))}</blockquote>`,
+      );
+      continue;
+    }
+
+    if (!line.trim()) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    paragraph.push(line.trim());
+  }
+
+  flushParagraph();
+  flushList();
+  flushTable();
+
+  return html.join("\n");
+};
+
+const downloadMarkdown = (result: AnalysisResult) => {
+  if (!result.content.trim()) return;
+
+  const filename = getSafeReportFilename(result, "md");
   const blob = new Blob([result.content], {
     type: "text/markdown;charset=utf-8",
   });
@@ -103,6 +268,167 @@ const downloadMarkdown = (result: AnalysisResult) => {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+};
+
+const printReportPdf = (result: AnalysisResult) => {
+  if (!result.content.trim()) return;
+
+  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  if (!printWindow) return;
+
+  const title = escapeHtml(result.query || "Airesearch Report");
+  const filename = getSafeReportFilename(result, "pdf");
+  const body = renderPrintableMarkdown(result.content);
+
+  printWindow.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${title} - Airesearch</title>
+    <style>
+      @page { size: A4; margin: 18mm 16mm; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: #171717;
+        background: #fff;
+        font-family: ui-serif, Georgia, "Times New Roman", "Noto Serif SC", serif;
+        line-height: 1.58;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .page { max-width: 820px; margin: 0 auto; }
+      .brand {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        border-bottom: 2px solid #111;
+        padding-bottom: 18px;
+        margin-bottom: 28px;
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        color: #137a3f;
+        font: 700 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      }
+      h1.title {
+        margin: 0;
+        font-size: 34px;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+      .meta {
+        min-width: 150px;
+        color: #666;
+        text-align: right;
+        font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      h1:not(.title), h2, h3, h4 {
+        break-after: avoid;
+        color: #111;
+        line-height: 1.2;
+      }
+      h1:not(.title) { font-size: 25px; margin: 28px 0 12px; }
+      h2 {
+        border-top: 1px solid #ddd;
+        margin: 26px 0 12px;
+        padding-top: 16px;
+        font-size: 21px;
+      }
+      h3 { margin: 18px 0 8px; font-size: 16px; }
+      h4 {
+        margin: 14px 0 8px;
+        color: #444;
+        font: 700 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+      }
+      p { margin: 0 0 10px; font-size: 13.5px; }
+      strong { font-weight: 700; }
+      code {
+        border: 1px solid #e2e2e2;
+        border-radius: 4px;
+        background: #f7f7f4;
+        padding: 1px 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+      }
+      pre {
+        break-inside: avoid;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #f7f7f4;
+        padding: 12px;
+        white-space: pre-wrap;
+      }
+      ul, ol { margin: 0 0 12px 20px; padding: 0; }
+      li { margin: 4px 0; font-size: 13.5px; }
+      blockquote {
+        margin: 14px 0;
+        border-left: 4px solid #4ac66d;
+        background: #f1fbf4;
+        padding: 10px 14px;
+        color: #245334;
+        break-inside: avoid;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 14px 0 18px;
+        font-size: 11.5px;
+        break-inside: avoid;
+      }
+      th {
+        background: #f3f5f2;
+        color: #333;
+        text-align: left;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10.5px;
+        letter-spacing: .04em;
+      }
+      th, td { border: 1px solid #ddd; padding: 7px 8px; vertical-align: top; }
+      tr:nth-child(even) td { background: #fbfbfa; }
+      a { color: #126a3a; text-decoration: none; overflow-wrap: anywhere; }
+      .disclaimer {
+        margin-top: 28px;
+        border-top: 1px solid #ddd;
+        padding-top: 12px;
+        color: #777;
+        font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      @media print {
+        .no-print { display: none; }
+        a[href]::after { content: " (" attr(href) ")"; color: #777; font-size: 10px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="brand">
+        <div>
+          <p class="eyebrow">Airesearch Deep Dive</p>
+          <h1 class="title">${title}</h1>
+        </div>
+        <div class="meta">
+          <div>${escapeHtml(result.timestamp)} · ${result.year}Y</div>
+          <div>${escapeHtml(filename)}</div>
+        </div>
+      </section>
+      <article>${body}</article>
+      <section class="disclaimer">
+        This report is framework analysis for research workflow support only. It is not investment advice. Verify live prices, filings, and fundamentals before making decisions.
+      </section>
+    </main>
+    <script>
+      window.addEventListener("load", () => {
+        setTimeout(() => window.print(), 250);
+      });
+    </script>
+  </body>
+</html>`);
+  printWindow.document.close();
 };
 
 interface MatrixTicker {
@@ -1901,14 +2227,24 @@ export const SerenityTerminal = () => {
                   </span>
                   <div className="ml-auto flex items-center gap-2">
                     {result.content.trim() && (
-                      <button
-                        type="button"
-                        onClick={() => downloadMarkdown(result)}
-                        className="inline-flex items-center gap-1 rounded border border-[#d8d2c8] bg-[#fffdf8] px-2 py-1 font-mono text-[10px] text-[#5a5650] transition-colors hover:border-[#1a1814] hover:text-[#1a1814]"
-                      >
-                        <Download className="size-3" />
-                        保存 Markdown
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => printReportPdf(result)}
+                          className="inline-flex items-center gap-1 rounded border border-[#d8d2c8] bg-[#fffdf8] px-2 py-1 font-mono text-[10px] text-[#5a5650] transition-colors hover:border-[#1a1814] hover:text-[#1a1814]"
+                        >
+                          <FileDown className="size-3" />
+                          保存 PDF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => downloadMarkdown(result)}
+                          className="inline-flex items-center gap-1 rounded border border-[#d8d2c8] bg-[#fffdf8] px-2 py-1 font-mono text-[10px] text-[#5a5650] transition-colors hover:border-[#1a1814] hover:text-[#1a1814]"
+                        >
+                          <Download className="size-3" />
+                          保存 Markdown
+                        </button>
+                      </>
                     )}
                     <span className="font-mono text-[10px] text-[#9a9690]">
                       {result.timestamp} · {result.year}Y
