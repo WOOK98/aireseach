@@ -36,6 +36,7 @@ const deepseekProvider = createOpenAI({
 
 const FREE_REPORT_MONTHLY_LIMIT = 3;
 const REPORT_MAX_OUTPUT_TOKENS = 2600;
+const COMMITTEE_MAX_OUTPUT_TOKENS = 4600;
 
 const PRO_PLAN_VARIANTS: string[] =
   billingConfig.plans
@@ -339,6 +340,204 @@ Return ONLY this JSON structure (all text in English):
         });
       } catch {
         // ignore logging failures
+      }
+    });
+  },
+);
+
+// ─── POST /api/report/committee/generate ────────────────────────────────────
+// Runs six named analytical frameworks without impersonating real investors.
+const committeeSchema = z.object({
+  ticker: z.string().min(1).max(10),
+  metrics: z.custom<FinancialMetrics>(),
+});
+
+reportRoute.post(
+  "/committee/generate",
+  zValidator("json", committeeSchema),
+  async (c) => {
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    const user = session?.user ?? null;
+
+    if (!user) {
+      throw new HTTPException(401, { message: "Authentication required." });
+    }
+
+    let isPaidUser = false;
+    try {
+      const customers = await getCustomersWithPurchasesByReferenceId(user.id);
+      for (const customer of customers) {
+        for (const subscription of customer.subscriptions) {
+          if (
+            ACTIVE_SUBSCRIPTION_STATUSES.includes(
+              subscription.status as never,
+            ) &&
+            PAID_VARIANTS.has(subscription.variantId)
+          ) {
+            isPaidUser = true;
+            break;
+          }
+        }
+        if (isPaidUser) break;
+      }
+    } catch {
+      // Treat billing lookup failures as free access.
+    }
+
+    if (!isPaidUser) {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      try {
+        const countResult = await db
+          .select({ value: count() })
+          .from(aiUsageLog)
+          .where(
+            and(
+              eq(aiUsageLog.userId, user.id),
+              eq(aiUsageLog.feature, "report"),
+              gte(aiUsageLog.createdAt, monthStart),
+            ),
+          );
+
+        if ((countResult[0]?.value ?? 0) >= FREE_REPORT_MONTHLY_LIMIT) {
+          throw new HTTPException(429, {
+            message: `Free plan limit reached (${FREE_REPORT_MONTHLY_LIMIT} reports/month). Upgrade to Pro for unlimited reports.`,
+          });
+        }
+      } catch (error) {
+        if (error instanceof HTTPException) throw error;
+        // Usage tracking activates after the migration is applied.
+      }
+    }
+
+    const { ticker, metrics: m } = c.req.valid("json");
+    const symbol = ticker.toUpperCase();
+    const model = getReportModelConfig();
+    const imaKnowledge = await searchImaKnowledge(symbol, {
+      limit: 10,
+      market: symbol.match(/^\d{6}$/) ? "a-stocks" : "us-stocks",
+    });
+    const sourceCatalog = [
+      {
+        id: "S1",
+        title: `${m.companyName} market and financial data`,
+        date: new Date().toISOString().slice(0, 10),
+        publisher: "Yahoo Finance",
+        url: `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}/`,
+        excerpt: `Price ${fmt(m.currentPrice, 2)}; market cap ${fmtB(m.marketCap)}; revenue growth ${fmt(m.revenueGrowthYoy)}%; gross margin ${fmt(m.grossMargin)}%; free cash flow ${fmtB(m.freeCashFlow)}.`,
+      },
+      ...imaKnowledge.map((hit, index) => ({
+        id: `S${index + 2}`,
+        title: hit.title,
+        date: hit.date ?? "unknown",
+        publisher: `IMA ${hit.category}`,
+        url: hit.sourceUrl,
+        excerpt: hit.excerpt,
+      })),
+    ];
+
+    const sourceContext = sourceCatalog
+      .map(
+        (source) =>
+          `[${source.id}] ${source.title}\nDate: ${source.date}; Publisher: ${source.publisher}; URL: ${source.url ?? "local archive only"}\nExcerpt: ${source.excerpt}`,
+      )
+      .join("\n\n");
+
+    const systemPrompt = `You are the chair of an evidence-led investment committee.
+You do not impersonate investors or attribute claims to famous people. You apply six generic analytical frameworks: Value, Growth, Macro, Trend, Quant, and Skeptic.
+Separate observed facts from inferences and opinions. Cite only source IDs supplied by the user. Never invent a URL, filing, metric, or quotation.
+Return strict JSON only, with no markdown fences. This is decision support, not financial advice.`;
+
+    const userPrompt = `Conduct an Investment Committee review of ${m.companyName} (${symbol}).
+
+CURRENT DATA
+- Price: $${fmt(m.currentPrice, 2)}; Market cap: ${fmtB(m.marketCap)}
+- Revenue growth YoY: ${fmt(m.revenueGrowthYoy)}%; Gross margin: ${fmt(m.grossMargin)}%; Operating margin: ${fmt(m.operatingMargin)}%; Net margin: ${fmt(m.netMargin)}%
+- EPS: $${fmt(m.eps, 2)}; Free cash flow: ${fmtB(m.freeCashFlow)}; FCF margin: ${fmt(m.fcfMargin)}%
+- Cash: ${fmtB(m.totalCash)}; Debt: ${fmtB(m.totalDebt)}; Net cash: ${fmtB(m.netCash)}
+- P/E: ${fmt(m.peRatio)}x; Forward P/E: ${fmt(m.forwardPE)}x; P/S: ${fmt(m.psRatio)}x; EV/EBITDA: ${fmt(m.evEbitda)}x
+- Sector / Industry: ${m.sector || "N/A"} / ${m.industry || "N/A"}
+- Company description: ${m.description?.slice(0, 500) || "N/A"}
+
+SOURCE CATALOG
+${sourceContext}
+
+Return exactly this structure in English:
+{
+  "verdict": "Investigate" | "Watch" | "Avoid",
+  "stance": "Bullish" | "Mixed" | "Bearish",
+  "confidence": <number 0-100>,
+  "dataAsOf": "<YYYY-MM-DD>",
+  "oneLineDecision": "<direct decision statement>",
+  "keyQuestion": "<single question that determines the thesis>",
+  "bullCase": ["<claim>", "<claim>", "<claim>"],
+  "bearCase": ["<claim>", "<claim>", "<claim>"],
+  "lenses": [
+    {
+      "id": "value" | "growth" | "macro" | "trend" | "quant" | "skeptic",
+      "label": "Value" | "Growth" | "Macro" | "Trend" | "Quant" | "Skeptic",
+      "stance": "Positive" | "Neutral" | "Negative",
+      "confidence": <number 0-100>,
+      "summary": "<framework conclusion>",
+      "observations": [
+        { "text": "<claim>", "kind": "Fact" | "Inference" | "View", "sourceIds": ["S1"] }
+      ],
+      "whatChangesTheView": "<specific falsifiable condition>"
+    }
+  ],
+  "consensus": ["<shared conclusion>"],
+  "divergences": [
+    { "topic": "<disputed issue>", "supportingLenses": ["Value"], "opposingLenses": ["Growth"], "why": "<reason for disagreement>" }
+  ],
+  "thesisBreakers": [
+    { "condition": "<observable invalidation condition>", "metric": "<metric>", "threshold": "<threshold>", "sourceIds": ["S1"] }
+  ],
+  "investorFit": [
+    { "profile": "<investor type>", "fit": "Good" | "Conditional" | "Poor", "reason": "<reason>" }
+  ],
+  "evidence": [
+    { "id": "S1", "title": "<exact supplied title>", "publisher": "<publisher>", "date": "<date>", "url": "<exact supplied URL or empty string>", "supports": "<claim supported>", "quality": "Primary" | "Secondary" | "Archive" }
+  ],
+  "limitations": ["<missing data or analytical limitation>"]
+}
+
+Requirements:
+- Include all six lenses exactly once.
+- Facts must cite at least one supplied source ID. Inferences and views may cite supporting IDs but must stay labeled.
+- Evidence entries must reproduce only supplied source metadata and URLs.
+- Trend and Quant must explicitly say when price history or statistical evidence is insufficient.
+- Skeptic must present the strongest good-faith counterargument and a falsifiable condition.
+- Do not issue a personalized buy or sell instruction.`;
+
+    return stream(c, async (s) => {
+      const result = streamText({
+        model,
+        system: systemPrompt,
+        prompt: userPrompt,
+        temperature: 0.2,
+        maxOutputTokens: COMMITTEE_MAX_OUTPUT_TOKENS,
+      });
+
+      for await (const chunk of result.textStream) {
+        await s.write(chunk);
+      }
+
+      try {
+        const usage = await result.usage;
+        const inputTokens = usage?.inputTokens ?? 0;
+        const outputTokens = usage?.outputTokens ?? 0;
+        await db.insert(aiUsageLog).values({
+          userId: user.id,
+          feature: "report",
+          model: getReportModelName(),
+          promptTokens: inputTokens,
+          completionTokens: outputTokens,
+          totalTokens: inputTokens + outputTokens,
+        });
+      } catch {
+        // Ignore best-effort usage logging failures.
       }
     });
   },

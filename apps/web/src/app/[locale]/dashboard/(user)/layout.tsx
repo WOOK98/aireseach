@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { FileText, BarChart3 } from "lucide-react";
+import { BarChart3, FileText, Scale } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { getBillingSummaryResponseSchema } from "@workspace/api/schema";
@@ -29,6 +29,11 @@ const menu = [
         title: "Snapshot",
         href: pathsConfig.dashboard.user.research,
         icon: <BarChart3 />,
+      },
+      {
+        title: "Investment Committee",
+        href: pathsConfig.dashboard.user.committee,
+        icon: <Scale />,
       },
       {
         title: "ai",
