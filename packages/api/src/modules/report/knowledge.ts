@@ -2,13 +2,14 @@ import { and, desc, ilike, or, sql } from "@workspace/db";
 import { imaKnowledgeDocument } from "@workspace/db/schema";
 import { db } from "@workspace/db/server";
 
-type ImaKnowledgeHit = {
+export type ImaKnowledgeHit = {
   title: string;
   market: string;
   category: string;
   date: string | null;
   excerpt: string;
   relativePath: string;
+  sourceUrl: string | null;
 };
 
 const escapeLike = (value: string) => value.replaceAll(/[%_\\]/g, "\\$&");
@@ -33,6 +34,11 @@ const cleanExcerpt = (content: string, query: string) => {
   const index = compact.toLowerCase().indexOf(query.toLowerCase());
   const start = index >= 0 ? Math.max(0, index - 180) : 0;
   return compact.slice(start, start + 520);
+};
+
+const extractSourceUrl = (content: string) => {
+  const match = content.match(/https?:\/\/[^\s<>"')\]]+/i)?.[0];
+  return match?.replace(/[.,;:!?]+$/, "") ?? null;
 };
 
 export const searchImaKnowledge = async (
@@ -79,6 +85,7 @@ export const searchImaKnowledge = async (
       date: row.documentDate?.toISOString().slice(0, 10) ?? null,
       excerpt: cleanExcerpt(row.content, terms[0] ?? query),
       relativePath: row.relativePath,
+      sourceUrl: extractSourceUrl(row.content),
     }));
   } catch {
     return [];
@@ -91,7 +98,7 @@ export const formatImaKnowledgeForPrompt = (hits: ImaKnowledgeHit[]) => {
   return hits
     .map(
       (hit, index) =>
-        `${index + 1}. ${hit.title}\nMarket: ${hit.market}; Category: ${hit.category}; Date: ${hit.date ?? "unknown"}; Source: ima/${hit.relativePath}\nExcerpt: ${hit.excerpt}`,
+        `${index + 1}. ${hit.title}\nMarket: ${hit.market}; Category: ${hit.category}; Date: ${hit.date ?? "unknown"}; Archive: ima/${hit.relativePath}; URL: ${hit.sourceUrl ?? "not available"}\nExcerpt: ${hit.excerpt}`,
     )
     .join("\n\n");
 };

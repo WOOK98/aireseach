@@ -47,6 +47,7 @@ const pathsConfig = {
       ai: `${DASHBOARD_PREFIX}/ai`,
       report: `${DASHBOARD_PREFIX}/report`,
       research: `${DASHBOARD_PREFIX}/research`,
+      committee: `${DASHBOARD_PREFIX}/committee`,
       settings: {
         index: `${DASHBOARD_PREFIX}/settings`,
         security: `${DASHBOARD_PREFIX}/settings/security`,
