@@ -51,8 +51,29 @@ interface AnalysisResult {
   cells?: Record<string, { text?: string; error?: string }>;
   status: "loading" | "done" | "error";
   error?: string;
+  blocked?: boolean;
+  blockMode?: "clarify" | "industry";
+  candidates?: ResolutionCandidate[];
   timestamp: string;
   year: number;
+}
+
+interface ResolutionCandidate {
+  ticker: string;
+  companyName: string;
+  exchange: string;
+  quoteType?: string;
+}
+
+interface SerenityErrorPayload {
+  message: string;
+  resolution?: {
+    ok: false;
+    mode: "clarify" | "industry";
+    message?: string;
+    input?: string;
+    candidates?: ResolutionCandidate[];
+  };
 }
 
 interface QuickExample {
@@ -76,14 +97,32 @@ const extractSerenityError = (text: string) => {
   return text.replace(/^.*Analysis failed:\s*/s, "").trim();
 };
 
-const readSerenityError = async (response: Response) => {
+const readSerenityErrorPayload = async (
+  response: Response,
+): Promise<SerenityErrorPayload> => {
   const data = await response.json().catch(() => null);
+  const fallback = `Serenity analysis error: HTTP ${response.status}`;
+
   if (data && typeof data === "object" && "detail" in data) {
     const detail = (data as { detail?: unknown }).detail;
-    if (typeof detail === "string") return detail;
+    const resolution = (data as { resolution?: unknown }).resolution;
+    return {
+      message: typeof detail === "string" ? detail : fallback,
+      resolution:
+        resolution &&
+        typeof resolution === "object" &&
+        "ok" in resolution &&
+        (resolution as { ok?: unknown }).ok === false
+          ? (resolution as SerenityErrorPayload["resolution"])
+          : undefined,
+    };
   }
-  return `Serenity analysis error: HTTP ${response.status}`;
+
+  return { message: fallback };
 };
+
+const readSerenityError = async (response: Response) =>
+  (await readSerenityErrorPayload(response)).message;
 
 const getSafeReportFilename = (result: AnalysisResult, extension: string) => {
   const safeQuery = result.query
@@ -1229,7 +1268,29 @@ export const SerenityTerminal = () => {
           signal: controller.signal,
         });
 
-        if (!response.ok) throw new Error(await readSerenityError(response));
+        if (!response.ok) {
+          const payload = await readSerenityErrorPayload(response);
+          const resolution = payload.resolution;
+          if (response.status === 422 && resolution) {
+            setResults((prev) => {
+              const next = [...prev];
+              const idx = next.findIndex((r) => r.id === resultId);
+              if (idx >= 0)
+                next[idx] = {
+                  ...next[idx],
+                  content: "",
+                  status: "done",
+                  error: payload.message,
+                  blocked: true,
+                  blockMode: resolution.mode,
+                  candidates: resolution.candidates ?? [],
+                } as AnalysisResult;
+              return next;
+            });
+            return;
+          }
+          throw new Error(payload.message);
+        }
 
         const reader = response.body?.getReader();
         if (!reader) throw new Error("No reader");
@@ -2265,10 +2326,13 @@ export const SerenityTerminal = () => {
             const skill = getSkillById(result.skillId!);
             if (!skill) return null;
 
+            const isBlocked = !!result.blocked;
             const isLoading = result.status === "loading" && !result.content;
-            const isError = !!result.error;
+            const isError = !!result.error && !isBlocked;
             const isDone =
-              result.status === "done" && result.skillId === "serenity";
+              !isBlocked &&
+              result.status === "done" &&
+              result.skillId === "serenity";
 
             return (
               <div key={result.id} className="mb-8">
@@ -2326,7 +2390,53 @@ export const SerenityTerminal = () => {
                   </div>
                 )}
 
-                {!isError &&
+                {isBlocked && (
+                  <div className="rounded border border-[#d8d2c8] bg-[#fffdf8] p-3">
+                    <div className="font-mono text-xs leading-relaxed text-[#5a5650]">
+                      {result.blockMode === "industry"
+                        ? "This looks like an industry or theme. Choose one listed candidate for single-asset analysis, or run industry research."
+                        : (result.error ??
+                          "Choose one listed candidate to continue.")}
+                    </div>
+
+                    {!!result.candidates?.length && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {result.candidates.map((candidate) => (
+                          <button
+                            key={`${candidate.ticker}-${candidate.exchange}`}
+                            type="button"
+                            onClick={() =>
+                              handleQuickRun(
+                                candidate.ticker,
+                                result.skillId ?? "serenity",
+                              )
+                            }
+                            className="inline-flex max-w-full items-center gap-1 rounded border border-[#d8d2c8] bg-[#fffaf0] px-2 py-1 font-mono text-[11px] text-[#1a1814] transition-colors hover:border-[#1a1814]"
+                            title={`${candidate.companyName} (${candidate.exchange || "unknown exchange"})`}
+                          >
+                            <span>{candidate.ticker}</span>
+                            <span className="truncate text-[#9a9690]">
+                              {candidate.companyName.slice(0, 28)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {result.blockMode === "industry" && (
+                      <button
+                        type="button"
+                        onClick={() => runIndustryQuery(result.query)}
+                        className="mt-3 rounded border border-[#1a1814] bg-[#1a1814] px-3 py-1.5 font-mono text-[11px] text-[#fffdf8] transition-colors hover:bg-[#3a332a]"
+                      >
+                        Run industry research on "{result.query}" →
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {!isBlocked &&
+                  !isError &&
                   (() => {
                     const reportData = isDone
                       ? tryParseReportData(result.content)
