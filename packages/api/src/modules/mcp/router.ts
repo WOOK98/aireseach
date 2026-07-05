@@ -209,7 +209,7 @@ const handleRequest = async (request: JsonRpcRequest) => {
   switch (request.method) {
     case "initialize":
       return jsonRpc(request.id, {
-        protocolVersion: "2024-11-05",
+        protocolVersion: "2025-06-18",
         capabilities: {
           tools: {},
         },
