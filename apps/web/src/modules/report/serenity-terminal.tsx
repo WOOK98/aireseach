@@ -60,6 +60,7 @@ interface QuickExample {
   text: string;
   query: string;
   label: string;
+  mode?: "single" | "industry";
 }
 
 const HOSTED_KEY_BALANCE_ERROR =
@@ -601,12 +602,14 @@ const QUICK_EXAMPLES: QuickExample[] = [
     text: "CPO sector capital rotation",
     query: "AI photonics CPO sector macro narrative and capital rotation",
     label: "Macro",
+    mode: "industry",
   },
   {
     skill: "risk",
     text: "Neocloud dilution risk",
     query: "$IREN $CRWV ATM dilution risk matrix comparison",
     label: "Risk · ATM dilution",
+    mode: "industry",
   },
 ];
 
@@ -1195,7 +1198,12 @@ export const SerenityTerminal = () => {
   // ─── Single analysis via backend streaming ───────────────────
 
   const runSingle = useCallback(
-    async (query: string, skillId: string, resultId: number) => {
+    async (
+      query: string,
+      skillId: string,
+      resultId: number,
+      options: { mode?: "single" | "industry" } = {},
+    ) => {
       if (!apiKey && !isPaid) return;
 
       const skill = getSkillById(skillId);
@@ -1210,7 +1218,7 @@ export const SerenityTerminal = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ticker: query,
-            mode: "single",
+            mode: options.mode ?? "single",
             language: "en-US",
             api_key: apiKey,
             base_url: baseUrl,
@@ -1439,7 +1447,11 @@ export const SerenityTerminal = () => {
   // ─── Quick run (fill & execute) ──────────────────────────────
 
   const handleQuickRun = useCallback(
-    (query: string, skillId: string) => {
+    (
+      query: string,
+      skillId: string,
+      mode: "single" | "industry" = "single",
+    ) => {
       if (!apiKey && !isPaid) return;
       setTicker(query);
       if (!multiMode) setActiveSkill(skillId);
@@ -1462,9 +1474,38 @@ export const SerenityTerminal = () => {
         },
         ...prev,
       ]);
-      void runSingle(query, skillId, id);
+      void runSingle(query, skillId, id, { mode });
     },
     [apiKey, isPaid, multiMode, year, runSingle],
+  );
+
+  const runIndustryQuery = useCallback(
+    (query: string) => {
+      if (!apiKey && !isPaid) return;
+      setTicker(query);
+      setActiveTab("examples");
+
+      const ts = new Date().toLocaleTimeString("zh", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const id = ++resultIdRef.current;
+      setResults((prev) => [
+        {
+          id,
+          type: "single",
+          skillId: "serenity",
+          query,
+          content: "",
+          status: "loading",
+          timestamp: ts,
+          year,
+        },
+        ...prev,
+      ]);
+      void runSingle(query, "serenity", id, { mode: "industry" });
+    },
+    [apiKey, isPaid, year, runSingle],
   );
 
   // ─── Fill ticker (from matrix/chain) ─────────────────────────
@@ -1799,7 +1840,7 @@ export const SerenityTerminal = () => {
                 <button
                   key={ex.query}
                   type="button"
-                  onClick={() => handleQuickRun(ex.query, ex.skill)}
+                  onClick={() => handleQuickRun(ex.query, ex.skill, ex.mode)}
                   className="group rounded-lg border border-[#e0dbd2] bg-[#faf9f6] p-3.5 text-left transition-all hover:border-[#ccc8be] hover:bg-[#f4f2ee]"
                 >
                   <div className="mb-1.5 font-mono text-[9px] tracking-[.1em] text-[#9a9690] uppercase">
@@ -1830,9 +1871,7 @@ export const SerenityTerminal = () => {
                   type="button"
                   onClick={() => {
                     const q = `${ticker.trim()} supply chain bottleneck analysis`;
-                    setTicker(q);
-                    setActiveTab("examples");
-                    void runSingle(q, "serenity", Date.now());
+                    runIndustryQuery(q);
                   }}
                   className="shrink-0 rounded-md bg-[#7a4f00] px-3 py-1.5 font-mono text-[11px] text-white transition-colors hover:bg-[#5a3a00]"
                 >
@@ -2114,9 +2153,7 @@ export const SerenityTerminal = () => {
                   type="button"
                   onClick={() => {
                     const q = `${ticker.trim()} competitive landscape analysis`;
-                    setTicker(q);
-                    setActiveTab("examples");
-                    void runSingle(q, "serenity", Date.now());
+                    runIndustryQuery(q);
                   }}
                   className="shrink-0 rounded-md bg-[#7a4f00] px-3 py-1.5 font-mono text-[11px] text-white transition-colors hover:bg-[#5a3a00]"
                 >
@@ -2289,29 +2326,31 @@ export const SerenityTerminal = () => {
                   </div>
                 )}
 
-                {(() => {
-                  const reportData = isDone
-                    ? tryParseReportData(result.content)
-                    : null;
-                  if (reportData) {
+                {!isError &&
+                  (() => {
+                    const reportData = isDone
+                      ? tryParseReportData(result.content)
+                      : null;
+                    if (reportData) {
+                      return (
+                        <div className="mt-4">
+                          <VisualReport data={reportData} />
+                        </div>
+                      );
+                    }
+                    if (!result.content.trim()) return null;
                     return (
                       <div className="mt-4">
-                        <VisualReport data={reportData} />
+                        <MarkdownReport
+                          text={result.content}
+                          skill={result.skillId}
+                          query={result.query}
+                          timestamp={result.timestamp}
+                          year={result.year}
+                        />
                       </div>
                     );
-                  }
-                  return (
-                    <div className="mt-4">
-                      <MarkdownReport
-                        text={result.content}
-                        skill={result.skillId}
-                        query={result.query}
-                        timestamp={result.timestamp}
-                        year={result.year}
-                      />
-                    </div>
-                  );
-                })()}
+                  })()}
 
                 {isDone && (
                   <div className="mt-3 rounded border-l-[3px] border-[#7a4f00] bg-[#fdf5e8] px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-[#7a4f00]">

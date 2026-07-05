@@ -131,6 +131,18 @@ const isTechnicalSkill = (body: Record<string, unknown>) => {
   );
 };
 
+const buildIndustryPrompt = (target: string) =>
+  [
+    `INDUSTRY MODE - research target is a theme, material, or industry rather than a single listed stock: "${target}".`,
+    "Produce exactly this structure:",
+    "1. Value chain map of the industry/theme, from end demand to upstream inputs.",
+    "2. Key listed players per chain layer, with tickers, exchanges, and a short role description.",
+    "3. Bottleneck dynamics: which layers have scarce capacity, qualification barriers, pricing power, or critical inputs.",
+    "4. Evidence and open questions: cite current sources, filings, company pages, or recent news where available.",
+    "5. Follow-up candidates: suggest 3-6 listed companies that deserve single-stock Deep Dive follow-up.",
+    "Hard rules: do not output per-stock technicals, price levels, RSI, MACD, support/resistance, entry/stop levels, or conviction tiers. If a listed player cannot be verified, label it as unverified rather than inventing a ticker.",
+  ].join("\n");
+
 const fetchJson = async <T>(url: string) => {
   const response = await fetch(url, { cache: "no-store" });
   const data = (await response.json().catch(() => null)) as T | null;
@@ -187,50 +199,83 @@ export async function POST(request: Request) {
     );
     const resolution = resolutionResult.data;
 
-    if (!resolutionResult.response.ok || !resolution?.ok) {
-      const detail =
-        resolution && !resolution.ok
-          ? resolution.message
-          : "Unable to resolve the requested ticker.";
-
+    if (!resolution) {
       return NextResponse.json(
         {
-          detail,
+          detail: "Unable to resolve the requested ticker.",
           resolution,
         },
         { status: 422 },
       );
     }
 
-    body.ticker = resolution.ticker;
-    body.company_name = resolution.companyName;
-    body.entity_lock = resolution.entityLock;
+    if (!resolution.ok) {
+      if (resolution.mode === "industry") {
+        body.ticker = input;
+        body.research_target = input;
+        body.mode = "industry";
+        body.company_name = "";
+        body.exchange = "";
+        body.entity_lock = "";
+        body.skill_id = "industry";
+        body.skill_prompt = `${buildIndustryPrompt(input)}\n\n${
+          typeof body.skill_prompt === "string" ? body.skill_prompt : ""
+        }`;
+      } else {
+        const candidateText =
+          "candidates" in resolution && resolution.candidates?.length
+            ? ` Candidates: ${resolution.candidates
+                .map(
+                  (candidate) =>
+                    `${candidate.ticker} - ${candidate.companyName} (${candidate.exchange || "unknown exchange"})`,
+                )
+                .join("; ")}`
+            : "";
 
-    const promptLocks = [resolution.entityLock];
+        const detail =
+          !resolutionResult.response.ok || !resolution.ok
+            ? resolution.message
+            : "Unable to resolve the requested ticker.";
 
-    if (isTechnicalSkill(body)) {
-      const technicalResult = await fetchJson<TechnicalResponse>(
-        `${origin}/api/report/technicals/${encodeURIComponent(resolution.ticker)}`,
-      );
-      const technical = technicalResult.data;
-
-      if (!technicalResult.response.ok || !technical?.ok) {
         return NextResponse.json(
           {
-            detail:
-              technical && !technical.ok
-                ? technical.error
-                : "Technicals: insufficient data — section withheld.",
+            detail: `${detail}${candidateText}`,
+            resolution,
           },
           { status: 422 },
         );
       }
+    } else {
+      body.ticker = resolution.ticker;
+      body.company_name = resolution.companyName;
+      body.entity_lock = resolution.entityLock;
 
-      promptLocks.push(formatTechnicalLock(technical));
-    }
+      const promptLocks = [resolution.entityLock];
 
-    if (typeof body.skill_prompt === "string") {
-      body.skill_prompt = `${promptLocks.join("\n\n")}\n\n${body.skill_prompt}`;
+      if (isTechnicalSkill(body)) {
+        const technicalResult = await fetchJson<TechnicalResponse>(
+          `${origin}/api/report/technicals/${encodeURIComponent(resolution.ticker)}`,
+        );
+        const technical = technicalResult.data;
+
+        if (!technicalResult.response.ok || !technical?.ok) {
+          return NextResponse.json(
+            {
+              detail:
+                technical && !technical.ok
+                  ? technical.error
+                  : "Technicals: insufficient data — section withheld.",
+            },
+            { status: 422 },
+          );
+        }
+
+        promptLocks.push(formatTechnicalLock(technical));
+      }
+
+      if (typeof body.skill_prompt === "string") {
+        body.skill_prompt = `${promptLocks.join("\n\n")}\n\n${body.skill_prompt}`;
+      }
     }
 
     const userPlan = await getUserPlan(request.headers);
