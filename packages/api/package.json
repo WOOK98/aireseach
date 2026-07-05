@@ -7,7 +7,11 @@
     ".": "./src/index.ts",
     "./env": "./src/env.ts",
     "./utils": "./src/utils/index.ts",
-    "./schema": "./src/schema/index.ts"
+    "./schema": "./src/schema/index.ts",
+    "./report/cache": "./src/modules/report/cache.ts",
+    "./report/entity-resolution": "./src/modules/report/entity-resolution.ts",
+    "./report/technicals": "./src/modules/report/technicals.ts",
+    "./report/yahoo-finance": "./src/modules/report/yahoo-finance.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .cache .turbo dist node_modules",
