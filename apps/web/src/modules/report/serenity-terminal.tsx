@@ -12,6 +12,8 @@ import {
   GitBranch,
   Download,
   FileDown,
+  Menu,
+  X,
 } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 
@@ -1213,6 +1215,7 @@ export const SerenityTerminal = () => {
   const [model, setModel] = useState("deepseek-chat");
   const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com/v1");
   const [running, setRunning] = useState(false);
+  const [mobileSidebar, setMobileSidebar] = useState(false);
   const abortRef = useRef<AbortController[]>([]);
   const resultIdRef = useRef(0);
 
@@ -1349,6 +1352,7 @@ export const SerenityTerminal = () => {
       if (e) e.preventDefault();
       if (!ticker.trim() || (!apiKey && !isPaid) || running) return;
 
+      setMobileSidebar(false);
       setRunning(true);
       abortRef.current = [];
 
@@ -1514,6 +1518,7 @@ export const SerenityTerminal = () => {
       mode: "single" | "industry" = "single",
     ) => {
       if (!apiKey && !isPaid) return;
+      setMobileSidebar(false);
       setTicker(query);
       if (!multiMode) setActiveSkill(skillId);
       // Run directly
@@ -1543,6 +1548,7 @@ export const SerenityTerminal = () => {
   const runIndustryQuery = useCallback(
     (query: string) => {
       if (!apiKey && !isPaid) return;
+      setMobileSidebar(false);
       setTicker(query);
       setActiveTab("examples");
 
@@ -1587,8 +1593,37 @@ export const SerenityTerminal = () => {
 
   return (
     <div className="flex min-h-[calc(100vh-56px)]">
+      {/* ── Mobile Menu Button ────────────────────────────── */}
+      <button
+        type="button"
+        onClick={() => setMobileSidebar(!mobileSidebar)}
+        className="fixed top-4 left-4 z-50 rounded-md border border-[#d8d2c8] bg-[#fffdf8] p-2 md:hidden"
+      >
+        {mobileSidebar ? (
+          <X className="size-5 text-[#1a1814]" />
+        ) : (
+          <Menu className="size-5 text-[#1a1814]" />
+        )}
+      </button>
+
+      {/* ── Mobile Backdrop ─────────────────────────────────── */}
+      {mobileSidebar && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={() => setMobileSidebar(false)}
+          onKeyDown={(e) => e.key === "Escape" && setMobileSidebar(false)}
+          role="button"
+          tabIndex={0}
+          aria-label="Close sidebar"
+        />
+      )}
+
       {/* ── Left Panel ─────────────────────────────────────── */}
-      <aside className="w-[280px] shrink-0 border-r border-[#e0dbd2] bg-[#faf9f6] p-6">
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-[280px] shrink-0 border-r border-[#e0dbd2] bg-[#faf9f6] p-6 transition-transform md:relative md:translate-x-0 ${
+          mobileSidebar ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="space-y-6">
           {/* Ticker Input */}
           <div>
@@ -1814,11 +1849,11 @@ export const SerenityTerminal = () => {
       </aside>
 
       {/* ── Right Panel ────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto bg-[#faf9f6] p-10">
+      <main className="flex-1 overflow-y-auto bg-[#faf9f6] p-4 sm:p-6 lg:p-10">
         {/* Hero */}
         {results.length === 0 && (
           <div>
-            <h1 className="mb-2 font-serif text-[30px] leading-tight font-light text-[#1a1814]">
+            <h1 className="mb-2 font-serif text-2xl leading-tight font-light text-[#1a1814] sm:text-[30px]">
               Supply Chain Bottleneck Analysis
               <br />
               AI · Semiconductors · Photonics
@@ -1871,7 +1906,7 @@ export const SerenityTerminal = () => {
                 <span className="text-[#9a9690]"> → </span>Indium Feedstock
                 (Vital)
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {[
                   { label: "Data source", value: "5,582 tweets" },
                   { label: "30-day directional accuracy", value: "~61%" },
@@ -1896,7 +1931,7 @@ export const SerenityTerminal = () => {
             <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
               Quick Analysis Examples
             </div>
-            <div className="mb-8 grid grid-cols-3 gap-2.5">
+            <div className="mb-8 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {QUICK_EXAMPLES.map((ex) => (
                 <button
                   key={ex.query}
@@ -1923,7 +1958,7 @@ export const SerenityTerminal = () => {
         {activeTab === "chain" && (
           <div>
             {ticker.trim() && (
-              <div className="mb-4 flex items-center justify-between rounded-lg border border-[#e8c87a] bg-[#fdf5e8] px-4 py-3">
+              <div className="mb-4 flex flex-col gap-2 rounded-lg border border-[#e8c87a] bg-[#fdf5e8] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="font-mono text-[11px] text-[#7a4f00]">
                   ⚠️ Below is Serenity's AI/semiconductor fixed universe, not
                   the supply chain for "{ticker.trim()}"
@@ -2205,7 +2240,7 @@ export const SerenityTerminal = () => {
         {activeTab === "matrix" && (
           <div>
             {ticker.trim() && (
-              <div className="mb-4 flex items-center justify-between rounded-lg border border-[#e8c87a] bg-[#fdf5e8] px-4 py-3">
+              <div className="mb-4 flex flex-col gap-2 rounded-lg border border-[#e8c87a] bg-[#fdf5e8] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="font-mono text-[11px] text-[#7a4f00]">
                   ⚠️ Below is Serenity's fixed conviction matrix, not related
                   tickers for "{ticker.trim()}"
@@ -2336,7 +2371,7 @@ export const SerenityTerminal = () => {
 
             return (
               <div key={result.id} className="mb-8">
-                <div className="mb-1 flex flex-wrap items-center gap-3">
+                <div className="mb-1 flex flex-wrap items-center gap-2 sm:gap-3">
                   <span
                     className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-mono text-[10px] tracking-[.05em]"
                     style={{
@@ -2427,7 +2462,7 @@ export const SerenityTerminal = () => {
                       <button
                         type="button"
                         onClick={() => runIndustryQuery(result.query)}
-                        className="mt-3 rounded border border-[#1a1814] bg-[#1a1814] px-3 py-1.5 font-mono text-[11px] text-[#fffdf8] transition-colors hover:bg-[#3a332a]"
+                        className="mt-3 w-full rounded border border-[#1a1814] bg-[#1a1814] px-3 py-2 font-mono text-[11px] text-[#fffdf8] transition-colors hover:bg-[#3a332a] sm:w-auto sm:py-1.5"
                       >
                         Run industry research on "{result.query}" →
                       </button>
