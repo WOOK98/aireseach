@@ -70,6 +70,7 @@ const normalizeTicker = (input: string) =>
   normalizeInput(input).replace(/\s+/g, "").toUpperCase();
 
 const isLikelyTicker = (input: string) =>
+  !/\s/.test(normalizeInput(input)) &&
   tickerPattern.test(normalizeTicker(input));
 
 const toCandidate = (quote: YahooSearchQuote): EntityCandidate | null => {
