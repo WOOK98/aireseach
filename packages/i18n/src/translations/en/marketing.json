@@ -209,7 +209,14 @@
       "product": "investment",
       "development": "AI tools",
       "prototype": "product updates",
-      "launch": "guides"
+      "launch": "guides",
+      "ai-tools": "AI tools",
+      "comparison": "comparison",
+      "research": "research",
+      "seo": "SEO",
+      "geo": "geo",
+      "llm": "LLM",
+      "tutorial": "tutorial"
     }
   },
   "api": {
