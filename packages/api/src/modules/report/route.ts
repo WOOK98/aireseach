@@ -18,8 +18,12 @@ import { aiUsageLog } from "@workspace/db/schema";
 import { db } from "@workspace/db/server";
 
 import { env } from "../../env";
+import {
+  cachedFetchTechnicalMetrics,
+  cachedFetchYahooFinance,
+  cachedResolveEntity,
+} from "./data-sources";
 import { formatImaKnowledgeForPrompt, searchImaKnowledge } from "./knowledge";
-import { fetchYahooFinance } from "./yahoo-finance";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
 
@@ -100,8 +104,52 @@ reportRoute.get(
     const { ticker } = c.req.valid("param");
 
     try {
-      const metrics = await fetchYahooFinance(ticker.toUpperCase());
+      const metrics = await cachedFetchYahooFinance(ticker.toUpperCase());
       return c.json({ ok: true, data: metrics });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      return c.json({ ok: false, error: message }, 422);
+    }
+  },
+);
+
+// ─── GET /api/report/resolve/:query ──────────────────────────────────────────
+// Resolve user input to exactly one listed entity before any AI analysis runs.
+reportRoute.get(
+  "/resolve/:query",
+  zValidator("param", z.object({ query: z.string().min(1).max(120) })),
+  async (c) => {
+    const { query } = c.req.valid("param");
+    const resolution = await cachedResolveEntity(query);
+
+    return c.json(resolution, resolution.ok ? 200 : 422);
+  },
+);
+
+// ─── GET /api/report/technicals/:ticker ──────────────────────────────────────
+// Deterministic technical indicators. AI may interpret these numbers, not make
+// them up.
+reportRoute.get(
+  "/technicals/:ticker",
+  zValidator("param", z.object({ ticker: z.string().min(1).max(15) })),
+  async (c) => {
+    const { ticker } = c.req.valid("param");
+    const resolution = await cachedResolveEntity(ticker);
+
+    if (!resolution.ok) {
+      return c.json(
+        {
+          ok: false,
+          error: resolution.message,
+          resolution,
+        },
+        422,
+      );
+    }
+
+    try {
+      const metrics = await cachedFetchTechnicalMetrics(resolution.ticker);
+      return c.json({ ok: true, entity: resolution, data: metrics });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       return c.json({ ok: false, error: message }, 422);
