@@ -194,34 +194,37 @@ export async function POST(request: Request) {
       );
     }
 
-    const resolutionResult = await fetchJson<EntityResolution>(
-      `${origin}/api/report/resolve/${encodeURIComponent(input)}`,
-    );
-    const resolution = resolutionResult.data;
+    const requestedMode =
+      typeof body.mode === "string" ? body.mode.toLowerCase() : "single";
 
-    if (!resolution) {
-      return NextResponse.json(
-        {
-          detail: "Unable to resolve the requested ticker.",
-          resolution,
-        },
-        { status: 422 },
+    if (requestedMode === "industry") {
+      body.ticker = "";
+      body.research_target = input;
+      body.mode = "industry";
+      body.company_name = "";
+      body.exchange = "";
+      body.entity_lock = "";
+      body.skill_id = "industry";
+      body.skill_prompt = `${buildIndustryPrompt(input)}\n\n${
+        typeof body.skill_prompt === "string" ? body.skill_prompt : ""
+      }`;
+    } else {
+      const resolutionResult = await fetchJson<EntityResolution>(
+        `${origin}/api/report/resolve/${encodeURIComponent(input)}`,
       );
-    }
+      const resolution = resolutionResult.data;
 
-    if (!resolution.ok) {
-      if (resolution.mode === "industry") {
-        body.ticker = input;
-        body.research_target = input;
-        body.mode = "industry";
-        body.company_name = "";
-        body.exchange = "";
-        body.entity_lock = "";
-        body.skill_id = "industry";
-        body.skill_prompt = `${buildIndustryPrompt(input)}\n\n${
-          typeof body.skill_prompt === "string" ? body.skill_prompt : ""
-        }`;
-      } else {
+      if (!resolution) {
+        return NextResponse.json(
+          {
+            detail: "Unable to resolve the requested ticker.",
+            resolution,
+          },
+          { status: 422 },
+        );
+      }
+
+      if (!resolution.ok) {
         const candidateText =
           "candidates" in resolution && resolution.candidates?.length
             ? ` Candidates: ${resolution.candidates
@@ -245,7 +248,7 @@ export async function POST(request: Request) {
           { status: 422 },
         );
       }
-    } else {
+
       body.ticker = resolution.ticker;
       body.company_name = resolution.companyName;
       body.entity_lock = resolution.entityLock;
