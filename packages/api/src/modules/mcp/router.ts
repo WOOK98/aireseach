@@ -2,10 +2,15 @@ import { Hono } from "hono";
 
 import { env } from "../../env";
 import {
+  cachedFetchEtfHoldings,
   cachedFetchTechnicalMetrics,
   cachedFetchYahooFinance,
   cachedResolveEntity,
 } from "../report/data-sources";
+import {
+  buildIndustryUniverse,
+  formatIndustryContext,
+} from "../report/industry";
 import { formatTechnicalContext } from "../report/technicals";
 
 type JsonRpcId = string | number | null;
@@ -77,6 +82,27 @@ const tools = [
         },
       },
       required: ["ticker"],
+    },
+  },
+  {
+    name: "get_etf_holdings",
+    description:
+      'Return ETF constituent holdings. Dual mode: pass a theme phrase ("humanoid robot") to resolve ETF candidates and return a merged universe; pass a single ETF ticker ("HUMN") for raw holdings.',
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            'Theme phrase ("humanoid robot") or ETF ticker ("HUMN").',
+        },
+        includeContext: {
+          type: "boolean",
+          description:
+            "Include a prompt-ready INDUSTRY CONTEXT block for analysis agents.",
+        },
+      },
+      required: ["query"],
     },
   },
 ];
@@ -200,6 +226,66 @@ const callTool = async (params: ToolCallParams) => {
       });
     }
 
+    case "get_etf_holdings": {
+      const query = getStringArgument(args, "query");
+      if (!query) throw new Error("get_etf_holdings requires query.");
+
+      const entity = await cachedResolveEntity(query);
+
+      // Single ETF ticker — return raw holdings
+      if (entity.ok && entity.quoteType === "ETF") {
+        const holdings = await cachedFetchEtfHoldings(entity.ticker);
+        return textContent({
+          ok: true,
+          mode: "single-etf",
+          etf: {
+            ticker: entity.ticker,
+            companyName: entity.companyName,
+          },
+          holdings,
+        });
+      }
+
+      // Already resolved to a non-ETF (equity) — hint the caller
+      if (entity.ok && entity.quoteType !== "ETF") {
+        return textContent({
+          ok: false,
+          hint: "equity_ticker",
+          message: `"${query}" resolved to ${entity.ticker} (${entity.companyName}), which is an equity, not an ETF. Use get_financials or get_technicals for equity analysis.`,
+        });
+      }
+
+      // Theme / industry query — resolve candidates, build universe
+      const candidates = "candidates" in entity ? entity.candidates : [];
+      const universe = await buildIndustryUniverse(
+        query,
+        candidates,
+        cachedFetchEtfHoldings,
+      );
+
+      if (!universe) {
+        return textContent({
+          ok: false,
+          mode: "no-etf-data",
+          message: `No theme-ETF holdings found for "${query}". Candidates returned ${candidates.length} result(s), but none were ETFs with accessible holdings.`,
+          candidates: candidates.map((c) => ({
+            ticker: c.ticker,
+            name: c.companyName,
+            type: c.quoteType,
+          })),
+        });
+      }
+
+      return textContent({
+        ok: true,
+        mode: "industry",
+        universe,
+        ...(args.includeContext === true
+          ? { industryContext: formatIndustryContext(universe) }
+          : {}),
+      });
+    }
+
     default:
       throw new Error(`Unknown tool: ${params.name ?? "missing name"}`);
   }
@@ -215,7 +301,7 @@ const handleRequest = async (request: JsonRpcRequest) => {
         },
         serverInfo: {
           name: "airesearch-market-data",
-          version: "0.2.0",
+          version: "0.3.0",
         },
       });
 
