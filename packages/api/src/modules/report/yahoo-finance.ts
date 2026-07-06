@@ -21,7 +21,7 @@ let cachedCrumb: string | null = null;
 let cachedCookies: string | null = null;
 let crumbExpiry = 0;
 
-async function getYahooCrumb(): Promise<{
+export async function getYahooCrumb(): Promise<{
   crumb: string | null;
   cookies: string | null;
 }> {
