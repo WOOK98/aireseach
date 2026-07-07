@@ -135,11 +135,17 @@ const getToken = (authorization: string | undefined) => {
   return authorization;
 };
 
+const normalizeKey = (raw: string) => {
+  const eq = raw.indexOf("=");
+  return eq > 0 ? raw.slice(eq + 1) : raw;
+};
+
 const isAuthorized = (authorization: string | undefined) => {
   const configured = (env.MCP_API_KEYS ?? "")
     .split(",")
     .map((key) => key.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map(normalizeKey);
 
   if (configured.length === 0) return false;
   return configured.includes(getToken(authorization));
