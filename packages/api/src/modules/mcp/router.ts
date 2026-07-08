@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 
+import { logger } from "@workspace/shared/logger";
 import { env } from "../../env";
 import {
   cachedFetchEtfHoldings,
@@ -140,16 +141,58 @@ const normalizeKey = (raw: string) => {
   return eq > 0 ? raw.slice(eq + 1) : raw;
 };
 
-const isAuthorized = (authorization: string | undefined) => {
-  const configured = (env.MCP_API_KEYS ?? "")
+const extractKeyName = (raw: string) => {
+  const eq = raw.indexOf("=");
+  return eq > 0 ? raw.slice(0, eq) : "unknown";
+};
+
+const isAuthorized = (
+  authorization: string | undefined,
+): { authorized: boolean; keyName?: string } => {
+  const entries = (env.MCP_API_KEYS ?? "")
     .split(",")
     .map((key) => key.trim())
-    .filter(Boolean)
-    .map(normalizeKey);
+    .filter(Boolean);
 
-  if (configured.length === 0) return false;
-  return configured.includes(getToken(authorization));
+  if (entries.length === 0) return { authorized: false };
+
+  const token = getToken(authorization);
+  for (const entry of entries) {
+    if (normalizeKey(entry) === token) {
+      return { authorized: true, keyName: extractKeyName(entry) };
+    }
+  }
+  return { authorized: false };
 };
+
+// In-memory sliding window rate limit.
+// NOTE: On Vercel serverless each function instance has its own memory,
+// so this is a best-effort guard, not a distributed rate limit.
+// For real abuse protection, swap in @upstash/ratelimit + Redis.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 60;
+const rateLimitBuckets = new Map<
+  string,
+  { timestamps: number[] }
+>();
+
+const checkRateLimit = (keyName: string): boolean => {
+  const now = Date.now();
+  const bucket = rateLimitBuckets.get(keyName);
+  if (!bucket) {
+    rateLimitBuckets.set(keyName, { timestamps: [now] });
+    return true;
+  }
+  // Prune expired entries
+  bucket.timestamps = bucket.timestamps.filter(
+    (t) => now - t < RATE_LIMIT_WINDOW_MS,
+  );
+  if (bucket.timestamps.length >= RATE_LIMIT_MAX) return false;
+  bucket.timestamps.push(now);
+  return true;
+};
+
+const MAX_BATCH_SIZE = 10;
 
 const getStringArgument = (
   args: Record<string, unknown>,
@@ -342,10 +385,25 @@ export const mcpRouter = new Hono()
     }),
   )
   .post("/", async (c) => {
-    if (!isAuthorized(c.req.header("authorization"))) {
+    const clientIp =
+      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+      c.req.header("x-real-ip") ??
+      "unknown";
+
+    const auth = isAuthorized(c.req.header("authorization"));
+    if (!auth.authorized) {
+      logger.warn("MCP auth failed", { ip: clientIp });
       return c.json(
         jsonRpcError(null, -32001, "Unauthorized MCP request."),
         401,
+      );
+    }
+
+    if (!checkRateLimit(auth.keyName!)) {
+      logger.warn("MCP rate limited", { keyName: auth.keyName, ip: clientIp });
+      return c.json(
+        jsonRpcError(null, -32003, "Rate limit exceeded."),
+        429,
       );
     }
 
@@ -359,6 +417,16 @@ export const mcpRouter = new Hono()
     }
 
     if (Array.isArray(body)) {
+      if (body.length > MAX_BATCH_SIZE) {
+        return c.json(
+          jsonRpcError(
+            null,
+            -32600,
+            `Batch size ${body.length} exceeds max ${MAX_BATCH_SIZE}.`,
+          ),
+          400,
+        );
+      }
       const results = (
         await Promise.all(body.map((request) => handleRequest(request)))
       ).filter((result) => result !== null);
