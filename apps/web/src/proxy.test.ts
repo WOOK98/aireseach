@@ -12,8 +12,8 @@ const createRequest = (pathname: string, authenticated = false) =>
       get: (name: string) =>
         authenticated &&
         [
-          "better-auth.session_token",
-          "__Secure-better-auth.session_token",
+          "turbostarter.session_token",
+          "__Secure-turbostarter.session_token",
         ].includes(name)
           ? { value: "session-token" }
           : undefined,
@@ -51,15 +51,12 @@ describe("proxy auth redirects", () => {
     expect(response).toBeNull();
   });
 
-  it("redirects authenticated users away from auth pages", () => {
+  it("allows auth pages even when an old session cookie is present", () => {
     const response = getAuthRedirectResponse(
       createRequest("/auth/login", true),
     );
 
-    expect(response?.status).toBe(307);
-    expect(response?.headers.get("location")).toBe(
-      "https://airesearchs.com/dashboard",
-    );
+    expect(response).toBeNull();
   });
 
   it("allows public marketing pages", () => {

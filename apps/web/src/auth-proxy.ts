@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import type { NextRequest } from "next/server";
 
-const AUTH_ROUTES = ["/auth/login", "/auth/register", "/auth/password"];
 const PROTECTED_PREFIXES = ["/dashboard"];
 
 const normalizePathname = (pathname: string) => {
@@ -36,10 +35,6 @@ export const getAuthRedirectResponse = (request: NextRequest) => {
     loginUrl.searchParams.set("redirectTo", pathname);
 
     return NextResponse.redirect(loginUrl);
-  }
-
-  if (matchesRoute(normalizedPathname, AUTH_ROUTES) && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return null;
