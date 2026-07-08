@@ -14,8 +14,12 @@ import {
   FileDown,
   Menu,
   X,
+  Clock3,
+  CheckCircle2,
+  AlertTriangle,
+  Lock,
 } from "lucide-react";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 
 import { Input } from "@workspace/ui-web/input";
 
@@ -543,15 +547,15 @@ Supply chain: hyperscaler capex → ASICs/TPUs → optical transceivers → CW/D
 7. ATM/dilution disqualifier: IREN $6B ATM at $11.7B MC. SIVE 2.5% listing dilution = positive.
 8. Financing quality spectrum: NBIS > CIFR/WULF > IREN > CRWV.
 9. Short squeeze (profitable-grower only): 35%+ SI on profitable growing company.
-10. Tariff/macro-shock-as-buy: algo risk-off on multi-year committed capex = entry.
+10. Tariff/macro-shock stress test: distinguish algo risk-off from fundamental thesis damage.
 11. Institutional lag: retail discovers chokepoints 4-6 weeks before institutions.
 12. Vega/IV mispricing: EWY 2028 leaps at 32% IV vs 50%+ Samsung/SK Hynix.
-13. Conviction tiering: S/A/B/C/D/F. Size to conviction AND binary risk.
+13. Thesis-quality tiering: S/A/B/C/D/F for evidence completeness and binary risk only.
 14. Anti-patterns: standalone TA, conflating supply chain layers, insider sales as bear signal, Reddit/X sentiment.
 
-KEY STANCES (May 2026 — theses decay, confirm prices):
-HIGHEST CONVICTION LONGS: SIVE (#1, CW/DFB laser, ~$2.6B MC, Jabil 1.6T, MRVL Celestial, Ayar Labs), AXTI (InP substrate, ~40% global, China ban = monopoly, +310%), AAOI (only US vertically integrated transceiver, $4.35B ARR target), NBIS (S-tier neocloud, 71.2% GAAP GM, NVDA+convertibles, $17B MSFT), LITE (OCS monopoly, structural long), COHR (safer compounder), IQE (high-risk binary bull), EWY (2028 LEAPS IV mispricing), TSM (safest compounder), SNDK (NAND compounder).
-BEARISH: IREN (flipped bear, $6B ATM, 51% dilution), CRWV (F-tier, heavy debt, OpenAI counterparty), ORCL (Avoid, OpenAI contagion), PLTR (Short, profit = mostly interest income), POET (downgraded, MRVL terminated Apr 27), OKLO/QBTS/IONQ (Strong Sell, pre-revenue quantum), SNAP (flipped bear, SBC masking negative FCF).
+KEY THESIS PATTERNS (May 2026 — theses decay, confirm evidence):
+HIGH-QUALITY EVIDENCE PATTERNS: SIVE (CW/DFB laser chokepoint, ~$2.6B MC, Jabil 1.6T, MRVL Celestial, Ayar Labs), AXTI (InP substrate, ~40% global, China ban = supply constraint, +310%), AAOI (US vertically integrated transceiver, $4.35B ARR target), NBIS (neocloud, 71.2% GAAP GM, NVDA+convertibles, $17B MSFT), LITE (OCS monopoly pattern), COHR (diversified photonics), IQE (binary substrate exposure), EWY (2028 LEAPS IV spread), TSM (scale compounder), SNDK (NAND cycle).
+INVALIDATION PATTERNS: IREN ($6B ATM, 51% dilution), CRWV (heavy debt, OpenAI counterparty concentration), ORCL (OpenAI contagion), PLTR (profit mostly interest income), POET (MRVL terminated Apr 27), OKLO/QBTS/IONQ (pre-revenue quantum evidence gap), SNAP (SBC masking negative FCF).
 
 CALIBRATION: ~61% 30-day directional accuracy. ~75-85% for mature supply-chain theses. Returns self-reported, unverified, survivorship bias.
 
@@ -616,27 +620,28 @@ const YEARS = [1, 2, 3, 5, 10];
 const QUICK_EXAMPLES: QuickExample[] = [
   {
     skill: "serenity",
-    text: "$SIVE CPO laser supply chain",
-    query: "$SIVE Sivers Semiconductors CPO laser bottleneck deep dive",
-    label: "Serenity · #1 conviction",
+    text: "MU HBM supply chain",
+    query: "MU",
+    label: "ENTITY LOCK · NASDAQ",
   },
   {
     skill: "serenity",
-    text: "$AXTI InP substrate control",
-    query: "$AXTI Strait of AXTI InP substrate analysis",
-    label: "Serenity · Flagship bottleneck",
+    text: "LITE ambiguity demo",
+    query: "LITE",
+    label: "Resolve before run",
   },
   {
     skill: "serenity",
-    text: "$NBIS Neocloud quality",
-    query: "$NBIS Neocloud financing quality comparison",
-    label: "Serenity · Financing spectrum",
+    text: "Liquid Silicone Rubber",
+    query: "liquid silicone rubber",
+    label: "Industry Mode",
+    mode: "industry",
   },
   {
     skill: "fundamental",
-    text: "$AAOI fundamental deep dive",
-    query: "$AAOI US-manufactured transceiver fundamentals",
-    label: "Fundamental",
+    text: "$AXTI InP substrate control",
+    query: "$AXTI Strait of AXTI InP substrate analysis",
+    label: "Morning brief follow-up",
   },
   {
     skill: "macro",
@@ -655,10 +660,11 @@ const QUICK_EXAMPLES: QuickExample[] = [
 ];
 
 const RECENT = [
+  "MU",
+  "LITE",
+  "liquid silicone rubber",
   "$SIVE CPO laser bottleneck analysis",
   "$AXTI InP substrate supply chain",
-  "$NBIS Neocloud financing quality",
-  "$AAOI US-manufactured transceiver",
 ];
 
 // ─── Conviction Matrix ───────────────────────────────────────────
@@ -748,7 +754,7 @@ const MATRIX: Record<string, MatrixTicker[]> = {
       t: "CRWV",
       tier: "F",
       dir: "bear",
-      desc: "F-tier · Avoid",
+      desc: "F-tier · Invalidation",
       q: "$CRWV F-tier risk analysis",
     },
   ],
@@ -792,7 +798,7 @@ const MATRIX: Record<string, MatrixTicker[]> = {
       t: "ORCL",
       tier: "D",
       dir: "bear",
-      desc: "OpenAI contagion · Avoid",
+      desc: "OpenAI contagion · Invalidation",
       q: "$ORCL Oracle risk analysis",
     },
   ],
@@ -1013,7 +1019,7 @@ const NEOCLOUD_NODES: NeocloudNode[] = [
   {
     x: 370,
     t: "CRWV",
-    sub: "F-tier · Avoid",
+    sub: "F-tier · Invalidation",
     fi: "#fdf0f0",
     st: "#f5b8b8",
     c: "#9b2c2c",
@@ -1024,13 +1030,153 @@ const NEOCLOUD_NODES: NeocloudNode[] = [
 type SubTab = "examples" | "chain" | "matrix" | "calibration";
 
 const SUB_TABS: { id: SubTab; label: string }[] = [
-  { id: "examples", label: "Quick Start" },
-  { id: "chain", label: "Supply Chain (Fixed)" },
-  { id: "matrix", label: "Conviction Matrix (Fixed)" },
+  { id: "examples", label: "Morning Brief" },
+  { id: "chain", label: "Supply Chain" },
+  { id: "matrix", label: "Decision Lab" },
   { id: "calibration", label: "Track Record" },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────
+
+type EntityResolution =
+  | {
+      state: "empty" | "checking" | "no-match";
+      label: string;
+      detail: string;
+    }
+  | {
+      state: "locked";
+      label: string;
+      detail: string;
+      runLabel: string;
+      mode: "single";
+    }
+  | {
+      state: "theme";
+      label: string;
+      detail: string;
+      runLabel: string;
+      mode: "industry";
+    }
+  | {
+      state: "ambiguous";
+      label: string;
+      detail: string;
+      options: Array<{
+        id: string;
+        label: string;
+        detail: string;
+        mode: "single" | "industry";
+      }>;
+    };
+
+function resolveEntityDemo(
+  rawInput: string,
+  selectedId: string | null,
+): EntityResolution {
+  const input = rawInput.trim();
+  const normalized = input.replace(/^\$/, "").toLowerCase();
+
+  if (!input) {
+    return {
+      state: "empty",
+      label: "ENTITY LOCK",
+      detail: "Type a ticker, company, sector, or material.",
+    };
+  }
+
+  if (normalized === "lite" && !selectedId) {
+    return {
+      state: "ambiguous",
+      label: "AMBIGUOUS",
+      detail: "LITE can resolve to a listed issuer or remain a theme query.",
+      options: [
+        {
+          id: "lite-equity",
+          label: "Lumentum Holdings · NASDAQ LITE",
+          detail: "Listed entity deep dive",
+          mode: "single",
+        },
+        {
+          id: "lite-theme",
+          label: "Treat LITE as a theme",
+          detail: "Industry Mode universe builder",
+          mode: "industry",
+        },
+      ],
+    };
+  }
+
+  if (normalized === "lite" && selectedId === "lite-theme") {
+    return {
+      state: "theme",
+      label: "THEME LOCK · LITE",
+      detail:
+        "Industry Mode will build a value-chain universe before analysis.",
+      runLabel: "Run industry deep dive",
+      mode: "industry",
+    };
+  }
+
+  if (normalized === "liquid silicone rubber") {
+    return {
+      state: "theme",
+      label: "THEME LOCK · Liquid Silicone Rubber",
+      detail: "Industry Mode will build the LSR value chain and monitor panel.",
+      runLabel: "Run industry deep dive",
+      mode: "industry",
+    };
+  }
+
+  const known: Record<
+    string,
+    { name: string; exchange: string; ticker: string }
+  > = {
+    mu: { name: "Micron Technology", exchange: "NASDAQ", ticker: "MU" },
+    "000660": { name: "SK hynix Inc.", exchange: "KRX", ticker: "000660" },
+    sive: { name: "Sivers Semiconductors", exchange: "STO", ticker: "SIVE" },
+    axti: { name: "AXT Inc.", exchange: "NASDAQ", ticker: "AXTI" },
+    nbis: { name: "Nebius Group", exchange: "NASDAQ", ticker: "NBIS" },
+    aaoi: {
+      name: "Applied Optoelectronics",
+      exchange: "NASDAQ",
+      ticker: "AAOI",
+    },
+    lite: { name: "Lumentum Holdings", exchange: "NASDAQ", ticker: "LITE" },
+  };
+  const resolved =
+    known[normalized] ?? known[input.replace(/^\$/, "").toLowerCase()];
+
+  if (resolved || /^[A-Z]{1,5}$/.test(input.replace(/^\$/, ""))) {
+    const entity = resolved ?? {
+      name: input.replace(/^\$/, "").toUpperCase(),
+      exchange: "Listed entity",
+      ticker: input.replace(/^\$/, "").toUpperCase(),
+    };
+    return {
+      state: "locked",
+      label: `ENTITY LOCK · ${entity.name}`,
+      detail: `${entity.exchange} ${entity.ticker} ✓`,
+      runLabel: "Run deep dive",
+      mode: "single",
+    };
+  }
+
+  if (input.length < 4) {
+    return {
+      state: "checking",
+      label: "CHECKING",
+      detail: "Keep typing to resolve the entity.",
+    };
+  }
+
+  return {
+    state: "no-match",
+    label: "NO MATCH",
+    detail:
+      "Choose a listed entity or an industry/theme phrase before running.",
+  };
+}
 
 function getSkillById(id: string): Skill | undefined {
   return SKILLS.find((s) => s.id === id);
@@ -1206,22 +1352,34 @@ export const SerenityTerminal = () => {
   const { plan, isPaid } = useUserPlan();
   const [ticker, setTicker] = useState("");
   const [year, setYear] = useState(3);
-  const [multiMode, setMultiMode] = useState(false);
+  const [multiMode, _setMultiMode] = useState(false);
   const [activeSkill, setActiveSkill] = useState("serenity");
   const [checkedSkills, setCheckedSkills] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<SubTab>("examples");
   const [results, setResults] = useState<AnalysisResult[]>([]);
+  const [selectedResolution, setSelectedResolution] = useState<string | null>(
+    null,
+  );
   const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("deepseek-chat");
-  const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com/v1");
+  const [model, _setModel] = useState("deepseek-chat");
+  const [baseUrl, _setBaseUrl] = useState("https://api.deepseek.com/v1");
   const [running, setRunning] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const abortRef = useRef<AbortController[]>([]);
   const resultIdRef = useRef(0);
+  const entityResolution = useMemo(
+    () => resolveEntityDemo(ticker, selectedResolution),
+    [ticker, selectedResolution],
+  );
+  const canRun =
+    !!ticker.trim() &&
+    (!!apiKey || isPaid) &&
+    !running &&
+    (entityResolution.state === "locked" || entityResolution.state === "theme");
 
   // ─── Skill toggle (single vs parallel) ───────────────────────
 
-  const handleSkillClick = useCallback(
+  const _handleSkillClick = useCallback(
     (skillId: string) => {
       if (multiMode) {
         setCheckedSkills((prev) => {
@@ -1350,7 +1508,7 @@ export const SerenityTerminal = () => {
   const handleSubmit = useCallback(
     async (e?: FormEvent) => {
       if (e) e.preventDefault();
-      if (!ticker.trim() || (!apiKey && !isPaid) || running) return;
+      if (!canRun) return;
 
       setMobileSidebar(false);
       setRunning(true);
@@ -1489,7 +1647,12 @@ export const SerenityTerminal = () => {
           },
           ...prev,
         ]);
-        await runSingle(ticker, activeSkill, id);
+        await runSingle(ticker, activeSkill, id, {
+          mode:
+            entityResolution.state === "theme"
+              ? "industry"
+              : entityResolution.mode,
+        });
       }
 
       setRunning(false);
@@ -1497,8 +1660,6 @@ export const SerenityTerminal = () => {
     [
       ticker,
       apiKey,
-      isPaid,
-      running,
       multiMode,
       checkedSkills,
       activeSkill,
@@ -1506,6 +1667,8 @@ export const SerenityTerminal = () => {
       baseUrl,
       model,
       runSingle,
+      canRun,
+      entityResolution,
     ],
   );
 
@@ -1579,6 +1742,7 @@ export const SerenityTerminal = () => {
 
   const fillTicker = useCallback((q: string) => {
     setTicker(q);
+    setSelectedResolution(null);
   }, []);
 
   // ─── Stop all ────────────────────────────────────────────────
@@ -1624,26 +1788,141 @@ export const SerenityTerminal = () => {
           mobileSidebar ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="space-y-6">
+        <div className="space-y-5">
+          {/* Watchlist */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <div className="font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
+                Watchlist
+              </div>
+              <span className="font-mono text-[10px] text-[#9a9690]">
+                CSV ready
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {["MU", "000660", "LITE", "AXTI", "LSR"].map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => {
+                    setSelectedResolution(null);
+                    setTicker(item === "LSR" ? "liquid silicone rubber" : item);
+                  }}
+                  className="rounded-full border border-[#d8d2c8] bg-[#fffdf8] px-3 py-1.5 font-mono text-[11px] text-[#1a1814] transition-colors hover:border-[#1a3a5c] hover:bg-[#eef5fb]"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Ticker Input */}
           <div>
             <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
               Research target
             </div>
             <input
-              placeholder="Ticker / Sector / Question"
+              placeholder="Try MU, LITE, or liquid silicone rubber"
               value={ticker}
-              onChange={(e) => setTicker(e.target.value)}
+              onChange={(e) => {
+                setSelectedResolution(null);
+                setTicker(e.target.value);
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit(e as never)}
               disabled={running}
               className="w-full border-b border-[#ccc8be] bg-transparent pb-1.5 font-serif text-xl font-light text-[#1a1814] transition-colors outline-none focus:border-[#1a3a5c]"
             />
           </div>
 
-          {/* Year Grid */}
-          <div>
-            <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-              Lookback window
+          {/* Entity Lock */}
+          <div
+            className={`rounded-lg border p-3 ${
+              entityResolution.state === "locked"
+                ? "border-[#9dcfb8] bg-[#edf7f2]"
+                : entityResolution.state === "theme"
+                  ? "border-[#b8cedd] bg-[#e8eef5]"
+                  : entityResolution.state === "ambiguous"
+                    ? "border-[#e8c87a] bg-[#fdf5e8]"
+                    : entityResolution.state === "no-match"
+                      ? "border-[#f5b8b8] bg-[#fdf0f0]"
+                      : "border-[#e0dbd2] bg-[#fffdf8]"
+            }`}
+          >
+            <div className="mb-1.5 flex items-center gap-2 font-mono text-[10px] tracking-[.1em] uppercase">
+              {entityResolution.state === "locked" ||
+              entityResolution.state === "theme" ? (
+                <CheckCircle2 className="size-3.5 text-[#1a5c3a]" />
+              ) : entityResolution.state === "ambiguous" ? (
+                <AlertTriangle className="size-3.5 text-[#7a4f00]" />
+              ) : (
+                <Lock className="size-3.5 text-[#9a9690]" />
+              )}
+              <span
+                className={
+                  entityResolution.state === "ambiguous"
+                    ? "text-[#7a4f00]"
+                    : entityResolution.state === "no-match"
+                      ? "text-[#9b2c2c]"
+                      : "text-[#1a3a5c]"
+                }
+              >
+                {entityResolution.label}
+              </span>
+            </div>
+            <p className="font-mono text-[11px] leading-relaxed text-[#5a5650]">
+              {entityResolution.detail}
+            </p>
+            {entityResolution.state === "ambiguous" && (
+              <div className="mt-3 space-y-1.5">
+                {entityResolution.options.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setSelectedResolution(option.id)}
+                    className="w-full rounded border border-[#e8c87a] bg-white px-2.5 py-2 text-left transition-colors hover:bg-[#fff8e8]"
+                  >
+                    <div className="font-mono text-[11px] text-[#1a1814]">
+                      {option.label}
+                    </div>
+                    <div className="font-mono text-[10px] text-[#9a9690]">
+                      {option.detail}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Run Button */}
+          <button
+            type="button"
+            onClick={running ? handleStop : handleSubmit}
+            disabled={!canRun}
+            className={`w-full rounded py-3 font-mono text-xs tracking-[.08em] transition-all ${
+              running
+                ? "border border-[#1a1814] bg-[#faf9f6] text-[#1a1814]"
+                : "bg-[#1a1814] text-[#faf9f6] hover:bg-[#2d2b28] disabled:bg-[#9a9690]"
+            }`}
+          >
+            {running
+              ? "Analyzing..."
+              : entityResolution.state === "locked" ||
+                  entityResolution.state === "theme"
+                ? entityResolution.runLabel
+                : "Resolve entity first"}
+          </button>
+
+          {/* Advanced */}
+          <div className="rounded-lg border border-[#e0dbd2] bg-[#fffdf8] p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
+                Advanced
+              </div>
+              <span className="font-mono text-[10px] text-[#1a5c3a]">
+                {isPaid
+                  ? `Hosted ${plan === "business" ? "Business" : "Pro"} key`
+                  : "Settings required"}
+              </span>
             </div>
             <div className="grid grid-cols-5 gap-1.5">
               {YEARS.map((y) => (
@@ -1651,179 +1930,25 @@ export const SerenityTerminal = () => {
                   key={y}
                   type="button"
                   onClick={() => setYear(y)}
-                  className={`flex h-8 items-center justify-center rounded border font-mono text-xs transition-all ${
+                  className={`flex h-7 items-center justify-center rounded border font-mono text-[11px] transition-all ${
                     year === y
                       ? "border-[#1a1814] bg-[#1a1814] text-[#faf9f6]"
                       : "border-[#ccc8be] text-[#5a5650] hover:border-[#5a5650]"
                   }`}
                 >
-                  {y}
+                  {y}Y
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Skills */}
-          <div>
-            <div className="mb-2 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-              Analysis Lens · Skill
-            </div>
-            <div className="space-y-0.5">
-              {SKILLS.map((skill) => {
-                const isActive = multiMode
-                  ? checkedSkills.has(skill.id)
-                  : activeSkill === skill.id;
-                return (
-                  <button
-                    key={skill.id}
-                    type="button"
-                    onClick={() => handleSkillClick(skill.id)}
-                    className={`flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left transition-all ${
-                      isActive
-                        ? skill.id === "serenity"
-                          ? "border border-[#b8cedd] bg-[#e8eef5]"
-                          : "border border-[#e0dbd2] bg-[#f4f2ee]"
-                        : "border border-transparent hover:bg-[#f4f2ee]"
-                    }`}
-                  >
-                    {multiMode && (
-                      <div
-                        className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${
-                          checkedSkills.has(skill.id)
-                            ? "border-[#1a5c3a] bg-[#1a5c3a] text-white"
-                            : "border-[#ccc8be]"
-                        }`}
-                      >
-                        {checkedSkills.has(skill.id) && "✓"}
-                      </div>
-                    )}
-                    <div
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: skill.color }}
-                    />
-                    <span className="flex-1 text-[13px] text-[#1a1814]">
-                      {skill.name}
-                    </span>
-                    <span className="font-mono text-[11px] text-[#9a9690]">
-                      {skill.sub}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Parallel toggle */}
-            <div
-              className={`mt-3 flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 transition-all ${
-                multiMode
-                  ? "border-[#9dcfb8] bg-[#edf7f2]"
-                  : "border-[#e0dbd2] bg-[#f4f2ee]"
-              }`}
-              role="button"
-              tabIndex={0}
-              onClick={() => {
-                setMultiMode(!multiMode);
-                if (multiMode) setCheckedSkills(new Set());
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  setMultiMode(!multiMode);
-                  if (multiMode) setCheckedSkills(new Set());
-                }
-              }}
-            >
-              <span className="text-xs text-[#5a5650]">
-                Multi-Skill Parallel
-              </span>
-              <div
-                className={`relative h-[18px] w-[34px] rounded-full transition-colors ${
-                  multiMode ? "bg-[#1a5c3a]" : "bg-[#ccc8be]"
-                }`}
-              >
-                <div
-                  className="absolute top-[3px] h-3 w-3 rounded-full bg-white shadow-sm transition-all"
-                  style={{ left: multiMode ? 19 : 3 }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Run Button */}
-          <button
-            type="button"
-            onClick={running ? handleStop : handleSubmit}
-            disabled={!ticker.trim() || (!apiKey && !isPaid)}
-            className={`w-full rounded py-3 font-mono text-xs tracking-[.08em] transition-all ${
-              running
-                ? "border border-[#1a1814] bg-[#faf9f6] text-[#1a1814]"
-                : "bg-[#1a1814] text-[#faf9f6] hover:bg-[#2d2b28] disabled:bg-[#9a9690]"
-            }`}
-          >
-            {running ? "Analyzing…" : "Run Analysis"}
-          </button>
-
-          {/* API Key */}
-          {isPaid ? (
-            <div>
-              <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-                API Key
-              </div>
-              <div className="mb-2 flex items-center gap-2 rounded border border-green-200 bg-green-50 px-3 py-2">
-                <span className="font-mono text-xs text-green-700">
-                  {apiKey
-                    ? "Using your request key"
-                    : `Using hosted ${plan === "business" ? "Business" : "Pro"} key`}
-                </span>
-              </div>
+            {!isPaid && (
               <Input
                 type="password"
-                placeholder="Optional fallback key, e.g. sk-..."
+                placeholder="API key fallback"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                className="border-[#ccc8be] bg-transparent font-mono text-xs"
+                className="mt-3 border-[#ccc8be] bg-transparent font-mono text-xs"
               />
-              <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-[#9a9690]">
-                Leave blank to use the hosted key. Add your own key only when
-                the hosted provider is temporarily unavailable.
-              </p>
-            </div>
-          ) : (
-            <div>
-              <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-                API Key
-              </div>
-              <Input
-                type="password"
-                placeholder="sk-..."
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="border-[#ccc8be] bg-transparent font-mono text-xs"
-              />
-            </div>
-          )}
-
-          {/* Model */}
-          <div>
-            <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-              Model
-            </div>
-            <Input
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="border-[#ccc8be] bg-transparent font-mono text-xs"
-            />
-          </div>
-
-          {/* Base URL */}
-          <div>
-            <div className="mb-1.5 font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
-              Base URL
-            </div>
-            <Input
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              className="border-[#ccc8be] bg-transparent font-mono text-xs"
-            />
+            )}
           </div>
 
           {/* Recent */}
@@ -1836,7 +1961,10 @@ export const SerenityTerminal = () => {
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setTicker(r)}
+                  onClick={() => {
+                    setSelectedResolution(null);
+                    setTicker(r);
+                  }}
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[#f4f2ee]"
                 >
                   <div className="h-1 w-1 rounded-full bg-[#9a9690]" />
@@ -1853,17 +1981,61 @@ export const SerenityTerminal = () => {
         {/* Hero */}
         {results.length === 0 && (
           <div>
-            <h1 className="mb-2 font-serif text-2xl leading-tight font-light text-[#1a1814] sm:text-[30px]">
-              Supply Chain Bottleneck Analysis
+            <div className="mb-6 overflow-x-auto">
+              <div className="flex min-w-[720px] gap-2">
+                {[
+                  {
+                    market: "NYSE",
+                    time: "05:31",
+                    status: "Pre-market",
+                    tone: "Needs attention",
+                  },
+                  {
+                    market: "HKEX · A股",
+                    time: "18:45",
+                    status: "Asia close",
+                    tone: "Filings sweep",
+                  },
+                  {
+                    market: "KRX",
+                    time: "19:45",
+                    status: "DART watch",
+                    tone: "Memory/HBM",
+                  },
+                ].map((session, index) => (
+                  <div
+                    key={session.market}
+                    className={`min-w-[220px] rounded-lg border px-4 py-3 ${
+                      index === 0
+                        ? "border-[#1a3a5c] bg-[#e8eef5]"
+                        : "border-[#e0dbd2] bg-[#fffdf8]"
+                    }`}
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="font-mono text-[10px] tracking-[.1em] text-[#9a9690] uppercase">
+                        {session.market}
+                      </span>
+                      <Clock3 className="size-3.5 text-[#5a5650]" />
+                    </div>
+                    <div className="font-serif text-xl text-[#1a1814]">
+                      {session.time}
+                    </div>
+                    <div className="mt-1 font-mono text-[11px] text-[#5a5650]">
+                      {session.status} · {session.tone}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <h1 className="mb-2 font-serif text-2xl leading-tight font-light text-[#1a1814] sm:text-[34px]">
+              Morning Brief
               <br />
-              AI · Semiconductors · Photonics
+              Follow Kevin&apos;s Watchlist
             </h1>
-            <p className="mb-7 font-mono text-[13px] text-[#9a9690]">
-              <span className="text-[#5a5650]">
-                Serenity (@aleabitoreddit) framework
-              </span>{" "}
-              · 5,582 tweets · 4 articles distilled · For decision support only,
-              not investment advice
+            <p className="mb-7 max-w-3xl font-mono text-[13px] leading-relaxed text-[#9a9690]">
+              Watchlist-first research desk · Entity Lock before every run ·
+              monitor panels feed the next brief · decision support only
             </p>
           </div>
         )}
@@ -1889,10 +2061,62 @@ export const SerenityTerminal = () => {
         {/* ── Tab: Quick Start ─────────────────────────────── */}
         {activeTab === "examples" && results.length === 0 && (
           <div>
+            <div className="mb-7 rounded-lg border border-[#d8d2c8] bg-[#fffdf8] p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-[#9b2c2c]" />
+                <div className="font-mono text-[10px] tracking-[.1em] text-[#9b2c2c] uppercase">
+                  Needs Attention
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                {[
+                  {
+                    ticker: "MU",
+                    title: "HBM capacity read-through",
+                    detail: "Check competitor capex vs. 15% trigger line",
+                  },
+                  {
+                    ticker: "000660",
+                    title: "KRX memory disclosure",
+                    detail: "DART filing sweep queued for Asia panel",
+                  },
+                  {
+                    ticker: "LSR",
+                    title: "Industry monitor",
+                    detail: "Wacker margin and Elkem divestiture triggers",
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.ticker}
+                    type="button"
+                    onClick={() => {
+                      setSelectedResolution(null);
+                      setTicker(
+                        item.ticker === "LSR"
+                          ? "liquid silicone rubber"
+                          : item.ticker,
+                      );
+                    }}
+                    className="rounded-lg border border-[#e0dbd2] bg-[#faf9f6] p-3 text-left transition-colors hover:border-[#1a3a5c] hover:bg-[#eef5fb]"
+                  >
+                    <div className="mb-2 font-mono text-[11px] text-[#1a3a5c]">
+                      {item.ticker}
+                    </div>
+                    <div className="font-serif text-[15px] text-[#1a1814]">
+                      {item.title}
+                    </div>
+                    <div className="mt-1 font-mono text-[11px] leading-relaxed text-[#9a9690]">
+                      {item.detail}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Serenity Info Card */}
             <div className="mb-7 rounded-lg border border-[#b8cedd] bg-[#e8eef5] p-4">
               <div className="mb-2.5 font-mono text-[10px] tracking-[.1em] text-[#1a3a5c] uppercase">
-                Serenity Core Supply Chain
+                Research Asset · Supply Chain Graph
               </div>
               <div className="mb-2.5 font-mono text-[11px] leading-[2] text-[#1a3a5c]">
                 Hyperscaler CapEx (GOOGL/MSFT/META/AMZN)
