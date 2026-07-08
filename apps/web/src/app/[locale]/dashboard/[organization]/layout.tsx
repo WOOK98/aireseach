@@ -12,6 +12,7 @@ import { api } from "~/lib/api/server";
 import { authClient } from "~/lib/auth/client";
 import { getOrganization, getSession } from "~/lib/auth/server";
 import { getQueryClient } from "~/lib/query/server";
+import { logger } from "@workspace/shared/logger";
 import { billing } from "~/modules/billing/lib/api";
 import { DashboardActionBar } from "~/modules/common/layout/dashboard/action-bar";
 import { DashboardInset } from "~/modules/common/layout/dashboard/inset";
@@ -103,15 +104,19 @@ export default async function DashboardLayout({
     organization.queries.get({ id: activeOrganization.id }).queryKey,
     activeOrganization,
   );
-  await queryClient.prefetchQuery({
-    ...billing.queries.summary.get(activeOrganization.id),
-    queryFn: () =>
-      handle(api.billing.summary.$get, {
-        schema: getBillingSummaryResponseSchema,
-      })({
-        query: { referenceId: activeOrganization.id },
-      }),
-  });
+  try {
+    await queryClient.prefetchQuery({
+      ...billing.queries.summary.get(activeOrganization.id),
+      queryFn: () =>
+        handle(api.billing.summary.$get, {
+          schema: getBillingSummaryResponseSchema,
+        })({
+          query: { referenceId: activeOrganization.id },
+        }),
+    });
+  } catch (error) {
+    logger.warn("billing prefetch failed:", error);
+  }
 
   const items = menu({
     slug: organizationSlug,

@@ -11,6 +11,7 @@ import { pathsConfig } from "~/config/paths";
 import { api } from "~/lib/api/server";
 import { getSession } from "~/lib/auth/server";
 import { getQueryClient } from "~/lib/query/server";
+import { logger } from "@workspace/shared/logger";
 import { billing } from "~/modules/billing/lib/api";
 import { DashboardActionBar } from "~/modules/common/layout/dashboard/action-bar";
 import { DashboardInset } from "~/modules/common/layout/dashboard/inset";
@@ -87,17 +88,22 @@ export default async function DashboardLayout({
   }
 
   const queryClient = getQueryClient();
-  await queryClient.prefetchQuery({
-    ...billing.queries.summary.get(user.id),
-    queryFn: () =>
-      handle(api.billing.summary.$get, {
-        schema: getBillingSummaryResponseSchema,
-      })({
-        query: {
-          referenceId: user.id,
-        },
-      }),
-  });
+  try {
+    await queryClient.prefetchQuery({
+      ...billing.queries.summary.get(user.id),
+      queryFn: () =>
+        handle(api.billing.summary.$get, {
+          schema: getBillingSummaryResponseSchema,
+        })({
+          query: {
+            referenceId: user.id,
+          },
+        }),
+    });
+  } catch (error) {
+    // Billing prefetch failed (e.g. stale session). Non-critical, skip.
+    logger.warn("billing prefetch failed:", error);
+  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

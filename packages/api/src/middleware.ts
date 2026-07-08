@@ -24,17 +24,25 @@ export const enforceAuth = createMiddleware<{
     user: User;
   };
 }>(async (c, next) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  const user = session?.user ?? null;
+  try {
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    const user = session?.user ?? null;
 
-  if (!user) {
+    if (!user) {
+      throw new HttpException(HttpStatusCode.UNAUTHORIZED, {
+        code: "error.unauthorized",
+      });
+    }
+
+    c.set("user", user);
+    await next();
+  } catch (error) {
+    if (error instanceof HttpException) throw error;
+    // Session cookie decryption failed (e.g. after secret rotation)
     throw new HttpException(HttpStatusCode.UNAUTHORIZED, {
       code: "error.unauthorized",
     });
   }
-
-  c.set("user", user);
-  await next();
 });
 
 /**
