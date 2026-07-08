@@ -17,14 +17,21 @@ const getHeaders = async () => {
 };
 
 export const getSession = cache(async () => {
-  const data = await auth.api.getSession({
-    headers: await getHeaders(),
-  });
+  try {
+    const data = await auth.api.getSession({
+      headers: await getHeaders(),
+    });
 
-  return {
-    session: data?.session ?? null,
-    user: data?.user ?? null,
-  };
+    return {
+      session: data?.session ?? null,
+      user: data?.user ?? null,
+    };
+  } catch (error) {
+    // Session cookie decryption failed (e.g. after BETTER_AUTH_SECRET rotation).
+    // Return null so callers redirect to login instead of white-screening.
+    logger.warn("getSession failed, clearing session:", error);
+    return { session: null, user: null };
+  }
 });
 
 export const getOrganization = cache(
