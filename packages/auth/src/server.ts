@@ -78,6 +78,7 @@ export const auth = betterAuth({
     "turbostarter://",
     "https://airesearchs.com",
     "https://www.airesearchs.com",
+    "https://aireseach*.vercel.app",
     /* Needed only for Apple ID authentication */
     "https://appleid.apple.com",
     ...(env.NODE_ENV === NodeEnv.DEVELOPMENT
