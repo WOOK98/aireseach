@@ -99,16 +99,28 @@ function phaseCls(p: string) {
   return p === "open" ? "open" : p === "pre" ? "pre" : "closed";
 }
 
+/**
+ * Session rail — shows real market status with live clocks.
+ *
+ * Chrome auto-translate fix:
+ * - All dynamic text wrapped in <span> (no bare text nodes adjacent to dynamic siblings)
+ * - Ticker/market labels, clocks, phase badges get class="notranslate"
+ * - Mount gate: renders empty until useEffect fires, avoiding SSR/client hydration mismatch
+ *   and giving Chrome translator time to settle before React starts updating DOM
+ */
 function SessionRail({
   sessionState: _sessionState,
 }: {
   sessionState: SessionState;
 }) {
+  const [mounted, setMounted] = useState(false);
   const [markets, setMarkets] = useState<
     { key: string; label: string; phase: string; clock: string; cls: string }[]
   >([]);
 
   useEffect(() => {
+    setMounted(true);
+
     function tick() {
       const nyse = getNyseStatus();
       const hk = getHkStatus();
@@ -143,6 +155,17 @@ function SessionRail({
     return () => clearInterval(id);
   }, []);
 
+  // Mount gate: render nothing until client-side hydration is complete.
+  // Prevents SSR time vs client time mismatch and gives Chrome translator
+  // time to settle before React starts mutating the DOM.
+  if (!mounted) {
+    return (
+      <div className="flex border-b border-[#e5e0d6] bg-white px-4 py-3">
+        <span className="font-mono text-xs text-[#6b675e]">Loading…</span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex overflow-x-auto border-b border-[#e5e0d6] bg-white">
       {markets.map((m) => (
@@ -150,11 +173,11 @@ function SessionRail({
           key={m.key}
           className="flex min-w-0 flex-1 items-baseline gap-2 border-r border-[#e5e0d6] px-4 py-3 whitespace-nowrap last:border-r-0"
         >
-          <span className="font-mono text-xs tracking-wide text-[#1c1b18]">
-            {m.label}
+          <span className="notranslate font-mono text-xs tracking-wide text-[#1c1b18]">
+            <span>{m.label}</span>
           </span>
           <span
-            className={`rounded-full border px-2 py-0.5 font-mono text-[10.5px] ${
+            className={`notranslate rounded-full border px-2 py-0.5 font-mono text-[10.5px] ${
               m.cls === "open"
                 ? "border-emerald-600 text-emerald-700"
                 : m.cls === "pre"
@@ -162,10 +185,10 @@ function SessionRail({
                   : "border-[#e5e0d6] text-[#6b675e]"
             }`}
           >
-            {m.phase}
+            <span>{m.phase}</span>
           </span>
-          <span className="ml-auto font-mono text-[11.5px] text-[#6b675e]">
-            {m.clock}
+          <span className="notranslate ml-auto font-mono text-[11.5px] text-[#6b675e]">
+            <span>{m.clock}</span>
           </span>
         </div>
       ))}
@@ -217,7 +240,11 @@ function WatchlistSidebar({ isAnonymous }: { isAnonymous: boolean }) {
 
 function BriefCard({ sessionState }: { sessionState: SessionState }) {
   const meta = SESSION_META[sessionState];
-  const date = formatDate();
+  const [date, setDate] = useState("");
+
+  useEffect(() => {
+    setDate(formatDate());
+  }, []);
 
   return (
     <section>
@@ -225,8 +252,10 @@ function BriefCard({ sessionState }: { sessionState: SessionState }) {
         <h1 className="font-serif text-[29px] font-semibold tracking-tight text-[#1c1b18]">
           {meta.label}
         </h1>
-        <span className="font-mono text-[11px] tracking-[0.12em] text-[#6b675e] uppercase">
-          {date} · {meta.briefLabel}
+        <span className="notranslate font-mono text-[11px] tracking-[0.12em] text-[#6b675e] uppercase">
+          <span>{date}</span>
+          <span> · </span>
+          <span>{meta.briefLabel}</span>
         </span>
       </div>
       <div className="overflow-hidden rounded-xl border border-[#e5e0d6] bg-white">
@@ -290,17 +319,17 @@ function EntityLockChip({
 
   if (entity.state === "locked" && entity.label) {
     return (
-      <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#c9d6ec] bg-[#edf2fa] px-3.5 py-1.5 font-mono text-[12.5px] text-[#1e3a5f]">
+      <div className="notranslate mt-3 inline-flex items-center gap-2 rounded-full border border-[#c9d6ec] bg-[#edf2fa] px-3.5 py-1.5 font-mono text-[12.5px] text-[#1e3a5f]">
         <span className="h-[7px] w-[7px] rounded-full bg-[#1e5aa8]" />
-        ENTITY LOCK · {entity.label} ✓
+        <span>ENTITY LOCK · {entity.label} ✓</span>
       </div>
     );
   }
 
   if (entity.state === "ambiguous" && entity.options) {
     return (
-      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#e3cd9a] bg-[#fbf3e2] px-3.5 py-1.5 font-mono text-[12.5px] text-[#7a5a16]">
-        DID YOU MEAN ·
+      <div className="notranslate mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#e3cd9a] bg-[#fbf3e2] px-3.5 py-1.5 font-mono text-[12.5px] text-[#7a5a16]">
+        <span>DID YOU MEAN ·</span>
         <button
           type="button"
           onClick={() => onSelect(entity.options![0])}
@@ -321,18 +350,22 @@ function EntityLockChip({
 
   if (entity.state === "theme") {
     return (
-      <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[#bddcc6] bg-[#edf6ef] px-3.5 py-1.5 font-mono text-[12.5px] text-[#1e5a38]">
-        THEME · &quot;{entity.label}&quot; is a material or topic → Industry
-        Mode: resolve ETFs, build the value-chain universe
+      <div className="notranslate mt-3 inline-flex items-center gap-2 rounded-xl border border-[#bddcc6] bg-[#edf6ef] px-3.5 py-1.5 font-mono text-[12.5px] text-[#1e5a38]">
+        <span>
+          THEME · &quot;{entity.label}&quot; is a material or topic → Industry
+          Mode: resolve ETFs, build the value-chain universe
+        </span>
       </div>
     );
   }
 
   // no-match
   return (
-    <div className="mt-3 inline-flex flex-wrap items-center gap-2 rounded-xl border border-[#e3cd9a] bg-[#fbf3e2] px-3.5 py-1.5 font-mono text-[12.5px] text-[#7a5a16]">
+    <div className="notranslate mt-3 inline-flex flex-wrap items-center gap-2 rounded-xl border border-[#e3cd9a] bg-[#fbf3e2] px-3.5 py-1.5 font-mono text-[12.5px] text-[#7a5a16]">
       <AlertTriangle className="h-3.5 w-3.5" />
-      NO MATCH · check the ticker, or press space to search as a theme
+      <span>
+        NO MATCH · check the ticker, or press space to search as a theme
+      </span>
     </div>
   );
 }
@@ -401,13 +434,13 @@ function ResearchSection() {
           className="w-full border-b border-[#1c1b18] bg-transparent pb-1.5 font-serif text-[21px] text-[#1c1b18] outline-none placeholder:text-[#b8b2a4]"
         />
         <div className="mt-2 font-mono text-[11px] text-[#6b675e]">
-          Try:{" "}
+          <span>Try: </span>
           {["MU", "LITE", "liquid silicone rubber"].map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => handleInput(t)}
-              className="bg-none px-0.5 font-mono text-[11px] text-[#6b675e] underline"
+              className="notranslate bg-none px-0.5 font-mono text-[11px] text-[#6b675e] underline"
             >
               {t}
             </button>
@@ -469,7 +502,7 @@ function ResearchSection() {
                 <span
                   className={`inline-block h-2 w-2 rounded-full ${lens.color}`}
                 />
-                {lens.name}
+                <span>{lens.name}</span>
               </span>
             ))}
           </div>
@@ -529,9 +562,9 @@ export function DashboardReport() {
           <div className="mt-9 flex flex-wrap items-center gap-3.5 border-t border-[#e5e0d6] px-0 pt-4 text-[12.5px] text-[#6b675e]">
             <span>Decision-support analysis, not investment advice.</span>
             <span>
-              Run any report in Claude Code:{" "}
-              <span className="font-mono">/deep-dive TICKER</span> · Install
-              plugin →
+              <span>Run any report in Claude Code: </span>
+              <span className="notranslate font-mono">/deep-dive TICKER</span>
+              <span> · Install plugin →</span>
             </span>
           </div>
         </main>
