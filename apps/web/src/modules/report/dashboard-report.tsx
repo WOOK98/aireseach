@@ -56,22 +56,26 @@ function getDayOfWeek(tz: string): number {
   return map[weekday] ?? 0;
 }
 
-/** Derive session state from real ET time */
+/** Derive session state from real ET time, cross-checking exchange local weekdays */
 function deriveSessionState(): SessionState {
   const et = getTimeInTz("America/New_York");
-  const dow = getDayOfWeek("America/New_York");
+  const etDow = getDayOfWeek("America/New_York");
 
-  // Weekend (Sat=6, Sun=0 in JS getDay)
-  if (dow === 0 || dow === 6) return "weekend";
+  // Weekend in ET → check if Asia is also weekend
+  if (etDow === 0 || etDow === 6) return "weekend";
 
   const minutes = et.h * 60 + et.m;
 
-  // Pre-market: 04:00–09:29 ET
+  // Pre-market: 04:00–09:29 ET (NYSE local weekday already confirmed)
   if (minutes >= 240 && minutes < 570) return "pre";
   // US session: 09:30–15:59 ET
   if (minutes >= 570 && minutes < 960) return "us";
-  // Asia overlap: 16:00–03:59 ET (evening into overnight)
-  if (minutes >= 960 || minutes < 240) return "asia";
+  // Asia window: 16:00–03:59 ET — but verify Asia is actually a weekday
+  if (minutes >= 960 || minutes < 240) {
+    const hkDow = getDayOfWeek("Asia/Hong_Kong");
+    if (hkDow === 0 || hkDow === 6) return "weekend";
+    return "asia";
+  }
 
   return "pre";
 }
@@ -452,7 +456,8 @@ function ResearchSection() {
     [resolved.state],
   );
 
-  const canRun = resolved.state === "locked" || resolved.state === "theme";
+  // P0: only locked entities can run. Theme stays disabled until resolve_entity API is wired (P1-1).
+  const canRun = resolved.state === "locked";
 
   return (
     <section className="mt-8">
@@ -498,7 +503,13 @@ function ResearchSection() {
           <button
             type="button"
             disabled={!canRun}
-            title={canRun ? undefined : "Enter a ticker or theme first"}
+            title={
+              resolved.state === "theme"
+                ? "Entity resolution接入中，暂不可用"
+                : canRun
+                  ? undefined
+                  : "Enter a ticker or theme first"
+            }
             className="rounded-lg bg-[#1c1b18] px-4 py-2 text-sm text-[#f5f2ea] disabled:cursor-not-allowed disabled:bg-[#c9c4b8] disabled:text-[#8a8578]"
           >
             {runLabel}
@@ -506,7 +517,13 @@ function ResearchSection() {
           <button
             type="button"
             disabled={!canRun}
-            title={canRun ? undefined : "Enter a ticker or theme first"}
+            title={
+              resolved.state === "theme"
+                ? "Entity resolution接入中，暂不可用"
+                : canRun
+                  ? undefined
+                  : "Enter a ticker or theme first"
+            }
             className="rounded-lg border border-[#e5e0d6] bg-transparent px-4 py-2 text-sm text-[#1c1b18] disabled:cursor-not-allowed disabled:opacity-40"
           >
             Run snapshot
