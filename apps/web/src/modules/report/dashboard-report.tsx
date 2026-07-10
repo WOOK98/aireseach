@@ -2,8 +2,11 @@
 
 /* oxlint-disable i18next/no-literal-string */
 
-import { AlertTriangle, Plus } from "lucide-react";
-import { useCallback, useState } from "react";
+import { AlertTriangle, LogIn, Plus } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { authClient } from "~/lib/auth/client";
 
 import type { KeyboardEvent } from "react";
 
@@ -12,202 +15,125 @@ import type { KeyboardEvent } from "react";
 type SessionState = "pre" | "us" | "asia" | "weekend";
 type EntityLockState = "empty" | "locked" | "ambiguous" | "theme" | "no-match";
 
-interface WatchlistRow {
-  symbol: string;
-  flag: string;
-  change: number; // percent
+// ─── Market time helpers ─────────────────────────────────────────────────────
+
+/** Get current time in a specific timezone as HH:MM */
+function getTimeInTz(tz: string): { h: number; m: number; label: string } {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: tz,
+  }).formatToParts(now);
+  const h = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const m = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  const label = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: tz,
+  }).format(now);
+  return { h, m, label };
 }
 
-interface BriefRow {
-  symbol: string;
-  change: number;
-  reason: string;
-  source: string;
+function getDayOfWeek(tz: string): number {
+  // JS getDay(): 0=Sun, 1=Mon ... 6=Sat. Use a temp Date shifted to target tz.
+  const now = new Date();
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    timeZone: tz,
+  }).format(now);
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  return map[weekday] ?? 0;
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+/** Derive session state from real ET time */
+function deriveSessionState(): SessionState {
+  const et = getTimeInTz("America/New_York");
+  const dow = getDayOfWeek("America/New_York");
 
-const WATCHLIST: WatchlistRow[] = [
-  { symbol: "NVDA", flag: "US", change: 0.4 },
-  { symbol: "MU", flag: "US", change: -5.2 },
-  { symbol: "AXTI", flag: "US", change: 1.1 },
-  { symbol: "0700.HK", flag: "HK", change: 0.9 },
-  { symbol: "000660.KS", flag: "KR", change: 2.8 },
-  { symbol: "600519.SS", flag: "A股", change: -0.3 },
-];
+  // Weekend (Sat=6, Sun=0 in JS getDay)
+  if (dow === 0 || dow === 6) return "weekend";
 
-const BRIEF_PRE: BriefRow[] = [
-  {
-    symbol: "MU",
-    change: -5.2,
-    reason:
-      "Samsung preliminary Q2 operating profit up ~19× — memory capacity fears hit the sector.",
-    source: "news · 07-08",
-  },
-  {
-    symbol: "000660.KS",
-    change: 2.8,
-    reason:
-      "$28B US listing raise draws heavy demand; watch supply-ramp read-through to MU.",
-    source: "filing · 07-08 KST",
-  },
-];
+  const minutes = et.h * 60 + et.m;
 
-const BRIEF_US: BriefRow[] = [
-  {
-    symbol: "MU",
-    change: -4.1,
-    reason: "Below pre-earnings level; memory sell-off continues.",
-    source: "10:12 PST",
-  },
-];
+  // Pre-market: 04:00–09:29 ET
+  if (minutes >= 240 && minutes < 570) return "pre";
+  // US session: 09:30–15:59 ET
+  if (minutes >= 570 && minutes < 960) return "us";
+  // Asia overlap: 16:00–03:59 ET (evening into overnight)
+  if (minutes >= 960 || minutes < 240) return "asia";
 
-const BRIEF_ASIA: BriefRow[] = [
-  {
-    symbol: "000660.KS",
-    change: 3.4,
-    reason: "Continued demand for the $28B raise; DART filing 09:02 KST.",
-    source: "DART · live",
-  },
-  {
-    symbol: "0700.HK",
-    change: 1.2,
-    reason: "HKEX announcement: buyback resumed.",
-    source: "披露易 · 09:41 HKT",
-  },
-  {
-    symbol: "600519.SS",
-    change: -0.5,
-    reason: "No new filings.",
-    source: "巨潮 · —",
-  },
-];
+  return "pre";
+}
 
-const BRIEF_WEEKEND: BriefRow[] = [
-  {
-    symbol: "MU",
-    change: -14.9,
-    reason: "Worst week on your list — memory capacity narrative flipped.",
-    source: "",
-  },
-  {
-    symbol: "000660.KS",
-    change: 6.2,
-    reason:
-      "Your list is 48% memory-sector by weight. Concentration worth a look.",
-    source: "",
-  },
-];
+function formatDate(): string {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(new Date());
+}
+
+// ─── Market status labels ────────────────────────────────────────────────────
 
 const SESSION_META: Record<
   SessionState,
   {
     label: string;
-    date: string;
-    brief: BriefRow[];
+    briefLabel: string;
     attentionLabel: string;
-    quietLine?: string;
+    quietLine: string;
     buttons: { label: string; primary: boolean }[];
   }
 > = {
   pre: {
     label: "Morning brief",
-    date: "Thu Jul 9 · watchlist overnight",
-    brief: BRIEF_PRE,
-    attentionLabel: "Needs attention · 2",
-    quietLine:
-      "QUIET · NVDA +0.4 · AXTI +1.1 · 0700.HK +0.9 · 600519.SS −0.3 (pre-market / last close)",
+    briefLabel: "watchlist overnight",
+    attentionLabel: "Needs attention",
+    quietLine: "Watchlist quiet — no overnight movers to flag.",
     buttons: [
       { label: "Run morning brief", primary: true },
-      { label: "Snapshot MU", primary: false },
+      { label: "Snapshot", primary: false },
     ],
   },
   us: {
     label: "US session",
-    date: "Thu Jul 9 · live",
-    brief: BRIEF_US,
+    briefLabel: "live",
     attentionLabel: "Biggest mover on your list",
-    quietLine:
-      "NVDA +0.7 · AXTI +0.6 · Asia closed — session moves frozen at close",
+    quietLine: "Watchlist quiet — no intraday movers to flag.",
     buttons: [
-      { label: "Snapshot MU", primary: true },
-      { label: "Deep dive MU", primary: false },
+      { label: "Snapshot", primary: true },
+      { label: "Deep dive", primary: false },
     ],
   },
   asia: {
     label: "Asia session",
-    date: "Thu Jul 9 evening · HKEX / A股 / KRX open",
-    brief: BRIEF_ASIA,
-    attentionLabel: "Your Asia listings · 3",
+    briefLabel: "HKEX / A股 / KRX open",
+    attentionLabel: "Your Asia listings",
+    quietLine: "Watchlist quiet — no Asia session movers to flag.",
     buttons: [{ label: "Run Asia brief", primary: true }],
   },
   weekend: {
     label: "Portfolio review",
-    date: "Weekend · markets closed",
-    brief: BRIEF_WEEKEND,
+    briefLabel: "markets closed",
     attentionLabel: "This week on your list",
+    quietLine: "Markets closed — review your week.",
     buttons: [
       { label: "Review portfolio", primary: true },
-      { label: "Update holdings CSV", primary: false },
+      { label: "Update holdings", primary: false },
     ],
   },
 };
-
-const SESSION_RAIL: Record<
-  SessionState,
-  {
-    us: [string, string, string];
-    hk: [string, string, string];
-    kr: [string, string, string];
-  }
-> = {
-  pre: {
-    us: ["PRE-MARKET", "pre", "05:31 PST"],
-    hk: ["CLOSED ✓", "", "20:31 HKT"],
-    kr: ["CLOSED ✓", "", "21:31 KST"],
-  },
-  us: {
-    us: ["OPEN", "open", "10:12 PST"],
-    hk: ["CLOSED ✓", "", "01:12 HKT"],
-    kr: ["CLOSED ✓", "", "02:12 KST"],
-  },
-  asia: {
-    us: ["CLOSED ✓", "", "18:45 PST"],
-    hk: ["OPEN", "open", "09:45 HKT"],
-    kr: ["OPEN", "open", "10:45 KST"],
-  },
-  weekend: {
-    us: ["CLOSED ✓", "", "Sat"],
-    hk: ["CLOSED ✓", "", "Sun"],
-    kr: ["CLOSED ✓", "", "Sun"],
-  },
-};
-
-// Known tickers for entity lock demo
-const KNOWN_TICKERS: Record<string, string> = {
-  MU: "Micron Technology, Inc. · NASDAQ MU · Semiconductors — Memory",
-  NVDA: "NVIDIA Corporation · NASDAQ NVDA · Semiconductors",
-  AXTI: "AXT, Inc. · NASDAQ AXTI · Semiconductors — Materials",
-  "0700.HK": "Tencent Holdings Ltd. · HKEX 0700 · Internet — Platforms",
-  "000660.KS": "SK hynix Inc. · KRX 000660 · Semiconductors — Memory",
-  "600519.SS": "Kweichow Moutai Co. · SSE 600519 · Beverages",
-};
-
-const AMBIGUOUS: Record<string, [string, string]> = {
-  LITE: [
-    "Lumentum Holdings, Inc. · NASDAQ LITE · Photonics",
-    'Continue as theme: "lite"',
-  ],
-};
-
-const LENS_COLORS = [
-  { name: "Supply chain", color: "bg-emerald-600" },
-  { name: "Fundamentals", color: "bg-amber-700" },
-  { name: "Macro", color: "bg-amber-600" },
-  { name: "Technicals", color: "bg-slate-500" },
-  { name: "Sentiment", color: "bg-purple-600" },
-  { name: "Risk matrix", color: "bg-red-600" },
-];
 
 // ─── Entity resolver ──────────────────────────────────────────────────────────
 
@@ -218,104 +144,150 @@ function resolveEntity(query: string): {
 } {
   const q = query.trim();
   if (!q) return { state: "empty" };
-  const upper = q.toUpperCase();
-  if (KNOWN_TICKERS[upper]) {
-    return { state: "locked", label: KNOWN_TICKERS[upper] };
-  }
-  if (AMBIGUOUS[upper]) {
-    return { state: "ambiguous", options: AMBIGUOUS[upper] };
-  }
   if (q.includes(" ") || q.length > 6) {
     return { state: "theme", label: q };
   }
+  // No hardcoded ticker knowledge — all resolution goes through the API.
   return { state: "no-match" };
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function SessionRail({ state }: { state: SessionState }) {
-  const rail = SESSION_RAIL[state];
+function SessionRail({
+  sessionState: _sessionState,
+}: {
+  sessionState: SessionState;
+}) {
+  const [clocks, setClocks] = useState({ us: "", hk: "", kr: "" });
+
+  useEffect(() => {
+    function tick() {
+      const us = getTimeInTz("America/New_York");
+      const hk = getTimeInTz("Asia/Hong_Kong");
+      const kr = getTimeInTz("Asia/Seoul");
+      setClocks({ us: us.label, hk: hk.label, kr: kr.label });
+    }
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  function marketStatus(
+    tz: string,
+    openH: number,
+    openM: number,
+    closeH: number,
+    closeM: number,
+  ): { text: string; cls: string } {
+    const now = getTimeInTz(tz);
+    const dow = getDayOfWeek(tz);
+    if (dow === 0 || dow === 6) return { text: "CLOSED ✓", cls: "closed" };
+    const mins = now.h * 60 + now.m;
+    const open = openH * 60 + openM;
+    const close = closeH * 60 + closeM;
+    if (mins >= open && mins < close) return { text: "OPEN", cls: "open" };
+    if (mins >= open - 180 && mins < open)
+      return { text: "PRE-MARKET", cls: "pre" };
+    return { text: "CLOSED ✓", cls: "closed" };
+  }
+
   const markets = [
-    { key: "us" as const, label: "NYSE·NASDAQ", data: rail.us },
-    { key: "hk" as const, label: "HKEX·A股", data: rail.hk },
-    { key: "kr" as const, label: "KRX", data: rail.kr },
+    {
+      key: "us",
+      label: "NYSE·NASDAQ",
+      status: marketStatus("America/New_York", 9, 30, 16, 0),
+      clock: clocks.us,
+    },
+    {
+      key: "hk",
+      label: "HKEX·A股",
+      status: marketStatus("Asia/Hong_Kong", 9, 30, 16, 0),
+      clock: clocks.hk,
+    },
+    {
+      key: "kr",
+      label: "KRX",
+      status: marketStatus("Asia/Seoul", 9, 0, 15, 30),
+      clock: clocks.kr,
+    },
   ];
+
   return (
     <div className="flex overflow-x-auto border-b border-[#e5e0d6] bg-white">
-      {markets.map((m) => {
-        const [text, cls, clock] = m.data;
-        return (
-          <div
-            key={m.key}
-            className="flex min-w-[200px] flex-1 items-baseline gap-2 border-r border-[#e5e0d6] px-4 py-3 whitespace-nowrap last:border-r-0"
+      {markets.map((m) => (
+        <div
+          key={m.key}
+          className="flex min-w-0 flex-1 items-baseline gap-2 border-r border-[#e5e0d6] px-4 py-3 whitespace-nowrap last:border-r-0"
+        >
+          <span className="font-mono text-xs tracking-wide text-[#1c1b18]">
+            {m.label}
+          </span>
+          <span
+            className={`rounded-full border px-2 py-0.5 font-mono text-[10.5px] ${
+              m.status.cls === "open"
+                ? "border-emerald-600 text-emerald-700"
+                : m.status.cls === "pre"
+                  ? "border-amber-600 text-amber-800"
+                  : "border-[#e5e0d6] text-[#6b675e]"
+            }`}
           >
-            <span className="font-mono text-xs tracking-wide text-[#1c1b18]">
-              {m.label}
-            </span>
-            <span
-              className={`rounded-full border px-2 py-0.5 font-mono text-[10.5px] ${
-                cls === "open"
-                  ? "border-emerald-600 text-emerald-700"
-                  : cls === "pre"
-                    ? "border-amber-600 text-amber-800"
-                    : "border-[#e5e0d6] text-[#6b675e]"
-              }`}
-            >
-              {text}
-            </span>
-            <span className="ml-auto font-mono text-[11.5px] text-[#6b675e]">
-              {clock}
-            </span>
-          </div>
-        );
-      })}
+            {m.status.text}
+          </span>
+          <span className="ml-auto font-mono text-[11.5px] text-[#6b675e]">
+            {m.clock}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
 
-function WatchlistSidebar() {
+function WatchlistSidebar({ isAnonymous }: { isAnonymous: boolean }) {
+  if (isAnonymous) {
+    return (
+      <aside className="w-[260px] border-r border-[#e5e0d6] bg-white py-4">
+        <h2 className="mb-2 px-5 font-mono text-[11px] tracking-[0.12em] text-[#6b675e] uppercase">
+          Watchlist
+        </h2>
+        <div className="px-5 py-6 text-center">
+          <p className="mb-3 text-[13px] text-[#6b675e]">
+            Sign in to build your watchlist
+          </p>
+          <Link
+            href="/auth/register"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#1c1b18] px-4 py-2 text-sm text-[#f5f2ea]"
+          >
+            <LogIn className="h-3.5 w-3.5" />
+            Sign in
+          </Link>
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside className="w-[260px] border-r border-[#e5e0d6] bg-white py-4">
       <h2 className="mb-2 px-5 font-mono text-[11px] tracking-[0.12em] text-[#6b675e] uppercase">
-        Watchlist · {WATCHLIST.length}
+        Watchlist · 0
       </h2>
-      <div>
-        {WATCHLIST.map((row) => (
-          <button
-            key={row.symbol}
-            type="button"
-            className="flex w-full items-baseline gap-2 border-b border-[#e5e0d6] bg-transparent px-5 py-2.5 text-left hover:bg-[#faf8f3]"
-          >
-            <span className="min-w-[84px] font-mono text-[13px] text-[#1c1b18]">
-              {row.symbol}
-            </span>
-            <span className="font-mono text-[11px] text-[#6b675e]">
-              {row.flag}
-            </span>
-            <span
-              className={`ml-auto font-mono text-[13px] ${
-                row.change >= 0 ? "text-emerald-700" : "text-red-700"
-              }`}
-            >
-              {row.change >= 0 ? "+" : ""}
-              {row.change.toFixed(1)}%
-            </span>
-          </button>
-        ))}
+      <div className="px-5 py-6 text-center">
+        <p className="mb-3 text-[13px] text-[#6b675e]">No tickers yet</p>
       </div>
       <button
         type="button"
         className="mx-5 mt-3 flex w-[calc(100%-40px)] items-center justify-center gap-1.5 rounded-md border border-dashed border-[#e5e0d6] bg-transparent px-3 py-2 text-[13px] text-[#6b675e]"
       >
         <Plus className="h-3.5 w-3.5" />
-        Add ticker or import CSV
+        Add ticker
       </button>
     </aside>
   );
 }
 
-function BriefCard({ state }: { state: SessionState }) {
-  const meta = SESSION_META[state];
+function BriefCard({ sessionState }: { sessionState: SessionState }) {
+  const meta = SESSION_META[sessionState];
+  const date = formatDate();
+
   return (
     <section>
       <div className="mb-3 flex flex-wrap items-baseline gap-3">
@@ -323,7 +295,7 @@ function BriefCard({ state }: { state: SessionState }) {
           {meta.label}
         </h1>
         <span className="font-mono text-[11px] tracking-[0.12em] text-[#6b675e] uppercase">
-          {meta.date}
+          {date} · {meta.briefLabel}
         </span>
       </div>
       <div className="overflow-hidden rounded-xl border border-[#e5e0d6] bg-white">
@@ -332,43 +304,22 @@ function BriefCard({ state }: { state: SessionState }) {
             {meta.attentionLabel}
           </span>
         </header>
-        {meta.brief.map((row) => (
-          <div
-            key={row.symbol}
-            className="flex flex-wrap items-baseline gap-3 border-b border-[#e5e0d6] px-4 py-3 last:border-b-0"
-          >
-            <span className="min-w-[84px] font-mono text-[13px] text-[#1c1b18]">
-              {row.symbol}
-            </span>
-            <span
-              className={`min-w-[58px] font-mono text-[13px] ${
-                row.change >= 0 ? "text-emerald-700" : "text-red-700"
-              }`}
-            >
-              {row.change >= 0 ? "+" : ""}
-              {row.change.toFixed(1)}%
-            </span>
-            <span className="min-w-[200px] flex-1 text-sm text-[#1c1b18]">
-              {row.reason}
-              {row.source && (
-                <span className="ml-1.5 font-mono text-[11px] text-[#6b675e]">
-                  {row.source}
-                </span>
-              )}
-            </span>
-          </div>
-        ))}
-        {meta.quietLine && (
-          <div className="px-4 py-2.5 font-mono text-xs text-[#6b675e]">
-            {meta.quietLine}
-          </div>
-        )}
+        {/* Brief content — empty until API is wired */}
+        <div className="px-4 py-6 text-center">
+          <p className="text-[13px] text-[#6b675e]">
+            Add tickers to your watchlist, then run a brief.
+          </p>
+        </div>
+        <div className="px-4 py-2.5 font-mono text-xs text-[#6b675e]">
+          {meta.quietLine}
+        </div>
         <footer className="flex flex-wrap items-center gap-2.5 border-t border-[#e5e0d6] px-4 py-3">
           {meta.buttons.map((btn) => (
             <button
               key={btn.label}
               type="button"
-              className={`rounded-lg px-4 py-2 text-sm ${
+              disabled
+              className={`rounded-lg px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
                 btn.primary
                   ? "bg-[#1c1b18] text-[#f5f2ea]"
                   : "border border-[#e5e0d6] bg-transparent text-[#1c1b18]"
@@ -377,7 +328,7 @@ function BriefCard({ state }: { state: SessionState }) {
               {btn.label}
             </button>
           ))}
-          {state === "pre" && (
+          {sessionState === "pre" && (
             <span className="ml-auto text-[12.5px] text-[#6b675e]">
               Get this at 5:30 automatically — plugin + scheduled task →
             </span>
@@ -406,7 +357,7 @@ function EntityLockChip({
 }) {
   if (entity.state === "empty") return null;
 
-  if (entity.state === "locked") {
+  if (entity.state === "locked" && entity.label) {
     return (
       <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#c9d6ec] bg-[#edf2fa] px-3.5 py-1.5 font-mono text-[12.5px] text-[#1e3a5f]">
         <span className="h-[7px] w-[7px] rounded-full bg-[#1e5aa8]" />
@@ -455,6 +406,15 @@ function EntityLockChip({
   );
 }
 
+const LENS_COLORS = [
+  { name: "Supply chain", color: "bg-emerald-600" },
+  { name: "Fundamentals", color: "bg-amber-700" },
+  { name: "Macro", color: "bg-amber-600" },
+  { name: "Technicals", color: "bg-slate-500" },
+  { name: "Sentiment", color: "bg-purple-600" },
+  { name: "Risk matrix", color: "bg-red-600" },
+];
+
 function ResearchSection() {
   const [query, setQuery] = useState("");
   const [resolved, setResolved] = useState<ReturnType<typeof resolveEntity>>({
@@ -475,7 +435,6 @@ function ResearchSection() {
   const handleInput = useCallback(
     (val: string) => {
       setQuery(val);
-      // Simple debounce via requestAnimationFrame
       requestAnimationFrame(() => debouncedResolve(val));
     },
     [debouncedResolve],
@@ -525,7 +484,6 @@ function ResearchSection() {
         <EntityLockChip
           entity={resolved}
           onSelect={(label) => {
-            // If user selects the theme option, re-resolve as theme
             if (label.startsWith("Continue as theme")) {
               const result = resolveEntity(query.toLowerCase());
               setResolved(result);
@@ -540,13 +498,15 @@ function ResearchSection() {
           <button
             type="button"
             disabled={!canRun}
-            className="rounded-lg bg-[#1c1b18] px-4 py-2 text-sm text-[#f5f2ea] disabled:cursor-not-allowed disabled:bg-[#c9c4b8]"
+            title={canRun ? undefined : "Enter a ticker or theme first"}
+            className="rounded-lg bg-[#1c1b18] px-4 py-2 text-sm text-[#f5f2ea] disabled:cursor-not-allowed disabled:bg-[#c9c4b8] disabled:text-[#8a8578]"
           >
             {runLabel}
           </button>
           <button
             type="button"
             disabled={!canRun}
+            title={canRun ? undefined : "Enter a ticker or theme first"}
             className="rounded-lg border border-[#e5e0d6] bg-transparent px-4 py-2 text-sm text-[#1c1b18] disabled:cursor-not-allowed disabled:opacity-40"
           >
             Run snapshot
@@ -577,9 +537,9 @@ function ResearchSection() {
 
 function TrackRecord() {
   const cards = [
-    { label: "30-day directional accuracy", value: "~61%" },
-    { label: "Mature supply-chain theses", value: "~75–85%" },
-    { label: "Recent reports", value: "MU · AXTI · 0700.HK" },
+    { label: "30-day directional accuracy", value: "—" },
+    { label: "Mature supply-chain theses", value: "—" },
+    { label: "Recent reports", value: "—" },
   ];
   return (
     <section className="mt-8 flex flex-wrap gap-3">
@@ -603,60 +563,31 @@ function TrackRecord() {
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export function DashboardReport() {
-  const [sessionState, setSessionState] = useState<SessionState>("pre");
+  const { data: session } = authClient.useSession();
+  const isAnonymous = session?.user?.isAnonymous ?? !session?.user;
 
-  const previewButtons: { key: SessionState; label: string }[] = [
-    { key: "pre", label: "Pre-market 05:31" },
-    { key: "us", label: "US 10:12" },
-    { key: "asia", label: "Asia 18:45" },
-    { key: "weekend", label: "Weekend" },
-  ];
+  const sessionState = useMemo(() => deriveSessionState(), []);
 
   return (
     <div className="flex h-full flex-col">
-      {/* Preview state toolbar */}
-      <div className="flex flex-wrap items-center gap-2.5 bg-[#1c1b18] px-4 py-2 text-[#ede9e0]">
-        <span className="font-mono text-[11px] tracking-[0.12em] text-[#b8b2a4] uppercase">
-          Mockup · page state
-        </span>
-        {previewButtons.map((btn) => (
-          <button
-            key={btn.key}
-            type="button"
-            aria-pressed={sessionState === btn.key}
-            onClick={() => setSessionState(btn.key)}
-            className={`rounded-full border px-3 py-1 font-mono text-[11px] tracking-wide ${
-              sessionState === btn.key
-                ? "border-[#ede9e0] bg-[#ede9e0] text-[#1c1b18]"
-                : "border-[#4a463e] bg-transparent text-[#ede9e0]"
-            }`}
-          >
-            {btn.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Session rail */}
-      <SessionRail state={sessionState} />
+      {/* Session rail — real market status */}
+      <SessionRail sessionState={sessionState} />
 
       {/* Main layout: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
-        <WatchlistSidebar />
+        <WatchlistSidebar isAnonymous={isAnonymous} />
         <main className="flex-1 overflow-y-auto px-8 py-6">
-          <BriefCard state={sessionState} />
+          <BriefCard sessionState={sessionState} />
           {sessionState === "asia" && <AsiaDegradationNotice />}
           <ResearchSection />
           <TrackRecord />
-          {/* Footer disclaimer */}
+          {/* Footer */}
           <div className="mt-9 flex flex-wrap items-center gap-3.5 border-t border-[#e5e0d6] px-0 pt-4 text-[12.5px] text-[#6b675e]">
             <span>Decision-support analysis, not investment advice.</span>
             <span>
               Run any report in Claude Code:{" "}
               <span className="font-mono">/deep-dive TICKER</span> · Install
               plugin →
-            </span>
-            <span className="ml-auto font-mono text-[11px]">
-              MOCKUP · ALL FIGURES ARE STATIC PLACEHOLDERS
             </span>
           </div>
         </main>

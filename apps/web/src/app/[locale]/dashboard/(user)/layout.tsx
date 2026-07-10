@@ -21,7 +21,7 @@ const menu = [
     label: "platform",
     items: [
       {
-        title: "Deep Dive",
+        title: "Report",
         href: pathsConfig.dashboard.user.report,
         icon: <FileText />,
       },
@@ -31,7 +31,7 @@ const menu = [
         icon: <BarChart3 />,
       },
       {
-        title: "Investment Committee",
+        title: "Decision Lab",
         href: pathsConfig.dashboard.user.committee,
         icon: <Scale />,
       },
