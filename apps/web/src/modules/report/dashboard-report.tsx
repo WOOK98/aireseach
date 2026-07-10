@@ -7,6 +7,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { authClient } from "~/lib/auth/client";
+import {
+  derivePageState,
+  formatDate,
+  getHkStatus,
+  getKrxStatus,
+  getNyseStatus,
+} from "~/modules/report/market-sessions";
 
 import type { KeyboardEvent } from "react";
 
@@ -14,79 +21,6 @@ import type { KeyboardEvent } from "react";
 
 type SessionState = "pre" | "us" | "asia" | "weekend";
 type EntityLockState = "empty" | "locked" | "ambiguous" | "theme" | "no-match";
-
-// ─── Market time helpers ─────────────────────────────────────────────────────
-
-/** Get current time in a specific timezone as HH:MM */
-function getTimeInTz(tz: string): { h: number; m: number; label: string } {
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: tz,
-  }).formatToParts(now);
-  const h = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
-  const m = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
-  const label = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: tz,
-  }).format(now);
-  return { h, m, label };
-}
-
-function getDayOfWeek(tz: string): number {
-  // JS getDay(): 0=Sun, 1=Mon ... 6=Sat. Use a temp Date shifted to target tz.
-  const now = new Date();
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    timeZone: tz,
-  }).format(now);
-  const map: Record<string, number> = {
-    Sun: 0,
-    Mon: 1,
-    Tue: 2,
-    Wed: 3,
-    Thu: 4,
-    Fri: 5,
-    Sat: 6,
-  };
-  return map[weekday] ?? 0;
-}
-
-/** Derive session state from real ET time, cross-checking exchange local weekdays */
-function deriveSessionState(): SessionState {
-  const et = getTimeInTz("America/New_York");
-  const etDow = getDayOfWeek("America/New_York");
-
-  // Weekend in ET → check if Asia is also weekend
-  if (etDow === 0 || etDow === 6) return "weekend";
-
-  const minutes = et.h * 60 + et.m;
-
-  // Pre-market: 04:00–09:29 ET (NYSE local weekday already confirmed)
-  if (minutes >= 240 && minutes < 570) return "pre";
-  // US session: 09:30–15:59 ET
-  if (minutes >= 570 && minutes < 960) return "us";
-  // Asia window: 16:00–03:59 ET — but verify Asia is actually a weekday
-  if (minutes >= 960 || minutes < 240) {
-    const hkDow = getDayOfWeek("Asia/Hong_Kong");
-    if (hkDow === 0 || hkDow === 6) return "weekend";
-    return "asia";
-  }
-
-  return "pre";
-}
-
-function formatDate(): string {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }).format(new Date());
-}
 
 // ─── Market status labels ────────────────────────────────────────────────────
 
@@ -157,64 +91,57 @@ function resolveEntity(query: string): {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+function phaseLabel(p: string) {
+  return p === "open" ? "OPEN" : p === "pre" ? "PRE-MARKET" : "CLOSED ✓";
+}
+
+function phaseCls(p: string) {
+  return p === "open" ? "open" : p === "pre" ? "pre" : "closed";
+}
+
 function SessionRail({
   sessionState: _sessionState,
 }: {
   sessionState: SessionState;
 }) {
-  const [clocks, setClocks] = useState({ us: "", hk: "", kr: "" });
+  const [markets, setMarkets] = useState<
+    { key: string; label: string; phase: string; clock: string; cls: string }[]
+  >([]);
 
   useEffect(() => {
     function tick() {
-      const us = getTimeInTz("America/New_York");
-      const hk = getTimeInTz("Asia/Hong_Kong");
-      const kr = getTimeInTz("Asia/Seoul");
-      setClocks({ us: us.label, hk: hk.label, kr: kr.label });
+      const nyse = getNyseStatus();
+      const hk = getHkStatus();
+      const kr = getKrxStatus();
+
+      setMarkets([
+        {
+          key: "us",
+          label: "NYSE·NASDAQ",
+          phase: phaseLabel(nyse.phase),
+          clock: nyse.clock,
+          cls: phaseCls(nyse.phase),
+        },
+        {
+          key: "hk",
+          label: "HKEX·A股",
+          phase: phaseLabel(hk.phase),
+          clock: hk.clock,
+          cls: phaseCls(hk.phase),
+        },
+        {
+          key: "kr",
+          label: "KRX",
+          phase: phaseLabel(kr.phase),
+          clock: kr.clock,
+          cls: phaseCls(kr.phase),
+        },
+      ]);
     }
     tick();
     const id = setInterval(tick, 30_000);
     return () => clearInterval(id);
   }, []);
-
-  function marketStatus(
-    tz: string,
-    openH: number,
-    openM: number,
-    closeH: number,
-    closeM: number,
-  ): { text: string; cls: string } {
-    const now = getTimeInTz(tz);
-    const dow = getDayOfWeek(tz);
-    if (dow === 0 || dow === 6) return { text: "CLOSED ✓", cls: "closed" };
-    const mins = now.h * 60 + now.m;
-    const open = openH * 60 + openM;
-    const close = closeH * 60 + closeM;
-    if (mins >= open && mins < close) return { text: "OPEN", cls: "open" };
-    if (mins >= open - 180 && mins < open)
-      return { text: "PRE-MARKET", cls: "pre" };
-    return { text: "CLOSED ✓", cls: "closed" };
-  }
-
-  const markets = [
-    {
-      key: "us",
-      label: "NYSE·NASDAQ",
-      status: marketStatus("America/New_York", 9, 30, 16, 0),
-      clock: clocks.us,
-    },
-    {
-      key: "hk",
-      label: "HKEX·A股",
-      status: marketStatus("Asia/Hong_Kong", 9, 30, 16, 0),
-      clock: clocks.hk,
-    },
-    {
-      key: "kr",
-      label: "KRX",
-      status: marketStatus("Asia/Seoul", 9, 0, 15, 30),
-      clock: clocks.kr,
-    },
-  ];
 
   return (
     <div className="flex overflow-x-auto border-b border-[#e5e0d6] bg-white">
@@ -228,14 +155,14 @@ function SessionRail({
           </span>
           <span
             className={`rounded-full border px-2 py-0.5 font-mono text-[10.5px] ${
-              m.status.cls === "open"
+              m.cls === "open"
                 ? "border-emerald-600 text-emerald-700"
-                : m.status.cls === "pre"
+                : m.cls === "pre"
                   ? "border-amber-600 text-amber-800"
                   : "border-[#e5e0d6] text-[#6b675e]"
             }`}
           >
-            {m.status.text}
+            {m.phase}
           </span>
           <span className="ml-auto font-mono text-[11.5px] text-[#6b675e]">
             {m.clock}
@@ -583,7 +510,7 @@ export function DashboardReport() {
   const { data: session } = authClient.useSession();
   const isAnonymous = session?.user?.isAnonymous ?? !session?.user;
 
-  const sessionState = useMemo(() => deriveSessionState(), []);
+  const sessionState = useMemo(() => derivePageState(), []);
 
   return (
     <div className="flex h-full flex-col">
