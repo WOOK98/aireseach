@@ -6,6 +6,7 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "next-env.d.ts"],
       "env": [
+        "VERCEL_ENV",
         "CONTACT_EMAIL",
 
         "BETTER_AUTH_URL",
