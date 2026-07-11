@@ -43,6 +43,48 @@ function formatCompactMoney(value: number, currency: string) {
   }).format(value);
 }
 
+function marketSessionLabel(state: string): string {
+  switch (state) {
+    case "REGULAR":
+      return "intraday";
+    case "PRE":
+      return "pre-market";
+    case "POST":
+      return "after-hours";
+    default:
+      return "at close";
+  }
+}
+
+function PriceChangeBadge({
+  change,
+  changePercent,
+  marketState,
+}: {
+  change: number | null;
+  changePercent: number | null;
+  marketState: string;
+}) {
+  if (change == null || changePercent == null) return null;
+  const isUp = change >= 0;
+  const sign = isUp ? "+" : "";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-xs ${
+        isUp
+          ? "border-green-line bg-green-bg text-green-ink"
+          : "text-down border-red-200 bg-red-50"
+      }`}
+    >
+      <span className="notranslate" translate="no">
+        {sign}
+        {formatNumber(changePercent, { maximumFractionDigits: 2 })}%
+      </span>
+      <span className="text-ink-2">{marketSessionLabel(marketState)}</span>
+    </span>
+  );
+}
+
 function metricValue(
   label: string,
   value: number | null | undefined,
@@ -213,8 +255,17 @@ export default async function CompanyPage({ params }: PageProps) {
                 {data.entity.ticker} · {industry}
               </p>
             </div>
-            <div className="text-ink-2 font-mono text-xs">
-              Market data · {asOf}
+            <div className="flex items-center gap-3">
+              {data.financials && (
+                <PriceChangeBadge
+                  change={data.financials.priceChange}
+                  changePercent={data.financials.priceChangePercent}
+                  marketState={data.financials.marketState}
+                />
+              )}
+              <div className="text-ink-2 font-mono text-xs">
+                Market data · {asOf}
+              </div>
             </div>
           </div>
           <p className="text-ink-2 mt-3 font-mono text-xs">
