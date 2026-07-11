@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useRef } from "react";
+import { z } from "zod";
 
 import type {
   FinancialMetrics,
@@ -52,6 +53,20 @@ export type ResearchMode =
   | "risk"
   | "poc";
 
+const monitorPanelSchema = z.object({
+  schema_version: z.literal(1),
+  monitors: z.array(
+    z.object({
+      metric: z.string(),
+      current: z.string(),
+      trigger: z.string(),
+      tolerance: z.string().optional(),
+      freq: z.enum(["Daily", "Weekly", "Quarterly", "Event-driven"]),
+      source: z.string(),
+    }),
+  ),
+});
+
 const fmtPct = (value: number) =>
   `${Number.isFinite(value) ? value.toFixed(1) : "N/A"}%`;
 
@@ -70,32 +85,37 @@ function buildFallbackReport(
   const growthHealthy = metrics.revenueGrowthYoy >= 10;
   const cashGenerative = metrics.freeCashFlow > 0 && metrics.fcfMargin > 0;
   const profitable = metrics.netMargin > 0;
-  const rating: ReportData["rating"] =
-    growthHealthy && cashGenerative && profitable ? "Buy" : "Hold";
-  const targetPrice =
-    metrics.currentPrice > 0
-      ? Number(
-          (metrics.currentPrice * (rating === "Buy" ? 1.12 : 1.03)).toFixed(2),
-        )
-      : 0;
-  const upside =
-    metrics.currentPrice > 0
-      ? Number(
-          (
-            ((targetPrice - metrics.currentPrice) / metrics.currentPrice) *
-            100
-          ).toFixed(1),
-        )
-      : 0;
+  const thesisTier: ReportData["thesisQuality"]["tier"] =
+    growthHealthy && cashGenerative && profitable ? "B" : "C";
 
   return {
     ticker,
     companyName: metrics.companyName,
-    rating,
-    targetPrice,
-    upside,
-    ratingRationale:
-      "The AI narrative did not return complete JSON, so this conservative snapshot is based on loaded financial data.",
+    thesisQuality: {
+      tier: thesisTier,
+      rationale:
+        "The AI narrative did not return complete JSON, so this fallback tier only reflects evidence completeness in the loaded financial data.",
+      disclaimer:
+        "Thesis quality scores evidence completeness only; it is not transaction advice.",
+    },
+    topJudgments: [
+      {
+        judgment:
+          "Growth quality is the first issue to verify before deeper work.",
+        keyNumber: fmtPct(metrics.revenueGrowthYoy),
+        wrongIf: "Revenue growth falls below 10% or turns negative.",
+      },
+      {
+        judgment: "Cash conversion determines whether the growth is durable.",
+        keyNumber: fmtPct(metrics.fcfMargin),
+        wrongIf: "FCF margin turns negative for a full quarter.",
+      },
+      {
+        judgment: "Margin quality needs confirmation against the next filing.",
+        keyNumber: fmtPct(metrics.grossMargin),
+        wrongIf: "Gross margin compresses by more than 300 bps.",
+      },
+    ],
     investmentThesis: `${metrics.companyName} shows revenue growth of ${fmtPct(metrics.revenueGrowthYoy)}, gross margin of ${fmtPct(metrics.grossMargin)}, and free cash flow of ${fmtMoney(metrics.freeCashFlow)}. Validate the thesis against the next earnings report, competition, and valuation range.`,
     sections: {
       overview: `This is a data-driven snapshot of ${metrics.companyName} (${ticker}) across growth, margins, cash flow, and valuation.`,
@@ -120,10 +140,7 @@ function buildFallbackReport(
       {
         scenario: "Bull",
         probability: 30,
-        targetPrice:
-          metrics.currentPrice > 0
-            ? Number((metrics.currentPrice * 1.2).toFixed(2))
-            : targetPrice,
+        keyMetric: "Revenue growth stays above 10%",
         drivers: [
           "Double-digit growth persists",
           "Margins improve",
@@ -133,7 +150,7 @@ function buildFallbackReport(
       {
         scenario: "Base",
         probability: 50,
-        targetPrice,
+        keyMetric: "Growth and margins remain near current levels",
         drivers: [
           "Growth normalizes",
           "Valuation holds current range",
@@ -143,10 +160,7 @@ function buildFallbackReport(
       {
         scenario: "Bear",
         probability: 20,
-        targetPrice:
-          metrics.currentPrice > 0
-            ? Number((metrics.currentPrice * 0.85).toFixed(2))
-            : targetPrice,
+        keyMetric: "Growth slows or FCF margin turns negative",
         drivers: ["Growth slows", "Margins compress", "Multiples derate"],
       },
     ],
@@ -179,6 +193,27 @@ function buildFallbackReport(
         whyItMatters: "It validates growth quality.",
       },
     ],
+    monitorPanel: {
+      schema_version: 1,
+      monitors: [
+        {
+          metric: "Revenue growth YoY",
+          current: fmtPct(metrics.revenueGrowthYoy),
+          trigger: "Below 10%",
+          tolerance: "One quarter",
+          freq: "Quarterly",
+          source: "Company filing / earnings release",
+        },
+        {
+          metric: "FCF margin",
+          current: fmtPct(metrics.fcfMargin),
+          trigger: "Below 0%",
+          tolerance: "One quarter",
+          freq: "Quarterly",
+          source: "Cash flow statement",
+        },
+      ],
+    },
     nextSteps: [
       "Regenerate for the full structured AI report.",
       "Compare peer valuation and margins.",
@@ -207,6 +242,65 @@ function parseReportJson(text: string) {
     }
     return null;
   }
+}
+
+type ReportPayload = Partial<ReportData> & {
+  [legacyKey: string]: unknown;
+  monitorPanel?:
+    | ReportData["monitorPanel"]
+    | NonNullable<ReportData["monitorPanel"]>["monitors"];
+};
+
+function normalizeReportPayload(
+  payload: ReportPayload,
+): Omit<ReportData, "ticker" | "companyName" | "generatedAt"> {
+  const legacyRatingRationale = payload["ratingRationale"];
+  const legacyRationale =
+    typeof legacyRatingRationale === "string"
+      ? legacyRatingRationale
+      : "Legacy report loaded without the v1 thesis-quality schema.";
+
+  const monitorPanel =
+    payload.monitorPanel && !Array.isArray(payload.monitorPanel)
+      ? monitorPanelSchema.safeParse(payload.monitorPanel)
+      : null;
+  const legacyMonitors = Array.isArray(payload.monitorPanel)
+    ? payload.monitorPanel
+    : undefined;
+
+  return {
+    thesisQuality: payload.thesisQuality ?? {
+      tier: "C",
+      rationale: legacyRationale,
+      disclaimer:
+        "Thesis quality scores evidence completeness only; it is not transaction advice.",
+    },
+    topJudgments: payload.topJudgments,
+    investmentThesis:
+      payload.investmentThesis ?? payload.sections?.overview ?? "",
+    sections: payload.sections ?? {
+      overview: "",
+      growthDrivers: "",
+      profitability: "",
+      risks: [],
+      valuation: "",
+      catalysts: "",
+    },
+    decisionBrief: payload.decisionBrief,
+    scenarioMatrix: payload.scenarioMatrix,
+    roleBriefs: payload.roleBriefs,
+    watchlist: payload.watchlist,
+    monitorPanel: monitorPanel?.success
+      ? monitorPanel.data
+      : legacyMonitors
+        ? {
+            schema_version: 1,
+            monitors: legacyMonitors,
+          }
+        : undefined,
+    nextSteps: payload.nextSteps,
+    evidenceNeeds: payload.evidenceNeeds,
+  };
 }
 
 export function useReportStream() {
@@ -281,10 +375,7 @@ export function useReportStream() {
         ticker,
         companyName: metrics.companyName,
         generatedAt: new Date().toISOString(),
-        ...(parsed as Omit<
-          ReportData,
-          "ticker" | "companyName" | "generatedAt"
-        >),
+        ...normalizeReportPayload(parsed as ReportPayload),
       } satisfies ReportData);
       setStatus("done");
     } catch (err) {

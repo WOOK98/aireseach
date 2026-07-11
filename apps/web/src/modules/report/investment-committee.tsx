@@ -54,6 +54,8 @@ type CommitteeLens = {
     kind: ClaimKind;
     sourceIds: string[];
   }>;
+  numericConclusion?: string;
+  howToReadThisNumber?: string;
   whatChangesTheView: string;
 };
 
@@ -64,6 +66,14 @@ type CommitteeReport = {
   dataAsOf: string;
   oneLineDecision: string;
   keyQuestion: string;
+  topJudgments?: Array<{
+    numeral: "I" | "II" | "III";
+    judgment: string;
+    keyNumber: string;
+    evidence: string;
+    wrongIf: string;
+    sourceIds: string[];
+  }>;
   bullCase: string[];
   bearCase: string[];
   lenses: CommitteeLens[];
@@ -80,6 +90,23 @@ type CommitteeReport = {
     threshold: string;
     sourceIds: string[];
   }>;
+  monitorPanel?: {
+    schema_version: 1;
+    monitors: Array<{
+      metric: string;
+      current: string;
+      trigger: string;
+      tolerance?: string;
+      freq: "Daily" | "Weekly" | "Quarterly" | "Event-driven";
+      source: string;
+      sourceIds: string[];
+    }>;
+  };
+  convictionTier?: {
+    tier: "S" | "A" | "B" | "C" | "D" | "F";
+    definition: string;
+    why: string;
+  };
   investorFit: Array<{
     profile: string;
     fit: "Good" | "Conditional" | "Poor";
@@ -537,6 +564,45 @@ export function InvestmentCommittee() {
                   </div>
                 </section>
 
+                {report.topJudgments && report.topJudgments.length > 0 && (
+                  <section>
+                    <div className="mb-3">
+                      <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
+                        Three falsifiable judgments
+                      </p>
+                      <h3 className="mt-1 text-lg font-semibold">
+                        Every claim has a number
+                      </h3>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {report.topJudgments.slice(0, 3).map((item) => (
+                        <div
+                          key={item.numeral}
+                          className="rounded-lg border p-4"
+                        >
+                          <p className="text-muted-foreground font-serif text-2xl">
+                            {item.numeral}
+                          </p>
+                          <p className="mt-3 font-mono text-xl font-semibold">
+                            {item.keyNumber}
+                          </p>
+                          <p className="mt-2 text-sm leading-relaxed">
+                            {item.judgment}
+                          </p>
+                          <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
+                            Wrong if: {item.wrongIf}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {item.sourceIds.map((id) => (
+                              <SourceLink key={id} id={id} report={report} />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
                 <section>
                   <div className="mb-3 flex items-center justify-between">
                     <div>
@@ -640,6 +706,31 @@ export function InvestmentCommittee() {
                           </div>
                         ))}
                       </div>
+                      {(selectedLens.numericConclusion ||
+                        selectedLens.howToReadThisNumber) && (
+                        <div className="mt-3 grid gap-2 md:grid-cols-2">
+                          {selectedLens.numericConclusion && (
+                            <div className="rounded-md border bg-slate-50 p-3 dark:bg-slate-900/60">
+                              <p className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
+                                Lens number
+                              </p>
+                              <p className="mt-1 text-xs leading-relaxed">
+                                {selectedLens.numericConclusion}
+                              </p>
+                            </div>
+                          )}
+                          {selectedLens.howToReadThisNumber && (
+                            <div className="rounded-md border bg-blue-50 p-3 dark:bg-blue-950/20">
+                              <p className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
+                                How to read this number
+                              </p>
+                              <p className="mt-1 text-xs leading-relaxed">
+                                {selectedLens.howToReadThisNumber}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <div className="mt-2 flex gap-2 rounded-md bg-slate-50 p-3 dark:bg-slate-900/60">
                         <CircleDot className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
                         <p className="text-xs leading-relaxed">
@@ -756,6 +847,80 @@ export function InvestmentCommittee() {
                     </div>
                   </div>
                 </section>
+
+                {(report.monitorPanel?.monitors.length ||
+                  report.convictionTier) && (
+                  <section className="grid gap-4 lg:grid-cols-[1fr_260px]">
+                    {report.monitorPanel &&
+                      report.monitorPanel.monitors.length > 0 && (
+                        <div>
+                          <div className="mb-3">
+                            <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
+                              Monitor panel
+                            </p>
+                            <h3 className="mt-1 text-lg font-semibold">
+                              Thesis checks for morning brief
+                            </h3>
+                          </div>
+                          <div className="overflow-hidden rounded-lg border">
+                            {report.monitorPanel.monitors
+                              .slice(0, 6)
+                              .map((item, index) => (
+                                <div
+                                  key={`${item.metric}-${index}`}
+                                  className={`grid gap-3 p-4 md:grid-cols-[1fr_120px_120px_auto] md:items-center ${index ? "border-t" : ""}`}
+                                >
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {item.metric}
+                                    </p>
+                                    <p className="text-muted-foreground mt-1 text-xs">
+                                      {item.source} · {item.freq}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
+                                      Current
+                                    </p>
+                                    <p className="font-mono text-xs">
+                                      {item.current}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
+                                      Trigger
+                                    </p>
+                                    <p className="font-mono text-xs">
+                                      {item.trigger}
+                                    </p>
+                                  </div>
+                                  <Button variant="outline" size="sm">
+                                    Add monitor
+                                  </Button>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                    {report.convictionTier && (
+                      <div className="h-fit rounded-lg border p-4">
+                        <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
+                          Thesis quality
+                        </p>
+                        <p className="mt-3 font-mono text-4xl font-semibold">
+                          {report.convictionTier.tier}
+                        </p>
+                        <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
+                          {report.convictionTier.definition}
+                        </p>
+                        <p className="mt-3 text-sm leading-relaxed">
+                          {report.convictionTier.why}
+                        </p>
+                      </div>
+                    )}
+                  </section>
+                )}
 
                 <Separator />
 
