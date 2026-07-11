@@ -54,7 +54,7 @@ function metricValue(
 }
 
 function buildMetrics(metrics: FinancialMetrics, asOf: string) {
-  const source = `Yahoo Finance · ${asOf}`;
+  const source = `Market data · ${asOf}`;
   return [
     metricValue(
       "Price",
@@ -214,15 +214,9 @@ export default async function CompanyPage({ params }: PageProps) {
               </p>
             </div>
             <div className="text-muted-foreground font-mono text-xs">
-              Data session: Yahoo Finance · {asOf}
+              Market data · {asOf}
             </div>
           </div>
-          {data.financials?.description && (
-            <p className="text-muted-foreground mt-5 max-w-4xl text-sm leading-7">
-              {data.financials.description.slice(0, 520)}
-              {data.financials.description.length > 520 ? "..." : ""}
-            </p>
-          )}
           <p className="text-muted-foreground mt-3 font-mono text-xs">
             {sector} · {industry}
           </p>
