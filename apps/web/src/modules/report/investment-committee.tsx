@@ -58,7 +58,7 @@ type CommitteeLens = {
 };
 
 type CommitteeReport = {
-  verdict: "Investigate" | "Watch" | "Avoid";
+  verdict: "Investigate" | "Watch" | "Defer";
   stance: "Bullish" | "Mixed" | "Bearish";
   confidence: number;
   dataAsOf: string;
@@ -148,7 +148,7 @@ function parseCommitteeJson(text: string): CommitteeReport {
   const start = clean.indexOf("{");
   const end = clean.lastIndexOf("}");
   if (start < 0 || end <= start)
-    throw new Error("The committee response was incomplete.");
+    throw new Error("The Decision Lab response was incomplete.");
   return JSON.parse(clean.slice(start, end + 1)) as CommitteeReport;
 }
 
@@ -290,7 +290,7 @@ export function InvestmentCommittee() {
       } catch (caught) {
         if (caught instanceof Error && caught.name === "AbortError") return;
         setError(
-          caught instanceof Error ? caught.message : "Committee review failed.",
+          caught instanceof Error ? caught.message : "Decision Lab failed.",
         );
         setStatus("error");
       }
@@ -352,9 +352,7 @@ export function InvestmentCommittee() {
               <Scale className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-sm font-semibold">
-                Investment Committee
-              </h1>
+              <h1 className="truncate text-sm font-semibold">Decision Lab</h1>
               <p className="text-muted-foreground text-xs">
                 Six-lens evidence review
               </p>
@@ -420,7 +418,7 @@ export function InvestmentCommittee() {
                 <div className="flex items-center gap-3">
                   <BrainCircuit className="h-4 w-4 animate-pulse" />
                   <div>
-                    <p className="text-sm font-medium">Committee in session</p>
+                    <p className="text-sm font-medium">Decision Lab running</p>
                     <p className="text-xs opacity-70">
                       {status === "streaming"
                         ? "Reconciling evidence and disagreements"
@@ -518,7 +516,7 @@ export function InvestmentCommittee() {
                     </div>
                     <div className="bg-background col-span-2 p-4">
                       <div className="text-muted-foreground flex items-center justify-between text-xs">
-                        <span>Committee confidence</span>
+                        <span>Review confidence</span>
                         <span>{clampPercent(report.confidence)}/100</span>
                       </div>
                       <div className="bg-muted mt-2 h-2 overflow-hidden rounded-full">
@@ -543,7 +541,7 @@ export function InvestmentCommittee() {
                   <div className="mb-3 flex items-center justify-between">
                     <div>
                       <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
-                        Committee table
+                        Decision table
                       </p>
                       <h3 className="mt-1 text-lg font-semibold">
                         Six-lens review

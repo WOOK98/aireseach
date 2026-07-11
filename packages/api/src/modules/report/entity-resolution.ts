@@ -149,6 +149,28 @@ export const buildEntityLock = (entity: {
     "All analysis sections must analyze this exact entity. Do not reinterpret the user input, substitute a similar company, or invent a ticker. If data is missing, say the data is unavailable.",
   ].join("\n");
 
+const resolveFromCandidate = (
+  input: string,
+  candidate: EntityCandidate,
+): ResolvedEntity => {
+  const entity = {
+    ticker: candidate.ticker.toUpperCase(),
+    companyName: candidate.companyName,
+    exchange: candidate.exchange,
+    quoteType: candidate.quoteType || "EQUITY",
+    price: null,
+    currency: null,
+  };
+
+  return {
+    ok: true,
+    mode: "ticker",
+    input,
+    ...entity,
+    entityLock: buildEntityLock(entity),
+  };
+};
+
 export const resolveEntity = async (
   input: string,
 ): Promise<EntityResolution> => {
@@ -190,6 +212,13 @@ export const resolveEntity = async (
         ...entity,
         entityLock: buildEntityLock(entity),
       };
+    }
+
+    const exactTickerCandidate = candidates.find(
+      (candidate) => candidate.ticker.toUpperCase() === ticker,
+    );
+    if (exactTickerCandidate) {
+      return resolveFromCandidate(query, exactTickerCandidate);
     }
 
     return {
@@ -238,6 +267,8 @@ export const resolveEntity = async (
         entityLock: buildEntityLock(entity),
       };
     }
+
+    return resolveFromCandidate(query, exactCandidate);
   }
 
   return {

@@ -493,12 +493,12 @@ reportRoute.post(
       )
       .join("\n\n");
 
-    const systemPrompt = `You are the chair of an evidence-led investment committee.
+    const systemPrompt = `You are an evidence-led Decision Lab analyst.
 You do not impersonate investors or attribute claims to famous people. You apply six generic analytical frameworks: Value, Growth, Macro, Trend, Quant, and Skeptic.
 Separate observed facts from inferences and opinions. Cite only source IDs supplied by the user. Never invent a URL, filing, metric, or quotation.
 Return strict JSON only, with no markdown fences. This is decision support, not financial advice.`;
 
-    const userPrompt = `Conduct an Investment Committee review of ${m.companyName} (${symbol}).
+    const userPrompt = `Conduct a Decision Lab review of ${m.companyName} (${symbol}).
 
 CURRENT DATA
 - Price: $${fmt(m.currentPrice, 2)}; Market cap: ${fmtB(m.marketCap)}
@@ -514,7 +514,7 @@ ${sourceContext}
 
 Return exactly this structure in English:
 {
-  "verdict": "Investigate" | "Watch" | "Avoid",
+  "verdict": "Investigate" | "Watch" | "Defer",
   "stance": "Bullish" | "Mixed" | "Bearish",
   "confidence": <number 0-100>,
   "dataAsOf": "<YYYY-MM-DD>",
@@ -598,6 +598,9 @@ reportRoute.get(
   zValidator("param", z.object({ ticker: z.string().min(1).max(10) })),
   async (c) => {
     const { ticker } = c.req.valid("param");
+    const resolution = await cachedResolveEntity(ticker);
+    if (!resolution.ok) return c.json({ valid: false });
+
     try {
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
       const res = await fetch(url, {
@@ -616,14 +619,17 @@ reportRoute.get(
         };
       };
       const meta = json?.chart?.result?.[0]?.meta;
-      if (!meta) return c.json({ valid: false });
       return c.json({
         valid: true,
-        name: meta.longName ?? meta.shortName,
-        price: meta.regularMarketPrice,
+        name: meta?.longName ?? meta?.shortName ?? resolution.companyName,
+        price: meta?.regularMarketPrice ?? resolution.price,
       });
     } catch {
-      return c.json({ valid: false });
+      return c.json({
+        valid: true,
+        name: resolution.companyName,
+        price: resolution.price,
+      });
     }
   },
 );
