@@ -22,7 +22,7 @@ export function WatchlistStar({ symbol }: { symbol: string }) {
         const response = await fetch(
           `/api/watchlist/${encodeURIComponent(symbol)}`,
         );
-        const data = (await response.json());
+        const data = await response.json();
         if (cancelled) return;
         const payload = data as {
           authenticated?: boolean;

@@ -21,7 +21,7 @@ export function WatchlistBadges() {
     void (async () => {
       try {
         const response = await fetch("/api/watchlist");
-        const data = (await response.json());
+        const data = await response.json();
         if (cancelled) return;
         const payload = data as { items?: WatchlistItem[] };
         setItems((payload.items ?? []).slice(0, 12));

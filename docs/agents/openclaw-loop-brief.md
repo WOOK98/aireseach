@@ -10,6 +10,7 @@
 ---
 
 ## §9 — GitHub Issues 指令总线
+
 > 追加到 openclaw-loop-brief.md 末尾。生效后, 实现圈的领活源从 backlog 文件
 > 切换为 GitHub Issues。backlog 文件降级为审计圈的产出草稿区(审计发现先进文件,
 > Wook 筛选后升格为 issue)。
@@ -49,10 +50,11 @@ directive ──领取──> in-progress ──开PR──> in-review ──合
 目标: 悬空工作归档入库, 建立 Phase B 干净基线。指标: 无。
 
 任务清单:
-- [ ] 删除 _tmp_19_* 临时文件; kevin-dashboard-v2 mockups 移出 repo 到本地目录
+
+- [ ] 删除 _tmp_19_\* 临时文件; kevin-dashboard-v2 mockups 移出 repo 到本地目录
 - [ ] 工作区改动按去向拆 4 个 commit 提交到 codex/preview-env-setup:
       ①报告骨架(route.ts/server.py/use-report.ts/metric-cards.tsx/
-        investment-committee.tsx/methodology·theses·track-record.md)
+      investment-committee.tsx/methodology·theses·track-record.md)
       ②MCP auth(router.ts/auth.ts/test/auth.test.ts) — 最高优先, 生产在跑的代码必须入库
       ③market-sessions.ts+单测 ④旧 dashboard UI(仅留档)
 - [ ] 等 Wook 合并 PR #9 后: cherry-pick ①②③到新 main 开清算 PR
@@ -61,6 +63,7 @@ directive ──领取──> in-progress ──开PR──> in-review ──合
 - [ ] codex/preview-env-setup 标 superseded 封存(分支描述注明"被单页架构取代")
 
 验收标准:
+
 - [ ] git status 全仓库干净, 无未跟踪产品代码
 - [ ] 清算 PR 的 CI 五道闸全绿
 - [ ] main 上 grep 不到旧 dashboard UI 重构的引用
@@ -91,23 +94,25 @@ blocked-by: #A(清算) + [WOOK] Preview 环境变量(DB+AI 密钥)
 ---
 
 ## §10 — 双执行者扩展（OpenClaw + Codex）
+
 > 追加于 §9 之后。总线不变, 执行者从一个变两个。Claude 继续担任指令产出与 PR 审查,
 > Wook 继续担任唯一合并闸门。本节同时发给 OpenClaw 与 Codex, 两者遵守同一协议。
 
 ### 10.1 路由：谁干什么
 
 Issue 可带路由 label(Wook 创建时指定, 可不指定):
+
 - `agent:codex` → 仅 Codex 可领取
 - `agent:openclaw` → 仅 OpenClaw 可领取
 - 无路由 label → 任意执行者可领, 先到先得(见 10.2)
 
 默认分工建议(Wook 可随时用 label 覆盖):
 
-| 任务类型 | 默认执行者 | 依据 |
-|---|---|---|
-| Web 前端 / Next.js 页面 / 公司页 | Codex | 现有单页与 A.5 工作均出自 codex/* 分支, 上下文连续 |
-| MCP server / 报告管线 / cron / 审计圈 | OpenClaw | 循环基建与 skill 体系在其侧 |
-| 纯文档 / 配置 | 任意 | — |
+| 任务类型                              | 默认执行者 | 依据                                                |
+| ------------------------------------- | ---------- | --------------------------------------------------- |
+| Web 前端 / Next.js 页面 / 公司页      | Codex      | 现有单页与 A.5 工作均出自 codex/\* 分支, 上下文连续 |
+| MCP server / 报告管线 / cron / 审计圈 | OpenClaw   | 循环基建与 skill 体系在其侧                         |
+| 纯文档 / 配置                         | 任意       | —                                                   |
 
 同一 issue 绝不双发: 禁止两个执行者做同一任务比谁快 — 浪费预算且必然合并冲突。
 并行的正确形态是**不同 issue 各领各的**(吞吐翻倍), 前提见 10.3。
@@ -115,12 +120,14 @@ Issue 可带路由 label(Wook 创建时指定, 可不指定):
 ### 10.2 领取协议（防碰撞, 两执行者共同遵守）
 
 领取前依次检查, 任一不满足则跳过该 issue:
+
 1. label 含 `directive` 且不含 `in-progress` / `stuck` / `blocked`
 2. 无 assignee, 且评论区无未撤销的 "Claimed" 评论
 3. 路由 label 允许本执行者
 
 领取动作(一次完成): 加 `in-progress` label + 自我 assign(或评论首行标识身份)
-+ 评论 `Claimed by <codex|openclaw> · branch: <agent>/YYYY-MM-DD-<slug>`
+
+- 评论 `Claimed by <codex|openclaw> · branch: <agent>/YYYY-MM-DD-<slug>`
 
 碰撞仲裁(两个 Claimed 评论同时出现): 有路由 label 者胜; 否则评论时间戳早者胜;
 败方评论 "Backing off" 并移除自己的痕迹, 30 秒内不再领取任何 issue(退避)。

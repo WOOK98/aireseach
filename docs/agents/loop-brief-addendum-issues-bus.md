@@ -36,19 +36,25 @@ name: Directive
 about: 循环执行指令(仅 WOOK98 创建的生效)
 labels: directive
 ---
+
 ## 目标
+
 <一句话 + 对应指标>
 
 ## 任务清单
+
 - [ ] ...
 
 ## 红线提醒
+
 <本任务特别适用的红线条目, 无则写"全局红线">
 
 ## 验收标准
+
 - [ ] ...
 
 ## blocked-by
+
 <#N 或 无>
 ```
 
@@ -62,13 +68,13 @@ labels: directive
 
 - [ ] 删除 `tmp_19*` 临时文件; kevin-dashboard-v2 mockups 移出 repo 到本地目录
 - [ ] 工作区改动按去向拆 4 个 commit 提交到 codex/preview-env-setup:
-  ①报告骨架(route.ts/server.py/use-report.ts/metric-cards.tsx/
-  investment-committee.tsx/methodology·theses·track-record.md)
-  ②MCP auth(router.ts/auth.ts/test/auth.test.ts) — 最高优先, 生产在跑的代码必须入库
-  ③market-sessions.ts+单测 ④旧 dashboard UI(仅留档)
+      ①报告骨架(route.ts/server.py/use-report.ts/metric-cards.tsx/
+      investment-committee.tsx/methodology·theses·track-record.md)
+      ②MCP auth(router.ts/auth.ts/test/auth.test.ts) — 最高优先, 生产在跑的代码必须入库
+      ③market-sessions.ts+单测 ④旧 dashboard UI(仅留档)
 - [ ] 等 Wook 合并 PR #9 后: cherry-pick ①②③到新 main 开清算 PR
 - [ ] 清算 PR 完整验证: build + 全部单测 + MCP auth 测试 + server.py py_compile
-  (这批代码从未过 CI, 视为未验证代码)
+      (这批代码从未过 CI, 视为未验证代码)
 - [ ] codex/preview-env-setup 标 superseded 封存(分支描述注明"被单页架构取代")
 
 验收标准:

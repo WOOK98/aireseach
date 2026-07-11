@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslation } from "@workspace/i18n";
 import {
   AreaChart,
   Area,
@@ -10,6 +9,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+
+import { useTranslation } from "@workspace/i18n";
 
 const chartData = [
   { month: "Oct", value: 10 },
@@ -56,8 +57,15 @@ export const DashboardPreview = () => {
                 <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-            <XAxis dataKey="month" stroke="rgba(255,255,255,0.3)" fontSize={10} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(255,255,255,0.1)"
+            />
+            <XAxis
+              dataKey="month"
+              stroke="rgba(255,255,255,0.3)"
+              fontSize={10}
+            />
             <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} />
             <Tooltip
               contentStyle={{
