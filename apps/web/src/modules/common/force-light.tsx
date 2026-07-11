@@ -1,13 +1,15 @@
 "use client";
 
-import { useTheme } from "next-themes";
-import { useEffect } from "react";
+import { ThemeProvider } from "next-themes";
 
-/** Force light mode in (app) route group. App tokens are light-only (v1). */
-export function ForceLight() {
-  const { setTheme } = useTheme();
-  useEffect(() => {
-    setTheme("light");
-  }, [setTheme]);
-  return null;
+/**
+ * Force light mode for (app) route group WITHOUT persisting to user storage.
+ * Uses next-themes forcedTheme — overrides rendering but preserves user preference.
+ */
+export function ForceLight({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider forcedTheme="light" attribute="class">
+      {children}
+    </ThemeProvider>
+  );
 }
