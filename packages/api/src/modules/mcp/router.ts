@@ -12,6 +12,7 @@ import {
   formatIndustryContext,
 } from "../report/industry";
 import { formatTechnicalContext } from "../report/technicals";
+import { isAuthorizedToken } from "./auth";
 
 type JsonRpcId = string | number | null;
 
@@ -128,28 +129,8 @@ const jsonRpcError = (
   },
 });
 
-const getToken = (authorization: string | undefined) => {
-  if (!authorization) return "";
-  const [scheme, value] = authorization.split(/\s+/, 2);
-  if (scheme?.toLowerCase() === "bearer") return value ?? "";
-  return authorization;
-};
-
-const normalizeKey = (raw: string) => {
-  const eq = raw.indexOf("=");
-  return eq > 0 ? raw.slice(eq + 1) : raw;
-};
-
-const isAuthorized = (authorization: string | undefined) => {
-  const configured = (env.MCP_API_KEYS ?? "")
-    .split(",")
-    .map((key) => key.trim())
-    .filter(Boolean)
-    .map(normalizeKey);
-
-  if (configured.length === 0) return false;
-  return configured.includes(getToken(authorization));
-};
+const isAuthorized = (authorization: string | undefined) =>
+  isAuthorizedToken(env.MCP_API_KEYS, authorization);
 
 const getStringArgument = (
   args: Record<string, unknown>,
