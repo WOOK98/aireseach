@@ -24,35 +24,35 @@ his views.**
 
 ## 2025 Q3 (Jul-Sep)
 
-| Date       | Ticker          | Call                                             | Outcome (as he reported)                     |
-| ---------- | --------------- | ------------------------------------------------ | -------------------------------------------- |
-| 2025-07-02 | UPWK            | Long ~$13-14; 7.5x P/E value thesis              | +50%+ by Sep, trimmed $16.5-17               |
-| 2025-07-02 | IBIT/BTC        | 2026-27 LEAPS at 44-55% IV; BTC $120-140K        | +$44K unrealized + $6.5K CC income by Jul 28 |
-| 2025-07-03 | GOOGL           | Calls ~$150; EOY PT $220+                        | +$101,428 realized on Jul 28 earnings        |
-| 2025-07-07 | HIMS            | Long $45.26                                      | Squeeze thesis; held into Sep                |
-| 2025-07-21 | ALAB            | Long ~$96-100; "$50B+ moonshot"                  | +154% by Sep 21 ($96→$244)                   |
-| 2025-07-21 | CRDO            | Long ~$100 (ALAB companion)                      | Held; DCA'd later                            |
-| 2025-07-28 | PLTR            | **Short** $150+ ("thanks Jim")                   | Maintained bear stance                       |
-| 2025-07-31 | KSPI            | Long $82, value                                  | Held                                         |
-| 2025-09-05 | HOOD            | Long $325K on S&P inclusion                      | +15% next day; later trimmed $130+           |
-| 2025-09-08 | ALAB            | **Took profit $217 (+100%+)** + CRDO short hedge | Realized win                                 |
-| 2025-09-09 | NBIS            | Long $100K after $17B MSFT contract              | Scaled to $750K+; core thesis launched       |
-| 2025-09-10 | TSM             | Calls ~$253                                      | +68% by Sep 19; sold all +100%+              |
-| 2025-09-12 | LTC             | Long ~$100-106 ahead of Oct 2 ETF                | "300% potential"; **outcome not recorded**   |
-| 2025-09-12 | HIMS            | "42% SI… make history" (viral)                   | Squeeze thesis; mixed near-term              |
-| 2025-09-19 | NBIS            | Long $500K; PT $225; "highest conviction"        | Became his defining multi-period winner      |
-| 2025-09-23 | AMZN            | "Great buy $220"; $3T PT                         | Long-term hold                               |
-| 2025-09-25 | CIFR            | "Good buy on 17.54% drop"; 0% int. dilution      | +250%, sold Oct 25                           |
-| 2025-09-26 | IREN            | Long $40.13                                      | ⚠️ later reversed to bear (2026)             |
-| 2025-09-26 | ORCL            | DCA calls $284                                   | ⚠️ later flipped to explicit Avoid           |
-| 2025-09-27 | NeoCloud thesis | "$1.5M+ in, 200-300%+" (1.2M views)              | Framework consolidation                      |
-| 2025-09-29 | OKLO/QBTS/IONQ  | **Strong Sell**                                  | Pre-revenue quantum avoid                    |
+| Date       | Ticker          | Call                                               | Outcome (as he reported)                         |
+| ---------- | --------------- | -------------------------------------------------- | ------------------------------------------------ |
+| 2025-07-02 | UPWK            | Long ~$13-14; 7.5x P/E value thesis                | +50%+ by Sep, trimmed $16.5-17                   |
+| 2025-07-02 | IBIT/BTC        | 2026-27 LEAPS at 44-55% IV; BTC $120-140K          | +$44K unrealized + $6.5K CC income by Jul 28     |
+| 2025-07-03 | GOOGL           | Calls ~$150; EOY PT $220+                          | +$101,428 realized on Jul 28 earnings            |
+| 2025-07-07 | HIMS            | Long $45.26                                        | Squeeze thesis; held into Sep                    |
+| 2025-07-21 | ALAB            | Long ~$96-100; "$50B+ moonshot"                    | +154% by Sep 21 ($96→$244)                       |
+| 2025-07-21 | CRDO            | Long ~$100 (ALAB companion)                        | Held; DCA'd later                                |
+| 2025-07-28 | PLTR            | **Short** $150+ ("thanks Jim")                     | Maintained bear stance                           |
+| 2025-07-31 | KSPI            | Long $82, value                                    | Held                                             |
+| 2025-09-05 | HOOD            | Long $325K on S&P inclusion                        | +15% next day; later trimmed $130+               |
+| 2025-09-08 | ALAB            | **Took profit $217 (+100%+)** + CRDO short hedge   | Realized win                                     |
+| 2025-09-09 | NBIS            | Long $100K after $17B MSFT contract                | Scaled to $750K+; core thesis launched           |
+| 2025-09-10 | TSM             | Calls ~$253                                        | +68% by Sep 19; sold all +100%+                  |
+| 2025-09-12 | LTC             | Long ~$100-106 ahead of Oct 2 ETF                  | "300% potential"; **outcome not recorded**       |
+| 2025-09-12 | HIMS            | "42% SI… make history" (viral)                     | Squeeze thesis; mixed near-term                  |
+| 2025-09-19 | NBIS            | Large disclosed exposure; $225 valuation case      | Became his defining multi-period winner          |
+| 2025-09-23 | AMZN            | Positive $220 entry commentary; $3T valuation case | Long-term hold                                   |
+| 2025-09-25 | CIFR            | Positive read on 17.54% drop; 0% int. dilution     | +250%, sold Oct 25                               |
+| 2025-09-26 | IREN            | Long $40.13                                        | ⚠️ later reversed to bear (2026)                 |
+| 2025-09-26 | ORCL            | DCA calls $284                                     | ⚠️ later flipped to explicit invalidation stance |
+| 2025-09-27 | NeoCloud thesis | "$1.5M+ in, 200-300%+" (1.2M views)                | Framework consolidation                          |
+| 2025-09-29 | OKLO/QBTS/IONQ  | Pre-revenue quantum evidence gap                   | Pre-revenue quantum invalidation pattern         |
 
 ## 2025 Q4 (Oct-Nov)
 
 | Date       | Ticker                   | Call                                          | Outcome                                       |
 | ---------- | ------------------------ | --------------------------------------------- | --------------------------------------------- |
-| Oct 10     | NBIS/CIFR/IREN/META/RKLB | **Buy the tariff dip** ("best entry of 2025") | Market stabilized Oct 12; dip-buyers rewarded |
+| Oct 10     | NBIS/CIFR/IREN/META/RKLB | Tariff-dip stress test ("best entry of 2025") | Market stabilized Oct 12; dip thesis rewarded |
 | Oct 17     | NBIS                     | +$300K leaps                                  | Held into Q3 blowout                          |
 | Oct 22     | NBIS                     | +$200K leaps at $98.8                         | Held                                          |
 | Oct 25     | CIFR                     | **Sold +250%**, rotated to NBIS               | Realized win                                  |
@@ -68,8 +68,8 @@ his views.**
 | Date       | Ticker | Call                                                   | Outcome                                                                      |
 | ---------- | ------ | ------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | 2025-12-01 | LITE   | Long ~$316.5; TPU OCS monopoly                         | ⚠️ reduced ~$385 early Jan (InP-supply concern), then re-affirmed structural |
-| 2025-12-04 | TTD    | Buy $38.6; PT $48-55                                   | "Markets pricing in" by Dec 14                                               |
-| 2025-12-05 | ORCL   | **Maintain Avoid** before earnings                     | Vindicated by -11% drop                                                      |
+| 2025-12-04 | TTD    | Positive $38.6 entry note; $48-55 valuation case       | "Markets pricing in" by Dec 14                                               |
+| 2025-12-05 | ORCL   | Maintained invalidation stance before earnings         | Vindicated by -11% drop                                                      |
 | 2025-12-09 | TSM    | Added ~$302.5                                          | "Safest compounder"                                                          |
 | 2025-12-11 | AAOI   | Formal long (small)                                    | ⚠️ trimmed Jan 9 on Japan controls; later tripled                            |
 | 2025-12-12 | AVGO   | -11.64% earnings = buy the dip                         | "Misunderstood backlog"                                                      |
@@ -82,7 +82,7 @@ his views.**
 | 2026-01-07 | OSS    | Long $155M MC; combat-validated                        | +50%+ in a day                                                               |
 | 2026-01-08 | AXTI   | -29.54% AH revenue miss; **held** ("deferred backlog") | Conviction held; thesis later vindicated                                     |
 | 2026-01-09 | VLN    | Long ~$1.50-2.28; data-error arbitrage                 | +58% day one; ~60% by Jan 14 ✅                                              |
-| 2026-01-12 | AXTI   | Craig-Hallum Buy $26 PT (lagging validation)           | Confirms institutional-lag thesis                                            |
+| 2026-01-12 | AXTI   | Craig-Hallum validation note with $26 PT               | Confirms institutional-lag thesis                                            |
 | 2026-01-14 | LPTH   | Long ~$621M MC; germanium-glass monopoly               | +25% same day                                                                |
 | 2026-01-16 | AIRO   | Long early Jan                                         | +76% by mid-Jan ✅                                                           |
 | 2026-01-17 | INTC   | High-conviction long; "7x just for waiting"            | "One of my biggest positions"                                                |

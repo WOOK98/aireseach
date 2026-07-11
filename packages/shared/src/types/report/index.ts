@@ -64,10 +64,16 @@ export interface ReportSection {
 export interface ReportData {
   ticker: string;
   companyName: string;
-  rating: "Buy" | "Hold" | "Sell";
-  ratingRationale: string;
-  targetPrice: number;
-  upside: number; // %
+  thesisQuality: {
+    tier: "S" | "A" | "B" | "C" | "D" | "F";
+    rationale: string;
+    disclaimer: string;
+  };
+  topJudgments?: Array<{
+    judgment: string;
+    keyNumber: string;
+    wrongIf: string;
+  }>;
   investmentThesis: string;
   sections: {
     overview: string;
@@ -86,7 +92,7 @@ export interface ReportData {
   scenarioMatrix?: Array<{
     scenario: string;
     probability: number;
-    targetPrice: number;
+    keyMetric: string;
     drivers: string[];
   }>;
   roleBriefs?: Array<{
@@ -100,6 +106,17 @@ export interface ReportData {
     threshold: string;
     whyItMatters: string;
   }>;
+  monitorPanel?: {
+    schema_version: 1;
+    monitors: Array<{
+      metric: string;
+      current: string;
+      trigger: string;
+      tolerance?: string;
+      freq: "Daily" | "Weekly" | "Quarterly" | "Event-driven";
+      source: string;
+    }>;
+  };
   nextSteps?: string[];
   evidenceNeeds?: string[];
   generatedAt: string;

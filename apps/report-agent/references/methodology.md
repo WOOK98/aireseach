@@ -160,15 +160,16 @@ dated example from the corpus. A runnable checklist is at the bottom.
   potential to make history on a short squeeze" (2025-09-12). Re-flagged on the
   2026-03 NVO-partnership flip.
 
-## 10. Tariff/macro-shock-as-buy
+## 10. Tariff/macro-shock stress test
 
 - **What:** Algorithmic risk-off selloffs on macro headlines are entries when
   the fundamental thesis is committed multi-year capex that doesn't respond to
   the shock within ~12 months.
 - **Signal:** A broad -8% to -15% sector flush on a tariff/geopolitical
   headline, with the underlying demand contracted years out.
-- **Apply:** Separate "algorithmic risk-off" from "fundamental re-rating." Buy
-  the former; respect the latter. He overlays macro as a _tilt_ (rate cuts →
+- **Apply:** Separate "algorithmic risk-off" from "fundamental re-rating." Treat
+  the former as a thesis-monitor event; respect the latter as possible invalidation.
+  He overlays macro as a _tilt_ (rate cuts →
   small-cap/growth; war → pre-position oil/defense, then rotate profits into the
   high-beta selloff), not a reason to abandon theses.
 - **Example:** Oct 10 2025 tariff escalation — added NBIS leaps at $98.8 into the
