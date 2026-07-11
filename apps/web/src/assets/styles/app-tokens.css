@@ -1,0 +1,57 @@
+/* airesearch app design tokens — source: dashboard-mockup v2 */
+/* Scoped to (app) route group via layout import. Do NOT import globally. */
+
+:root {
+  /* 纸面基底 */
+  --paper: #faf8f3;
+  --panel: #ffffff;
+  --ink: #1c1b18;
+  --ink-2: #6b675e;
+  --line: #e5e0d6;
+
+  /* 功能色 */
+  --up: #1e7a46;
+  --down: #b03a2e;
+  --lock: #1e5aa8;
+
+  /* 状态芯片 */
+  --tint: #edf2fa;
+  --tint-line: #c9d6ec;
+  --amber: #fbf3e2;
+  --amber-line: #e3cd9a;
+  --amber-ink: #7a5a16;
+  --green: #edf6ef;
+  --green-line: #bddcc6;
+  --green-ink: #1e5a38;
+
+  /* 六 lens 色点 */
+  --l1: #3b7a57;
+  --l2: #8a6d2f;
+  --l3: #7a4a2b;
+  --l4: #4a5a7a;
+  --l5: #7a3b6b;
+  --l6: #a03030;
+
+  /* 字体 */
+  --font-serif: "Iowan Old Style", Georgia, "Times New Roman", serif;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-line: var(--line);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-lock: var(--lock);
+  --color-tint: var(--tint);
+  --color-tint-line: var(--tint-line);
+  --color-amber-bg: var(--amber);
+  --color-amber-line: var(--amber-line);
+  --color-amber-ink: var(--amber-ink);
+  --color-green-bg: var(--green);
+  --color-green-line: var(--green-line);
+  --color-green-ink: var(--green-ink);
+  --font-serif: var(--font-serif);
+}

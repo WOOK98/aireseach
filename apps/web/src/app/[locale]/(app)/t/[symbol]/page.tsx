@@ -174,8 +174,8 @@ export default async function CompanyPage({ params }: PageProps) {
   const industry = data.financials?.industry || "Industry unavailable";
 
   return (
-    <div className="bg-background text-foreground min-h-screen">
-      <div className="bg-background/95 sticky top-0 z-20 border-b backdrop-blur">
+    <div className="text-ink">
+      <div className="bg-paper/95 border-line sticky top-0 z-20 border-b backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 md:flex-row md:items-start md:justify-between">
           <div className="w-full md:max-w-2xl">
             <EntitySearch initialValue={data.entity.ticker} compact />
@@ -183,7 +183,7 @@ export default async function CompanyPage({ params }: PageProps) {
           <div className="flex items-center justify-between gap-3 md:justify-end">
             <Link
               href="/"
-              className="text-muted-foreground hover:text-foreground rounded-full border px-3 py-2 text-sm"
+              className="text-ink-2 hover:text-ink border-line rounded-full border px-3 py-2 text-sm"
             >
               Home
             </Link>
@@ -194,30 +194,30 @@ export default async function CompanyPage({ params }: PageProps) {
 
       <main className="mx-auto w-full max-w-6xl px-4 py-8 md:py-10">
         <section className="border-b pb-7">
-          <div className="bg-muted/40 text-muted-foreground mb-4 inline-flex rounded-full border px-3 py-1 font-mono text-xs">
+          <div className="bg-tint text-lock border-tint-line mb-4 inline-flex rounded-full border px-3 py-1 font-mono text-xs">
             ENTITY LOCK
           </div>
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <h1
-                className="notranslate text-4xl font-semibold tracking-tight md:text-6xl"
+                className="notranslate font-serif text-4xl font-semibold tracking-tight md:text-6xl"
                 translate="no"
               >
                 {data.entity.companyName}
               </h1>
               <p
-                className="notranslate text-muted-foreground mt-3 font-mono text-sm"
+                className="notranslate text-ink-2 mt-3 font-mono text-sm"
                 translate="no"
               >
                 {data.entity.exchange || "Exchange unavailable"} ·{" "}
                 {data.entity.ticker} · {industry}
               </p>
             </div>
-            <div className="text-muted-foreground font-mono text-xs">
+            <div className="text-ink-2 font-mono text-xs">
               Market data · {asOf}
             </div>
           </div>
-          <p className="text-muted-foreground mt-3 font-mono text-xs">
+          <p className="text-ink-2 mt-3 font-mono text-xs">
             {sector} · {industry}
           </p>
         </section>
@@ -225,7 +225,7 @@ export default async function CompanyPage({ params }: PageProps) {
         <section className="py-7">
           <div className="mb-3 flex items-baseline justify-between gap-3">
             <h2 className="text-xl font-semibold">Key metrics</h2>
-            <span className="text-muted-foreground font-mono text-xs">
+            <span className="text-ink-2 font-mono text-xs">
               each figure carries source date
             </span>
           </div>
@@ -234,36 +234,34 @@ export default async function CompanyPage({ params }: PageProps) {
               {metrics.map((metric) => (
                 <div
                   key={metric.label}
-                  className="bg-card rounded-2xl border p-4"
+                  className="bg-panel border-line rounded-2xl border p-4"
                 >
-                  <p className="text-muted-foreground text-xs">
-                    {metric.label}
-                  </p>
+                  <p className="text-ink-2 text-xs">{metric.label}</p>
                   <p
                     className="notranslate mt-2 font-mono text-2xl font-semibold"
                     translate="no"
                   >
                     {metric.value}
                   </p>
-                  <p className="text-muted-foreground mt-2 font-mono text-[11px]">
+                  <p className="text-ink-2 mt-2 font-mono text-[11px]">
                     {metric.period}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="bg-muted/30 text-muted-foreground rounded-2xl border p-5 text-sm">
+            <div className="bg-panel text-ink-2 border-line rounded-2xl border p-5 text-sm">
               Verified entity is available, but current metrics are unavailable.
             </div>
           )}
         </section>
 
         <section className="grid gap-4 py-7 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="bg-card rounded-2xl border p-5">
+          <div className="bg-panel border-line rounded-2xl border p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-semibold">Six lens</h2>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="text-ink-2 mt-1 text-sm">
                   Deep-dive summaries will appear here when a cached report
                   exists.
                 </p>
@@ -271,14 +269,14 @@ export default async function CompanyPage({ params }: PageProps) {
               {user ? (
                 <button
                   type="button"
-                  className="bg-foreground text-background rounded-full px-4 py-2 text-sm"
+                  className="bg-ink text-paper rounded-full px-4 py-2 text-sm"
                 >
                   Generate deep dive
                 </button>
               ) : (
                 <Link
                   href={`/auth/login?redirectTo=${encodeURIComponent(`/t/${data.entity.ticker}`)}`}
-                  className="bg-foreground text-background rounded-full px-4 py-2 text-sm"
+                  className="bg-ink text-paper rounded-full px-4 py-2 text-sm"
                 >
                   Sign in to generate
                 </Link>
@@ -293,9 +291,12 @@ export default async function CompanyPage({ params }: PageProps) {
                 "Sentiment",
                 "Risk",
               ].map((lens) => (
-                <div key={lens} className="bg-muted/20 rounded-xl border p-4">
+                <div
+                  key={lens}
+                  className="bg-panel border-line rounded-xl border p-4"
+                >
                   <p className="font-medium">{lens}</p>
-                  <p className="text-muted-foreground mt-2 text-xs">
+                  <p className="text-ink-2 mt-2 text-xs">
                     Awaiting cached report.
                   </p>
                 </div>
@@ -303,13 +304,13 @@ export default async function CompanyPage({ params }: PageProps) {
             </div>
           </div>
 
-          <div className="bg-card rounded-2xl border p-5">
+          <div className="bg-panel border-line rounded-2xl border p-5">
             <h2 className="text-xl font-semibold">Invalidation and monitors</h2>
-            <p className="text-muted-foreground mt-2 text-sm leading-6">
+            <p className="text-ink-2 mt-2 text-sm leading-6">
               Monitor rows are generated from deep-dive reports. When available,
               each row can be added to the company watchlist.
             </p>
-            <div className="bg-muted/20 text-muted-foreground mt-5 rounded-xl border p-4 font-mono text-xs">
+            <div className="bg-muted/20 text-ink-2 border-line mt-5 rounded-xl border p-4 font-mono text-xs">
               No monitor panel cached for{" "}
               <span className="notranslate" translate="no">
                 {data.entity.ticker}
@@ -320,8 +321,8 @@ export default async function CompanyPage({ params }: PageProps) {
         </section>
       </main>
 
-      <footer className="border-t">
-        <div className="text-muted-foreground mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-6 text-sm md:flex-row md:items-center md:justify-between">
+      <footer className="border-line border-t">
+        <div className="text-ink-2 mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-6 text-sm md:flex-row md:items-center md:justify-between">
           <p>Decision-support analysis only. Not investment advice.</p>
           <p className="font-mono">
             /deep-dive{" "}
