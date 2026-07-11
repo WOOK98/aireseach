@@ -598,6 +598,9 @@ reportRoute.get(
   zValidator("param", z.object({ ticker: z.string().min(1).max(10) })),
   async (c) => {
     const { ticker } = c.req.valid("param");
+    const resolution = await cachedResolveEntity(ticker);
+    if (!resolution.ok) return c.json({ valid: false });
+
     try {
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
       const res = await fetch(url, {
@@ -616,14 +619,17 @@ reportRoute.get(
         };
       };
       const meta = json?.chart?.result?.[0]?.meta;
-      if (!meta) return c.json({ valid: false });
       return c.json({
         valid: true,
-        name: meta.longName ?? meta.shortName,
-        price: meta.regularMarketPrice,
+        name: meta?.longName ?? meta?.shortName ?? resolution.companyName,
+        price: meta?.regularMarketPrice ?? resolution.price,
       });
     } catch {
-      return c.json({ valid: false });
+      return c.json({
+        valid: true,
+        name: resolution.companyName,
+        price: resolution.price,
+      });
     }
   },
 );
