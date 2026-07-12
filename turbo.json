@@ -44,6 +44,7 @@
     "CONTACT_EMAIL"
   ],
   "globalPassThroughEnv": [
+    "AIRESEARCH_PLUGIN_DIR",
     "NODE_ENV",
     "SKIP_ENV_VALIDATION",
     "npm_lifecycle_event"

@@ -43,3 +43,6 @@ yarn-error.log*
 .env.production
 knowledge/
 .env.vercel
+
+# local secrets
+.mcp-api-key.local
