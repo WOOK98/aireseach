@@ -14,14 +14,54 @@ const ACCURACY_METRICS = [
 
 const VERIFIED_CALLS = [
   { ticker: "CIFR", result: "+250%", date: "2025 Q3", note: "Mining→DC pivot" },
-  { ticker: "AXTI", result: "+310%", date: "2025-12 → 2026-04", note: "InP chokepoint thesis" },
-  { ticker: "SIVE", result: "+200%+", date: "2026-03 → 2026-05", note: "#1 conviction, CPO laser" },
-  { ticker: "LITE", result: "+85%", date: "2025-12 → 2026-03", note: "OCS monopoly for TPU" },
-  { ticker: "AAOI", result: "+180%", date: "2026-02 earnings → Apr", note: "Blowout Q1, 900% growth" },
-  { ticker: "NBIS", result: "+120%", date: "2025 Q4 → 2026 Q1", note: "S-tier neocloud" },
-  { ticker: "XLU", result: "+15%", date: "2026-01 → 2026-04", note: "Power/grid macro hedge" },
-  { ticker: "IREN", result: "⚠️ -40%", date: "2026-02 → 2026-04", note: "Reversed — financing issues" },
-  { ticker: "CRWV", result: "⚠️ -30%", date: "2026-01 → 2026-03", note: "Reversed — ATM dilution" },
+  {
+    ticker: "AXTI",
+    result: "+310%",
+    date: "2025-12 → 2026-04",
+    note: "InP chokepoint thesis",
+  },
+  {
+    ticker: "SIVE",
+    result: "+200%+",
+    date: "2026-03 → 2026-05",
+    note: "#1 conviction, CPO laser",
+  },
+  {
+    ticker: "LITE",
+    result: "+85%",
+    date: "2025-12 → 2026-03",
+    note: "OCS monopoly for TPU",
+  },
+  {
+    ticker: "AAOI",
+    result: "+180%",
+    date: "2026-02 earnings → Apr",
+    note: "Blowout Q1, 900% growth",
+  },
+  {
+    ticker: "NBIS",
+    result: "+120%",
+    date: "2025 Q4 → 2026 Q1",
+    note: "S-tier neocloud",
+  },
+  {
+    ticker: "XLU",
+    result: "+15%",
+    date: "2026-01 → 2026-04",
+    note: "Power/grid macro hedge",
+  },
+  {
+    ticker: "IREN",
+    result: "⚠️ -40%",
+    date: "2026-02 → 2026-04",
+    note: "Reversed — financing issues",
+  },
+  {
+    ticker: "CRWV",
+    result: "⚠️ -30%",
+    date: "2026-01 → 2026-03",
+    note: "Reversed — ATM dilution",
+  },
 ];
 
 const SECTOR_COVERAGE = [
@@ -84,14 +124,15 @@ export const CalibrationChart = () => {
           Calibration & Win Rate
         </h3>
         <p className="text-muted-foreground mt-1 text-sm">
-          Honest assessment of Serenity&apos;s public call accuracy. Self-reported
-          returns, verified against Yahoo Finance adjusted-close data.
+          Honest assessment of Serenity&apos;s public call accuracy.
+          Self-reported returns, verified against Yahoo Finance adjusted-close
+          data.
         </p>
       </div>
 
       {/* Accuracy Bars */}
       <div className="space-y-3">
-        <h4 className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+        <h4 className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Accuracy Metrics
         </h4>
         {ACCURACY_METRICS.map((m) => (
@@ -115,7 +156,7 @@ export const CalibrationChart = () => {
 
       {/* Donut Chart + Legend */}
       <div>
-        <h4 className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wider">
+        <h4 className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
           Sector Coverage Distribution
         </h4>
         <div className="flex items-center gap-6">
@@ -138,7 +179,7 @@ export const CalibrationChart = () => {
 
       {/* Verified Calls Timeline */}
       <div>
-        <h4 className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wider">
+        <h4 className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
           Verified Calls Timeline
         </h4>
         <div className="space-y-2">
@@ -167,9 +208,7 @@ export const CalibrationChart = () => {
                     {call.date}
                   </span>
                 </div>
-                <p className="text-muted-foreground text-[10px]">
-                  {call.note}
-                </p>
+                <p className="text-muted-foreground text-[10px]">{call.note}</p>
               </div>
             </div>
           ))}

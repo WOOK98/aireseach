@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getBillingSummaryResponseSchema } from "@workspace/api/schema";
 import { handle } from "@workspace/api/utils";
+import { logger } from "@workspace/shared/logger";
 import { Icons } from "@workspace/ui-web/icons";
 import { SidebarInset, SidebarProvider } from "@workspace/ui-web/sidebar";
 
@@ -11,7 +12,6 @@ import { pathsConfig } from "~/config/paths";
 import { api } from "~/lib/api/server";
 import { getSession } from "~/lib/auth/server";
 import { getQueryClient } from "~/lib/query/server";
-import { logger } from "@workspace/shared/logger";
 import { billing } from "~/modules/billing/lib/api";
 import { DashboardActionBar } from "~/modules/common/layout/dashboard/action-bar";
 import { DashboardInset } from "~/modules/common/layout/dashboard/inset";

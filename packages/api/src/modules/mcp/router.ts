@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 
 import { logger } from "@workspace/shared/logger";
+
 import { env } from "../../env";
 import {
   cachedFetchEtfHoldings,
@@ -171,10 +172,7 @@ const isAuthorized = (
 // For real abuse protection, swap in @upstash/ratelimit + Redis.
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 60;
-const rateLimitBuckets = new Map<
-  string,
-  { timestamps: number[] }
->();
+const rateLimitBuckets = new Map<string, { timestamps: number[] }>();
 
 const checkRateLimit = (keyName: string): boolean => {
   const now = Date.now();
@@ -401,10 +399,7 @@ export const mcpRouter = new Hono()
 
     if (!checkRateLimit(auth.keyName!)) {
       logger.warn("MCP rate limited", { keyName: auth.keyName, ip: clientIp });
-      return c.json(
-        jsonRpcError(null, -32003, "Rate limit exceeded."),
-        429,
-      );
+      return c.json(jsonRpcError(null, -32003, "Rate limit exceeded."), 429);
     }
 
     const body = (await c.req.json().catch(() => null)) as

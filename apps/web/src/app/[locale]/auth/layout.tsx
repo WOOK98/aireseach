@@ -2,8 +2,8 @@ import { getTranslation } from "@workspace/i18n/server";
 import { Icons } from "@workspace/ui-web/icons";
 
 import { pathsConfig } from "~/config/paths";
-import { TurboLink } from "~/modules/common/turbo-link";
 import { AuthMarketingPanel } from "~/modules/auth/layout/marketing-panel";
+import { TurboLink } from "~/modules/common/turbo-link";
 
 export default async function AuthLayout({
   children,

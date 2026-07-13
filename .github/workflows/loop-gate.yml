@@ -1,0 +1,125 @@
+name: Loop Gate
+
+on:
+  pull_request:
+    branches: ["*"]
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: "1"
+  SKIP_ENV_VALIDATION: "1"
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+
+jobs:
+  redline-grep:
+    name: Redline grep
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check changed product files for banned UI language
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_ref="${{ github.base_ref || 'main' }}"
+          git fetch origin "$base_ref" --depth=1
+          mapfile -t files < <(
+            git diff --name-only "origin/$base_ref"...HEAD \
+              | grep -E '^(apps|packages|skills)/' \
+              | grep -Ev '(^|/)(docs|__snapshots__)/|\.md$|\.mdx$|\.test\.|\.spec\.' \
+              || true
+          )
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No changed product files to scan."
+            exit 0
+          fi
+          printf '%s\n' "${files[@]}"
+          if grep -nE 'Target price|Buy-Hold-Sell|hosted DeepSeek|unlimited Jina|process\.env\.[A-Z0-9_]*(KEY|SECRET|TOKEN)' "${files[@]}"; then
+            echo "Redline grep failed: banned wording or env/provider leakage found."
+            exit 1
+          fi
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      - name: Build content collections
+        run: pnpm --filter @workspace/cms build
+
+      - name: Build web
+        run: pnpm --filter web build
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      - name: Run all unit tests
+        run: pnpm test
+
+  mcp-auth-tests:
+    name: MCP auth tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      - name: Run MCP auth tests when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t tests < <(find . -path './node_modules' -prune -o -type f \( -name '*auth.test.ts' -o -name '*auth.spec.ts' \) -print)
+          if [ "${#tests[@]}" -eq 0 ]; then
+            echo "No MCP auth test files found yet."
+            exit 0
+          fi
+          pnpm exec vitest run "${tests[@]}"
+
+  python-compile:
+    name: Python py_compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Compile report agent
+        run: python -m py_compile apps/report-agent/server.py
+
+  playwright-smoke:
+    name: Playwright smoke TODO
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder
+        run: |
+          echo "TODO: add protected-preview Playwright smoke once preview auth/bypass is standardized."

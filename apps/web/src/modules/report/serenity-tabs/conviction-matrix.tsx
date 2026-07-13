@@ -10,53 +10,163 @@ const SECTORS = [
   {
     name: "Photonics / CPO",
     tickers: [
-      { ticker: "SIVE", tier: "S", stance: "bull", reason: "#1 conviction — CW/DFB merchant laser for CPO supercycle" },
-      { ticker: "AXTI", tier: "A", stance: "bull", reason: "InP substrate chokepoint — 'Strait of AXTI'" },
-      { ticker: "LITE", tier: "A", stance: "bull", reason: "OCS near-monopoly for Google TPU, sold out 2028" },
-      { ticker: "AAOI", tier: "A", stance: "bull", reason: "Only US vertically integrated transceiver maker" },
-      { ticker: "COHR", tier: "B", stance: "bull", reason: "Safer compounder, diversified photonics" },
-      { ticker: "IQE", tier: "B", stance: "mixed", reason: "InP epiwafer — dependent on AXTI substrate supply" },
+      {
+        ticker: "SIVE",
+        tier: "S",
+        stance: "bull",
+        reason: "#1 conviction — CW/DFB merchant laser for CPO supercycle",
+      },
+      {
+        ticker: "AXTI",
+        tier: "A",
+        stance: "bull",
+        reason: "InP substrate chokepoint — 'Strait of AXTI'",
+      },
+      {
+        ticker: "LITE",
+        tier: "A",
+        stance: "bull",
+        reason: "OCS near-monopoly for Google TPU, sold out 2028",
+      },
+      {
+        ticker: "AAOI",
+        tier: "A",
+        stance: "bull",
+        reason: "Only US vertically integrated transceiver maker",
+      },
+      {
+        ticker: "COHR",
+        tier: "B",
+        stance: "bull",
+        reason: "Safer compounder, diversified photonics",
+      },
+      {
+        ticker: "IQE",
+        tier: "B",
+        stance: "mixed",
+        reason: "InP epiwafer — dependent on AXTI substrate supply",
+      },
     ],
   },
   {
     name: "Neocloud / AI DC",
     tickers: [
-      { ticker: "NBIS", tier: "S", stance: "bull", reason: "S-tier neocloud, NVIDIA partnership" },
-      { ticker: "CIFR", tier: "B", stance: "mixed", reason: "Mining→DC pivot, execution risk" },
-      { ticker: "IREN", tier: "F", stance: "bear", reason: "⚠️ Downgraded — financing quality concerns" },
-      { ticker: "CRWV", tier: "F", stance: "bear", reason: "⚠️ Reversed — dilution + ATM overhang" },
+      {
+        ticker: "NBIS",
+        tier: "S",
+        stance: "bull",
+        reason: "S-tier neocloud, NVIDIA partnership",
+      },
+      {
+        ticker: "CIFR",
+        tier: "B",
+        stance: "mixed",
+        reason: "Mining→DC pivot, execution risk",
+      },
+      {
+        ticker: "IREN",
+        tier: "F",
+        stance: "bear",
+        reason: "⚠️ Downgraded — financing quality concerns",
+      },
+      {
+        ticker: "CRWV",
+        tier: "F",
+        stance: "bear",
+        reason: "⚠️ Reversed — dilution + ATM overhang",
+      },
     ],
   },
   {
     name: "AI Compute",
     tickers: [
-      { ticker: "NVDA", tier: "B", stance: "bull", reason: "Obvious shovel — not the bottleneck, but core demand driver" },
-      { ticker: "MRVL", tier: "B", stance: "bull", reason: "Custom ASIC + Celestial CPO interconnect" },
-      { ticker: "AVGO", tier: "B", stance: "bull", reason: "Networking infrastructure, diversified" },
-      { ticker: "TSM", tier: "B", stance: "bull", reason: "Foundry monopoly — too big for asymmetric upside" },
+      {
+        ticker: "NVDA",
+        tier: "B",
+        stance: "bull",
+        reason: "Obvious shovel — not the bottleneck, but core demand driver",
+      },
+      {
+        ticker: "MRVL",
+        tier: "B",
+        stance: "bull",
+        reason: "Custom ASIC + Celestial CPO interconnect",
+      },
+      {
+        ticker: "AVGO",
+        tier: "B",
+        stance: "bull",
+        reason: "Networking infrastructure, diversified",
+      },
+      {
+        ticker: "TSM",
+        tier: "B",
+        stance: "bull",
+        reason: "Foundry monopoly — too big for asymmetric upside",
+      },
     ],
   },
   {
     name: "Power / Grid",
     tickers: [
-      { ticker: "VST", tier: "A", stance: "bull", reason: "Nuclear power for AI datacenters" },
-      { ticker: "CEG", tier: "A", stance: "bull", reason: "Constellation — nuclear fleet, grid exposure" },
-      { ticker: "XLU", tier: "B", stance: "bull", reason: "Utility ETF — macro hedge play" },
+      {
+        ticker: "VST",
+        tier: "A",
+        stance: "bull",
+        reason: "Nuclear power for AI datacenters",
+      },
+      {
+        ticker: "CEG",
+        tier: "A",
+        stance: "bull",
+        reason: "Constellation — nuclear fleet, grid exposure",
+      },
+      {
+        ticker: "XLU",
+        tier: "B",
+        stance: "bull",
+        reason: "Utility ETF — macro hedge play",
+      },
     ],
   },
   {
     name: "Memory / Storage",
     tickers: [
-      { ticker: "MU", tier: "B", stance: "bull", reason: "HBM supercycle beneficiary" },
-      { ticker: "SNDK", tier: "B", stance: "bull", reason: "NAND exposure, storage demand" },
+      {
+        ticker: "MU",
+        tier: "B",
+        stance: "bull",
+        reason: "HBM supercycle beneficiary",
+      },
+      {
+        ticker: "SNDK",
+        tier: "B",
+        stance: "bull",
+        reason: "NAND exposure, storage demand",
+      },
     ],
   },
   {
     name: "Other",
     tickers: [
-      { ticker: "SOI", tier: "B", stance: "mixed", reason: "Alternative substrate — less conviction than AXTI" },
-      { ticker: "TSEM", tier: "B", stance: "mixed", reason: "Tower Semi — foundry, less pure-play" },
-      { ticker: "EWY", tier: "C", stance: "mixed", reason: "South Korea ETF — Samsung/SK Hynix proxy" },
+      {
+        ticker: "SOI",
+        tier: "B",
+        stance: "mixed",
+        reason: "Alternative substrate — less conviction than AXTI",
+      },
+      {
+        ticker: "TSEM",
+        tier: "B",
+        stance: "mixed",
+        reason: "Tower Semi — foundry, less pure-play",
+      },
+      {
+        ticker: "EWY",
+        tier: "C",
+        stance: "mixed",
+        reason: "South Korea ETF — Samsung/SK Hynix proxy",
+      },
     ],
   },
 ];
@@ -72,7 +182,8 @@ const tierColors: Record<string, string> = {
 const stanceStyles: Record<string, string> = {
   bull: "border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20",
   bear: "border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20",
-  mixed: "border-yellow-200 bg-yellow-50/50 dark:border-yellow-900 dark:bg-yellow-950/20",
+  mixed:
+    "border-yellow-200 bg-yellow-50/50 dark:border-yellow-900 dark:bg-yellow-950/20",
 };
 
 export const ConvictionMatrix = ({ onTickerClick }: ConvictionMatrixProps) => {
@@ -90,7 +201,7 @@ export const ConvictionMatrix = ({ onTickerClick }: ConvictionMatrixProps) => {
 
       {SECTORS.map((sector) => (
         <div key={sector.name}>
-          <h4 className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
+          <h4 className="text-muted-foreground mb-2 text-xs font-medium tracking-wider uppercase">
             {sector.name}
           </h4>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

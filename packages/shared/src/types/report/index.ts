@@ -11,6 +11,9 @@ export interface FinancialMetrics {
   currentPrice: number;
   marketCap: number;
   currency: string;
+  priceChange: number | null; // absolute change
+  priceChangePercent: number | null; // % change
+  marketState: string; // "REGULAR" | "PRE" | "POST" | "CLOSED"
 
   // Income Statement
   revenue: number;

@@ -70,9 +70,18 @@ interface YFRaw {
     shortName: string;
     longName: string;
     regularMarketPrice: { raw: number };
+    regularMarketChange: { raw: number };
+    regularMarketChangePercent: { raw: number };
+    regularMarketTime: { raw: number };
+    regularMarketPreviousClose: { raw: number };
+    preMarketChange: { raw: number };
+    preMarketChangePercent: { raw: number };
+    postMarketChange: { raw: number };
+    postMarketChangePercent: { raw: number };
     marketCap: { raw: number };
     currency: string;
     exchangeName: string;
+    marketState: string; // "REGULAR" | "PRE" | "POST" | "CLOSED"
   };
   financialData?: {
     currentPrice: { raw: number };
@@ -196,6 +205,9 @@ async function fetchYahooChartMetrics(
     currentPrice: latestClose,
     marketCap: 0,
     currency: meta.currency ?? "USD",
+    priceChange: null,
+    priceChangePercent: null,
+    marketState: "CLOSED",
     revenue: 0,
     revenueGrowthYoy,
     grossProfit: 0,
@@ -328,6 +340,9 @@ export async function fetchYahooFinance(
     currentPrice,
     marketCap: safe(p?.marketCap),
     currency: p?.currency ?? "USD",
+    priceChange: safe(p?.regularMarketChange) || null,
+    priceChangePercent: safe(p?.regularMarketChangePercent) || null,
+    marketState: p?.marketState ?? "CLOSED",
     revenue,
     revenueGrowthYoy: safe(fd?.revenueGrowth) * 100,
     grossProfit: 0,

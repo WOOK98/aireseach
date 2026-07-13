@@ -405,10 +405,10 @@ if (!customElements.get("quick-order-list")) {
         this.updateMessage();
         this.setErrorMessage();
 
-        fetch(`${routes.cart_update_url}`, ({
-	...fetchConfig(),
-	body
-}))
+        fetch(`${routes.cart_update_url}`, {
+          ...fetchConfig(),
+          body,
+        })
           .then((response) => response.text())
           .then(async (state) => {
             const parsedState = JSON.parse(state);
