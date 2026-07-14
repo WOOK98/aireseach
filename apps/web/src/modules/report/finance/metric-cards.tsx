@@ -1,67 +1,6 @@
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-
 import { cn } from "@workspace/ui";
 
-import type {
-  FinancialMetrics,
-  ReportData,
-} from "@workspace/shared/types/report";
-
-// ─── Rating Badge ─────────────────────────────────────────────────────────────
-const RATING_MAP = {
-  Buy: {
-    label: "Buy",
-    variant: "default" as const,
-    className:
-      "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-  },
-  Hold: {
-    label: "Hold",
-    variant: "secondary" as const,
-    className:
-      "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  },
-  Sell: {
-    label: "Sell",
-    variant: "destructive" as const,
-    className: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
-  },
-};
-
-export function RatingBadge({ rating }: { rating: ReportData["rating"] }) {
-  const r = RATING_MAP[rating];
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-xs font-semibold tracking-wide",
-        r.className,
-      )}
-    >
-      {rating === "Buy" && <TrendingUp className="h-3 w-3" />}
-      {rating === "Sell" && <TrendingDown className="h-3 w-3" />}
-      {rating === "Hold" && <Minus className="h-3 w-3" />}
-      {r.label}
-    </span>
-  );
-}
-
-// ─── Upside indicator ─────────────────────────────────────────────────────────
-export function UpsideLabel({ upside }: { upside: number }) {
-  const positive = upside >= 0;
-  return (
-    <span
-      className={cn(
-        "font-mono text-xs font-medium",
-        positive
-          ? "text-emerald-600 dark:text-emerald-400"
-          : "text-red-600 dark:text-red-400",
-      )}
-    >
-      {positive ? "+" : ""}
-      {upside.toFixed(1)}%
-    </span>
-  );
-}
+import type { FinancialMetrics } from "@workspace/shared/types/report";
 
 // ─── Key Metrics Grid ─────────────────────────────────────────────────────────
 interface MetricCardProps {

@@ -33,11 +33,7 @@ import {
   MarginChart,
   RevenueChart,
 } from "~/modules/report/finance/charts";
-import {
-  MetricsGrid,
-  RatingBadge,
-  UpsideLabel,
-} from "~/modules/report/finance/metric-cards";
+import { MetricsGrid } from "~/modules/report/finance/metric-cards";
 import {
   useFinancials,
   useReportStream,
@@ -248,7 +244,7 @@ function ScenarioMatrix({
     <div className="grid gap-3 md:grid-cols-3">
       {scenarios.map((scenario) => (
         <div
-          key={`${scenario.scenario}-${scenario.targetPrice}`}
+          key={`${scenario.scenario}-${scenario.keyMetric}`}
           className="bg-muted/30 rounded-xl border p-4"
         >
           <div className="flex items-start justify-between gap-3">
@@ -258,8 +254,8 @@ function ScenarioMatrix({
                 Probability {scenario.probability}%
               </p>
             </div>
-            <p className="font-mono text-sm font-semibold">
-              ${scenario.targetPrice}
+            <p className="max-w-[9rem] text-right font-mono text-xs leading-snug font-semibold">
+              {scenario.keyMetric}
             </p>
           </div>
           <div className="bg-background mt-3 h-1.5 overflow-hidden rounded-full">
@@ -579,20 +575,6 @@ export default function ResearchPage() {
                         {financials.data.sector} · {financials.data.industry}
                       </p>
                     </div>
-                    {isDone && (
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        <RatingBadge rating={report.rating} />
-                        <div className="text-right">
-                          <p className="text-muted-foreground text-[10px]">
-                            Target price
-                          </p>
-                          <p className="font-mono text-sm font-medium">
-                            ${report.targetPrice}{" "}
-                            <UpsideLabel upside={report.upside} />
-                          </p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
 

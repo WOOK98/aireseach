@@ -50,8 +50,8 @@ his latest known stance (as of May 2026). **Stance reversals are flagged with
 - **Thesis:** "Safer compounder" of the photonics group; diversified, vertically
   integrated for some epiwafer/EML/CW capacity. Japan $550B plan includes COHR
   for synthetic-diamond substrates.
-- **Tier:** Consistent "Buy" / #3 photonics pick behind AXTI and LITE. Less
-  upside, lower risk.
+- **Tier:** Consistent high-quality photonics evidence pattern behind AXTI and
+  LITE. Lower upside case, lower risk.
 - **Key evidence:** NVDA $2B investment (Mar 31). CEO confirmed CPO is a **2026**
   timeline, not 2027 (May 7) — accelerant for the whole chain. +18.9% in his
   Apr 10-24 tracker.
@@ -219,7 +219,7 @@ his latest known stance (as of May 2026). **Stance reversals are flagged with
   conviction increased every week.
 - **Key evidence:** China export ban (+14% day, Jan 6); 7N indium parabolic to
   ATHs on SMM (his derivative price-hike indicator); Northland $100M raise;
-  Craig-Hallum Buy, $26 PT (Jan 12); Trump EO to seize US InP assets (Jan 17);
+  Craig-Hallum validation note with $26 PT (Jan 12); Trump EO to seize US InP assets (Jan 17);
   LITE CEO "Substrates keep me up at night" (Mar 20). Dismissed the Jan 8 Q4
   revenue miss (-29% AH) as deferred 2024 backlog.
 - **Article support:** The Jan 19 "Hidden Gold Rush" article uses AXTI/InP as a
@@ -360,9 +360,9 @@ his latest known stance (as of May 2026). **Stance reversals are flagged with
 - **Thesis:** "Safest one in the neocloud sector." Backstopped by AMZN + GOOGL
   (via Fluidstack); colo model = no GPU depreciation risk; clean dilution terms
   (0% interest vs. CRWV 9%); BTC on balance sheet.
-- **Tier evolution:** Speculative bull with good terms (Sep 2025) → **sold at
+- **Tier evolution:** Speculative positive thesis with good terms (Sep 2025) → **sold at
   +250% (Oct 25), rotated into NBIS** ("easy money made," thesis intact) →
-  maintained A-tier / "Strong Buy" (Jan); called the ORCL-contagion drop
+  maintained A-tier thesis quality (Jan); called the ORCL-contagion drop
   ($24→$14) a buying opportunity.
 - **Latest stance:** A-tier; "safest neocloud" framing persists. Held as
   diversifier.
@@ -473,7 +473,8 @@ superseded this list by 2026.)
   disinformation (retracted). T1 ASIC designer for Celestial CPO (after the
   $5.5B Celestial acq: $500M revenue 2028, $1B 2029). MRVL dropped POET → buys
   lasers direct from SIVE (Apr) — read mainly as a demand signal for SIVE.
-- **Tier:** Bull long-term but "not a primary pick." Buy on oversold dips. Cramer
+- **Tier:** Positive long-term thesis but "not a primary pick." Oversold dips
+  treated as monitor events. Cramer
   "all in MRVL" (Mar 31) → inverse signal, "Sorry MRVL holders."
 - **Latest stance:** Long-term bull; monitored as the SIVE demand driver. May 28
   earnings read-through: Celestial selected by a tier-1 hyperscaler, likely AMZN
@@ -488,7 +489,7 @@ superseded this list by 2026.)
   floor," not a cap. Dec -11.64% earnings drop = buying opportunity. Ramachandran
   at OFC: "definite supply constraint in laser space" (validates SIVE/LITE/AXTI).
   Potential acquirer of SIVE (~$280-350M to control MRVL's CPO roadmap).
-- **Tier:** "Buy" / "Faster Compounders." Owns ~5% of Win Semi.
+- **Tier:** Positive "faster compounder" thesis. Owns ~5% of Win Semi.
 
 ### ALAB (Astera Labs) — AI interconnect (PCIe retimers / CXL)
 
@@ -795,5 +796,5 @@ superseded this list by 2026.)
 - **UPWK, KSPI:** 2025 deep-value longs (low P/E, cash-rich, margin expansion).
   UPWK trimmed +50% on strength; both faded from the late corpus as he rotated to
   supply-chain bottlenecks.
-- **Bearish/avoid (quantum/other):** **OKLO, QBTS, IONQ, RGTI** rated "Strong
-  Sell"/"Avoid" in 2025 (pre-revenue quantum). **PLTR** (see above).
+- **Invalidation-pattern examples (quantum/other):** **OKLO, QBTS, IONQ, RGTI**
+  flagged in 2025 for pre-revenue quantum evidence gaps. **PLTR** (see above).

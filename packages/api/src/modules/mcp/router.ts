@@ -14,6 +14,7 @@ import {
   formatIndustryContext,
 } from "../report/industry";
 import { formatTechnicalContext } from "../report/technicals";
+import { getAuthorizationResult } from "./auth";
 
 type JsonRpcId = string | number | null;
 
@@ -130,41 +131,10 @@ const jsonRpcError = (
   },
 });
 
-const getToken = (authorization: string | undefined) => {
-  if (!authorization) return "";
-  const [scheme, value] = authorization.split(/\s+/, 2);
-  if (scheme?.toLowerCase() === "bearer") return value ?? "";
-  return authorization;
-};
-
-const normalizeKey = (raw: string) => {
-  const eq = raw.indexOf("=");
-  return eq > 0 ? raw.slice(eq + 1) : raw;
-};
-
-const extractKeyName = (raw: string) => {
-  const eq = raw.indexOf("=");
-  return eq > 0 ? raw.slice(0, eq) : "unknown";
-};
-
 const isAuthorized = (
   authorization: string | undefined,
-): { authorized: boolean; keyName?: string } => {
-  const entries = (env.MCP_API_KEYS ?? "")
-    .split(",")
-    .map((key) => key.trim())
-    .filter(Boolean);
-
-  if (entries.length === 0) return { authorized: false };
-
-  const token = getToken(authorization);
-  for (const entry of entries) {
-    if (normalizeKey(entry) === token) {
-      return { authorized: true, keyName: extractKeyName(entry) };
-    }
-  }
-  return { authorized: false };
-};
+): { authorized: boolean; keyName?: string } =>
+  getAuthorizationResult(env.MCP_API_KEYS, authorization);
 
 // In-memory sliding window rate limit.
 // NOTE: On Vercel serverless each function instance has its own memory,
