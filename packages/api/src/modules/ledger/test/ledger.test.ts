@@ -5,25 +5,17 @@ import { describe, expect, it, vi } from "vitest";
 // red-line enforcement (no 0.0% fallback, no target price/rating/position).
 
 // Mock db and auth modules
-const mockInsert = vi.fn<() => unknown>();
-const mockSelect = vi.fn<() => unknown>();
-const _mockWhere = vi.fn<() => unknown>();
-const _mockLimit = vi.fn<() => unknown>();
-const _mockOrderBy = vi.fn<() => unknown>();
-const _mockReturning = vi.fn<() => unknown>();
-const _mockOnConflictDoNothing = vi.fn<() => unknown>();
-
 vi.mock("@workspace/db/server", () => ({
   db: {
-    insert: mockInsert,
-    select: mockSelect,
+    insert: vi.fn<() => void>(),
+    select: vi.fn<() => void>(),
   },
 }));
 
 vi.mock("@workspace/auth/server", () => ({
   auth: {
     api: {
-      getSession: vi.fn<() => unknown>(),
+      getSession: vi.fn<() => void>(),
     },
   },
 }));
