@@ -187,10 +187,12 @@ const financeReportOutputSchema = z
           judgment: z.string().min(1),
           keyNumber: z.string().regex(/\d/),
           wrongIf: z.string().regex(/\d/),
+          dataPoint: z.string().optional(),
         }),
       )
       .length(3),
     monitorPanel: reportMonitorPanelSchema,
+    landingRate: z.number().min(0).max(1).optional(),
   })
   .passthrough();
 
@@ -204,6 +206,7 @@ const committeeReportOutputSchema = z
           judgment: z.string().min(1),
           keyNumber: z.string().regex(/\d/),
           wrongIf: z.string().regex(/\d/),
+          dataPoint: z.string().optional(),
         }),
       )
       .length(3),
@@ -263,6 +266,11 @@ const validateGeneratedJson = (
   }
 };
 
+import {
+  buildRetryPromptSuffix,
+  validateLandingRate,
+} from "./landing-validator";
+
 const generateValidatedJson = async ({
   model,
   system,
@@ -284,7 +292,7 @@ const generateValidatedJson = async ({
 }) => {
   let lastError: Error | null = null;
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     const result = await generateText({
       model,
       system,
@@ -298,12 +306,45 @@ The previous output failed validation. Return corrected strict JSON only. Keep s
       maxOutputTokens,
     });
 
+    // ── L0: Schema validation ──
     try {
       validateGeneratedJson(result.text, schema, label);
-      return result;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+      continue;
     }
+
+    // ── L1: Landing rate validation ──
+    const parsed = parseGeneratedJson(result.text);
+    const judgments = (parsed as Record<string, unknown>).topJudgments as
+      | Array<{
+          judgment: string;
+          keyNumber: string;
+          wrongIf: string;
+          dataPoint?: string;
+        }>
+      | undefined;
+
+    if (judgments && Array.isArray(judgments) && judgments.length > 0) {
+      const landing = validateLandingRate(judgments);
+      if (!landing.passed && attempt < 2) {
+        const suffix = buildRetryPromptSuffix(landing);
+        // Inject feedback into next attempt's prompt
+        prompt = `${prompt}
+
+${suffix}`;
+        lastError = new Error(
+          `L1 landing rate ${(landing.rate * 100).toFixed(0)}% < 85%: ${landing.unbound.length} unbound assertions`,
+        );
+        continue;
+      }
+      // Attach landingRate to the parsed JSON for metadata
+      (parsed as Record<string, unknown>).landingRate = landing.rate;
+      // Re-serialize with landingRate attached (result is a fresh object)
+      return { ...result, text: JSON.stringify(parsed) };
+    }
+
+    return result;
   }
 
   console.error(`[report] ${label} output validation failed`, lastError);
@@ -534,7 +575,8 @@ Return ONLY this JSON structure (all text in English):
     {
       "judgment": "<one falsifiable thesis sentence>",
       "keyNumber": "<numeric anchor>",
-      "wrongIf": "<numeric condition that invalidates this judgment>"
+      "wrongIf": "<numeric condition that invalidates this judgment>",
+      "dataPoint": "<source period, e.g. Yahoo Finance Q2 2026>"
     }
   ],
   "investmentThesis": "<2-3 sentences core thesis>",
@@ -605,7 +647,7 @@ Return ONLY this JSON structure (all text in English):
 }
 
 Hard rules:
-- Include exactly three topJudgments. Every judgment must have a numeric keyNumber and a numeric wrongIf condition.
+- Include exactly three topJudgments. Every judgment must have a numeric keyNumber, a numeric wrongIf condition, and a dataPoint field (source + period, e.g. "Yahoo Finance Q2 2026").
 - Include monitorPanel.schema_version = 1 and 3-6 monitorPanel.monitors rows. These rows are consumed by watchlist monitors and morning-brief checks.
 - Do not output target prices, buy/sell ratings, entry levels, stop levels, portfolio weights, or position sizing.
 - Conviction/thesis tier evaluates evidence quality only, not whether the user should transact.
@@ -866,6 +908,7 @@ Return exactly this structure in English:
       "keyNumber": "<the numeric value that anchors the judgment>",
       "evidence": "<short source-backed support>",
       "wrongIf": "<observable numeric condition that would invalidate this judgment>",
+      "dataPoint": "<source period, e.g. Company 10-K FY2025>",
       "sourceIds": ["S1"]
     }
   ],
@@ -923,7 +966,7 @@ Return exactly this structure in English:
 
 Requirements:
 - Include all six lenses exactly once.
-- Include exactly three topJudgments. Every top judgment must contain a numeric keyNumber and numeric wrongIf condition. If no reliable number exists, do not include that judgment; replace it with a weaker but quantified judgment.
+- Include exactly three topJudgments. Every top judgment must contain a numeric keyNumber, a numeric wrongIf condition, and a dataPoint field (source + period, e.g. "Yahoo Finance Q2 2026"). If no reliable number exists, do not include that judgment; replace it with a weaker but quantified judgment.
 - Facts must cite at least one supplied source ID. Inferences and views may cite supporting IDs but must stay labeled.
 - Evidence entries must reproduce only supplied source metadata and URLs.
 - For every lens, include numericConclusion and howToReadThisNumber. The "how to read" sentence must name source, basis, timestamp/date, and known blind spot.
