@@ -53,6 +53,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      ...getEntry(pathsConfig.marketing.privacy),
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.5,
+    },
+    {
+      ...getEntry(pathsConfig.marketing.terms),
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.5,
+    },
+    {
       ...getEntry(pathsConfig.marketing.blog.index),
       lastModified: new Date(),
       changeFrequency: "monthly",
