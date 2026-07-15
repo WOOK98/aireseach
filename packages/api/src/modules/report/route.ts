@@ -14,7 +14,7 @@ import {
 } from "@workspace/billing";
 import { getCustomersWithPurchasesByReferenceId } from "@workspace/billing/server";
 import { and, count, eq, gte } from "@workspace/db";
-import { aiUsageLog } from "@workspace/db/schema";
+import { aiUsageLog, ledgerJudgment } from "@workspace/db/schema";
 import { db } from "@workspace/db/server";
 
 import { env } from "../../env";
@@ -388,10 +388,11 @@ reportRoute.post(
     }
 
     const { ticker, metrics: m, mode } = c.req.valid("json");
+    const symbol = ticker.toUpperCase();
     const model = getReportModelConfig();
-    const imaKnowledge = await searchImaKnowledge(ticker.toUpperCase(), {
+    const imaKnowledge = await searchImaKnowledge(symbol, {
       limit: 6,
-      market: ticker.match(/^\d{6}$/) ? "a-stocks" : "us-stocks",
+      market: symbol.match(/^\d{6}$/) ? "a-stocks" : "us-stocks",
     });
     const imaKnowledgeContext = formatImaKnowledgeForPrompt(imaKnowledge);
 
@@ -651,6 +652,58 @@ Hard rules:
         });
       } catch {
         // ignore logging failures
+      }
+
+      // ── L3 Ledger auto-insert: log topJudgments ──────────────────────
+      try {
+        const parsed = JSON.parse(result.text) as {
+          topJudgments?: Array<{
+            judgment?: string;
+            keyNumber?: string;
+            keyNumberValue?: string;
+            wrongIf?: string;
+            metric?: string;
+            trigger?: string;
+            tolerance?: string;
+            source?: string;
+            freq?: string;
+          }>;
+        };
+        const judgments = parsed.topJudgments;
+        if (Array.isArray(judgments) && judgments.length > 0) {
+          const reportId = `rpt-${symbol}-${new Date().toISOString().slice(0, 10)}-${Date.now()}`;
+          const now = new Date();
+          for (const j of judgments) {
+            if (!j.judgment || !j.keyNumber || !j.wrongIf) continue;
+            // Red line: reject fallback values
+            if (j.keyNumber === "0.0%" || j.keyNumber === "N/A") continue;
+            try {
+              await db
+                .insert(ledgerJudgment)
+                .values({
+                  userId: user.id,
+                  reportId,
+                  ticker: symbol,
+                  companyName: m.companyName,
+                  judgment: j.judgment,
+                  keyNumber: j.keyNumber,
+                  keyNumberValue: j.keyNumberValue ?? null,
+                  wrongIf: j.wrongIf,
+                  metric: j.metric ?? null,
+                  trigger: j.trigger ?? null,
+                  tolerance: j.tolerance ?? null,
+                  source: j.source ?? null,
+                  freq: j.freq ?? null,
+                  publishedAt: now,
+                })
+                .onConflictDoNothing();
+            } catch {
+              // Individual insert failure — don't break the stream
+            }
+          }
+        }
+      } catch {
+        // JSON parse failure or DB error — best-effort, don't break the response
       }
     });
   },
@@ -1012,6 +1065,57 @@ Requirements:
         });
       } catch {
         // Ignore best-effort usage logging failures.
+      }
+
+      // ── L3 Ledger auto-insert: log topJudgments ──────────────────────
+      try {
+        const parsed = JSON.parse(result.text) as {
+          topJudgments?: Array<{
+            judgment?: string;
+            keyNumber?: string;
+            keyNumberValue?: string;
+            wrongIf?: string;
+            metric?: string;
+            trigger?: string;
+            tolerance?: string;
+            source?: string;
+            freq?: string;
+          }>;
+        };
+        const judgments = parsed.topJudgments;
+        if (Array.isArray(judgments) && judgments.length > 0) {
+          const reportId = `rpt-${symbol}-${new Date().toISOString().slice(0, 10)}-${Date.now()}`;
+          const now = new Date();
+          for (const j of judgments) {
+            if (!j.judgment || !j.keyNumber || !j.wrongIf) continue;
+            if (j.keyNumber === "0.0%" || j.keyNumber === "N/A") continue;
+            try {
+              await db
+                .insert(ledgerJudgment)
+                .values({
+                  userId: user.id,
+                  reportId,
+                  ticker: symbol,
+                  companyName: m.companyName,
+                  judgment: j.judgment,
+                  keyNumber: j.keyNumber,
+                  keyNumberValue: j.keyNumberValue ?? null,
+                  wrongIf: j.wrongIf,
+                  metric: j.metric ?? null,
+                  trigger: j.trigger ?? null,
+                  tolerance: j.tolerance ?? null,
+                  source: j.source ?? null,
+                  freq: j.freq ?? null,
+                  publishedAt: now,
+                })
+                .onConflictDoNothing();
+            } catch {
+              // Individual insert failure — don't break the stream
+            }
+          }
+        }
+      } catch {
+        // JSON parse failure or DB error — best-effort
       }
     });
   },
