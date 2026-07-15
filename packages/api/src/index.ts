@@ -16,6 +16,7 @@ import { adminRouter } from "./modules/admin/router";
 import { aiRouter } from "./modules/ai/router";
 import { authRouter } from "./modules/auth/router";
 import { billingRouter } from "./modules/billing/router";
+import { ledgerRoute } from "./modules/ledger/router";
 import { mcpRouter } from "./modules/mcp/router";
 import { organizationRouter } from "./modules/organization/router";
 import { reportRoute } from "./modules/report/route";
@@ -73,6 +74,7 @@ const appRouter = new Hono()
   .route("/storage", storageRouter)
   .route("/watchlist", watchlistRouter)
   .route("/report", reportRoute)
+  .route("/ledger", ledgerRoute)
   .route("/webhooks", webhooksRouter)
   .onError(onError);
 
