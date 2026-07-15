@@ -1,32 +1,68 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 
-// ─── L3 Ledger unit tests ──────────────────────────────────────────────────
-// Tests cover: insert, idempotent duplicate, verification state transitions,
-// red-line enforcement (no 0.0% fallback, no target price/rating/position).
+// ─── L3 Ledger integration tests ────────────────────────────────────────────
+// Tests call real router endpoints via hono app.request(), not unit-test
+// helper functions. This ensures the production code path is exercised.
 
-// Mock db and auth modules
+// ── Mock state ──────────────────────────────────────────────────────────────
+let mockInsertResult: unknown[] = [];
+let mockSelectResult: unknown[] = [];
+let mockDbError: Error | null = null;
+
 vi.mock("@workspace/db/server", () => ({
   db: {
-    insert: vi.fn<() => void>(),
-    select: vi.fn<() => void>(),
+    insert: vi.fn<() => unknown>(() => ({
+      values: vi.fn<() => unknown>(() => ({
+        onConflictDoNothing: vi.fn<() => unknown>(() => ({
+          returning: vi.fn<() => Promise<unknown>>(async () => {
+            if (mockDbError) throw mockDbError;
+            return mockInsertResult.shift() ?? [];
+          }),
+        })),
+        returning: vi.fn<() => Promise<unknown>>(async () => {
+          if (mockDbError) throw mockDbError;
+          return mockInsertResult.shift() ?? [];
+        }),
+      })),
+    })),
+    select: vi.fn<() => unknown>(() => ({
+      from: vi.fn<() => unknown>(() => ({
+        where: vi.fn<() => unknown>(() => ({
+          orderBy: vi.fn<() => Promise<unknown>>(async () => {
+            if (mockDbError) throw mockDbError;
+            return mockSelectResult;
+          }),
+          limit: vi.fn<() => Promise<unknown>>(async () => {
+            if (mockDbError) throw mockDbError;
+            return mockSelectResult;
+          }),
+        })),
+      })),
+    })),
   },
 }));
+
+const mockUserId = "test-user-123";
 
 vi.mock("@workspace/auth/server", () => ({
   auth: {
     api: {
-      getSession: vi.fn<() => void>(),
+      getSession: vi.fn<() => Promise<{ user: { id: string } } | null>>(
+        async () => ({ user: { id: mockUserId } }),
+      ),
     },
   },
 }));
 
-// Helper to build a valid judgment payload
+// ── Import router AFTER mocks are installed ─────────────────────────────────
+import { ledgerRoute } from "../router";
+
+// Helper: build a valid judgment payload
 const makeJudgment = (overrides?: Record<string, unknown>) => ({
   reportId: "rpt-20260712-001",
   ticker: "0700.HK",
   companyName: "Tencent Holdings",
-  judgment:
-    "Revenue growth re-accelerates to 15%+ YoY driven by gaming recovery",
+  judgment: "Revenue growth re-accelerates to 15%+ YoY",
   keyNumber: "Revenue Growth YoY 12.3%",
   keyNumberValue: "12.3",
   wrongIf: "Revenue growth drops below 8% for two consecutive quarters",
@@ -39,79 +75,173 @@ const makeJudgment = (overrides?: Record<string, unknown>) => ({
   ...overrides,
 });
 
-describe("L3 Ledger — schema validation", () => {
-  it("accepts valid judgment with all fields", () => {
-    const j = makeJudgment();
-    expect(j.reportId).toBeTruthy();
-    expect(j.ticker).toBeTruthy();
-    expect(j.judgment).toBeTruthy();
-    expect(j.keyNumber).toBeTruthy();
-    expect(j.wrongIf).toBeTruthy();
-    expect(j.publishedAt).toBeTruthy();
+// Helper: JSON POST request to router
+const postJson = (path: string, body: unknown) =>
+  ledgerRoute.request(path, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
   });
 
-  it("accepts judgment without optional fields", () => {
-    const j = makeJudgment({
-      keyNumberValue: undefined,
-      metric: undefined,
-      trigger: undefined,
-      tolerance: undefined,
-      source: undefined,
-      freq: undefined,
-      checkAfter: undefined,
+const getJson = (path: string) => ledgerRoute.request(path);
+
+// Helper: parse JSON body safely
+const parseJson = async <T>(res: Response): Promise<T> =>
+  (await res.json()) as T;
+
+// ── Reset mocks between tests ───────────────────────────────────────────────
+beforeEach(() => {
+  mockInsertResult = [];
+  mockSelectResult = [];
+  mockDbError = null;
+});
+
+// ─── POST /judgments — red line enforcement ─────────────────────────────────
+describe("POST /judgments — red line enforcement", () => {
+  it("rejects keyNumber '0.0%' with 422", async () => {
+    const res = await postJson("/judgments", {
+      judgments: [makeJudgment({ keyNumber: "0.0%" })],
     });
-    expect(j.reportId).toBeTruthy();
-    expect(j.keyNumber).toBeTruthy();
-  });
-});
-
-describe("L3 Ledger — red line enforcement", () => {
-  it("rejects 0.0% fallback keyNumber", () => {
-    const j = makeJudgment({ keyNumber: "0.0%" });
-    // Red line: 0.0% fallback is not allowed in ledger
-    expect(j.keyNumber).toBe("0.0%");
-    // In the router, this should throw 422
-    const isFallback = j.keyNumber === "0.0%" || j.keyNumber === "N/A";
-    expect(isFallback).toBe(true);
+    expect(res.status).toBe(422);
+    const body = await res.text();
+    expect(body).toContain("0.0%");
+    expect(body).toContain("fallback");
   });
 
-  it("rejects N/A fallback keyNumber", () => {
-    const j = makeJudgment({ keyNumber: "N/A" });
-    const isFallback = j.keyNumber === "0.0%" || j.keyNumber === "N/A";
-    expect(isFallback).toBe(true);
-  });
-
-  it("does not contain target price fields", () => {
-    const j = makeJudgment();
-    expect(j).not.toHaveProperty("targetPrice");
-    expect(j).not.toHaveProperty("rating");
-    expect(j).not.toHaveProperty("position");
-  });
-});
-
-describe("L3 Ledger — idempotent insert", () => {
-  it("same reportId + judgment text is idempotent", () => {
-    const j1 = makeJudgment();
-    const j2 = makeJudgment(); // same reportId + same judgment text
-    // unique index on (reportId, judgment) should deduplicate
-    expect(j1.reportId).toBe(j2.reportId);
-    expect(j1.judgment).toBe(j2.judgment);
-    // onConflictDoNothing() in the router handles this
-  });
-
-  it("same reportId with different judgment text is a separate entry", () => {
-    const j1 = makeJudgment();
-    const j2 = makeJudgment({
-      judgment: "Operating margin expands to 35%+ as cloud business scales",
-      keyNumber: "Operating Margin 32.1%",
-      wrongIf: "Operating margin falls below 28%",
+  it("rejects keyNumber 'N/A' with 422", async () => {
+    const res = await postJson("/judgments", {
+      judgments: [makeJudgment({ keyNumber: "N/A" })],
     });
-    expect(j1.reportId).toBe(j2.reportId);
-    expect(j1.judgment).not.toBe(j2.judgment);
+    expect(res.status).toBe(422);
+    const body = await res.text();
+    expect(body).toContain("N/A");
+  });
+
+  it("rejects batch where ANY judgment has fallback keyNumber", async () => {
+    const res = await postJson("/judgments", {
+      judgments: [
+        makeJudgment({ keyNumber: "Revenue Growth 12.3%" }),
+        makeJudgment({ judgment: "Another", keyNumber: "0.0%" }),
+      ],
+    });
+    expect(res.status).toBe(422);
   });
 });
 
-describe("L3 Ledger — verification result states", () => {
+// ─── POST /judgments — three-state response ─────────────────────────────────
+describe("POST /judgments — three-state response", () => {
+  it("returns { inserted, skippedDuplicates, errors } on success", async () => {
+    mockInsertResult = [[{ id: "j1", ...makeJudgment() }]];
+
+    const res = await postJson("/judgments", {
+      judgments: [makeJudgment()],
+    });
+    expect(res.status).toBe(200);
+    const body = await parseJson<{
+      ok: boolean;
+      inserted: number;
+      skippedDuplicates: number;
+      errors: number;
+      judgments: unknown[];
+    }>(res);
+    expect(body.ok).toBe(true);
+    expect(body.inserted).toBe(1);
+    expect(body.skippedDuplicates).toBe(0);
+    expect(body.errors).toBe(0);
+    expect(body.judgments).toHaveLength(1);
+  });
+
+  it("reports skippedDuplicates when onConflictDoNothing returns empty", async () => {
+    mockInsertResult = [[]];
+
+    const res = await postJson("/judgments", {
+      judgments: [makeJudgment()],
+    });
+    expect(res.status).toBe(200);
+    const body = await parseJson<{
+      inserted: number;
+      skippedDuplicates: number;
+      errors: number;
+    }>(res);
+    expect(body.inserted).toBe(0);
+    expect(body.skippedDuplicates).toBe(1);
+    expect(body.errors).toBe(0);
+  });
+
+  it("reports errors when DB insert throws", async () => {
+    mockDbError = new Error("connection refused");
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const res = await postJson("/judgments", {
+      judgments: [makeJudgment()],
+    });
+    expect(res.status).toBe(200);
+    const body = await parseJson<{
+      inserted: number;
+      skippedDuplicates: number;
+      errors: number;
+    }>(res);
+    expect(body.inserted).toBe(0);
+    expect(body.skippedDuplicates).toBe(0);
+    expect(body.errors).toBe(1);
+    // Error was logged server-side
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[ledger] Failed to insert judgment"),
+      expect.any(Error),
+    );
+
+    consoleSpy.mockRestore();
+  });
+});
+
+// ─── POST /judgments — input validation ─────────────────────────────────────
+describe("POST /judgments — input validation", () => {
+  it("rejects empty judgments array", async () => {
+    const res = await postJson("/judgments", { judgments: [] });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects missing required fields", async () => {
+    const res = await postJson("/judgments", {
+      judgments: [{ reportId: "rpt-1" }],
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects non-datetime publishedAt", async () => {
+    const res = await postJson("/judgments", {
+      judgments: [makeJudgment({ publishedAt: "not-a-date" })],
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("normalizes ticker to uppercase", async () => {
+    mockInsertResult = [[{ id: "j1", ...makeJudgment(), ticker: "0700.HK" }]];
+
+    const res = await postJson("/judgments", {
+      judgments: [makeJudgment({ ticker: "0700.hk" })],
+    });
+    expect(res.status).toBe(200);
+  });
+});
+
+// ─── POST /judgments — authentication ───────────────────────────────────────
+describe("POST /judgments — authentication", () => {
+  it("rejects unauthenticated requests with 401", async () => {
+    const { auth } = await import("@workspace/auth/server");
+    vi.mocked(auth.api.getSession).mockResolvedValueOnce(null as never);
+
+    const res = await postJson("/judgments", {
+      judgments: [makeJudgment()],
+    });
+    expect(res.status).toBe(401);
+    const body = await res.text();
+    expect(body).toContain("Authentication required");
+  });
+});
+
+// ─── POST /verify — state transitions ───────────────────────────────────────
+describe("POST /verify — state transitions", () => {
   const validResults = [
     "confirmed",
     "invalidated",
@@ -119,73 +249,120 @@ describe("L3 Ledger — verification result states", () => {
     "insufficient_data",
   ] as const;
 
-  it.each(validResults)("accepts verification result: %s", (result) => {
-    expect(validResults).toContain(result);
+  it.each(validResults)("accepts result '%s'", async (result) => {
+    mockSelectResult = [{ id: "j1", userId: mockUserId, ticker: "0700.HK" }];
+    mockInsertResult = [
+      [
+        {
+          id: "v1",
+          judgmentId: "j1",
+          result,
+          verifiedAt: "2026-10-01T00:00:00Z",
+        },
+      ],
+    ];
+
+    const res = await postJson("/verify", {
+      judgmentId: "j1",
+      result,
+      verifiedAt: "2026-10-01T00:00:00Z",
+    });
+    expect(res.status).toBe(200);
+    const body = await parseJson<{
+      ok: boolean;
+      verification: { result: string };
+    }>(res);
+    expect(body.ok).toBe(true);
+    expect(body.verification.result).toBe(result);
   });
 
-  it("verification links to a judgment", () => {
-    const verification = {
-      judgmentId: "judgment-123",
-      result: "confirmed" as const,
-      dataPoint: "Revenue Growth YoY 14.2%",
-      evidenceUrl: "https://finance.yahoo.com/quote/0700.HK/",
-      notes: "Q2 2026 earnings confirmed above threshold",
-      verifiedAt: "2026-10-01T10:00:00Z",
-    };
-    expect(verification.judgmentId).toBeTruthy();
-    expect(verification.result).toBe("confirmed");
-    expect(verification.verifiedAt).toBeTruthy();
+  it("rejects verify for non-existent judgment with 404", async () => {
+    mockSelectResult = [];
+
+    const res = await postJson("/verify", {
+      judgmentId: "nonexistent",
+      result: "confirmed",
+      verifiedAt: "2026-10-01T00:00:00Z",
+    });
+    expect(res.status).toBe(404);
   });
 
-  it("pending verification has no evidence", () => {
-    const verification = {
-      judgmentId: "judgment-123",
-      result: "pending" as const,
-      verifiedAt: "2026-07-15T10:00:00Z",
-    };
-    expect(verification.result).toBe("pending");
-    expect((verification as Record<string, unknown>).dataPoint).toBeUndefined();
-    expect(
-      (verification as Record<string, unknown>).evidenceUrl,
-    ).toBeUndefined();
-  });
-
-  it("insufficient_data verification notes the gap", () => {
-    const verification = {
-      judgmentId: "judgment-123",
-      result: "insufficient_data" as const,
-      notes: "Yahoo Finance API returned no data for this ticker",
-      verifiedAt: "2026-10-01T10:00:00Z",
-    };
-    expect(verification.result).toBe("insufficient_data");
-    expect(verification.notes).toContain("no data");
+  it("rejects verify with invalid result enum", async () => {
+    const res = await postJson("/verify", {
+      judgmentId: "j1",
+      result: "maybe",
+      verifiedAt: "2026-10-01T00:00:00Z",
+    });
+    expect(res.status).toBe(400);
   });
 });
 
+// ─── GET /judgments/:ticker — read ──────────────────────────────────────────
+describe("GET /judgments/:ticker", () => {
+  it("returns judgments for ticker", async () => {
+    mockSelectResult = [
+      { id: "j1", ticker: "0700.HK", judgment: "Revenue up" },
+    ];
+
+    const res = await getJson("/judgments/0700.HK");
+    expect(res.status).toBe(200);
+    const body = await parseJson<{
+      ok: boolean;
+      ticker: string;
+      judgments: unknown[];
+    }>(res);
+    expect(body.ok).toBe(true);
+    expect(body.ticker).toBe("0700.HK");
+    expect(body.judgments).toHaveLength(1);
+  });
+
+  it("normalizes ticker to uppercase in query", async () => {
+    mockSelectResult = [];
+
+    const res = await getJson("/judgments/0700.hk");
+    expect(res.status).toBe(200);
+    const body = await parseJson<{ ticker: string }>(res);
+    expect(body.ticker).toBe("0700.HK");
+  });
+});
+
+// ─── GET /judgments/:ticker/history — with verifications ────────────────────
+describe("GET /judgments/:ticker/history", () => {
+  it("returns judgments with grouped verifications", async () => {
+    mockSelectResult = [
+      { id: "j1", ticker: "0700.HK", judgment: "Revenue up" },
+    ];
+
+    const res = await getJson("/judgments/0700.HK/history");
+    expect(res.status).toBe(200);
+    const body = await parseJson<{
+      ok: boolean;
+      ticker: string;
+      history: unknown[];
+    }>(res);
+    expect(body.ok).toBe(true);
+    expect(body.ticker).toBe("0700.HK");
+    expect(body.history).toBeDefined();
+  });
+});
+
+// ─── L3 Ledger — date/timezone handling ─────────────────────────────────────
 describe("L3 Ledger — date/timezone handling", () => {
-  it("publishedAt accepts ISO 8601 format", () => {
-    const j = makeJudgment({ publishedAt: "2026-07-12T10:00:00Z" });
-    const date = new Date(j.publishedAt);
-    expect(date.toISOString()).toBe("2026-07-12T10:00:00.000Z");
+  it("publishedAt accepts ISO 8601 format", async () => {
+    mockInsertResult = [
+      [{ id: "j1", ...makeJudgment({ publishedAt: "2026-07-12T10:00:00Z" }) }],
+    ];
+
+    const res = await postJson("/judgments", {
+      judgments: [makeJudgment({ publishedAt: "2026-07-12T10:00:00Z" })],
+    });
+    expect(res.status).toBe(200);
   });
 
-  it("publishedAt rejects invalid format", () => {
-    const invalidDate = "not-a-date";
-    const date = new Date(invalidDate);
-    expect(isNaN(date.getTime())).toBe(true);
-  });
-
-  it("checkAfter is optional and ISO 8601", () => {
-    const j = makeJudgment({ checkAfter: "2026-10-01T00:00:00Z" });
-    const date = new Date((j as Record<string, unknown>).checkAfter as string);
-    expect(date.toISOString()).toBe("2026-10-01T00:00:00.000Z");
-  });
-});
-
-describe("L3 Ledger — ticker normalization", () => {
-  it("tickers are uppercased", () => {
-    const j = makeJudgment({ ticker: "0700.hk" });
-    const normalized = j.ticker.toUpperCase();
-    expect(normalized).toBe("0700.HK");
+  it("publishedAt rejects invalid format", async () => {
+    const res = await postJson("/judgments", {
+      judgments: [makeJudgment({ publishedAt: "not-a-date" })],
+    });
+    expect(res.status).toBe(400);
   });
 });

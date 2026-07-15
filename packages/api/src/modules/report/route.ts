@@ -27,6 +27,71 @@ import { formatImaKnowledgeForPrompt, searchImaKnowledge } from "./knowledge";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
 
+// ── L3 Ledger: shared auto-insert helper ────────────────────────────────────
+// Best-effort: logs errors but never blocks the report stream response.
+async function autoInsertLedgerJudgments(opts: {
+  userId: string;
+  reportId: string;
+  ticker: string;
+  companyName: string;
+  rawJson: string;
+}) {
+  try {
+    const parsed = JSON.parse(opts.rawJson) as {
+      topJudgments?: Array<{
+        judgment?: string;
+        keyNumber?: string;
+        keyNumberValue?: string;
+        wrongIf?: string;
+        metric?: string;
+        trigger?: string;
+        tolerance?: string;
+        source?: string;
+        freq?: string;
+      }>;
+    };
+    const judgments = parsed.topJudgments;
+    if (!Array.isArray(judgments) || judgments.length === 0) return;
+
+    const now = new Date();
+    for (const j of judgments) {
+      if (!j.judgment || !j.keyNumber || !j.wrongIf) continue;
+      if (j.keyNumber === "0.0%" || j.keyNumber === "N/A") continue;
+      try {
+        await db
+          .insert(ledgerJudgment)
+          .values({
+            userId: opts.userId,
+            reportId: opts.reportId,
+            ticker: opts.ticker,
+            companyName: opts.companyName,
+            judgment: j.judgment,
+            keyNumber: j.keyNumber,
+            keyNumberValue: j.keyNumberValue ?? null,
+            wrongIf: j.wrongIf,
+            metric: j.metric ?? null,
+            trigger: j.trigger ?? null,
+            tolerance: j.tolerance ?? null,
+            source: j.source ?? null,
+            freq: j.freq ?? null,
+            publishedAt: now,
+          })
+          .onConflictDoNothing();
+      } catch (err) {
+        console.error(
+          `[ledger] auto-insert failed report=${opts.reportId} ticker=${opts.ticker}:`,
+          err,
+        );
+      }
+    }
+  } catch (err) {
+    console.error(
+      `[ledger] auto-insert parse/init failed report=${opts.reportId}:`,
+      err,
+    );
+  }
+}
+
 export const reportRoute = new Hono();
 
 const openaiProvider = createOpenAI({
@@ -655,56 +720,14 @@ Hard rules:
       }
 
       // ── L3 Ledger auto-insert: log topJudgments ──────────────────────
-      try {
-        const parsed = JSON.parse(result.text) as {
-          topJudgments?: Array<{
-            judgment?: string;
-            keyNumber?: string;
-            keyNumberValue?: string;
-            wrongIf?: string;
-            metric?: string;
-            trigger?: string;
-            tolerance?: string;
-            source?: string;
-            freq?: string;
-          }>;
-        };
-        const judgments = parsed.topJudgments;
-        if (Array.isArray(judgments) && judgments.length > 0) {
-          const reportId = `rpt-${symbol}-${new Date().toISOString().slice(0, 10)}-${Date.now()}`;
-          const now = new Date();
-          for (const j of judgments) {
-            if (!j.judgment || !j.keyNumber || !j.wrongIf) continue;
-            // Red line: reject fallback values
-            if (j.keyNumber === "0.0%" || j.keyNumber === "N/A") continue;
-            try {
-              await db
-                .insert(ledgerJudgment)
-                .values({
-                  userId: user.id,
-                  reportId,
-                  ticker: symbol,
-                  companyName: m.companyName,
-                  judgment: j.judgment,
-                  keyNumber: j.keyNumber,
-                  keyNumberValue: j.keyNumberValue ?? null,
-                  wrongIf: j.wrongIf,
-                  metric: j.metric ?? null,
-                  trigger: j.trigger ?? null,
-                  tolerance: j.tolerance ?? null,
-                  source: j.source ?? null,
-                  freq: j.freq ?? null,
-                  publishedAt: now,
-                })
-                .onConflictDoNothing();
-            } catch {
-              // Individual insert failure — don't break the stream
-            }
-          }
-        }
-      } catch {
-        // JSON parse failure or DB error — best-effort, don't break the response
-      }
+      const reportId1 = `rpt-${symbol}-${new Date().toISOString().slice(0, 10)}-${Date.now()}`;
+      await autoInsertLedgerJudgments({
+        userId: user.id,
+        reportId: reportId1,
+        ticker: symbol,
+        companyName: m.companyName,
+        rawJson: result.text,
+      });
     });
   },
 );
@@ -1068,55 +1091,14 @@ Requirements:
       }
 
       // ── L3 Ledger auto-insert: log topJudgments ──────────────────────
-      try {
-        const parsed = JSON.parse(result.text) as {
-          topJudgments?: Array<{
-            judgment?: string;
-            keyNumber?: string;
-            keyNumberValue?: string;
-            wrongIf?: string;
-            metric?: string;
-            trigger?: string;
-            tolerance?: string;
-            source?: string;
-            freq?: string;
-          }>;
-        };
-        const judgments = parsed.topJudgments;
-        if (Array.isArray(judgments) && judgments.length > 0) {
-          const reportId = `rpt-${symbol}-${new Date().toISOString().slice(0, 10)}-${Date.now()}`;
-          const now = new Date();
-          for (const j of judgments) {
-            if (!j.judgment || !j.keyNumber || !j.wrongIf) continue;
-            if (j.keyNumber === "0.0%" || j.keyNumber === "N/A") continue;
-            try {
-              await db
-                .insert(ledgerJudgment)
-                .values({
-                  userId: user.id,
-                  reportId,
-                  ticker: symbol,
-                  companyName: m.companyName,
-                  judgment: j.judgment,
-                  keyNumber: j.keyNumber,
-                  keyNumberValue: j.keyNumberValue ?? null,
-                  wrongIf: j.wrongIf,
-                  metric: j.metric ?? null,
-                  trigger: j.trigger ?? null,
-                  tolerance: j.tolerance ?? null,
-                  source: j.source ?? null,
-                  freq: j.freq ?? null,
-                  publishedAt: now,
-                })
-                .onConflictDoNothing();
-            } catch {
-              // Individual insert failure — don't break the stream
-            }
-          }
-        }
-      } catch {
-        // JSON parse failure or DB error — best-effort
-      }
+      const reportId2 = `rpt-${symbol}-${new Date().toISOString().slice(0, 10)}-${Date.now()}`;
+      await autoInsertLedgerJudgments({
+        userId: user.id,
+        reportId: reportId2,
+        ticker: symbol,
+        companyName: m.companyName,
+        rawJson: result.text,
+      });
     });
   },
 );

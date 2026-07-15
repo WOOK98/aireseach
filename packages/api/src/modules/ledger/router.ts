@@ -52,8 +52,11 @@ ledgerRoute.post(
       }
     }
 
-    // Insert with idempotency (unique on reportId + judgment)
-    const inserted = [];
+    // Three-state insert: inserted / skippedDuplicates / errors
+    const insertedRows: Array<typeof ledgerJudgment.$inferSelect> = [];
+    let skippedDuplicates = 0;
+    let errors = 0;
+
     for (const j of judgments) {
       try {
         const [row] = await db
@@ -77,13 +80,28 @@ ledgerRoute.post(
           })
           .onConflictDoNothing()
           .returning();
-        if (row) inserted.push(row);
-      } catch {
-        // Individual row failure — continue batch
+        if (row) {
+          insertedRows.push(row);
+        } else {
+          // onConflictDoNothing returns empty on conflict — this is a duplicate
+          skippedDuplicates++;
+        }
+      } catch (err) {
+        errors++;
+        console.error(
+          `[ledger] Failed to insert judgment for report=${j.reportId} ticker=${j.ticker}:`,
+          err,
+        );
       }
     }
 
-    return c.json({ ok: true, inserted: inserted.length, judgments: inserted });
+    return c.json({
+      ok: true,
+      inserted: insertedRows.length,
+      skippedDuplicates,
+      errors,
+      judgments: insertedRows,
+    });
   },
 );
 
