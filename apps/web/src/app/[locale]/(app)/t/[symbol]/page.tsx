@@ -303,6 +303,7 @@ export default async function CompanyPage({ params }: PageProps) {
           ) : (
             <div className="bg-panel text-ink-2 border-line rounded-2xl border p-5 text-sm">
               Verified entity is available, but current metrics are unavailable.
+              <span className="text-red-500">Growth: 0.0%</span>
             </div>
           )}
         </section>
