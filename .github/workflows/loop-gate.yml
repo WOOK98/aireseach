@@ -135,6 +135,15 @@ jobs:
       - name: Build web
         run: pnpm --filter web build
 
+      - name: Create .env for smoke tests
+        run: |
+          cat > apps/web/.env.local <<'EOF'
+          SKIP_ENV_VALIDATION=1
+          DATABASE_URL=postgresql://localhost:5432/test
+          CONTACT_EMAIL=test@example.com
+          BETTER_AUTH_SECRET=ci-smoke-secret
+          EOF
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
 
