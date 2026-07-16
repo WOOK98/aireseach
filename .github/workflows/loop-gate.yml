@@ -130,13 +130,9 @@ jobs:
         uses: ./tooling/github/setup
 
       - name: Create .env for smoke tests
-        run: |
-          cat > apps/web/.env.local <<'EOF'
-          SKIP_ENV_VALIDATION=1
-          DATABASE_URL=postgresql://localhost:5432/test
-          CONTACT_EMAIL=test@example.com
-          BETTER_AUTH_SECRET=ci-smoke-secret
-          EOF
+        run: >
+          printf 'SKIP_ENV_VALIDATION=1\nDATABASE_URL=postgresql://localhost:5432/test\nCONTACT_EMAIL=test@example.com\nBETTER_AUTH_SECRET=ci-smoke-secret\n'
+          > apps/web/.env.local
 
       - name: Build content collections
         run: pnpm --filter @workspace/cms build
