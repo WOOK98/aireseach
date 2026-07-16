@@ -131,19 +131,22 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
 
-      - name: Wait for Vercel preview
-        uses: lewagon/wait-on-check-action@v1.3.4
-        with:
-          ref: ${{ github.ref }}
-          check-name: "Vercel"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-          allowed-conclusions: success
-
       - name: Get Vercel preview URL
         id: vercel
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          # Wait for Vercel check to pass (max 3 min)
+          for i in $(seq 1 18); do
+            STATE=$(gh api repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs \
+              --jq '.check_runs[] | select(.name=="Vercel") | .conclusion' 2>/dev/null || echo "")
+            if [ "$STATE" = "success" ]; then
+              break
+            fi
+            echo "Waiting for Vercel... ($i/18) state=$STATE"
+            sleep 10
+          done
           URL=$(gh api repos/${{ github.repository }}/deployments \
             --jq '.[0].id' | xargs -I{} gh api repos/${{ github.repository }}/deployments/{}/statuses \
             --jq '.[0].target_url')
