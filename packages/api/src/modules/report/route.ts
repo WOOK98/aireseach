@@ -268,6 +268,7 @@ const validateGeneratedJson = (
 
 import {
   buildRetryPromptSuffix,
+  isValidBinding,
   validateLandingRate,
 } from "./landing-validator";
 
@@ -338,9 +339,31 @@ ${suffix}`;
         );
         continue;
       }
-      // Attach landingRate to the parsed JSON for metadata
+
+      // Exhaustion: strip unbound judgments, keep only landed
+      if (!landing.passed) {
+        const boundJudgments = judgments.filter((j) =>
+          isValidBinding(j.dataPoint),
+        );
+        if (boundJudgments.length === 0) {
+          // All judgments unbound - treat as failure
+          lastError = new Error(
+            `L1 exhaustion: all ${landing.total} judgments unbound after 3 attempts`,
+          );
+          continue;
+        }
+        // Return with only bound judgments + metadata about withheld ones
+        (parsed as Record<string, unknown>).topJudgments = boundJudgments;
+        (parsed as Record<string, unknown>).landingRate = landing.rate;
+        (parsed as Record<string, unknown>).withheldJudgments = landing.unbound;
+        console.warn(
+          `[report] ${label} L1 exhaustion: returning ${boundJudgments.length}/${landing.total} bound, withholding ${landing.unbound.length}`,
+        );
+        return { ...result, text: JSON.stringify(parsed) };
+      }
+
+      // All passed - attach landingRate and return
       (parsed as Record<string, unknown>).landingRate = landing.rate;
-      // Re-serialize with landingRate attached (result is a fresh object)
       return { ...result, text: JSON.stringify(parsed) };
     }
 
@@ -576,7 +599,7 @@ Return ONLY this JSON structure (all text in English):
       "judgment": "<one falsifiable thesis sentence>",
       "keyNumber": "<numeric anchor>",
       "wrongIf": "<numeric condition that invalidates this judgment>",
-      "dataPoint": "<source period, e.g. Yahoo Finance Q2 2026>"
+      "dataPoint": "<source period, e.g. Company 10-K FY2025>"
     }
   ],
   "investmentThesis": "<2-3 sentences core thesis>",
@@ -647,7 +670,7 @@ Return ONLY this JSON structure (all text in English):
 }
 
 Hard rules:
-- Include exactly three topJudgments. Every judgment must have a numeric keyNumber, a numeric wrongIf condition, and a dataPoint field (source + period, e.g. "Yahoo Finance Q2 2026").
+- Include exactly three topJudgments. Every judgment must have a numeric keyNumber, a numeric wrongIf condition, and a dataPoint field (source + period, e.g. "Company 10-K FY2025").
 - Include monitorPanel.schema_version = 1 and 3-6 monitorPanel.monitors rows. These rows are consumed by watchlist monitors and morning-brief checks.
 - Do not output target prices, buy/sell ratings, entry levels, stop levels, portfolio weights, or position sizing.
 - Conviction/thesis tier evaluates evidence quality only, not whether the user should transact.
@@ -966,7 +989,7 @@ Return exactly this structure in English:
 
 Requirements:
 - Include all six lenses exactly once.
-- Include exactly three topJudgments. Every top judgment must contain a numeric keyNumber, a numeric wrongIf condition, and a dataPoint field (source + period, e.g. "Yahoo Finance Q2 2026"). If no reliable number exists, do not include that judgment; replace it with a weaker but quantified judgment.
+- Include exactly three topJudgments. Every top judgment must contain a numeric keyNumber, a numeric wrongIf condition, and a dataPoint field (source + period, e.g. "Company 10-K FY2025"). If no reliable number exists, do not include that judgment; replace it with a weaker but quantified judgment.
 - Facts must cite at least one supplied source ID. Inferences and views may cite supporting IDs but must stay labeled.
 - Evidence entries must reproduce only supplied source metadata and URLs.
 - For every lens, include numericConclusion and howToReadThisNumber. The "how to read" sentence must name source, basis, timestamp/date, and known blind spot.

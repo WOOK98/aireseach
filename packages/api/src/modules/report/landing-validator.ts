@@ -6,7 +6,7 @@ export interface JudgmentLike {
   judgment: string;
   keyNumber: string;
   wrongIf: string;
-  dataPoint?: string; // "source (period)" e.g. "Yahoo Finance Q2 2026"
+  dataPoint?: string; // "source (period)" e.g. "Company 10-K FY2025"
 }
 
 export interface LandingResult {
@@ -27,7 +27,7 @@ const DEFAULT_CONFIG: LandingConfig = { threshold: 0.85 };
  * Check if a dataPoint binding is valid (non-empty, contains meaningful content).
  * A binding like "N/A" or "unknown" or empty string counts as unbound.
  */
-function isValidBinding(dataPoint: string | undefined): boolean {
+export function isValidBinding(dataPoint: string | undefined): boolean {
   if (!dataPoint) return false;
   const trimmed = dataPoint.trim();
   if (trimmed.length === 0) return false;
@@ -83,6 +83,6 @@ L1 LANDING CHECK FAILED: Only ${result.landed}/${result.total} judgments have da
 Unbound assertions:
 ${unboundList}
 
-For each judgment above, add a "dataPoint" field in the format "Source Period" (e.g. "Yahoo Finance Q2 2026", "Company 10-K FY2025", "Bloomberg July 2026").
+For each judgment above, add a "dataPoint" field in the format "Source Period" (e.g. "Company 10-K FY2025", "Exchange filings Q2 2026", "Earnings report Q1 2026").
 Every numeric claim MUST cite its source and time period. This is a hard requirement.`;
 }

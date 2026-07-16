@@ -15,7 +15,7 @@ const makeJudgment = (overrides?: Partial<JudgmentLike>): JudgmentLike => ({
   judgment: "Revenue growth re-accelerates to 15%+ YoY",
   keyNumber: "Revenue Growth YoY 12.3%",
   wrongIf: "Revenue growth drops below 8% for two consecutive quarters",
-  dataPoint: "Yahoo Finance Q2 2026",
+  dataPoint: "Company 10-K FY2025",
   ...overrides,
 });
 
@@ -24,14 +24,14 @@ describe("L1 landing validator — validateLandingRate", () => {
   describe("path 1: all judgments have dataPoint → passes", () => {
     it("3/3 bound → rate 1.0, passed=true", () => {
       const judgments = [
-        makeJudgment({ dataPoint: "Yahoo Finance Q2 2026" }),
+        makeJudgment({ dataPoint: "Company 10-K FY2025" }),
         makeJudgment({
           judgment: "Margin expansion",
-          dataPoint: "Company 10-K FY2025",
+          dataPoint: "Exchange filings Q2 2026",
         }),
         makeJudgment({
           judgment: "FCF yield above 5%",
-          dataPoint: "Bloomberg July 2026",
+          dataPoint: "Earnings report Q1 2026",
         }),
       ];
       const result = validateLandingRate(judgments);
@@ -53,7 +53,7 @@ describe("L1 landing validator — validateLandingRate", () => {
   describe("path 2: partial landing → triggers retry", () => {
     it("1/3 bound → rate 0.33, passed=false", () => {
       const judgments = [
-        makeJudgment({ dataPoint: "Yahoo Finance Q2 2026" }),
+        makeJudgment({ dataPoint: "Company 10-K FY2025" }),
         makeJudgment({ judgment: "Unbound judgment 1", dataPoint: undefined }),
         makeJudgment({ judgment: "Unbound judgment 2", dataPoint: undefined }),
       ];
@@ -70,8 +70,8 @@ describe("L1 landing validator — validateLandingRate", () => {
 
     it("2/3 bound → rate 0.67, passed=false (below 0.85)", () => {
       const judgments = [
-        makeJudgment({ dataPoint: "Yahoo Finance Q2 2026" }),
         makeJudgment({ dataPoint: "Company 10-K FY2025" }),
+        makeJudgment({ dataPoint: "Exchange filings Q2 2026" }),
         makeJudgment({ judgment: "No source", dataPoint: undefined }),
       ];
       const result = validateLandingRate(judgments);
@@ -95,8 +95,8 @@ describe("L1 landing validator — validateLandingRate", () => {
 
     it("custom threshold 0.5 → 2/4 bound passes", () => {
       const judgments = [
-        makeJudgment({ dataPoint: "Yahoo Finance Q2 2026" }),
         makeJudgment({ dataPoint: "Company 10-K FY2025" }),
+        makeJudgment({ dataPoint: "Exchange filings Q2 2026" }),
         makeJudgment({ judgment: "No source 1", dataPoint: undefined }),
         makeJudgment({ judgment: "No source 2", dataPoint: undefined }),
       ];
@@ -154,7 +154,7 @@ describe("L1 landing validator — buildRetryPromptSuffix", () => {
 
 describe("L1 landing validator — binding edge cases", () => {
   it("valid binding with hyphenated source", () => {
-    const judgments = [makeJudgment({ dataPoint: "Yahoo-Finance Q2 2026" })];
+    const judgments = [makeJudgment({ dataPoint: "SEC-Filing Q2 2026" })];
     const result = validateLandingRate(judgments);
     expect(result.landed).toBe(1);
   });
