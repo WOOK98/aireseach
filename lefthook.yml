@@ -1,9 +1,15 @@
 pre-commit:
   parallel: true
   commands:
+    # glob 限定为 oxfmt/oxlint 实际支持的 JS/TS 家族。二者对 json/md/yml/sh
+    # 等类型一律 exit 1（2026-07 实测），无 glob 时任何非代码 commit 都会被
+    # 误拦——这曾四次诱发 --no-verify 红线事故（见 issue #15）。
+    # lefthook 在 glob 过滤后无匹配文件时跳过该命令。
     format:
+      glob: "*.{ts,tsx,js,jsx,mjs,cjs}"
       run: pnpm format:fix {staged_files}
       stage_fixed: true
     lint:
+      glob: "*.{ts,tsx,js,jsx,mjs,cjs}"
       run: pnpm lint:fix {staged_files}
       stage_fixed: true
