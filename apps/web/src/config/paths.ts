@@ -27,6 +27,8 @@ const pathsConfig = {
     report: "/report",
     pricing: "/pricing",
     contact: "/contact",
+    privacy: "/privacy",
+    terms: "/terms",
     blog: {
       index: BLOG_PREFIX,
       post: (slug: string) => `${BLOG_PREFIX}/${slug}`,

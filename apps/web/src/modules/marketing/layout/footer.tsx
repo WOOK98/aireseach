@@ -87,11 +87,11 @@ const links = [
     items: [
       {
         title: "legal.privacy",
-        href: pathsConfig.marketing.legal("privacy-policy"),
+        href: pathsConfig.marketing.privacy,
       },
       {
         title: "legal.terms",
-        href: pathsConfig.marketing.legal("terms-and-conditions"),
+        href: pathsConfig.marketing.terms,
       },
     ],
   },

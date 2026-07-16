@@ -1,21 +1,6 @@
-import { notFound } from "next/navigation";
+import { CollectionType, getContentItems } from "@workspace/cms";
 
-import {
-  CollectionType,
-  getContentItemBySlug,
-  getContentItems,
-} from "@workspace/cms";
-import { getTranslation } from "@workspace/i18n/server";
-
-import { getMetadata } from "~/lib/metadata";
-import { Mdx } from "~/modules/common/mdx";
-import {
-  Section,
-  SectionBadge,
-  SectionDescription,
-  SectionHeader,
-  SectionTitle,
-} from "~/modules/marketing/layout/section";
+import { getLegalMetadata, LegalPage } from "~/modules/marketing/legal/page";
 
 interface PageParams {
   params: Promise<{
@@ -25,28 +10,9 @@ interface PageParams {
 }
 
 export default async function Page({ params }: PageParams) {
-  const item = getContentItemBySlug({
-    collection: CollectionType.LEGAL,
-    slug: (await params).slug,
-    locale: (await params).locale,
-  });
+  const { slug, locale } = await params;
 
-  if (!item) {
-    return notFound();
-  }
-
-  const { t } = await getTranslation({ ns: "common" });
-
-  return (
-    <Section>
-      <SectionHeader>
-        <SectionBadge>{t("legal.label")}</SectionBadge>
-        <SectionTitle as="h1">{item.title}</SectionTitle>
-        <SectionDescription>{item.description}</SectionDescription>
-      </SectionHeader>
-      <Mdx mdx={item.mdx} />
-    </Section>
-  );
+  return <LegalPage slug={slug} locale={locale} />;
 }
 
 export function generateStaticParams() {
@@ -59,18 +25,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageParams) {
-  const item = getContentItemBySlug({
-    collection: CollectionType.LEGAL,
-    slug: (await params).slug,
-    locale: (await params).locale,
-  });
+  const { slug, locale } = await params;
 
-  if (!item) {
-    return notFound();
-  }
-
-  return getMetadata({
-    title: item.title,
-    description: item.description,
-  })({ params });
+  return getLegalMetadata({ slug, locale })({ params });
 }
