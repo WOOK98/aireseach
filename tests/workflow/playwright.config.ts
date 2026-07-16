@@ -41,6 +41,8 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       SKIP_ENV_VALIDATION: "1",
+      DATABASE_URL: "postgresql://localhost:5432/test",
+      CONTACT_EMAIL: "test@example.com",
     },
   },
 });
