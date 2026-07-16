@@ -35,14 +35,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm --filter web start -p ${PORT}`,
+    command: `env SKIP_ENV_VALIDATION=1 DATABASE_URL=postgresql://localhost:5432/test CONTACT_EMAIL=test@example.com pnpm --filter web start -p ${PORT}`,
     port: PORT,
     timeout: 60_000,
     reuseExistingServer: !process.env.CI,
-    env: {
-      SKIP_ENV_VALIDATION: "1",
-      DATABASE_URL: "postgresql://localhost:5432/test",
-      CONTACT_EMAIL: "test@example.com",
-    },
   },
 });
