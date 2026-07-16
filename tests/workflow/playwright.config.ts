@@ -10,7 +10,10 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
  * Loop Gate — Playwright smoke config.
  *
  * CI budget: total smoke suite ≤ 60 s (see loop-gate.yml).
- * Tests run against a local Next.js production build.
+ *
+ * When BASE_URL is set (e.g. Vercel preview), tests run against that URL
+ * directly — no local server needed. Otherwise, a local Next.js production
+ * build is started on PORT.
  */
 export default defineConfig({
   testDir: ".",
@@ -18,7 +21,7 @@ export default defineConfig({
   fullyParallel: false,
   retries: 0,
   timeout: 30_000,
-  expect: { timeout: 5_000 },
+  expect: { timeout: 10_000 },
   reporter: process.env.CI
     ? [["github"], ["html", { open: "never" }]]
     : [["html", { open: "never" }]],
@@ -34,10 +37,15 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
-    command: `pnpm --filter web start -p ${PORT}`,
-    port: PORT,
-    timeout: 60_000,
-    reuseExistingServer: !process.env.CI,
-  },
+  // Only start a local server when BASE_URL is not provided.
+  ...(process.env.BASE_URL
+    ? {}
+    : {
+        webServer: {
+          command: `pnpm --filter web start -p ${PORT}`,
+          port: PORT,
+          timeout: 60_000,
+          reuseExistingServer: !process.env.CI,
+        },
+      }),
 });

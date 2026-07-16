@@ -119,9 +119,8 @@ jobs:
   playwright-smoke:
     name: Playwright smoke
     runs-on: ubuntu-latest
-    # CI budget: ≤ 60 s total for this job (build excluded).
-    # If this job exceeds budget, investigate before raising the limit.
-    timeout-minutes: 5
+    # CI budget: ≤ 60 s total (no local build — tests hit Vercel preview).
+    timeout-minutes: 3
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -129,30 +128,33 @@ jobs:
       - name: Setup
         uses: ./tooling/github/setup
 
-      - name: Create .env for smoke tests
-        run: |
-          echo 'SKIP_ENV_VALIDATION=1' > apps/web/.env.local
-          echo 'DATABASE_URL=postgresql://localhost:5432/test' >> apps/web/.env.local
-          echo 'CONTACT_EMAIL=test@example.com' >> apps/web/.env.local
-          echo 'BETTER_AUTH_SECRET=ci-smoke-secret' >> apps/web/.env.local
-          echo 'BETTER_AUTH_URL=http://localhost:3999' >> apps/web/.env.local
-          cat apps/web/.env.local
-
-      - name: Build content collections
-        run: pnpm --filter @workspace/cms build
-
-      - name: Build web
-        run: pnpm --filter web build
-
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
+
+      - name: Wait for Vercel preview
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.ref }}
+          check-name: "Vercel"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+          allowed-conclusions: success
+
+      - name: Get Vercel preview URL
+        id: vercel
+        run: |
+          set -euo pipefail
+          URL=$(gh api repos/${{ github.repository }}/deployments \
+            --jq '.[0].id' | xargs -I{} gh api repos/${{ github.repository }}/deployments/{}/statuses \
+            --jq '.[0].target_url')
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: $URL"
 
       - name: Run smoke tests (≤60s budget)
         run: pnpm exec playwright test --config tests/workflow/playwright.config.ts
         env:
           CI: "1"
-          SKIP_ENV_VALIDATION: "1"
-          PORT: "3999"
+          BASE_URL: ${{ steps.vercel.outputs.url }}
 
       - name: Upload test artifacts
         if: failure()
