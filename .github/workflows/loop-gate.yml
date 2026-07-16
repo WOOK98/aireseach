@@ -64,6 +64,9 @@ jobs:
       - name: Build content collections
         run: pnpm --filter @workspace/cms build
 
+      - name: Build content collections
+        run: pnpm --filter @workspace/cms build
+
       - name: Build web
         run: pnpm --filter web build
 
