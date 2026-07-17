@@ -42,12 +42,19 @@ jobs:
           DETAILS=$(echo "$OUTPUT" | head -n -1)
 
           echo "exit_code=${EXIT_CODE}" >> "$GITHUB_OUTPUT"
+          # Escape multiline for safe transport via GITHUB_OUTPUT
           echo "summary=${SUMMARY}" >> "$GITHUB_OUTPUT"
 
           if [[ $EXIT_CODE -eq 0 ]]; then
             echo "### ✅ MCP Healthy" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+          elif [[ $EXIT_CODE -eq 3 ]]; then
+            echo "### ⚠️ MCP Not Configured" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Set \`MCP_SMOKE_ENDPOINT\` and \`MCP_SMOKE_KEY\` repo secrets to enable this check." >> "$GITHUB_STEP_SUMMARY"
           elif [[ $EXIT_CODE -eq 1 ]]; then
             echo "### 🔴 MCP Auth Failure" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -66,8 +73,9 @@ jobs:
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          # Always report; fail the job on non-healthy
-          if [[ $EXIT_CODE -ne 0 ]]; then
+          # Fail the job only on real failures (1=AUTH_FAIL, 2=UNREACHABLE).
+          # Exit 3 (NOT_CONFIGURED) is a warning — job stays green.
+          if [[ $EXIT_CODE -eq 1 || $EXIT_CODE -eq 2 ]]; then
             echo "::error::MCP smoke failed: ${SUMMARY}"
             exit 1
           fi
@@ -75,11 +83,14 @@ jobs:
       - name: 📝 Create issue on failure
         if: failure()
         uses: actions/github-script@v7
+        env:
+          SMOKE_SUMMARY: ${{ steps.smoke.outputs.summary }}
+          SMOKE_EXIT_CODE: ${{ steps.smoke.outputs.exit_code }}
         with:
           script: |
-            const summary = '${{ steps.smoke.outputs.summary }}';
-            const exitCode = '${{ steps.smoke.outputs.exit_code }}';
-            const state = exitCode === '1' ? 'AUTH_FAIL' : 'UNREACHABLE';
+            const summary = process.env.SMOKE_SUMMARY || 'unknown';
+            const exitCode = parseInt(process.env.SMOKE_EXIT_CODE || '0', 10);
+            const state = exitCode === 1 ? 'AUTH_FAIL' : 'UNREACHABLE';
             const title = `🚨 MCP Smoke: ${state} — ${new Date().toISOString().slice(0,10)}`;
 
             // Check if there's already an open smoke issue to avoid duplicates
@@ -91,13 +102,14 @@ jobs:
               per_page: 1,
             });
 
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
             if (existing.data.length > 0) {
-              // Comment on existing issue instead of creating duplicate
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: existing.data[0].number,
-                body: `**Repeat failure** (${state})\n\n\`\`\`\n${summary}\n\`\`\`\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                body: `**Repeat failure** (${state})\n\n\`\`\`\n${summary}\n\`\`\`\n\nRun: ${runUrl}`,
               });
               return;
             }
@@ -106,6 +118,6 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title,
-              body: `## MCP Smoke Test Failure\n\n**State:** ${state}\n**Summary:** \`${summary}\`\n**Workflow run:** [${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n\n### What this means\n\nThe automated MCP production smoke test detected that the endpoint is **${state.toLowerCase().replace('_', ' ')}**. This issue was auto-created.\n\n### Action required\n\n- [ ] Investigate MCP endpoint status\n- [ ] Fix the root cause\n- [ ] Close this issue once smoke test passes\n`,
+              body: `## MCP Smoke Test Failure\n\n**State:** ${state}\n**Summary:** \`${summary}\`\n**Workflow run:** [${context.runId}](${runUrl})\n\n### What this means\n\nThe automated MCP production smoke test detected that the endpoint is **${state.toLowerCase().replace('_', ' ')}**. This issue was auto-created.\n\n### Action required\n\n- [ ] Investigate MCP endpoint status\n- [ ] Fix the root cause\n- [ ] Close this issue once smoke test passes\n`,
               labels: ['mcp-smoke', 'auto', 'P1'],
             });
