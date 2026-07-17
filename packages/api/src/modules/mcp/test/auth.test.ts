@@ -5,6 +5,7 @@ import {
   getAuthorizationResult,
   getToken,
   isAuthorizedToken,
+  keyFingerprint,
   normalizeKey,
   parseConfiguredKeys,
 } from "../auth";
@@ -130,5 +131,74 @@ describe("getAuthorizationResult", () => {
     expect(getAuthorizationResult("plugin=mcp_abc", "Bearer nope")).toEqual({
       authorized: false,
     });
+  });
+});
+
+describe("keyFingerprint", () => {
+  it("returns 8 hex chars", () => {
+    const fp = keyFingerprint("mcp_testkey123");
+    expect(fp).toHaveLength(8);
+    expect(fp).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it("is deterministic for the same input", () => {
+    expect(keyFingerprint("abc")).toBe(keyFingerprint("abc"));
+  });
+
+  it("differs for different inputs", () => {
+    expect(keyFingerprint("abc")).not.toBe(keyFingerprint("def"));
+  });
+
+  it("does not leak the original key", () => {
+    const secret = "mcp_supersecretkey_xyz";
+    const fp = keyFingerprint(secret);
+    expect(fp).not.toContain(secret);
+    expect(fp.length).toBeLessThan(secret.length);
+  });
+});
+
+describe("multi-key revocation scenarios", () => {
+  const KEYS = "beta-alice=mcp_alice111,beta-bob=mcp_bob222,beta-carol=mcp_carol333";
+
+  it("all three keys authorize independently", () => {
+    expect(isAuthorizedToken(KEYS, "Bearer mcp_alice111")).toBe(true);
+    expect(isAuthorizedToken(KEYS, "Bearer mcp_bob222")).toBe(true);
+    expect(isAuthorizedToken(KEYS, "Bearer mcp_carol333")).toBe(true);
+  });
+
+  it("after removing bob's key, alice and carol still work", () => {
+    const afterRevoke = "beta-alice=mcp_alice111,beta-carol=mcp_carol333";
+    expect(isAuthorizedToken(afterRevoke, "Bearer mcp_alice111")).toBe(true);
+    expect(isAuthorizedToken(afterRevoke, "Bearer mcp_carol333")).toBe(true);
+    // Bob is now rejected
+    expect(isAuthorizedToken(afterRevoke, "Bearer mcp_bob222")).toBe(false);
+  });
+
+  it("revoked key returns correct keyName before revocation", () => {
+    expect(getAuthorizationResult(KEYS, "Bearer mcp_bob222")).toEqual({
+      authorized: true,
+      keyName: "beta-bob",
+    });
+  });
+
+  it("revoked key returns authorized:false after removal", () => {
+    const afterRevoke = "beta-alice=mcp_alice111,beta-carol=mcp_carol333";
+    expect(getAuthorizationResult(afterRevoke, "Bearer mcp_bob222")).toEqual({
+      authorized: false,
+    });
+  });
+});
+
+describe("empty key list", () => {
+  it("rejects everything when configured keys is empty string", () => {
+    expect(isAuthorizedToken("", "Bearer anything")).toBe(false);
+  });
+
+  it("rejects everything when configured keys is undefined", () => {
+    expect(isAuthorizedToken(undefined, "Bearer anything")).toBe(false);
+  });
+
+  it("rejects everything when configured keys is only whitespace/commas", () => {
+    expect(isAuthorizedToken(" , , ", "Bearer anything")).toBe(false);
   });
 });

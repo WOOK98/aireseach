@@ -4,6 +4,27 @@
  * rest of the API's environment/config graph.
  */
 
+import { createHash, timingSafeEqual } from "crypto";
+
+/**
+ * Constant-time string comparison to prevent timing attacks.
+ * Pads both strings to equal length before comparing.
+ */
+const timingSafeCompare = (a: string, b: string): boolean => {
+  if (a.length !== b.length) return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return timingSafeEqual(bufA, bufB);
+};
+
+/**
+ * Generate a short fingerprint for logging (first 8 hex chars of SHA-256).
+ * Used to identify which key made a request without exposing the key itself.
+ * Example: mcp_abc123xyz → "a1b2c3d4"
+ */
+export const keyFingerprint = (token: string): string =>
+  createHash("sha256").update(token).digest("hex").slice(0, 8);
+
 export const getToken = (authorization: string | undefined) => {
   if (!authorization) return "";
   const [scheme, value] = authorization.split(/\s+/, 2);
@@ -46,7 +67,7 @@ export const getAuthorizationResult = (
 
   const token = getToken(authorization);
   for (const entry of configured) {
-    if (normalizeKey(entry) === token) {
+    if (timingSafeCompare(normalizeKey(entry), token)) {
       return { authorized: true, keyName: extractKeyName(entry) };
     }
   }
