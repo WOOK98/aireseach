@@ -45,7 +45,51 @@ const VENDOR_LEAK =
   /Yahoo\s*Finance|Yahoo API|DeepSeek API|Jina API|hosted DeepSeek|unlimited Jina/i;
 const INTERNAL_PATH_LEAK =
   /\/api\/report|\/api\/mcp|process\.env\.[A-Z_]|__NEXT_DATA__.*"env"/;
-const FALLBACK_COPY = /0\.0%/;
+const FALLBACK_COPY = /(?<!\d)0\.0%/; // standalone 0.0% only, not 10.0% etc.
+
+/* ── Vercel auth-page detection (Gate 0 pre-assertion) ── */
+const VERCEL_AUTH_PATTERN =
+  /Authentication Required|Vercel Authentication|Log in to continue/i;
+
+async function assertNotVercelAuthPage(
+  page: import("@playwright/test").Page,
+  response: import("@playwright/test").Response | null,
+) {
+  // Fast path: 401/403 without bypass headers → definitely auth wall
+  if (response && (response.status() === 401 || response.status() === 403)) {
+    throw new Error(
+      `Vercel protection returned ${response.status()} — bypass headers may be missing or secret is invalid`,
+    );
+  }
+  // Slow path: 200 but rendered auth page (Vercel sometimes serves auth as 200)
+  const title = await page.title();
+  if (VERCEL_AUTH_PATTERN.test(title)) {
+    throw new Error(
+      `Vercel auth page detected (title: "${title}") — bypass is not working`,
+    );
+  }
+  const bodySnippet = await page
+    .locator("body")
+    .innerText()
+    .catch(() => "");
+  if (bodySnippet.length < 500 && VERCEL_AUTH_PATTERN.test(bodySnippet)) {
+    throw new Error(
+      "Vercel auth page detected in body text — bypass is not working",
+    );
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Gate 0 — Vercel protection bypass sanity check
+   ═══════════════════════════════════════════════════════════ */
+test.describe("Gate 0 — Vercel bypass sanity", () => {
+  test("homepage is NOT the Vercel auth page", async ({ page }) => {
+    const response = await page.goto(HOME);
+    await assertNotVercelAuthPage(page, response);
+    // Double-check: must have the real app title
+    await expect(page).toHaveTitle(/Airesearch/i);
+  });
+});
 
 /* ═══════════════════════════════════════════════════════════
    Gate 1 — Homepage loads successfully
@@ -83,8 +127,10 @@ test.describe("Gate 2 — Company page", () => {
     const headingText = await heading.textContent();
     expect(headingText!.length).toBeGreaterThan(0);
 
-    // Ticker renders in the sub-heading area
-    await expect(page.getByText("AAPL")).toBeVisible();
+    // Ticker renders in the sub-heading paragraph (NasdaqGS · AAPL · ...)
+    await expect(
+      page.locator("p").filter({ hasText: "AAPL" }).first(),
+    ).toBeVisible();
   });
 });
 
