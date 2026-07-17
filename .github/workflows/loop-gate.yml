@@ -117,9 +117,67 @@ jobs:
         run: python -m py_compile apps/report-agent/server.py
 
   playwright-smoke:
-    name: Playwright smoke TODO
+    name: Playwright smoke
     runs-on: ubuntu-latest
+    # CI budget: ≤ 60 s total (no local build — tests hit Vercel preview).
+    timeout-minutes: 3
     steps:
-      - name: Placeholder
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Get Vercel preview URL
+        id: vercel
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "TODO: add protected-preview Playwright smoke once preview auth/bypass is standardized."
+          set -euo pipefail
+          # Wait for Vercel deployment to be ready (max 3 min)
+          for i in $(seq 1 18); do
+            DEPLOY_ID=$(gh api repos/${{ github.repository }}/deployments \
+              --jq '.[0].id' 2>/dev/null || echo "")
+            if [ -n "$DEPLOY_ID" ]; then
+              URL=$(gh api repos/${{ github.repository }}/deployments/$DEPLOY_ID/statuses \
+                --jq '.[0].target_url' 2>/dev/null || echo "")
+              STATE=$(gh api repos/${{ github.repository }}/deployments/$DEPLOY_ID/statuses \
+                --jq '.[0].state' 2>/dev/null || echo "")
+              if [ "$STATE" = "success" ] && [ -n "$URL" ]; then
+                echo "url=$URL" >> "$GITHUB_OUTPUT"
+                echo "Preview URL: $URL"
+                exit 0
+              fi
+              echo "Waiting for Vercel... ($i/18) state=$STATE"
+            else
+              echo "Waiting for Vercel deployment... ($i/18)"
+            fi
+            sleep 10
+          done
+          echo "Vercel deployment not ready after 3 min — skipping smoke tests"
+          echo "url=" >> "$GITHUB_OUTPUT"
+
+      - name: Run smoke tests (≤60s budget)
+        if: steps.vercel.outputs.url != ''
+        run: pnpm exec playwright test --config tests/workflow/playwright.config.ts
+        env:
+          CI: "1"
+          BASE_URL: ${{ steps.vercel.outputs.url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+
+      - name: Skip smoke tests (Vercel not ready)
+        if: steps.vercel.outputs.url == ''
+        run: echo "Skipping Playwright smoke — Vercel preview not available"
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-smoke-artifacts
+          path: |
+            test-results/
+            tests/workflow/playwright-report/
+          retention-days: 7

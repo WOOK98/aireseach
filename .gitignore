@@ -46,3 +46,7 @@ knowledge/
 
 # local secrets
 .mcp-api-key.local
+
+# Playwright test artifacts
+test-results/
+tests/workflow/playwright-report/

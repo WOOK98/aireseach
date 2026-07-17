@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@google-cloud/local-auth": "3.0.1",
+    "@playwright/test": "^1.52.0",
     "@turbo/gen": "catalog:turbo",
     "@workspace/oxfmt": "workspace:*",
     "@workspace/oxlint": "workspace:*",
