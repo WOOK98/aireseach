@@ -9,7 +9,7 @@
     "format": "oxfmt --check",
     "format:fix": "oxfmt",
     "postinstall": "pnpm lint:ws",
-    "lint": "turbo build --filter=./packages/* && oxlint",
+    "lint": "turbo build --filter=./packages/* && node scripts/lint/check-oxlint-baseline.mjs",
     "lint:fix": "turbo build --filter=./packages/* && oxlint --fix",
     "lint:ws": "pnpm dlx sherif@latest -r packages-without-package-json",
     "services:logs": "docker compose logs -f",

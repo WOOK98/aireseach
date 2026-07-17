@@ -1,0 +1,991 @@
+{
+  "schemaVersion": 1,
+  "tool": "oxlint",
+  "capturedAt": "2026-07-18",
+  "issue": "WOOK98/aireseach#14",
+  "total": 116,
+  "policy": "Existing diagnostics are tracked here so CI can enforce zero new lint diagnostics. Do not add entries without reviewing whether the new diagnostic should be fixed instead.",
+  "repaymentPlan": [
+    "P2-A: retire root assets/*.js diagnostics by either excluding vendored/static theme assets from lint or cleaning them in a dedicated mechanical PR.",
+    "P2-B: retire scripts/blogger/setup.mjs diagnostics after confirming setup script runtime paths.",
+    "P2-C: retire the remaining TypeScript diagnostics in typed app/package code before tightening lint to zero-baseline."
+  ],
+  "summary": {
+    "byFile": {
+      "assets/global.js": 44,
+      "assets/product-info.js": 10,
+      "assets/quick-order-list.js": 7,
+      "assets/cart.js": 6,
+      "assets/magnify.js": 5,
+      "assets/quick-add-bulk.js": 5,
+      "assets/media-gallery.js": 4,
+      "assets/pickup-availability.js": 4,
+      "assets/product-form.js": 4,
+      "assets/facets.js": 3,
+      "assets/share.js": 3,
+      "scripts/blogger/setup.mjs": 3,
+      "assets/constants.js": 2,
+      "assets/pubsub.js": 2,
+      "assets/quick-add.js": 2,
+      "packages/ui/mobile/src/components/i18n.tsx": 2,
+      "apps/web/src/lib/noop-polyfill.ts": 1,
+      "assets/cart-drawer.js": 1,
+      "assets/customer.js": 1,
+      "assets/details-modal.js": 1,
+      "assets/predictive-search.js": 1,
+      "assets/price-per-item.js": 1,
+      "assets/product-modal.js": 1,
+      "assets/product-model.js": 1,
+      "assets/show-more.js": 1,
+      "assets/theme-editor.js": 1
+    },
+    "byRule": {
+      "eslint(no-unused-vars)": 31,
+      "eslint(no-unused-expressions)": 21,
+      "eslint-plugin-promise(always-return)": 20,
+      "typescript-eslint(no-floating-promises)": 14,
+      "eslint-plugin-unicorn(prefer-add-event-listener)": 6,
+      "eslint(no-useless-constructor)": 6,
+      "typescript-eslint(unbound-method)": 4,
+      "typescript-eslint(no-extraneous-class)": 3,
+      "eslint(block-scoped-var)": 2,
+      "eslint(no-useless-concat)": 2,
+      "typescript(TS2339)": 2,
+      "eslint-plugin-promise(no-callback-in-promise)": 1,
+      "eslint-plugin-unicorn(no-empty-file)": 1,
+      "eslint(no-extra-boolean-cast)": 1,
+      "eslint(no-self-assign)": 1,
+      "oxc(no-accumulating-spread)": 1
+    }
+  },
+  "diagnostics": [
+    {
+      "fingerprint": "apps/web/src/lib/noop-polyfill.ts:1:1:eslint-plugin-unicorn(no-empty-file):Empty files are not allowed.",
+      "file": "apps/web/src/lib/noop-polyfill.ts",
+      "line": 1,
+      "column": 1,
+      "code": "eslint-plugin-unicorn(no-empty-file)",
+      "message": "Empty files are not allowed."
+    },
+    {
+      "fingerprint": "assets/cart-drawer.js:89:5:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/cart-drawer.js",
+      "line": 89,
+      "column": 5,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/cart.js:108:15:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/cart.js",
+      "line": 108,
+      "column": 15,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/cart.js:128:15:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/cart.js",
+      "line": 128,
+      "column": 15,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/cart.js:190:13:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/cart.js",
+      "line": 190,
+      "column": 13,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/cart.js:254:13:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/cart.js",
+      "line": 254,
+      "column": 13,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/cart.js:276:9:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/cart.js",
+      "line": 276,
+      "column": 9,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/cart.js:380:13:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/cart.js",
+      "line": 380,
+      "column": 13,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/constants.js:1:7:eslint(no-unused-vars):Variable 'ON_CHANGE_DEBOUNCE_TIMER' is declared but never used. Unused variables should start with a '_'.",
+      "file": "assets/constants.js",
+      "line": 1,
+      "column": 7,
+      "code": "eslint(no-unused-vars)",
+      "message": "Variable 'ON_CHANGE_DEBOUNCE_TIMER' is declared but never used. Unused variables should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/constants.js:3:7:eslint(no-unused-vars):Variable 'PUB_SUB_EVENTS' is declared but never used. Unused variables should start with a '_'.",
+      "file": "assets/constants.js",
+      "line": 3,
+      "column": 7,
+      "code": "eslint(no-unused-vars)",
+      "message": "Variable 'PUB_SUB_EVENTS' is declared but never used. Unused variables should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/customer.js:15:7:eslint(no-unused-vars):Class 'CustomerAddresses' is declared but never used.",
+      "file": "assets/customer.js",
+      "line": 15,
+      "column": 7,
+      "code": "eslint(no-unused-vars)",
+      "message": "Class 'CustomerAddresses' is declared but never used."
+    },
+    {
+      "fingerprint": "assets/details-modal.js:29:5:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/details-modal.js",
+      "line": 29,
+      "column": 5,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/facets.js:60:7:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/facets.js",
+      "line": 60,
+      "column": 7,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/facets.js:69:5:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/facets.js",
+      "line": 69,
+      "column": 5,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/facets.js:71:13:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/facets.js",
+      "line": 71,
+      "column": 13,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/global.js:1030:7:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 1030,
+      "column": 7,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:1092:5:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 1092,
+      "column": 5,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:1166:22:eslint(no-unused-vars):Parameter 'event' is declared but never used. Unused parameters should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 1166,
+      "column": 22,
+      "code": "eslint(no-unused-vars)",
+      "message": "Parameter 'event' is declared but never used. Unused parameters should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:1238:3:eslint(no-useless-constructor):Redundant super call in constructor",
+      "file": "assets/global.js",
+      "line": 1238,
+      "column": 3,
+      "code": "eslint(no-useless-constructor)",
+      "message": "Redundant super call in constructor"
+    },
+    {
+      "fingerprint": "assets/global.js:1247:7:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/global.js",
+      "line": 1247,
+      "column": 7,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/global.js:1313:3:eslint(no-useless-constructor):Redundant super call in constructor",
+      "file": "assets/global.js",
+      "line": 1313,
+      "column": 3,
+      "code": "eslint(no-useless-constructor)",
+      "message": "Redundant super call in constructor"
+    },
+    {
+      "fingerprint": "assets/global.js:1339:13:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/global.js",
+      "line": 1339,
+      "column": 13,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/global.js:1499:7:eslint(no-unused-vars):Class 'CartPerformance' is declared but never used.",
+      "file": "assets/global.js",
+      "line": 1499,
+      "column": 7,
+      "code": "eslint(no-unused-vars)",
+      "message": "Class 'CartPerformance' is declared but never used."
+    },
+    {
+      "fingerprint": "assets/global.js:1499:7:typescript-eslint(no-extraneous-class):Unexpected class with only static properties.",
+      "file": "assets/global.js",
+      "line": 1499,
+      "column": 7,
+      "code": "typescript-eslint(no-extraneous-class)",
+      "message": "Unexpected class with only static properties."
+    },
+    {
+      "fingerprint": "assets/global.js:1509:11:eslint(no-unused-vars):Variable 'startMarker' is declared but never used. Unused variables should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 1509,
+      "column": 11,
+      "code": "eslint(no-unused-vars)",
+      "message": "Variable 'startMarker' is declared but never used. Unused variables should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:1513:11:eslint(no-unused-vars):Variable 'endMarker' is declared but never used. Unused variables should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 1513,
+      "column": 11,
+      "code": "eslint(no-unused-vars)",
+      "message": "Variable 'endMarker' is declared but never used. Unused variables should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:1520:11:eslint(no-unused-vars):Variable 'endMarker' is declared but never used. Unused variables should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 1520,
+      "column": 11,
+      "code": "eslint(no-unused-vars)",
+      "message": "Variable 'endMarker' is declared but never used. Unused variables should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:1527:11:eslint(no-unused-vars):Variable 'startMarker' is declared but never used. Unused variables should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 1527,
+      "column": 11,
+      "code": "eslint(no-unused-vars)",
+      "message": "Variable 'startMarker' is declared but never used. Unused variables should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:1531:11:eslint(no-unused-vars):Variable 'endMarker' is declared but never used. Unused variables should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 1531,
+      "column": 11,
+      "code": "eslint(no-unused-vars)",
+      "message": "Variable 'endMarker' is declared but never used. Unused variables should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:161:10:eslint(no-unused-vars):Catch parameter 'e' is caught but never used.",
+      "file": "assets/global.js",
+      "line": 161,
+      "column": 10,
+      "code": "eslint(no-unused-vars)",
+      "message": "Catch parameter 'e' is caught but never used."
+    },
+    {
+      "fingerprint": "assets/global.js:189:41:eslint(no-unused-vars):Parameter 'event' is declared but never used. Unused parameters should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 189,
+      "column": 41,
+      "code": "eslint(no-unused-vars)",
+      "message": "Parameter 'event' is declared but never used. Unused parameters should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:208:10:eslint(no-unused-vars):Function 'pauseAllMedia' is declared but never used.",
+      "file": "assets/global.js",
+      "line": 208,
+      "column": 10,
+      "code": "eslint(no-unused-vars)",
+      "message": "Function 'pauseAllMedia' is declared but never used."
+    },
+    {
+      "fingerprint": "assets/global.js:211:39:eslint(no-useless-concat):Unexpected string concatenation of literals.",
+      "file": "assets/global.js",
+      "line": 211,
+      "column": 39,
+      "code": "eslint(no-useless-concat)",
+      "message": "Unexpected string concatenation of literals."
+    },
+    {
+      "fingerprint": "assets/global.js:211:7:eslint(no-useless-concat):Unexpected string concatenation of literals.",
+      "file": "assets/global.js",
+      "line": 211,
+      "column": 7,
+      "code": "eslint(no-useless-concat)",
+      "message": "Unexpected string concatenation of literals."
+    },
+    {
+      "fingerprint": "assets/global.js:271:17:eslint(no-unused-vars):Parameter 'event' is declared but never used. Unused parameters should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 271,
+      "column": 17,
+      "code": "eslint(no-unused-vars)",
+      "message": "Parameter 'event' is declared but never used. Unused parameters should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:28:7:eslint(no-unused-vars):Class 'HTMLUpdateUtility' is declared but never used.",
+      "file": "assets/global.js",
+      "line": 28,
+      "column": 7,
+      "code": "eslint(no-unused-vars)",
+      "message": "Class 'HTMLUpdateUtility' is declared but never used."
+    },
+    {
+      "fingerprint": "assets/global.js:28:7:typescript-eslint(no-extraneous-class):Unexpected class with only static properties.",
+      "file": "assets/global.js",
+      "line": 28,
+      "column": 7,
+      "code": "typescript-eslint(no-extraneous-class)",
+      "message": "Unexpected class with only static properties."
+    },
+    {
+      "fingerprint": "assets/global.js:322:10:eslint(no-unused-vars):Function 'debounce' is declared but never used.",
+      "file": "assets/global.js",
+      "line": 322,
+      "column": 10,
+      "code": "eslint(no-unused-vars)",
+      "message": "Function 'debounce' is declared but never used."
+    },
+    {
+      "fingerprint": "assets/global.js:330:10:eslint(no-unused-vars):Function 'throttle' is declared but never used.",
+      "file": "assets/global.js",
+      "line": 330,
+      "column": 10,
+      "code": "eslint(no-unused-vars)",
+      "message": "Function 'throttle' is declared but never used."
+    },
+    {
+      "fingerprint": "assets/global.js:342:10:eslint(no-unused-vars):Function 'fetchConfig' is declared but never used.",
+      "file": "assets/global.js",
+      "line": 342,
+      "column": 10,
+      "code": "eslint(no-unused-vars)",
+      "message": "Function 'fetchConfig' is declared but never used."
+    },
+    {
+      "fingerprint": "assets/global.js:377:3:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 377,
+      "column": 3,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:438:29:eslint(no-unused-vars):Parameter 'e' is declared but never used. Unused parameters should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 438,
+      "column": 29,
+      "code": "eslint(no-unused-vars)",
+      "message": "Parameter 'e' is declared but never used. Unused parameters should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:439:9:eslint(block-scoped-var):'opt' is used outside of binding context.",
+      "file": "assets/global.js",
+      "line": 439,
+      "column": 9,
+      "code": "eslint(block-scoped-var)",
+      "message": "'opt' is used outside of binding context."
+    },
+    {
+      "fingerprint": "assets/global.js:440:15:eslint(block-scoped-var):'opt' is used outside of binding context.",
+      "file": "assets/global.js",
+      "line": 440,
+      "column": 15,
+      "code": "eslint(block-scoped-var)",
+      "message": "'opt' is used outside of binding context."
+    },
+    {
+      "fingerprint": "assets/global.js:465:21:eslint(no-unused-vars):Variable 'count' is declared but never used. Unused variables should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 465,
+      "column": 21,
+      "code": "eslint(no-unused-vars)",
+      "message": "Variable 'count' is declared but never used. Unused variables should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:50:7:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 50,
+      "column": 7,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:502:5:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 502,
+      "column": 5,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:51:7:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 51,
+      "column": 7,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:530:7:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 530,
+      "column": 7,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:544:9:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 544,
+      "column": 9,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:545:9:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 545,
+      "column": 9,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:604:5:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 604,
+      "column": 5,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:643:3:eslint(no-useless-constructor):Redundant super call in constructor",
+      "file": "assets/global.js",
+      "line": 643,
+      "column": 3,
+      "code": "eslint(no-useless-constructor)",
+      "message": "Redundant super call in constructor"
+    },
+    {
+      "fingerprint": "assets/global.js:680:5:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/global.js",
+      "line": 680,
+      "column": 5,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/global.js:750:3:eslint(no-useless-constructor):Redundant super call in constructor",
+      "file": "assets/global.js",
+      "line": 750,
+      "column": 3,
+      "code": "eslint(no-useless-constructor)",
+      "message": "Redundant super call in constructor"
+    },
+    {
+      "fingerprint": "assets/global.js:762:17:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/global.js",
+      "line": 762,
+      "column": 17,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/global.js:860:48:eslint(no-unused-vars):Parameter 'entries' is declared but never used. Unused parameters should start with a '_'.",
+      "file": "assets/global.js",
+      "line": 860,
+      "column": 48,
+      "code": "eslint(no-unused-vars)",
+      "message": "Parameter 'entries' is declared but never used. Unused parameters should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/global.js:9:7:eslint(no-unused-vars):Class 'SectionId' is declared but never used.",
+      "file": "assets/global.js",
+      "line": 9,
+      "column": 7,
+      "code": "eslint(no-unused-vars)",
+      "message": "Class 'SectionId' is declared but never used."
+    },
+    {
+      "fingerprint": "assets/global.js:9:7:typescript-eslint(no-extraneous-class):Unexpected class with only static properties.",
+      "file": "assets/global.js",
+      "line": 9,
+      "column": 7,
+      "code": "typescript-eslint(no-extraneous-class)",
+      "message": "Unexpected class with only static properties."
+    },
+    {
+      "fingerprint": "assets/magnify.js:11:16:eslint-plugin-unicorn(prefer-add-event-listener):Prefer `addEventListener()` over their `on`-function counterparts.",
+      "file": "assets/magnify.js",
+      "line": 11,
+      "column": 16,
+      "code": "eslint-plugin-unicorn(prefer-add-event-listener)",
+      "message": "Prefer `addEventListener()` over their `on`-function counterparts."
+    },
+    {
+      "fingerprint": "assets/magnify.js:49:11:eslint-plugin-unicorn(prefer-add-event-listener):Prefer `addEventListener()` over their `on`-function counterparts.",
+      "file": "assets/magnify.js",
+      "line": 49,
+      "column": 11,
+      "code": "eslint-plugin-unicorn(prefer-add-event-listener)",
+      "message": "Prefer `addEventListener()` over their `on`-function counterparts."
+    },
+    {
+      "fingerprint": "assets/magnify.js:50:11:eslint-plugin-unicorn(prefer-add-event-listener):Prefer `addEventListener()` over their `on`-function counterparts.",
+      "file": "assets/magnify.js",
+      "line": 50,
+      "column": 11,
+      "code": "eslint-plugin-unicorn(prefer-add-event-listener)",
+      "message": "Prefer `addEventListener()` over their `on`-function counterparts."
+    },
+    {
+      "fingerprint": "assets/magnify.js:51:11:eslint-plugin-unicorn(prefer-add-event-listener):Prefer `addEventListener()` over their `on`-function counterparts.",
+      "file": "assets/magnify.js",
+      "line": 51,
+      "column": 11,
+      "code": "eslint-plugin-unicorn(prefer-add-event-listener)",
+      "message": "Prefer `addEventListener()` over their `on`-function counterparts."
+    },
+    {
+      "fingerprint": "assets/magnify.js:57:11:eslint-plugin-unicorn(prefer-add-event-listener):Prefer `addEventListener()` over their `on`-function counterparts.",
+      "file": "assets/magnify.js",
+      "line": 57,
+      "column": 11,
+      "code": "eslint-plugin-unicorn(prefer-add-event-listener)",
+      "message": "Prefer `addEventListener()` over their `on`-function counterparts."
+    },
+    {
+      "fingerprint": "assets/media-gallery.js:121:15:eslint-plugin-unicorn(prefer-add-event-listener):Prefer `addEventListener()` over their `on`-function counterparts.",
+      "file": "assets/media-gallery.js",
+      "line": 121,
+      "column": 15,
+      "code": "eslint-plugin-unicorn(prefer-add-event-listener)",
+      "message": "Prefer `addEventListener()` over their `on`-function counterparts."
+    },
+    {
+      "fingerprint": "assets/media-gallery.js:132:21:eslint(no-self-assign):this expression is assigned to itself",
+      "file": "assets/media-gallery.js",
+      "line": 132,
+      "column": 21,
+      "code": "eslint(no-self-assign)",
+      "message": "this expression is assigned to itself"
+    },
+    {
+      "fingerprint": "assets/media-gallery.js:62:11:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/media-gallery.js",
+      "line": 62,
+      "column": 11,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/media-gallery.js:69:13:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/media-gallery.js",
+      "line": 69,
+      "column": 13,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/pickup-availability.js:29:17:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/pickup-availability.js",
+      "line": 29,
+      "column": 17,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/pickup-availability.js:35:19:eslint(no-unused-vars):Parameter 'e' is declared but never used. Unused parameters should start with a '_'.",
+      "file": "assets/pickup-availability.js",
+      "line": 35,
+      "column": 19,
+      "code": "eslint(no-unused-vars)",
+      "message": "Parameter 'e' is declared but never used. Unused parameters should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/pickup-availability.js:38:56:typescript-eslint(unbound-method):Avoid referencing unbound methods which may cause unintentional scoping of `this`.",
+      "file": "assets/pickup-availability.js",
+      "line": 38,
+      "column": 56,
+      "code": "typescript-eslint(unbound-method)",
+      "message": "Avoid referencing unbound methods which may cause unintentional scoping of `this`."
+    },
+    {
+      "fingerprint": "assets/pickup-availability.js:62:16:typescript-eslint(unbound-method):Avoid referencing unbound methods which may cause unintentional scoping of `this`.",
+      "file": "assets/pickup-availability.js",
+      "line": 62,
+      "column": 16,
+      "code": "typescript-eslint(unbound-method)",
+      "message": "Avoid referencing unbound methods which may cause unintentional scoping of `this`."
+    },
+    {
+      "fingerprint": "assets/predictive-search.js:211:13:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/predictive-search.js",
+      "line": 211,
+      "column": 13,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/price-per-item.js:95:13:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/price-per-item.js",
+      "line": 95,
+      "column": 13,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/product-form.js:50:17:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/product-form.js",
+      "line": 50,
+      "column": 17,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/product-form.js:52:15:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/product-form.js",
+      "line": 52,
+      "column": 15,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/product-form.js:77:15:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/product-form.js",
+      "line": 77,
+      "column": 15,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/product-form.js:81:23:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/product-form.js",
+      "line": 81,
+      "column": 23,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/product-info.js:144:17:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/product-info.js",
+      "line": 144,
+      "column": 17,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/product-info.js:150:13:eslint-plugin-promise(no-callback-in-promise):Avoid calling back inside of a promise",
+      "file": "assets/product-info.js",
+      "line": 150,
+      "column": 13,
+      "code": "eslint-plugin-promise(no-callback-in-promise)",
+      "message": "Avoid calling back inside of a promise"
+    },
+    {
+      "fingerprint": "assets/product-info.js:152:17:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/product-info.js",
+      "line": 152,
+      "column": 17,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/product-info.js:169:16:eslint(no-extra-boolean-cast):Redundant double negation",
+      "file": "assets/product-info.js",
+      "line": 169,
+      "column": 16,
+      "code": "eslint(no-extra-boolean-cast)",
+      "message": "Redundant double negation"
+    },
+    {
+      "fingerprint": "assets/product-info.js:179:9:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/product-info.js",
+      "line": 179,
+      "column": 9,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/product-info.js:217:27:eslint(no-unused-vars):Parameter 'source' is declared but never used. Unused parameters should start with a '_'.",
+      "file": "assets/product-info.js",
+      "line": 217,
+      "column": 27,
+      "code": "eslint(no-unused-vars)",
+      "message": "Parameter 'source' is declared but never used. Unused parameters should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/product-info.js:257:11:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/product-info.js",
+      "line": 257,
+      "column": 11,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/product-info.js:437:9:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/product-info.js",
+      "line": 437,
+      "column": 9,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/product-info.js:451:17:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/product-info.js",
+      "line": 451,
+      "column": 17,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/product-info.js:66:45:eslint(no-unused-vars):Parameter 'newNode' is declared but never used. Unused parameters should start with a '_'.",
+      "file": "assets/product-info.js",
+      "line": 66,
+      "column": 45,
+      "code": "eslint(no-unused-vars)",
+      "message": "Parameter 'newNode' is declared but never used. Unused parameters should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/product-modal.js:5:7:eslint(no-useless-constructor):Redundant super call in constructor",
+      "file": "assets/product-modal.js",
+      "line": 5,
+      "column": 7,
+      "code": "eslint(no-useless-constructor)",
+      "message": "Redundant super call in constructor"
+    },
+    {
+      "fingerprint": "assets/product-model.js:5:7:eslint(no-useless-constructor):Redundant super call in constructor",
+      "file": "assets/product-model.js",
+      "line": 5,
+      "column": 7,
+      "code": "eslint(no-useless-constructor)",
+      "message": "Redundant super call in constructor"
+    },
+    {
+      "fingerprint": "assets/pubsub.js:17:10:eslint(no-unused-vars):Function 'publish' is declared but never used.",
+      "file": "assets/pubsub.js",
+      "line": 17,
+      "column": 10,
+      "code": "eslint(no-unused-vars)",
+      "message": "Function 'publish' is declared but never used."
+    },
+    {
+      "fingerprint": "assets/pubsub.js:3:10:eslint(no-unused-vars):Function 'subscribe' is declared but never used.",
+      "file": "assets/pubsub.js",
+      "line": 3,
+      "column": 10,
+      "code": "eslint(no-unused-vars)",
+      "message": "Function 'subscribe' is declared but never used."
+    },
+    {
+      "fingerprint": "assets/quick-add-bulk.js:106:19:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/quick-add-bulk.js",
+      "line": 106,
+      "column": 19,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/quick-add-bulk.js:152:17:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/quick-add-bulk.js",
+      "line": 152,
+      "column": 17,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/quick-add-bulk.js:155:13:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/quick-add-bulk.js",
+      "line": 155,
+      "column": 13,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/quick-add-bulk.js:42:13:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/quick-add-bulk.js",
+      "line": 42,
+      "column": 13,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/quick-add-bulk.js:42:38:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/quick-add-bulk.js",
+      "line": 42,
+      "column": 38,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/quick-add.js:30:9:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/quick-add.js",
+      "line": 30,
+      "column": 9,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/quick-add.js:32:17:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/quick-add.js",
+      "line": 32,
+      "column": 17,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/quick-order-list.js:212:17:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/quick-order-list.js",
+      "line": 212,
+      "column": 17,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/quick-order-list.js:25:50:typescript-eslint(unbound-method):Avoid referencing unbound methods which may cause unintentional scoping of `this`.",
+      "file": "assets/quick-order-list.js",
+      "line": 25,
+      "column": 50,
+      "code": "typescript-eslint(unbound-method)",
+      "message": "Avoid referencing unbound methods which may cause unintentional scoping of `this`."
+    },
+    {
+      "fingerprint": "assets/quick-order-list.js:413:17:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/quick-order-list.js",
+      "line": 413,
+      "column": 17,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/quick-order-list.js:416:13:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/quick-order-list.js",
+      "line": 416,
+      "column": 13,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/quick-order-list.js:426:13:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/quick-order-list.js",
+      "line": 426,
+      "column": 13,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "assets/quick-order-list.js:51:51:typescript-eslint(unbound-method):Avoid referencing unbound methods which may cause unintentional scoping of `this`.",
+      "file": "assets/quick-order-list.js",
+      "line": 51,
+      "column": 51,
+      "code": "typescript-eslint(unbound-method)",
+      "message": "Avoid referencing unbound methods which may cause unintentional scoping of `this`."
+    },
+    {
+      "fingerprint": "assets/quick-order-list.js:563:38:oxc(no-accumulating-spread):Do not spread accumulators in Array.prototype.reduce()",
+      "file": "assets/quick-order-list.js",
+      "line": 563,
+      "column": 38,
+      "code": "oxc(no-accumulating-spread)",
+      "message": "Do not spread accumulators in Array.prototype.reduce()"
+    },
+    {
+      "fingerprint": "assets/share.js:23:13:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/share.js",
+      "line": 23,
+      "column": 13,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/share.js:49:74:eslint-plugin-promise(always-return):Each then() should return a value or throw",
+      "file": "assets/share.js",
+      "line": 49,
+      "column": 74,
+      "code": "eslint-plugin-promise(always-return)",
+      "message": "Each then() should return a value or throw"
+    },
+    {
+      "fingerprint": "assets/share.js:49:9:typescript-eslint(no-floating-promises):Promises must be awaited, add void operator to ignore.",
+      "file": "assets/share.js",
+      "line": 49,
+      "column": 9,
+      "code": "typescript-eslint(no-floating-promises)",
+      "message": "Promises must be awaited, add void operator to ignore."
+    },
+    {
+      "fingerprint": "assets/show-more.js:26:15:eslint(no-unused-vars):Variable 'parentWrap' is declared but never used. Unused variables should start with a '_'.",
+      "file": "assets/show-more.js",
+      "line": 26,
+      "column": 15,
+      "code": "eslint(no-unused-vars)",
+      "message": "Variable 'parentWrap' is declared but never used. Unused variables should start with a '_'."
+    },
+    {
+      "fingerprint": "assets/theme-editor.js:3:3:eslint(no-unused-expressions):Expected expression to be used",
+      "file": "assets/theme-editor.js",
+      "line": 3,
+      "column": 3,
+      "code": "eslint(no-unused-expressions)",
+      "message": "Expected expression to be used"
+    },
+    {
+      "fingerprint": "packages/ui/mobile/src/components/i18n.tsx:17:11:typescript(TS2339):Property 'ES' does not exist on type '{ readonly EN: \"en\"; }'.",
+      "file": "packages/ui/mobile/src/components/i18n.tsx",
+      "line": 17,
+      "column": 11,
+      "code": "typescript(TS2339)",
+      "message": "Property 'ES' does not exist on type '{ readonly EN: \"en\"; }'."
+    },
+    {
+      "fingerprint": "packages/ui/mobile/src/components/i18n.tsx:18:11:typescript(TS2339):Property 'ZH_TW' does not exist on type '{ readonly EN: \"en\"; }'.",
+      "file": "packages/ui/mobile/src/components/i18n.tsx",
+      "line": 18,
+      "column": 11,
+      "code": "typescript(TS2339)",
+      "message": "Property 'ZH_TW' does not exist on type '{ readonly EN: \"en\"; }'."
+    },
+    {
+      "fingerprint": "scripts/blogger/setup.mjs:126:11:eslint(no-unused-vars):Variable 'res' is declared but never used. Unused variables should start with a '_'.",
+      "file": "scripts/blogger/setup.mjs",
+      "line": 126,
+      "column": 11,
+      "code": "eslint(no-unused-vars)",
+      "message": "Variable 'res' is declared but never used. Unused variables should start with a '_'."
+    },
+    {
+      "fingerprint": "scripts/blogger/setup.mjs:128:12:eslint(no-unused-vars):Catch parameter 'err' is caught but never used.",
+      "file": "scripts/blogger/setup.mjs",
+      "line": 128,
+      "column": 12,
+      "code": "eslint(no-unused-vars)",
+      "message": "Catch parameter 'err' is caught but never used."
+    },
+    {
+      "fingerprint": "scripts/blogger/setup.mjs:61:32:eslint(no-unused-vars):Parameter 'reject' is declared but never used. Unused parameters should start with a '_'.",
+      "file": "scripts/blogger/setup.mjs",
+      "line": 61,
+      "column": 32,
+      "code": "eslint(no-unused-vars)",
+      "message": "Parameter 'reject' is declared but never used. Unused parameters should start with a '_'."
+    }
+  ]
+}
