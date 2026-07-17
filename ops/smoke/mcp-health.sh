@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# mcp-health.sh — MCP production smoke test (tri-state)
+# mcp-health.sh — MCP production smoke test (four-state)
 #
 # Exit codes:
-#   0  HEALTHY   — endpoint reachable, auth enforced & accepted
-#   1  AUTH_FAIL — endpoint reachable but auth behaviour unexpected
-#   2  UNREACHABLE — connection timeout / DNS failure / non-2xx on GET
+#   0  HEALTHY        — endpoint reachable, auth enforced & accepted
+#   1  AUTH_FAIL       — endpoint reachable but auth behaviour unexpected
+#   2  UNREACHABLE     — connection timeout / DNS failure / non-2xx on GET
+#   3  NOT_CONFIGURED  — MCP_SMOKE_ENDPOINT or MCP_SMOKE_KEY not set
 #
 # Required env:
 #   MCP_SMOKE_ENDPOINT  — full URL (e.g. https://<host>/api/mcp)
@@ -17,11 +18,22 @@
 
 set -euo pipefail
 
-ENDPOINT="${MCP_SMOKE_ENDPOINT:?MCP_SMOKE_ENDPOINT not set}"
-KEY="${MCP_SMOKE_KEY:?MCP_SMOKE_KEY not set}"
-TIMEOUT="${MCP_SMOKE_TIMEOUT:-10}"
-
 timestamp() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
+
+# ---------------------------------------------------------------------------
+# Phase 0: Configuration check — exit 3 if env vars are missing or empty.
+# This is NOT an auth failure — secrets simply aren't configured yet.
+# Workflow treats exit 3 as a warning, not a failure.
+# ---------------------------------------------------------------------------
+if [[ -z "${MCP_SMOKE_ENDPOINT:-}" || -z "${MCP_SMOKE_KEY:-}" ]]; then
+  echo "[$(timestamp)] NOT_CONFIGURED — MCP_SMOKE_ENDPOINT or MCP_SMOKE_KEY not set (exit 3)" >&2
+  echo "NOT_CONFIGURED | secrets not configured | $(timestamp)"
+  exit 3
+fi
+
+ENDPOINT="$MCP_SMOKE_ENDPOINT"
+KEY="$MCP_SMOKE_KEY"
+TIMEOUT="${MCP_SMOKE_TIMEOUT:-10}"
 
 # ---------------------------------------------------------------------------
 # Phase 1: Reachability — GET the MCP root (no auth required by design)
@@ -61,7 +73,6 @@ fi
 
 # ---------------------------------------------------------------------------
 # Phase 3: Auth acceptance — POST with key (expect 200 + valid JSON-RPC)
-# Single request: capture both body and HTTP status code.
 # ---------------------------------------------------------------------------
 RAW=$(curl -s -w '\n%{http_code}' --max-time "$TIMEOUT" \
   -X POST "${ENDPOINT}" \
