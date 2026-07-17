@@ -127,8 +127,10 @@ test.describe("Gate 2 — Company page", () => {
     const headingText = await heading.textContent();
     expect(headingText!.length).toBeGreaterThan(0);
 
-    // Ticker renders in the sub-heading area (use first match to avoid strict mode)
-    await expect(page.getByText("AAPL").first()).toBeVisible();
+    // Ticker renders in the sub-heading paragraph (NasdaqGS · AAPL · ...)
+    await expect(
+      page.locator("p").filter({ hasText: "AAPL" }).first(),
+    ).toBeVisible();
   });
 });
 
