@@ -45,7 +45,7 @@ const VENDOR_LEAK =
   /Yahoo\s*Finance|Yahoo API|DeepSeek API|Jina API|hosted DeepSeek|unlimited Jina/i;
 const INTERNAL_PATH_LEAK =
   /\/api\/report|\/api\/mcp|process\.env\.[A-Z_]|__NEXT_DATA__.*"env"/;
-const FALLBACK_COPY = /0\.0%/;
+const FALLBACK_COPY = /(?<!\d)0\.0%/; // standalone 0.0% only, not 10.0% etc.
 
 /* ── Vercel auth-page detection (Gate 0 pre-assertion) ── */
 const VERCEL_AUTH_PATTERN =
