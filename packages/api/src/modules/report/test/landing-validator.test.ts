@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   validateLandingRate,
   buildRetryPromptSuffix,
+  isValidBinding,
   type JudgmentLike,
 } from "../landing-validator";
 
@@ -173,5 +174,91 @@ describe("L1 landing validator — binding edge cases", () => {
     const result = validateLandingRate(judgments);
     expect(result.landed).toBe(0);
     expect(result.passed).toBe(false);
+  });
+});
+
+// ─── L1 exhaustion integration — mirrors generateValidatedJson logic ─────
+// These two tests verify the exhaustion path in route.ts:
+//   attempt 3 fails → filter by isValidBinding → strip unbound → return or fail
+
+describe("L1 exhaustion — strip unbound (耗尽剔除)", () => {
+  it("2/3 bound after 3 attempts → returns only bound judgments + withheld metadata", () => {
+    const judgments: JudgmentLike[] = [
+      makeJudgment({ dataPoint: "Company 10-K FY2025" }),
+      makeJudgment({
+        judgment: "Margin expansion",
+        dataPoint: "Exchange filings Q2 2026",
+      }),
+      makeJudgment({ judgment: "Unbound claim", dataPoint: undefined }),
+    ];
+
+    // Exhaustion logic: landing fails on last attempt
+    const landing = validateLandingRate(judgments);
+    expect(landing.passed).toBe(false);
+    expect(landing.landed).toBe(2);
+    expect(landing.unbound).toEqual(["Unbound claim"]);
+
+    // Filter: keep only bound judgments (mirrors route.ts exhaustion)
+    const boundJudgments = judgments.filter((j) => isValidBinding(j.dataPoint));
+    expect(boundJudgments).toHaveLength(2);
+    expect(boundJudgments[0]!.dataPoint).toBe("Company 10-K FY2025");
+    expect(boundJudgments[1]!.dataPoint).toBe("Exchange filings Q2 2026");
+
+    // withheldJudgments should equal landing.unbound
+    expect(landing.unbound).toEqual(["Unbound claim"]);
+  });
+
+  it("1/3 bound → returns single bound judgment, two withheld", () => {
+    const judgments: JudgmentLike[] = [
+      makeJudgment({ dataPoint: "Company 10-K FY2025" }),
+      makeJudgment({ judgment: "No source A", dataPoint: "N/A" }),
+      makeJudgment({ judgment: "No source B", dataPoint: "unknown" }),
+    ];
+
+    const landing = validateLandingRate(judgments);
+    expect(landing.passed).toBe(false);
+
+    const boundJudgments = judgments.filter((j) => isValidBinding(j.dataPoint));
+    expect(boundJudgments).toHaveLength(1);
+    expect(boundJudgments[0]!.dataPoint).toBe("Company 10-K FY2025");
+    expect(landing.unbound).toEqual(["No source A", "No source B"]);
+  });
+});
+
+describe("L1 exhaustion — all unbound failure (全 unbound 失败)", () => {
+  it("0/3 bound after 3 attempts → boundJudgments empty → treated as failure", () => {
+    const judgments: JudgmentLike[] = [
+      makeJudgment({ dataPoint: undefined }),
+      makeJudgment({ judgment: "No source 2", dataPoint: "N/A" }),
+      makeJudgment({ judgment: "No source 3", dataPoint: "TBD" }),
+    ];
+
+    const landing = validateLandingRate(judgments);
+    expect(landing.passed).toBe(false);
+    expect(landing.landed).toBe(0);
+    expect(landing.unbound).toHaveLength(3);
+
+    // Exhaustion filter: all get stripped → boundJudgments.length === 0
+    const boundJudgments = judgments.filter((j) => isValidBinding(j.dataPoint));
+    expect(boundJudgments).toHaveLength(0);
+    // This triggers the "all judgments unbound" error path in route.ts
+  });
+
+  it("all placeholder dataPoints (N/A, unknown, TBD, pending) → fully exhausted", () => {
+    const judgments: JudgmentLike[] = [
+      makeJudgment({ judgment: "J1", dataPoint: "N/A" }),
+      makeJudgment({ judgment: "J2", dataPoint: "unknown" }),
+      makeJudgment({ judgment: "J3", dataPoint: "TBD" }),
+      makeJudgment({ judgment: "J4", dataPoint: "pending" }),
+      makeJudgment({ judgment: "J5", dataPoint: "—" }),
+    ];
+
+    const landing = validateLandingRate(judgments);
+    expect(landing.landed).toBe(0);
+    expect(landing.passed).toBe(false);
+
+    const boundJudgments = judgments.filter((j) => isValidBinding(j.dataPoint));
+    expect(boundJudgments).toHaveLength(0);
+    expect(landing.unbound).toEqual(["J1", "J2", "J3", "J4", "J5"]);
   });
 });
