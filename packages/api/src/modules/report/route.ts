@@ -671,6 +671,7 @@ Return ONLY this JSON structure (all text in English):
 
 Hard rules:
 - Include exactly three topJudgments. Every judgment must have a numeric keyNumber, a numeric wrongIf condition, and a dataPoint field (source + period, e.g. "Company 10-K FY2025").
+- Name primary sources in dataPoint (filings, releases, reports), never data-vendor brands.
 - Include monitorPanel.schema_version = 1 and 3-6 monitorPanel.monitors rows. These rows are consumed by watchlist monitors and morning-brief checks.
 - Do not output target prices, buy/sell ratings, entry levels, stop levels, portfolio weights, or position sizing.
 - Conviction/thesis tier evaluates evidence quality only, not whether the user should transact.
@@ -990,6 +991,7 @@ Return exactly this structure in English:
 Requirements:
 - Include all six lenses exactly once.
 - Include exactly three topJudgments. Every top judgment must contain a numeric keyNumber, a numeric wrongIf condition, and a dataPoint field (source + period, e.g. "Company 10-K FY2025"). If no reliable number exists, do not include that judgment; replace it with a weaker but quantified judgment.
+- Name primary sources in dataPoint (filings, releases, reports), never data-vendor brands.
 - Facts must cite at least one supplied source ID. Inferences and views may cite supporting IDs but must stay labeled.
 - Evidence entries must reproduce only supplied source metadata and URLs.
 - For every lens, include numericConclusion and howToReadThisNumber. The "how to read" sentence must name source, basis, timestamp/date, and known blind spot.
