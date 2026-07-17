@@ -29,9 +29,9 @@
 
 ## Four Smoke States
 
-| Exit | State             | Meaning                                      |
-| ---- | ----------------- | -------------------------------------------- |
-| 0    | HEALTHY           | Endpoint up, auth OK                         |
-| 1    | AUTH_FAIL         | Endpoint reachable, auth behaviour unexpected |
-| 2    | UNREACHABLE       | Timeout / DNS failure / non-2xx              |
-| 3    | NOT_CONFIGURED    | Secrets not set yet                          |
+| Exit | State          | Meaning                                       |
+| ---- | -------------- | --------------------------------------------- |
+| 0    | HEALTHY        | Endpoint up, auth OK                          |
+| 1    | AUTH_FAIL      | Endpoint reachable, auth behaviour unexpected |
+| 2    | UNREACHABLE    | Timeout / DNS failure / non-2xx               |
+| 3    | NOT_CONFIGURED | Secrets not set yet                           |

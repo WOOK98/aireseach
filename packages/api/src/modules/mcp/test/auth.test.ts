@@ -158,7 +158,8 @@ describe("keyFingerprint", () => {
 });
 
 describe("multi-key revocation scenarios", () => {
-  const KEYS = "beta-alice=mcp_alice111,beta-bob=mcp_bob222,beta-carol=mcp_carol333";
+  const KEYS =
+    "beta-alice=mcp_alice111,beta-bob=mcp_bob222,beta-carol=mcp_carol333";
 
   it("all three keys authorize independently", () => {
     expect(isAuthorizedToken(KEYS, "Bearer mcp_alice111")).toBe(true);
