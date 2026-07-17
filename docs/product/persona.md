@@ -25,14 +25,14 @@
 
 ## 信息源矩阵
 
-| 市场 | 行情/数据 | 观点/社区 | 一手材料 |
-|---|---|---|---|
-| 美股 | TradingView, Finviz, Koyfin | X/FinTwit, Reddit, Seeking Alpha | SEC EDGAR, 财报会 |
-| A股 | 东方财富/同花顺, 富途 | 雪球, 韭圈儿, 公众号 | 巨潮资讯 |
-| 港股 | 富途/IBKR, AAStocks | 格隆汇, 雪球港股区 | 披露易 HKEX |
-| 韩股 | Naver Finance, IBKR | Reddit, 英文财经媒体 | DART（靠AI翻译） |
-| 宏观/期货 | CME FedWatch, 财经日历 | 宏观播客 | Fed/BLS 原始数据 |
-| 对冲基金 | WhaleWisdom, Dataroma | 13F 追踪贴 | SEC 13F/13D 原文 |
+| 市场      | 行情/数据                   | 观点/社区                        | 一手材料          |
+| --------- | --------------------------- | -------------------------------- | ----------------- |
+| 美股      | TradingView, Finviz, Koyfin | X/FinTwit, Reddit, Seeking Alpha | SEC EDGAR, 财报会 |
+| A股       | 东方财富/同花顺, 富途       | 雪球, 韭圈儿, 公众号             | 巨潮资讯          |
+| 港股      | 富途/IBKR, AAStocks         | 格隆汇, 雪球港股区               | 披露易 HKEX       |
+| 韩股      | Naver Finance, IBKR         | Reddit, 英文财经媒体             | DART（靠AI翻译）  |
+| 宏观/期货 | CME FedWatch, 财经日历      | 宏观播客                         | Fed/BLS 原始数据  |
+| 对冲基金  | WhaleWisdom, Dataroma       | 13F 追踪贴                       | SEC 13F/13D 原文  |
 
 ## AI 工具栈（三层）
 
@@ -54,11 +54,11 @@
 
 ## 画像 → 决策映射（入库时已在产的对应关系）
 
-| 画像要素 | 已落地的产品决策 |
-|---|---|
-| 四个时段的日程 | session rail（market-sessions.ts）、morning-brief 技能 |
-| 信任边界/怕幻觉 | ENTITY LOCK（L0）、L1 断言落地校验、判断-结果账本（L3） |
-| 预测 2（MCP 分发） | 插件 + 托管 MCP 战略 |
-| 预测 3（跨市场空白） | 六 lens 跨市场覆盖（美/港实测已过） |
-| 预测 4（可验证性付费） | 免费 web 降级 + API key 数据层付费 |
-| 预测 5 + 共识策略 | "Claude Code first, Codex-compatible" 双生态打包 |
+| 画像要素               | 已落地的产品决策                                        |
+| ---------------------- | ------------------------------------------------------- |
+| 四个时段的日程         | session rail（market-sessions.ts）、morning-brief 技能  |
+| 信任边界/怕幻觉        | ENTITY LOCK（L0）、L1 断言落地校验、判断-结果账本（L3） |
+| 预测 2（MCP 分发）     | 插件 + 托管 MCP 战略                                    |
+| 预测 3（跨市场空白）   | 六 lens 跨市场覆盖（美/港实测已过）                     |
+| 预测 4（可验证性付费） | 免费 web 降级 + API key 数据层付费                      |
+| 预测 5 + 共识策略      | "Claude Code first, Codex-compatible" 双生态打包        |
