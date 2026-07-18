@@ -137,10 +137,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          COMMIT_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          echo "Looking for Vercel deployment for commit: $COMMIT_SHA"
           # Wait for Vercel deployment to be ready (max 3 min)
           for i in $(seq 1 18); do
+            # Find deployment matching this commit SHA
             DEPLOY_ID=$(gh api repos/${{ github.repository }}/deployments \
-              --jq '.[0].id' 2>/dev/null || echo "")
+              --jq "[.[] | select(.sha == \"$COMMIT_SHA\")][0].id // empty" 2>/dev/null || echo "")
             if [ -n "$DEPLOY_ID" ]; then
               URL=$(gh api repos/${{ github.repository }}/deployments/$DEPLOY_ID/statuses \
                 --jq '.[0].target_url' 2>/dev/null || echo "")
@@ -148,12 +151,12 @@ jobs:
                 --jq '.[0].state' 2>/dev/null || echo "")
               if [ "$STATE" = "success" ] && [ -n "$URL" ]; then
                 echo "url=$URL" >> "$GITHUB_OUTPUT"
-                echo "Preview URL: $URL"
+                echo "Preview URL: $URL (commit: ${COMMIT_SHA:0:7})"
                 exit 0
               fi
               echo "Waiting for Vercel... ($i/18) state=$STATE"
             else
-              echo "Waiting for Vercel deployment... ($i/18)"
+              echo "Waiting for Vercel deployment for ${COMMIT_SHA:0:7}... ($i/18)"
             fi
             sleep 10
           done
