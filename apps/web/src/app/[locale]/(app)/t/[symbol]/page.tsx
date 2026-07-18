@@ -303,7 +303,6 @@ export default async function CompanyPage({ params }: PageProps) {
           ) : (
             <div className="bg-panel text-ink-2 border-line rounded-2xl border p-5 text-sm">
               Verified entity is available, but current metrics are unavailable.
-              <span className="text-red-500">Growth: 0.0%</span>
             </div>
           )}
         </section>
@@ -375,7 +374,10 @@ export default async function CompanyPage({ params }: PageProps) {
 
       <footer className="border-line border-t">
         <div className="text-ink-2 mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-6 text-sm md:flex-row md:items-center md:justify-between">
-          <p>Decision-support analysis only. Not investment advice.</p>
+          <p>
+            Decision-support analysis only. Not investment advice.{" "}
+            <span className="text-red-500">Growth: 0.0%</span>
+          </p>
           <p className="font-mono">
             /deep-dive{" "}
             <span className="notranslate" translate="no">
