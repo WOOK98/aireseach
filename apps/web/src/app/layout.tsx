@@ -54,6 +54,18 @@ export default function RootLayout({
           gtag('config', 'G-9TWC725PD2');
         `}
       </Script>
+      {/* VibeLoft Web Telemetry — renders only when the web auth key is
+          configured (NEXT_PUBLIC_VIBELOFT_AUTH_KEY, set in Vercel). The
+          browser loads only vibeloft.ai/telemetry/v1.js and posts events
+          to api.vibeloft.ai; no other endpoints. */}
+      {process.env.NEXT_PUBLIC_VIBELOFT_AUTH_KEY ? (
+        <Script
+          src="https://vibeloft.ai/telemetry/v1.js"
+          strategy="afterInteractive"
+          data-vl-product-id="58a0f785-70cd-478d-bde1-c3c0fe16c9e7"
+          data-vl-auth-key={process.env.NEXT_PUBLIC_VIBELOFT_AUTH_KEY}
+        />
+      ) : null}
       <OrganizationJsonLd />
       <WebsiteJsonLd />
       {children}
