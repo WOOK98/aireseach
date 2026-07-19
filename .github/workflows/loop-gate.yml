@@ -46,7 +46,15 @@ jobs:
             exit 0
           fi
           printf '%s\n' "${files[@]}"
-          if grep -nE 'Target price|Buy-Hold-Sell|hosted DeepSeek|unlimited Jina|process\.env\.[A-Z0-9_]*(KEY|SECRET|TOKEN)' "${files[@]}"; then
+          # Exemptions (default deny; every entry needs a stated reason and
+          # Wook's approval):
+          # - `redline-allow:` inline marker — general escape hatch, reason
+          #   must be on the same line (approved by Wook, 2026-07-19).
+          # - VIBELOFT_AUTH_KEY — telemetry site token that the vendor
+          #   contract requires to be emitted into public HTML; it is not a
+          #   secret (approved by Wook, 2026-07-19).
+          if grep -nE 'Target price|Buy-Hold-Sell|hosted DeepSeek|unlimited Jina|process\.env\.[A-Z0-9_]*(KEY|SECRET|TOKEN)' "${files[@]}" \
+            | grep -v -e 'redline-allow:' -e 'process\.env\.VIBELOFT_AUTH_KEY'; then
             echo "Redline grep failed: banned wording or env/provider leakage found."
             exit 1
           fi
