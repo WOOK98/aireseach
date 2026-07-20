@@ -24,6 +24,7 @@ import {
   sanitizeFinancialMetrics,
   cachedResolveEntity,
 } from "./data-sources";
+import { buildIndustryUniverse } from "./industry";
 import { formatImaKnowledgeForPrompt, searchImaKnowledge } from "./knowledge";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
@@ -1211,5 +1212,72 @@ reportRoute.get(
         price: resolution.price,
       });
     }
+  },
+);
+
+// ─── POST /api/report/industry/analyze ───────────────────────────────────────
+// Theme → ETF holdings → constituent universe with financials
+const industryAnalyzeSchema = z.object({
+  query: z.string().min(1).max(120),
+});
+
+reportRoute.post(
+  "/industry/analyze",
+  zValidator("json", industryAnalyzeSchema),
+  async (c) => {
+    const { query } = c.req.valid("json");
+
+    const resolution = await cachedResolveEntity(query);
+
+    if (resolution.ok && resolution.mode === "ticker") {
+      return c.json({
+        ok: false,
+        mode: "ticker",
+        message: `"${query}" resolved to a single ticker (${resolution.ticker}). Use the stock research flow instead.`,
+        resolution,
+      });
+    }
+
+    const candidates = resolution.ok ? [] : resolution.candidates;
+    const universe = await buildIndustryUniverse(query, candidates);
+
+    if (!universe) {
+      return c.json({
+        ok: false,
+        mode: "industry",
+        message: `No theme ETFs found for "${query}". Try a more specific industry or theme name.`,
+        candidates,
+      });
+    }
+
+    const topConstituents = universe.constituents.slice(0, 12);
+    const financials = await Promise.allSettled(
+      topConstituents.map(async (c) => {
+        const raw = await cachedFetchYahooFinance(c.symbol);
+        const { metrics, report } = sanitizeFinancialMetrics(raw);
+        return { ...metrics, _sanitization: report };
+      }),
+    );
+
+    const constituentFinancials = topConstituents.map((c, i) => {
+      const result = financials[i];
+      if (!result) return { ...c, financials: null, error: "No data" };
+      return {
+        ...c,
+        financials:
+          result.status === "fulfilled" ? (result.value ?? null) : null,
+        error:
+          result.status === "rejected"
+            ? String(result.reason ?? "Failed to fetch")
+            : null,
+      };
+    });
+
+    return c.json({
+      ok: true,
+      mode: "industry",
+      universe,
+      constituents: constituentFinancials,
+    });
   },
 );
