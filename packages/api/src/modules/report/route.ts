@@ -123,7 +123,7 @@ const PAID_VARIANTS = new Set([
 ]);
 
 const getReportModelConfig = () => {
-  const providerName = env.OPENAI_API_KEY ? "OpenAI" : "DeepSeek";
+  const providerName = "AI provider";
   const apiKey = env.OPENAI_API_KEY || env.DEEPSEEK_API_KEY || env.LLM_API_KEY;
 
   if (!apiKey) {

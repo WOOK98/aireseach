@@ -19,7 +19,7 @@ export const CtaButton = (
       {...props}
       href={
         data?.session
-          ? pathsConfig.dashboard.user.report
+          ? pathsConfig.dashboard.user.research
           : pathsConfig.marketing.report
       }
       className={cn(buttonVariants(), props.className)}
