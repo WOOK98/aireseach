@@ -10,7 +10,8 @@ export interface FinancialMetrics {
   // Price
   currentPrice: number;
   marketCap: number;
-  currency: string;
+  currency: string; // quote currency (from price feed)
+  financialCurrency?: string; // reporting currency (from financial statements)
   priceChange: number | null; // absolute change
   priceChangePercent: number | null; // % change
   marketState: string; // "REGULAR" | "PRE" | "POST" | "CLOSED"

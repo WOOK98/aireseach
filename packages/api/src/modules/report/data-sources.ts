@@ -4,6 +4,8 @@ import { getEtfHoldings } from "./industry";
 import { fetchTechnicalMetrics } from "./technicals";
 import { fetchYahooFinance } from "./yahoo-finance";
 
+export { sanitizeFinancialMetrics } from "./financial-sanitizer";
+
 const FIVE_MINUTES = 5 * 60 * 1000;
 const ONE_HOUR = 60 * 60 * 1000;
 
