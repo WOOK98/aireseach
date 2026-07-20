@@ -94,7 +94,7 @@
       },
       "features": {
         "reports": "Reports per month",
-        "jinaSearch": "Jina search usage",
+        "webSearch": "Web search usage",
         "modelKey": "LLM API key",
         "analysisLenses": "Analysis lenses",
         "reportHistory": "Report history & saved reports",
@@ -112,15 +112,15 @@
           "pro": "Unlimited",
           "business": "Unlimited"
         },
-        "jinaSearch": {
+        "webSearch": {
           "free": "10 searches / month",
           "pro": "Unlimited",
           "business": "Unlimited"
         },
         "modelKey": {
           "free": "Bring your own key",
-          "pro": "DeepSeek key included",
-          "business": "DeepSeek key included"
+          "pro": "Hosted AI key included",
+          "business": "Hosted AI key included"
         },
         "analysisLenses": {
           "free": "Comprehensive",
@@ -143,7 +143,7 @@
     "question": {
       "whatDoesOurPlatformDo": {
         "question": "What is Aireseach?",
-        "answer": "Aireseach generates structured business research reports from live web sources. It uses Jina search to gather public data and your preferred LLM to produce market, competitor, risk, and investment analyses."
+        "answer": "Aireseach generates structured business research reports from live web sources. It uses web search to gather public data and your preferred LLM to produce market, competitor, risk, and investment analyses."
       },
       "howWillThisBenefitMyBusiness": {
         "question": "Who is Aireseach for?",
@@ -155,7 +155,7 @@
       },
       "whatKindOfIntegrationsAreAvailable": {
         "question": "Which model providers are supported?",
-        "answer": "OpenAI, DeepSeek, OpenRouter, Perplexity (deep research), and any OpenAI-compatible endpoint. You bring the key; Aireseach handles the search and report structure."
+        "answer": "OpenAI, OpenRouter, Perplexity (deep research), and any OpenAI-compatible endpoint. You bring the key; Aireseach handles the search and report structure."
       },
       "howEasyIsItToOnboardMyTeam": {
         "question": "How do I get started?",
@@ -292,7 +292,7 @@
   },
   "buyCta": {
     "title": "Upgrade your research workflow.",
-    "description": "Unlock hosted DeepSeek usage, unlimited Jina searches, and saved reports.",
+    "description": "Unlock hosted AI usage, unlimited web searches, and saved reports.",
     "link": "Upgrade subscription"
   }
 }

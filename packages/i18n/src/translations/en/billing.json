@@ -3,7 +3,7 @@
     "label": "Pricing",
     "title": "Simple pricing for business research",
     "description": "Start free with basic research reports. Upgrade to Pro for unlimited analyses, supply chain mapping, and priority AI processing.",
-    "disclaimer": "Free users get 3 total report generations with their own API key. Paid plans include hosted DeepSeek usage and unlimited Jina search under fair use."
+    "disclaimer": "Free users get 3 total report generations with their own API key. Paid plans include hosted AI usage and unlimited web search under fair use."
   },
   "settings": {
     "subscriptions": {
@@ -47,7 +47,7 @@
     },
     "pro": {
       "name": "Pro",
-      "description": "Hosted DeepSeek key with unlimited Jina searches",
+      "description": "Hosted AI key with unlimited web searches",
       "badge": "Most popular"
     },
     "business": {
@@ -76,9 +76,9 @@
     "BRANDED_PDF": "Branded PDF export",
     "PRIORITY_SUPPORT": "Priority support",
     "REPORTS_3_TOTAL": "3 report generations (lifetime)",
-    "JINA_SEARCH_3_TOTAL": "3 Jina searches (lifetime)",
-    "PLATFORM_DEEPSEEK_KEY": "Hosted DeepSeek API key included",
-    "UNLIMITED_JINA_SEARCH": "Unlimited Jina searches"
+    "JINA_SEARCH_3_TOTAL": "3 web searches (lifetime)",
+    "PLATFORM_DEEPSEEK_KEY": "Hosted AI API key included",
+    "UNLIMITED_JINA_SEARCH": "Unlimited web searches"
   },
   "error": {
     "checkout": "An error occurred while checking out.",

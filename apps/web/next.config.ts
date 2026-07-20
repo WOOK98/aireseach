@@ -57,6 +57,54 @@ const config: NextConfig = {
 
   /** We already do linting and typechecking as separate tasks in CI */
   typescript: { ignoreBuildErrors: true },
+
+  async redirects() {
+    return [
+      // Retired dashboard routes → new research page
+      {
+        source: "/:locale/dashboard/report",
+        destination: "/:locale/dashboard/research",
+        permanent: true,
+      },
+      {
+        source: "/:locale/dashboard/committee",
+        destination: "/:locale/dashboard/research",
+        permanent: true,
+      },
+      {
+        source: "/:locale/dashboard/ai",
+        destination: "/:locale/dashboard/research",
+        permanent: true,
+      },
+      // Non-locale variants
+      {
+        source: "/dashboard/report",
+        destination: "/dashboard/research",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/committee",
+        destination: "/dashboard/research",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/ai",
+        destination: "/dashboard/research",
+        permanent: true,
+      },
+      // Marketing report page → authenticated research
+      {
+        source: "/:locale/report",
+        destination: "/:locale/dashboard/research",
+        permanent: true,
+      },
+      {
+        source: "/report",
+        destination: "/dashboard/research",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default config;

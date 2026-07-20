@@ -44,7 +44,7 @@ const links = [
       },
       {
         title: "marketing:roadmap.title",
-        href: pathsConfig.dashboard.user.report,
+        href: pathsConfig.dashboard.user.research,
       },
     ],
   },

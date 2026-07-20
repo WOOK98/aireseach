@@ -17,10 +17,10 @@ const features = [
     business: "comparison.table.value.reports.business",
   },
   {
-    key: "jinaSearch",
-    free: "comparison.table.value.jinaSearch.free",
-    pro: "comparison.table.value.jinaSearch.pro",
-    business: "comparison.table.value.jinaSearch.business",
+    key: "webSearch",
+    free: "comparison.table.value.webSearch.free",
+    pro: "comparison.table.value.webSearch.pro",
+    business: "comparison.table.value.webSearch.business",
   },
   {
     key: "modelKey",
