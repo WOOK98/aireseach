@@ -82,6 +82,7 @@ interface YFRaw {
     currency: string;
     exchangeName: string;
     marketState: string; // "REGULAR" | "PRE" | "POST" | "CLOSED"
+    financialCurrency?: string; // reporting currency from financial statements
   };
   financialData?: {
     currentPrice: { raw: number };
@@ -130,6 +131,7 @@ interface YFChartResponse {
     result?: Array<{
       meta?: {
         currency?: string;
+        financialCurrency?: string;
         symbol?: string;
         exchangeName?: string;
         fullExchangeName?: string;
@@ -205,6 +207,7 @@ async function fetchYahooChartMetrics(
     currentPrice: latestClose,
     marketCap: 0,
     currency: meta.currency ?? "USD",
+    financialCurrency: meta.currency ?? "USD", // chart fallback has no separate financialCurrency
     priceChange: null,
     priceChangePercent: null,
     marketState: "CLOSED",
@@ -340,6 +343,7 @@ export async function fetchYahooFinance(
     currentPrice,
     marketCap: safe(p?.marketCap),
     currency: p?.currency ?? "USD",
+    financialCurrency: p?.financialCurrency ?? p?.currency ?? "USD",
     priceChange: safe(p?.regularMarketChange) || null,
     priceChangePercent: safe(p?.regularMarketChangePercent) || null,
     marketState: p?.marketState ?? "CLOSED",

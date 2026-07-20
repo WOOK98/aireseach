@@ -21,6 +21,7 @@ import { env } from "../../env";
 import {
   cachedFetchTechnicalMetrics,
   cachedFetchYahooFinance,
+  sanitizeFinancialMetrics,
   cachedResolveEntity,
 } from "./data-sources";
 import { formatImaKnowledgeForPrompt, searchImaKnowledge } from "./knowledge";
@@ -391,8 +392,9 @@ reportRoute.get(
     const { ticker } = c.req.valid("param");
 
     try {
-      const metrics = await cachedFetchYahooFinance(ticker.toUpperCase());
-      return c.json({ ok: true, data: metrics });
+      const raw = await cachedFetchYahooFinance(ticker.toUpperCase());
+      const { metrics, report } = sanitizeFinancialMetrics(raw);
+      return c.json({ ok: true, data: metrics, _sanitization: report });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       return c.json({ ok: false, error: message }, 422);
