@@ -9,6 +9,7 @@ import {
   BriefcaseBusiness,
   CheckCircle2,
   FileText,
+  Globe,
   ListChecks,
   RotateCcw,
   Search,
@@ -33,7 +34,12 @@ import {
   MarginChart,
   RevenueChart,
 } from "~/modules/report/finance/charts";
+import { IndustryView } from "~/modules/report/finance/industry-view";
 import { MetricsGrid } from "~/modules/report/finance/metric-cards";
+import {
+  useIndustryAnalyze,
+  isLikelyTicker,
+} from "~/modules/report/finance/use-industry";
 import {
   useFinancials,
   useReportStream,
@@ -41,6 +47,7 @@ import {
 } from "~/modules/report/finance/use-report";
 
 import type { ChangeEvent, ElementType, KeyboardEvent, ReactNode } from "react";
+import type { IndustryAnalyzeResult } from "~/modules/report/finance/use-industry";
 import type { ResearchMode } from "~/modules/report/finance/use-report";
 
 const analysisModes: Array<{
@@ -350,29 +357,56 @@ export default function ResearchPage() {
   const [activeTicker, setActiveTicker] = useState<string | null>(null);
   const [activeMode, setActiveMode] = useState<ResearchMode>("snapshot");
   const [language] = useState<"zh" | "en">("en");
+  const [industryResult, setIndustryResult] =
+    useState<IndustryAnalyzeResult | null>(null);
 
   const validate = useValidateTicker();
   const financials = useFinancials(activeTicker);
   const { status, rawText, report, error, generate, reset } = useReportStream();
+  const industryAnalyze = useIndustryAnalyze();
 
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleSearch() {
-    const ticker = inputVal.trim().toUpperCase();
-    if (!ticker) return;
+    const query = inputVal.trim();
+    if (!query) return;
 
-    const result = await validate.mutateAsync(ticker).catch(() => ({
-      valid: false,
-    }));
-    if (!result.valid) {
-      toast.error(
-        `Ticker "${ticker}" was not found. Please check and try again.`,
-      );
-      return;
+    if (isLikelyTicker(query)) {
+      const ticker = query.toUpperCase();
+      setIndustryResult(null);
+
+      const result = await validate.mutateAsync(ticker).catch(() => ({
+        valid: false,
+      }));
+      if (!result.valid) {
+        toast.error(
+          `Ticker "${ticker}" was not found. Please check and try again.`,
+        );
+        return;
+      }
+
+      reset();
+      setActiveTicker(ticker);
+    } else {
+      setActiveTicker(null);
+      reset();
+      setIndustryResult(null);
+
+      try {
+        const result = await industryAnalyze.mutateAsync(query);
+        setIndustryResult(result);
+
+        if (!result.ok) {
+          toast.error(
+            result.message ?? "Industry analysis returned no results.",
+          );
+        }
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Industry analysis failed.",
+        );
+      }
     }
-
-    reset();
-    setActiveTicker(ticker);
   }
 
   // Once financials load, auto-trigger AI generation
@@ -390,6 +424,11 @@ export default function ResearchPage() {
   const isLoading = financials.isLoading || status === "loading";
   const isStreaming = status === "streaming";
   const isDone = status === "done" && report;
+  const isIndustryLoading = industryAnalyze.isPending;
+  const hasIndustryResult =
+    industryResult?.ok &&
+    industryResult.universe &&
+    industryResult.constituents;
   const financialError = financials.isError
     ? financials.error?.message
     : undefined;
@@ -408,14 +447,14 @@ export default function ResearchPage() {
                 ref={inputRef}
                 value={inputVal}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setInputVal(e.target.value.toUpperCase())
+                  setInputVal(e.target.value)
                 }
                 onKeyDown={(e: KeyboardEvent<HTMLInputElement>) =>
                   e.key === "Enter" && handleSearch()
                 }
-                placeholder="Enter a ticker symbol (TSLA, AAPL)"
+                placeholder="Ticker (TSLA, AAPL) or theme (AI, semiconductors)"
                 className="pl-9 font-mono text-sm uppercase placeholder:font-sans placeholder:normal-case"
-                maxLength={10}
+                maxLength={40}
               />
             </div>
             <Button
@@ -424,6 +463,7 @@ export default function ResearchPage() {
                 !inputVal.trim() ||
                 isLoading ||
                 isStreaming ||
+                isIndustryLoading ||
                 validate.isPending
               }
               size="sm"
@@ -486,7 +526,7 @@ export default function ResearchPage() {
         <div className="mx-auto w-full max-w-5xl space-y-6">
           <AnimatePresence mode="wait">
             {/* Empty state */}
-            {!activeTicker && (
+            {!activeTicker && !hasIndustryResult && !isIndustryLoading && (
               <motion.div
                 key="empty"
                 initial={{ opacity: 0 }}
@@ -502,9 +542,59 @@ export default function ResearchPage() {
                     Snapshot
                   </p>
                   <p className="text-muted-foreground max-w-[200px] text-xs leading-relaxed">
-                    Enter a ticker symbol to generate a fast research snapshot.
+                    Enter a ticker symbol or a theme (e.g. AI, semiconductors)
+                    to get started.
                   </p>
                 </div>
+              </motion.div>
+            )}
+
+            {/* Industry loading */}
+            {isIndustryLoading && (
+              <motion.div
+                key="industry-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center gap-3 py-16 text-center"
+              >
+                <div className="bg-muted rounded-full p-4">
+                  <Globe className="text-primary h-6 w-6 animate-pulse" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-foreground text-sm font-medium">
+                    Analyzing theme...
+                  </p>
+                  <p className="text-muted-foreground max-w-[200px] text-xs leading-relaxed">
+                    Resolving ETFs, fetching holdings, and building constituent
+                    universe.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Industry result */}
+            {hasIndustryResult && (
+              <motion.div
+                key="industry"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-4"
+              >
+                <div>
+                  <p className="text-muted-foreground mb-0.5 font-mono text-[10px] tracking-widest uppercase">
+                    Industry Mode
+                  </p>
+                  <h2 className="text-foreground text-lg leading-tight font-semibold">
+                    {industryResult.universe!.query}
+                  </h2>
+                </div>
+                <Separator />
+                <IndustryView
+                  universe={industryResult.universe!}
+                  constituents={industryResult.constituents!}
+                />
               </motion.div>
             )}
 
