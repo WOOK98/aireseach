@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import {
   cachedFetchYahooFinance,
   cachedResolveEntity,
+  sanitizeFinancialMetrics,
 } from "@workspace/api/report/data-sources";
 
 import { getSession } from "~/lib/auth/server";
@@ -178,7 +179,8 @@ async function getCompanyData(symbol: string) {
   if (!resolution.ok) return null;
 
   try {
-    const financials = await cachedFetchYahooFinance(resolution.ticker);
+    const raw = await cachedFetchYahooFinance(resolution.ticker);
+    const { metrics: financials } = sanitizeFinancialMetrics(raw);
     return { entity: resolution, financials };
   } catch {
     return { entity: resolution, financials: null };

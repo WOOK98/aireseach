@@ -67,11 +67,11 @@ const monitorPanelSchema = z.object({
   ),
 });
 
-const fmtPct = (value: number) =>
-  `${Number.isFinite(value) ? value.toFixed(1) : "N/A"}%`;
+const fmtPct = (value: number | null | undefined) =>
+  value == null || !Number.isFinite(value) ? "N/A" : `${value.toFixed(1)}%`;
 
-const fmtMoney = (value: number) => {
-  if (!Number.isFinite(value) || value === 0) return "N/A";
+const fmtMoney = (value: number | null | undefined) => {
+  if (value == null || !Number.isFinite(value) || value === 0) return "N/A";
   if (Math.abs(value) >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
   if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
   return `$${value.toFixed(0)}`;
@@ -83,8 +83,9 @@ function buildFallbackReport(
   _language: "zh" | "en",
 ): ReportData {
   const growthHealthy = metrics.revenueGrowthYoy >= 10;
-  const cashGenerative = metrics.freeCashFlow > 0 && metrics.fcfMargin > 0;
-  const profitable = metrics.netMargin > 0;
+  const cashGenerative =
+    (metrics.freeCashFlow ?? 0) > 0 && (metrics.fcfMargin ?? 0) > 0;
+  const profitable = (metrics.netMargin ?? 0) > 0;
   const thesisTier: ReportData["thesisQuality"]["tier"] =
     growthHealthy && cashGenerative && profitable ? "B" : "C";
 

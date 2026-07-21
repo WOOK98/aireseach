@@ -20,19 +20,19 @@ export interface FinancialMetrics {
   revenue: number;
   revenueGrowthYoy: number; // %
   grossProfit: number;
-  grossMargin: number; // %
+  grossMargin: number | null; // %
   operatingIncome: number;
-  operatingMargin: number; // %
+  operatingMargin: number | null; // %
   netIncome: number;
-  netMargin: number; // %
-  ebitda: number;
-  eps: number;
-  epsGrowthYoy: number; // %
+  netMargin: number | null; // %
+  ebitda: number | null;
+  eps: number | null;
+  epsGrowthYoy: number | null; // %
 
   // Balance Sheet
   totalCash: number;
   totalDebt: number;
-  netCash: number;
+  netCash: number | null;
 
   // Valuation
   peRatio: number | null;
@@ -42,8 +42,8 @@ export interface FinancialMetrics {
   forwardPE: number | null;
 
   // Cash Flow
-  freeCashFlow: number;
-  fcfMargin: number; // %
+  freeCashFlow: number | null;
+  fcfMargin: number | null; // %
 
   // Historical — for charts (last 8 quarters)
   revenueHistory: QuarterlyPoint[];

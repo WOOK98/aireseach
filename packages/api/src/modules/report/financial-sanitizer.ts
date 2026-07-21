@@ -73,7 +73,7 @@ export function sanitizeFinancialMetrics(
       "operatingMargin",
       `Operating margin (${m.operatingMargin.toFixed(1)}%) exceeds gross margin (${m.grossMargin.toFixed(1)}%) — mathematically impossible`,
     );
-    m.operatingMargin = 0; // will render as N/A via fmt()
+    m.operatingMargin = null;
   }
 
   // ── 2. Margin bounds check ────────────────────────────────────────────────
@@ -91,7 +91,7 @@ export function sanitizeFinancialMetrics(
     const val = m[key];
     if (typeof val === "number" && (val < -100 || val > 100)) {
       withhold(key, `${label} out of bounds: ${val.toFixed(1)}%`);
-      m[key] = 0;
+      m[key] = null;
     }
   }
 
@@ -155,7 +155,7 @@ export function sanitizeFinancialMetrics(
           key,
           `${label} (${fmtCompact(val)}) exceeds sanity threshold vs market cap (${fmtCompact(m.marketCap)}) — likely currency magnitude error`,
         );
-        m[key] = 0;
+        m[key] = null;
       }
     }
   }
@@ -170,7 +170,7 @@ export function sanitizeFinancialMetrics(
       "eps",
       `EPS (${m.eps.toFixed(2)}) exceeds 2× current price (${m.currentPrice.toFixed(2)}) — likely magnitude error`,
     );
-    m.eps = 0;
+    m.eps = null;
   }
 
   return {
