@@ -29,6 +29,7 @@ import { Input } from "@workspace/ui-web/input";
 import { Separator } from "@workspace/ui-web/separator";
 import { Skeleton } from "@workspace/ui-web/skeleton";
 
+import { JPMReport } from "~/components/report/JPMReport";
 import {
   FCFChart,
   MarginChart,
@@ -133,20 +134,6 @@ function ReportSkeleton() {
           <Skeleton className="h-16 w-full" />
         </div>
       ))}
-    </div>
-  );
-}
-
-// ─── Streaming indicator ─────────────────────────────────────────────────────
-function StreamingIndicator({ text }: { text: string }) {
-  const charCount = text.length;
-  return (
-    <div className="border-border bg-muted/30 space-y-2 rounded-lg border border-dashed px-4 py-8 text-center">
-      <Sparkles className="text-primary mx-auto h-5 w-5 animate-pulse" />
-      <p className="text-muted-foreground text-sm">AI is analyzing data...</p>
-      <p className="text-muted-foreground/60 font-mono text-[11px]">
-        {charCount} characters received
-      </p>
     </div>
   );
 }
@@ -710,10 +697,40 @@ export default function ResearchPage() {
 
                 <Separator />
 
-                {/* AI Analysis */}
-                {isStreaming && <StreamingIndicator text={rawText} />}
+                {/* AI Analysis — JPM Markdown mode (Kimi output) */}
+                {isStreaming && rawText.length > 0 && (
+                  <motion.div
+                    key="jpm-streaming"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <JPMReport
+                      content={rawText}
+                      ticker={activeTicker ?? undefined}
+                      companyName={financials.data.companyName}
+                    />
+                  </motion.div>
+                )}
 
-                {isDone && (
+                {/* JPM Markdown mode — done (Kimi output with headers) */}
+                {isDone && rawText.includes("## ") && (
+                  <motion.div
+                    key="jpm-done"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <JPMReport
+                      content={rawText}
+                      ticker={activeTicker ?? undefined}
+                      companyName={financials.data.companyName}
+                      generatedAt={report?.generatedAt}
+                    />
+                  </motion.div>
+                )}
+
+                {/* Fallback: structured JSON report (DeepSeek / legacy) */}
+                {isDone && !rawText.includes("## ") && report && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

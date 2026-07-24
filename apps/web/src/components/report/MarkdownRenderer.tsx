@@ -47,7 +47,7 @@ export function MarkdownRenderer({
             <li className="text-sm leading-relaxed">{children}</li>
           ),
           table: ({ children }) => (
-            <div className="my-3 overflow-x-auto">
+            <div className="my-4 overflow-x-auto rounded-lg border">
               <table className="w-full border-collapse text-xs">
                 {children}
               </table>
@@ -57,12 +57,12 @@ export function MarkdownRenderer({
           tbody: ({ children }) => <tbody>{children}</tbody>,
           tr: ({ children }) => <tr>{children}</tr>,
           th: ({ children }) => (
-            <th className="bg-muted border-border border-b px-3 py-1.5 text-left font-medium">
+            <th className="border-b border-slate-700 bg-slate-800 px-3 py-2 text-left text-[11px] font-semibold tracking-wide text-slate-100 uppercase">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="border-border border-b px-3 py-1.5 align-top">
+            <td className="border-border border-b px-3 py-2 align-top text-sm">
               {children}
             </td>
           ),

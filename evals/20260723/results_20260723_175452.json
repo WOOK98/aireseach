@@ -1,0 +1,114 @@
+{
+  "run_ts": "20260723_175452",
+  "shuffle_swapped": true,
+  "model_a": {
+    "label": "Model-B",
+    "model": "kimi-for-coding"
+  },
+  "model_b": {
+    "label": "Model-A",
+    "model": "deepseek-chat"
+  },
+  "results": [
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "",
+      "latency_s": 41.97,
+      "input_tokens": 247,
+      "output_tokens": 4000,
+      "reasoning_tokens": null,
+      "total_tokens": 4247,
+      "finish_reason": "length",
+      "error": null
+    },
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "",
+      "latency_s": 207.34,
+      "input_tokens": 250,
+      "output_tokens": 4000,
+      "reasoning_tokens": 3999,
+      "total_tokens": 4250,
+      "finish_reason": "length",
+      "error": null
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "## 1. INVESTMENT THESIS\n\nWe rate Alibaba **Outperform** with a 12-month base-case target of **$105** (≈30% upside). BABA trades at **~8.5x forward P/E ex-net cash**, pricing in a secular decline that we view as cyclical, with domestic commerce EBITA margins stabilized at **40%+** and Cloud Intelligence set to inflect from AI monetization and enterprise modernization. The market is underappreciating the value-unlocking potential of the six-way restructuring (Cainiao/Cloud IPOs, Freshippo spin-off), the **RMB 25bn buyback + inaugural dividend** signaling capital discipline, and the governance refresh under Eddie Wu and Joseph Tsai. Our conviction is that the asymmetric risk/reward—limited downside to ~$70 in a bear case and upside to $140+ if the Cloud/commerce inflection materializes—makes this a compelling restructuring/reopening play.\n\n**Confidence level:** Moderate-High (65–70%). Forward multiples and EPS estimates are consensus-derived; actual figures may vary.\n\n---\n\n## 2. SCENARIO ANALYSIS\n\n**Bull — 30%**\n- **Assumptions:** China retail sales growth recovers to **8–10%**, Cloud revenue reaccelerates to **18–22% YoY**, Cainiao IPO prices at **$18–22bn**, buybacks reduce share count by **5–8%**.\n- **Outcome:** FY25 EPS **$9.00–$10.50**; stock **$130–$150**.\n- **Catalyst:** Cloud Intelligence Group spin-off/IPO and quantified AI revenue contribution.\n\n**Base — 50%**\n- **Assumptions:** Domestic commerce GMV grows **2–4%**, Cloud grows **10–14%**, EBITA margins stable at **38–42%**, buybacks offset stock-based-compensation dilution.\n- **Outcome:** FY25 EPS **$7.50–$8.50**; stock **$95–$115**.\n- **Catalyst:** Consistent quarterly margin delivery and buyback acceleration.\n\n**Bear — 20%**\n- **Assumptions:** Accelerated market share loss to PDD/Temu/Douyin, Cloud growth **<5%**, regulatory/fine risk resurfaces, ADR delisting overhang intensifies.\n- **Outcome:** FY25 EPS **$6.00–$7.00**; stock **$60–$75**.\n- **Trigger:** New anti-monopoly fine **>RMB 10bn** or PCAOB audit progress reverses.\n\n---\n\n## 3. THESIS INVALIDATION CONDITIONS\n\n- **Condition:** Domestic commerce EBITA margin falls below sustainable threshold → **Trigger: <35% for two consecutive quarters**\n- **Condition:** Cloud revenue growth decelerates to single digits → **Trigger: <5% YoY for two consecutive quarters**\n- **Condition:** Capital return fails to shrink share count → **Trigger: FY25 shares outstanding >5% above FY23 level**\n- **Condition:** ADR delisting becomes actionable → **Trigger: PCAOB audit resolution fails or delisting timeline <12 months**\n\n---\n\n## 4. RISK MATRIX\n\n| Risk | Impact (1-5) | Probability (1-5) | Score |\n|---|---|---|---|\n| China consumption / macro collapse | 5 | 4 | **20** |\n| Competitive share loss to PDD / Temu / ByteDance | 4 | 4 | **16** |\n| U.S.-China ADR delisting / audit access | 5 | 3 | **15** |",
+      "latency_s": 20.73,
+      "input_tokens": 247,
+      "output_tokens": 2850,
+      "reasoning_tokens": null,
+      "total_tokens": 3097,
+      "finish_reason": "stop",
+      "error": null
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "",
+      "latency_s": 47.19,
+      "input_tokens": 248,
+      "output_tokens": 4000,
+      "reasoning_tokens": null,
+      "total_tokens": 4248,
+      "finish_reason": "length",
+      "error": null
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    }
+  ]
+}

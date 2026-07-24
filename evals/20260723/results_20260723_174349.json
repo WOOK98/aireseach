@@ -1,0 +1,94 @@
+{
+  "run_ts": "20260723_174349",
+  "shuffle_swapped": true,
+  "model_a": {
+    "label": "Model-B",
+    "model": "kimi-for-coding"
+  },
+  "model_b": {
+    "label": "Model-A",
+    "model": "deepseek-chat"
+  },
+  "results": [
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": null,
+      "latency_s": 0.41,
+      "error": "Error code: 400 - {'error': {'message': 'invalid temperature: only 1 is allowed for this model', 'type': 'invalid_request_error'}}"
+    },
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 1.63,
+      "error": "Connection error."
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": null,
+      "latency_s": 0.44,
+      "error": "Error code: 400 - {'error': {'message': 'invalid temperature: only 1 is allowed for this model', 'type': 'invalid_request_error'}}"
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 1.68,
+      "error": "Connection error."
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": null,
+      "latency_s": 0.4,
+      "error": "Error code: 400 - {'error': {'message': 'invalid temperature: only 1 is allowed for this model', 'type': 'invalid_request_error'}}"
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 1.59,
+      "error": "Connection error."
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": null,
+      "latency_s": 0.39,
+      "error": "Error code: 400 - {'error': {'message': 'invalid temperature: only 1 is allowed for this model', 'type': 'invalid_request_error'}}"
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 1.51,
+      "error": "Connection error."
+    }
+  ]
+}

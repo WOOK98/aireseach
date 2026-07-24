@@ -1,0 +1,114 @@
+{
+  "run_ts": "20260723_175023",
+  "shuffle_swapped": true,
+  "model_a": {
+    "label": "Model-B",
+    "model": "kimi-for-coding"
+  },
+  "model_b": {
+    "label": "Model-A",
+    "model": "deepseek-chat"
+  },
+  "results": [
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "## 1. INVESTMENT THESIS\n\n**Overweight / Buy** — We see ~20–25% upside over 12 months. The market is pricing a rapid collapse in AI capex and gross margin (NVDA trades at ~32x FY26 consensus EPS), which is inconsistent with the observable multi-year build-out of AI infrastructure, the Blackwell ramp, and NVIDIA’s expanding CUDA/software moat. Evidence: Q3 FY25 revenue was $35.1B (+94% YoY), Data Center revenue was $30.8B (+112% YoY), and GAAP gross margin was 74.6%. As long as Data Center growth stays above 35% YoY and gross margin holds above 70%, the risk/reward is asymmetric. **Conviction: NVDA is the indispensable compute layer of the generative AI capital cycle.**\n\n*Data basis: Q3 FY25 actuals (Oct 2024) and FY26 consensus estimates; confidence: medium due to Blackwell ramp uncertainty.*\n\n---\n\n## 2. SCENARIO ANALYSIS\n\n**Bull — 30%**\n- **Assumptions:** (1) Blackwell volume shipments exceed supply and drive ASP +10–15%; (2) sovereign/enterprise AI and inference workloads add sustained Data Center demand; (3) software/services mix expands, lifting gross margin >74%.\n- **Outcome:** FY26 revenue $190–210B; FY26 EPS $5.50–6.00; 12-month target $200–220.\n- **Primary catalyst:** Blackwell volume ramp and FY26 guidance raise.\n\n**Base — 50%**\n- **Assumptions:** (1) Data Center revenue grows 35–45% YoY in FY26; (2) custom ASICs (Google TPU, Amazon Trainium, AMD MI300) take modest share but NVIDIA retains 75–80% of training and a large share of inference; (3) gross margin stays 71–74%.\n- **Outcome:** FY26 revenue $145–165B; FY26 EPS $4.20–4.80; 12-month target $155–175.\n- **Primary catalyst:** Q4 FY25/FY26 guidance in line with consensus.\n\n**Bear — 20%**\n- **Assumptions:** (1) Hyperscalers digest GPU inventory and Data Center revenue is flat to down 10% YoY in FY26; (2) Blackwell execution issues or pricing pressure compress gross margin to ~65%; (3) China export restrictions further reduce revenue.\n- **Outcome:** FY26 revenue $100–120B; FY26 EPS $2.50–3.30; 12-month target $95–120.\n- **Primary trigger:** Two consecutive quarters of negative Data Center revenue guidance or order pushouts.\n\n---\n\n## 3. THESIS INVALIDATION CONDITIONS\n\n- **Condition:** Data Center demand deceleration → **Trigger:** Data Center revenue YoY growth falls below 25% for two consecutive quarters (vs. Q3 FY25: +112%).\n- **Condition:** Gross margin collapse → **Trigger:** Quarterly GAAP gross margin <68% for two consecutive quarters (vs. Q3 FY25: 74.6%).\n- **Condition:** Blackwell execution failure → **Trigger:** Blackwell contributes <20% of Data Center revenue by Q2 FY26 (July 2025) or FY26 revenue guidance falls below $130B.\n- **Condition:** Customer concentration / capex cut → **Trigger:** Combined top-4 hyperscaler capex growth turns negative YoY and NVIDIA sales outlook/bookings decline >20% quarter-over-quarter.\n\n---\n\n## 4. RISK MATRIX (TOP 3)\n\n| Risk | Impact (1-5) | Probability (1-5) | Score |\n|---|---:|---:|---:|\n| U.S.-China export controls and China revenue loss | 4 | 4 | **16** |\n| AI capex digestion / demand normalization | 5 | 3 | **15** |\n| Hyperscaler custom ASIC competition and pricing pressure | 4 | 3 | **12** |\n\n*Score = Impact × Probability. Higher score = higher priority risk.*",
+      "latency_s": 44.29,
+      "input_tokens": 247,
+      "output_tokens": 5390,
+      "reasoning_tokens": null,
+      "total_tokens": 5637,
+      "finish_reason": "stop",
+      "error": null
+    },
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "## 1. INVESTMENT THESIS\n\n**Equalweight / Hold.** Harmonic Drive Systems is the highest-quality global pure-play strain-wave-gear supplier and a clear beneficiary of collaborative and humanoid robotics, but the current valuation (~21x FY3/25e EV/EBITDA on our estimates) already embeds a humanoid-volume ramp that is unlikely to generate material revenue before FY2027. The market is underappreciating the near-term resilience of its high-mix, high-margin non-industrial segments (medical/aerospace ~15% of sales, above-corporate gross margins) and disciplined capex, which should keep operating margins above 12% even if industrial-robot capex softens. Why now: 1H FY3/25 order trends sit at a cyclical inflection—a sustained recovery in industrial-automation orders would re-rate the stock, while another disappointment on humanoid design-ins would likely compress the multiple.  \n\n**Conviction:** A premium franchise, but the stock is a hold until there is evidence of either humanoid revenue conversion or a durable order inflection.\n\n---\n\n## 2. SCENARIO ANALYSIS\n\n| Scenario | Probability | Key Assumptions | FY3/26 Outcome | Catalyst / Trigger |\n|---|---|---|---|---|\n| **Bull** | 20% | Humanoid actuators adopt strain-wave gears and HD captures >25% of high-spec joint demand; China domestic substitution limited (<2 pp share loss); pricing stable. | Revenue ¥128–138B; OP margin 16.0–18.0%; stock +40–60% | Commercial humanoid pilot orders (≥50k units/yr) + Japan/EU industrial-robot capex recovery. |\n| **Base** | 55% | Industrial-automation replacement demand grows 5–7% p.a.; humanoid remains largely pre-revenue; China share loss <3 pp. | Revenue ¥104–112B; OP margin 13.0–14.5%; stock +0–15% | Steady cobot/robot replacement demand and stable semiconductor/FPD capex. |\n| **Bear** | 25% | Chinese players (e.g., Leaderdrive, Nidec-Shimpo) take >5 pp share; semiconductor/FPD capex downcycle; humanoid volumes pushed to FY2028+. | Revenue ¥86–94B; OP margin 9.5–11.0%; stock –25–35% | Chinese competitor price cuts >15% y/y or order backlog decline >10% q/q for two quarters. |\n\n*FY3/24 baseline: revenue ~¥96B, OP margin ~13.8%. Forward estimates are our own; confidence: medium.*\n\n---\n\n## 3. THESIS INVALIDATION CONDITIONS\n\n- **Condition:** Cyclical order momentum rolls over → **Trigger:** Quarterly order intake YoY decline >15% for two consecutive quarters.\n- **Condition:** Pricing power breaks down → **Trigger:** Gross margin falls below 32% for two consecutive quarters (vs. ~35–36% recent run-rate).\n- **Condition:** Humanoid optionality fails to materialize → **Trigger:** Humanoid-related revenue <¥2B (<2% of sales) by FY3/26.\n- **Condition:** China substitution accelerates → **Trigger:** China revenue declines >20% YoY in any 12-month period while domestic robot-output indicators are flat or positive.\n\n---\n\n## 4. RISK MATRIX (top 3)\n\n| Risk | Impact (1–5) | Probability (1–5) | Score |\n|---|---|---|---|\n| Chinese domestic substitution / price wars | 4 | 4 | **16** |\n| Humanoid-robot commercialization delayed beyond FY2027 | 5 | 3 | **15** |\n| Industrial-robot / semiconductor capex downturn | 4 | 3 | **12** |",
+      "latency_s": 532.07,
+      "input_tokens": 250,
+      "output_tokens": 4617,
+      "reasoning_tokens": 3806,
+      "total_tokens": 4867,
+      "finish_reason": "stop",
+      "error": null
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "## 1. INVESTMENT THESIS\n\n**Overweight / Buy.** BABA trades at ~9.5x FY2025E P/E and ~8% FCF yield (price ~$80), a >40% discount to global e-commerce peers, despite FY2024 revenue of ~$130bn, non-GAAP net income of ~$22bn, and FCF of ~$22bn. The market is underpricing: (i) the stabilization of Taobao/Tmall monetization (CMR) through new ad tools and GMV share defense; (ii) an inflection in Cloud Intelligence growth/margin from AI and public-cloud demand; and (iii) a ~$35bn net cash/investments cushion plus aggressive buybacks ($12.5bn in FY2024). A trough in regulatory fine cycles and improving China consumption/stimulus provide the near-term catalyst. **High-conviction value/quality reopening play with a cloud/AI call option.**\n\n*Inputs: FY2024 company filings (high confidence); consensus FY2025/26E EPS $8.60/$9.50 and price ~$80 as of late 2024 (moderate confidence).*\n\n---\n\n## 2. SCENARIO ANALYSIS\n\n| Scenario | Probability | Key Assumptions | Metric Outcome | Catalyst / Trigger |\n|---|---|---|---|---|\n| **Bull** | 25% | 1) China retail sales rebound +5%+, Tmall/Taobao GMV +7% and CMR +8%; 2) Cloud Intelligence revenue +20%+ and segment EBITA margin >8%; 3) buybacks reduce shares outstanding by ~5% over 12 mo. | 12-mo target **$120–$135** (13–14x FY2026E EPS $9.5–$10.0); FCF yield ~6.5–7% | Stronger fiscal stimulus / 11.11 GMV beat / large AI cloud contract wins |\n| **Base** | 50% | 1) China e-commerce GMV low-single-digit, CMR flat-to-+3%; 2) Cloud revenue +10–15% and segment EBITA margin 6–8%; 3) stable margins, ~$10bn annual buybacks. | 12-mo target **$95–$105** (11–12x FY2026E EPS $8.8–$9.2); FCF yield ~8–9% | Consistent quarterly earnings, return of buyback execution |\n| **Bear** | 25% | 1) PDD/Douyin share gains accelerate, Tmall/Taobao GMV -2% and CMR -5%; 2) Cloud revenue +<5% and margin <5%; 3) new regulatory action or ADR delisting risk. | 12-mo target **$60–$75** (7–8x FY2026E EPS $7.0–$7.5); FCF yield >11% | China consumer downgrade / SEC delisting determination / major Ant/fintech regulatory event |\n\n---\n\n## 3. THESIS INVALIDATION CONDITIONS\n\n- **Condition:** Core Tmall/Taobao monetization breaks down → **Trigger:** CMR YoY growth < -3% for two consecutive quarters.\n- **Condition:** Cloud growth/margin inflection fails to materialize → **Trigger:** Cloud Intelligence revenue growth < +5% YoY for two consecutive quarters OR segment EBITA margin < 4%.\n- **Condition:** Free-cash-flow generation collapses relative to earnings → **Trigger:** TTM FCF / non-GAAP net income < 40% OR net cash/investments < $15bn.\n- **Condition:** U.S.-China ADR/delisting risk becomes concrete → **Trigger:** SEC conclusive determination of inability to inspect / BABA placed on the HFCAA delisting list or failure to file 20-F by statutory deadline.\n\n---\n\n## 4. RISK MATRIX\n\n| Risk | Impact (1-5) | Probability (1-5) | Score |\n|---|---|---|---|\n| China macro / consumer demand collapse (property drag, deflation) | 5 | 4 | **20** |\n| Competitive share loss to PDD, Douyin/TikTok Shop in GMV/CMR | 4 | 4 | **16** |\n| U.S.-China regulatory / ADR audit / capital restrictions | 5 | 2 | **10** |",
+      "latency_s": 36.24,
+      "input_tokens": 247,
+      "output_tokens": 4664,
+      "reasoning_tokens": null,
+      "total_tokens": 4911,
+      "finish_reason": "stop",
+      "error": null
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "## 1. INVESTMENT THESIS\n\nWe are **Overweight** the humanoid actuator supply chain (precision gears, frameless torque motors, encoders, ball screws, and integrated actuator assemblies) and **Neutral/Underweight** the humanoid OEMs over the next 12–24 months.\n\nThe market is pricing the **end-robot narrative** but is underpricing the **physical bottleneck**: actuators represent **30–40% of humanoid BOM** (roughly **$8k–$15k per unit at current pilot volumes**), and long-lead precision components (harmonic/RV reducers, rare-earth torque motors, force sensors) have **6–18 month lead times** with limited qualified supplier capacity. With 2024–2025 marking the shift from one-off prototypes to production-intent pilot programs (Tesla Optimus, Figure 02/03, Agility Digit, 1X, UBTech), the **order inflection will show up in component suppliers first**, driving pricing power and margin leverage for the top tier.\n\nThe market is missing that **software generalization can be delayed, but the robot cannot ship without actuators**—and the supply chain is already capacity-constrained.\n\n**Conviction:** *Overweight precision actuators > humanoid OEMs; the parts shortage will outperform the software story over the next two years.*\n\n---\n\n## 2. SCENARIO ANALYSIS\n\n| Scenario | Probability | Key Assumptions | Metric Range Outcome | Primary Catalyst / Trigger |\n|---|---|---|---|---|\n| **Bull** | **30%** | • 2030 humanoid unit volumes >700k (Tesla + Chinese OEMs factory deployment)<br>• OEMs outsource >60% of actuator assembly<br>• Actuator ASP falls only to ~$8k/unit | **2030 TAM: $6.0–$8.5B**<br>CAGR 2024–2030: **55–65%** | Binding multi-year actuator framework contract (>50k units) from Tesla, BMW, or a major Chinese OEM |\n| **Base** | **50%** | • 2030 unit volumes ~300–400k (industrial/logistics first, general use slower)<br>• 40–50% outsourced; OEMs retain final integration<br>• Actuator ASP declines to ~$5–$6k/unit | **2030 TAM: $2.0–$3.0B**<br>CAGR 2024–2030: **30–35%** | First meaningful factory deployment at 10k+ annual units with visible supplier order books |\n| **Bear** | **20%** | • 2030 unit volumes <100k due to reliability/AI gaps<br>• OEMs in-source >55% of actuators (e.g., Tesla vertical integration)<br>• Chinese supply drives ASPs to ~$4k/unit | **2030 TAM: $0.5–$1.0B**<br>CAGR 2024–2030: **10–15%** | Cancellation of 2025–2026 pilot contracts or a major OEM in-house actuator announcement |\n\n**Data confidence:** Medium (±30–40%) due to limited public supplier disclosures and rapidly changing OEM roadmaps.\n\n---\n\n## 3. THESIS INVALIDATION CONDITIONS\n\n1. **Condition:** Major OEMs in-source actuator assemblies and bypass the external supply chain → **Trigger:** Outsourced actuator share falls below **50% by 2026**.\n2. **Condition:** Humanoid production fails to inflect → **Trigger:** Annual global production <**20,000 units in 2025** and <**50,000 units in 2027**.\n3. **Condition:** Component pricing collapses → **Trigger:** Average harmonic/RV reducer or frameless motor ASP declines **>20% year-over-year for two consecutive years**.\n4. **Condition:** OEM funding dries up and capex is cut → **Trigger:** Top 5 humanoid OEMs’ combined operating cash burn exceeds capital raised by **>20% in both 2025 and 2026**.\n\n---\n\n## 4. RISK MATRIX (Top 3)\n\n| Risk | Impact (1–5) | Probability (1–5) | Score |\n|---|---|---|---|\n| **OEM vertical integration / actuator architecture change** (e.g., Tesla in-sources actuators; quasi-direct drive replaces geared actuators) | 4 | 3 | **12** |\n| **Demand/timing risk** (AI/software generalization gap delays commercial deployment) | 5 | 3 | **15** |\n| **Pricing/commoditization risk** (Chinese supply floods harmonic/RV gears and torque motors) | 3 | 4 | **12** |\n\n**Scoring:** Impact × Probability.",
+      "latency_s": 51.08,
+      "input_tokens": 248,
+      "output_tokens": 5211,
+      "reasoning_tokens": null,
+      "total_tokens": 5459,
+      "finish_reason": "stop",
+      "error": null
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    }
+  ]
+}

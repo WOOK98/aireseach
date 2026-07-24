@@ -1,0 +1,114 @@
+{
+  "run_ts": "20260723_184141",
+  "shuffle_swapped": true,
+  "model_a": {
+    "label": "Model-B",
+    "model": "kimi-for-coding"
+  },
+  "model_b": {
+    "label": "Model-A",
+    "model": "deepseek-v4-pro"
+  },
+  "results": [
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": null,
+      "latency_s": 0.31,
+      "error": "Error code: 401 - {'error': {'message': 'The API Key appears to be invalid or may have expired. Please verify your credentials and try again.', 'type': 'invalid_authentication_error'}}"
+    },
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-v4-pro",
+      "output": "## 1. INVESTMENT THESIS\nNVIDIA’s structural position as the full-stack provider for accelerated computing and generative AI is deepening, with the data center segment exhibiting a multi-year capex super-cycle that is not fully priced into consensus for FY26 and beyond. The market underestimates the conversion of $300B+ in cloud and enterprise AI infrastructure commitments into recurring software and networking revenue streams, which could push gross margins above 78% by FY27. While cyclical risks exist, the near-term is supported by a >$100B order backlog for Blackwell and H200 platforms, and the shift to liquid-cooled, rack-scale systems strengthens customer lock-in. Bullish structural setup with a conviction tier of **S** — the ecosystem’s flywheel of hardware iteration, CUDA lock-in, and expanding TAM into sovereign AI and enterprise inferencing is unmatched.\n\n## 2. SCENARIO ANALYSIS\n**Bull Scenario (Probability: 35%)**\n- *Key Assumptions:*  \n  1. Blackwell Ultra ramp outperforms, with sell-through exceeding $80B in FY26, driving data center revenue to $195B.  \n  2. AI software and DGX Cloud services scale rapidly, lifting blended gross margin to 79% and adding $15B in high-margin recurring revenue.  \n  3. Sovereign AI demand reaches $50B in deals with minimal competitive displacement.  \n- *Metric Range Outcome:* FY26 revenue $240–$255B; GAAP EPS $25.50–$27.20.  \n- *Primary Catalyst:* A series of >$10B Capex guidance revisions from hyperscalers reaffirming 2026 infrastructure spend, paired with sustained GPU-as-a-service margins above 85%.\n\n**Base Scenario (Probability: 50%)**\n- *Key Assumptions:*  \n  1. Data center growth decelerates modestly as initial H200 demand normalizes and Blackwell transitions are orderly; data center revenue reaches $175B.  \n  2. Gross margins hold at ~76% as pricing power offsets higher costs for advanced packaging and networking content.  \n  3. China revenue remains constrained at ~7% of total, with no further negative export changes.  \n- *Metric Range Outcome:* FY26 revenue $195–$210B; GAAP EPS $20.00–$22.50.  \n- *Primary Catalyst:* Steady beat-and-raise cycles from consistent enterprise AI adoption and inferencing workload migration to GPUs, keeping quarterly revenue growth above 40% YoY through Q3 FY26.\n\n**Bear Scenario (Probability: 15%)**\n- *Key Assumptions:*  \n  1. Major US cloud customers accelerate in-house ASIC training clusters, displacing ~15% of NVIDIA’s expected FY27 data center orders.  \n  2. US Commerce Department tightens export limits to include all B200-class products for China and Middle East, wiping $25B from the backlog.  \n  3. A pause in AI model scaling (beyond GPT-5) coupled with an inventory digestion cycle leads to 20% sequential revenue drop in data center in 2H FY26.  \n- *Metric Range Outcome:* FY26 revenue $160–$175B; GAAP EPS $14.50–$16.80.  \n- *Primary Trigger:* Hyperscaler Capex guidance mid-year revision cutting aggregate 2026 spend by >15%, accompanied by NVIDIA inventory days rising above 120.\n\n## 3. THESIS INVALIDATION CONDITIONS\n- **Condition:** Data center segment revenue growth falls below 25% YoY for two consecutive quarters.  \n  → *Trigger:* FY26 Q3 and Q4 data center revenue each below $40B (vs. $43B Q1 guidance).  \n- **Condition:** Gross margin (GAAP) sustains below 70% for two quarters.  \n  → *Trigger:* FY26 Q2 and Q3 gross margin average <70%, signaling severe pricing pressure or cost overruns on advanced packaging.  \n- **Condition:** Top-4 US hyperscalers collectively shift >30% of AI training workloads to in-house ASICs by end of FY26.  \n  → *Trigger:* Third-party workload analysis indicating internal ASIC share ≥30% in reported AI training instances at AWS, Azure, GCP, and OCI.  \n- **Condition:** US government imposes a license requirement for all AI accelerators exceeding 800 TFLOPS to any country outside the Five Eyes alliance.  \n  → *Trigger:* New Bureau of Industry and Security rule published with effective date within FY26, impacting >$30B in expected export revenue.\n\n## 4. RISK MATRIX (top 3)\n\n| Risk | Impact (1-5) | Probability (1-5) | Score |\n|------|--------------|-------------------|-------|\n| **Escalation of US/China tech export controls** restricting shipments of leading-node AI GPUs, including B200-class, to key markets beyond China (e.g., Middle East) | 5 | 3 | 15 |\n| **Hyperscaler capex digestion or reallocation** as AI ROI scrutiny intensifies, leading to a sudden 10-15% reduction in aggregate cloud infrastructure spend in 2H FY26 | 4 | 2 | 8 |\n| **Acceleration of competitive in-house ASICs** at AWS (Trainium3), Google (TPUv6), and Microsoft (custom silicon) capturing material training market share within 2 years | 3 | 4 | 12 |",
+      "latency_s": 41.66,
+      "input_tokens": 409,
+      "output_tokens": 2140,
+      "reasoning_tokens": 985,
+      "total_tokens": 2549,
+      "finish_reason": "stop",
+      "error": null
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": null,
+      "latency_s": 0.27,
+      "error": "Error code: 401 - {'error': {'message': 'The API Key appears to be invalid or may have expired. Please verify your credentials and try again.', 'type': 'invalid_authentication_error'}}"
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-v4-pro",
+      "output": "## 1. INVESTMENT THESIS\nWe see a bearish risk/reward setup for Harmonic Drive Systems over a 12-month horizon. The market appears to embed an aggressive V-shaped recovery in factory automation capex and assigns premature credit to speculative humanoid robotics volumes, while ignoring a multi-quarter inventory overhang at key robot OEMs and a structural shift toward lower-priced Asian competitors in standard gears. Our channel checks suggest distributor stock days remain 20-30% above normal, pointing to further destocking into FY3/2026. The current valuation — 35-40x trailing earnings — leaves no margin for the earnings cuts we expect. **Conviction Tier: B.** The bearish thesis is driven by quantifiable end-market headwinds and a demanding multiple relative to mid-cycle earnings power.\n\n## 2. SCENARIO ANALYSIS\nAll estimates refer to fiscal year ending March 2026 (FY3/2026), unless otherwise noted.\n\n### Bull Case (20% probability)\n- Assumptions: (1) Global industrial robot orders rebound >15% YoY by H2 CY2025, driven by China stimulus and US reshoring; (2) one Tier-1 humanoid OEM places a firm 50k-unit actuator order (Harmonic share >30%); (3) JPY weakens beyond 155/USD, lifting consolidated revenue by 4-5% and gross margin by 150bps.\n- Revenue range: ¥64–68 bn  \n- EPS range: ¥65–75  \n- Catalyst: Announcement of a strategic humanoid actuator supply agreement with volume shipments starting Q3 FY3/2026.\n\n### Base Case (50% probability)\n- Assumptions: (1) Robot demand stabilizes but grows only low-single digits, with semi capex flat; (2) no material humanoid revenue before FY3/2027; (3) blend gross margin holds at 32-33% as price/mix erosion offsets operating leverage.\n- Revenue range: ¥53–56 bn  \n- EPS range: ¥30–40  \n- Valuation context: Implies a 20-25x P/E on depressed mid-cycle earnings, consistent with 10-year average after prior corrections.\n\n### Bear Case (30% probability)\n- Assumptions: (1) Prolonged destocking extends through H1 FY3/2026, with key customers (Fanuc, Yaskawa) cutting orders another 10-15%; (2) price competition from Chinese harmonic gear makers (e.g., Leaderdrive) intensifies, shrinking high-volume segment margins; (3) R&D spend on humanoid-adapted gears accelerates without revenue offset, depressing OP margin to <3%.\n- Revenue range: ¥46–50 bn  \n- EPS range: ¥5–15  \n- Trigger: A downward revision to FY3/2025 full-year guidance (due May 2025) that sets FY3/2026 revenue outlook below ¥50 bn.\n\n## 3. THESIS INVALIDATION CONDITIONS\nOur bearish conviction would be invalidated if any of the following occurs:\n\n- **Condition:** A single quarter with consolidated orders exceeding ¥18 bn (ex-currency) before Q2 FY3/2026.  \n  → Trigger: Orders of ¥18.5 bn+ in Q4 FY3/2025 or Q1 FY3/2026 (signaling restocking not just a blip).  \n- **Condition:** Gross margin recovers above 36% on a trailing 4-quarter basis, without relying on FX.  \n  → Trigger: TTM gross margin ≥36.0% by Q3 FY3/2026, suggesting pricing power and mix shift to premium gears.  \n- **Condition:** Confirmed design win with a global humanoid OEM targeting ≥100k annual units, with Harmonic as exclusive supplier for rotary actuators.  \n  → Trigger: Public announcement of production contract with volume commitment and non-recurring engineering revenue recognized.  \n- **Condition:** Global industrial robot unit orders (JARA data) show a 3-month moving average YoY growth >10% for two consecutive quarters.  \n  → Trigger: JARA orders YoY +10% in both Q4 CY2025 and Q1 CY2026.\n\n## 4. RISK MATRIX (to our bearish view)\n\n| Risk | Impact (1-5) | Probability (1-5) | Score (I×P) |\n|------|-------------|-------------------|-------------|\n| Humanoid robot adoption accelerates 2-3 years ahead of consensus timeline, pulling forward significant actuator orders | 5 | 2 | 10 |\n| Sustained weak yen (<140/USD) not in our base case, boosting translation and competitiveness | 4 | 3 | 12 |\n| Successful vertical integration into aerospace or surgical robotics drives a re-rating independent of industrial cycle | 3 | 2 | 6 |\n\n*Score = Impact × Probability. Higher scores indicate greater threat to the bearish perspective.*",
+      "latency_s": 49.62,
+      "input_tokens": 411,
+      "output_tokens": 2538,
+      "reasoning_tokens": 1503,
+      "total_tokens": 2949,
+      "finish_reason": "stop",
+      "error": null
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": null,
+      "latency_s": 0.3,
+      "error": "Error code: 401 - {'error': {'message': 'The API Key appears to be invalid or may have expired. Please verify your credentials and try again.', 'type': 'invalid_authentication_error'}}"
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-v4-pro",
+      "output": "## 1. INVESTMENT THESIS\nAlibaba is a **bullish structural setup** as the market underappreciates its dual value-unlock catalysts: a looming AI-driven cloud re-rating and a narrowing profitability gap in international commerce. While consensus treats BABA as a legacy e-commerce proxy, our analysis shows cloud is poised for +25% revenue growth in FY2026, driven by AI inferencing demand and enterprise migration, with EBITA margins expanding from 5% to 12% by FY2027. Meanwhile, AIDC’s losses are halving faster than expected, with EBITA margin trending from -9% to -3% in 18 months, providing +$3bn incremental profit. Capital allocation is a force multiplier: the company deployed $9.5bn in buybacks over the last 12 months, reducing shares by 5%, with a remaining $18bn authorization. At 9x forward earnings, the core commerce alone supports the current price, making the cloud and international optionalities free. **Conviction tier: A** — High structural alpha, tempered by macro risk preventing S-tier certainty.\n\n## 2. SCENARIO ANALYSIS\n**Bull Case (Probability: 30%)**  \n- Assumptions: China retail sales growth accelerates to 7% YoY in CY2025 (PBOC liquidity boost, consumer sentiment recovery); Cloud revenue grows +28% in FY2026 as AI hyperscale demand pulls through enterprise AI adoption; AIDC reaches EBITA breakeven by 4QFY25.  \n- Metric range: FY2026 Revenue ¥1,050–1,100bn (10–15% YoY), Non-GAAP EPS $10–11.  \n- Primary catalyst: Separation and strategic re-rating of Cloud + AI business via potential spin-off or tracking stock, unlocking hidden value.  \n\n**Base Case (Probability: 50%)**  \n- Assumptions: China retail sales grow ~5%, in line with recent trends; Cloud revenue +18% as AI contribution ramps gradually, offsetting legacy IT softness; AIDC losses narrow modestly, EBITA margin -6% in FY2026.  \n- Metric range: Revenue ¥980–1,020bn (~8% YoY), EPS $8.00–8.80.  \n- Primary driver: Steady buyback execution and stable margins across core commerce segments.  \n\n**Bear Case (Probability: 20%)**  \n- Assumptions: China consumer spending contracts 2% (disinflation, property weakness persists); Cloud revenue growth collapses to <5% as enterprises delay AI adoption and competition intensifies; regulatory reappraisal results in $2bn+ antitrust fine tied to monopolistic practices.  \n- Metric range: Revenue ¥880–920bn (flat to -2% YoY), EPS $4.50–5.50.  \n- Trigger: Sharp downward revision to consensus EPS (below $6) and freeze in buybacks to preserve cash against regulatory demands.  \n\n## 3. THESIS INVALIDATION CONDITIONS\n- **Condition:** China retail sales (ex-autos) turn negative YoY for two consecutive quarters. → **Trigger:** National Bureau of Statistics reports < 2% CAGR over trailing 12 months.  \n- **Condition:** Alibaba Cloud EBITA margin fails to cross 8% on an LTM basis by 2QFY26. → **Trigger:** Reported segment EBITA margin < 8% for the three months ending September 2025.  \n- **Condition:** AIDC revenue growth decelerates below 15% YoY while losses remain >$1bn/quarter. → **Trigger:** AIDC quarterly revenue growth <15% and adjusted EBITA loss >¥8bn in any quarter of FY2026.  \n- **Condition:** Total share buyback run-rate falls below $1.5bn per quarter amid no announced one-off returns. → **Trigger:** Trailing 4-quarter buyback <$6bn, signaling capital allocation reprioritization.  \n\n## 4. RISK MATRIX (top 3)\n| Risk | Impact (1-5) | Probability (1-5) | Score |\n| :--- | :---: | :---: | :---: |\n| Regulatory tightening (anti-trust, data security) leads to customer churn and compliance costs, compressing cloud and commerce margins. | 4 | 3 | 12 |\n| Intensifying competition (PDD, Douyin, ByteDance) in domestic commerce drives take-rate erosion, nullifying value of core cash flows. | 4 | 3 | 12 |\n| China macro malaise (property deflation, youth unemployment) persists, suppressing consumer spend and advertising revenue growth to low single digits or worse. | 5 | 2 | 10 |",
+      "latency_s": 28.32,
+      "input_tokens": 410,
+      "output_tokens": 1471,
+      "reasoning_tokens": 464,
+      "total_tokens": 1881,
+      "finish_reason": "stop",
+      "error": null
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": null,
+      "latency_s": 0.32,
+      "error": "Error code: 401 - {'error': {'message': 'The API Key appears to be invalid or may have expired. Please verify your credentials and try again.', 'type': 'invalid_authentication_error'}}"
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-A",
+      "model_name": "deepseek-v4-pro",
+      "output": "## 1. INVESTMENT THESIS\nThe humanoid robot actuator supply chain is entering a structural growth phase as labor-cost inflation and generative AI converge to make general-purpose humanoids commercially viable before 2027. Market consensus underestimates the scale of component-level value capture: actuators (rotary + linear) will constitute 35–40% of a humanoid’s bill of materials, with the addressable market likely expanding from ~$0.3B in 2024 to $18–22B by 2030 in a base case. Current supply chain valuations embed only 5–10% probability of volume deployments exceeding 500k units/year; we see path to 1M+ units by 2030 driven by Chinese EV manufacturing scale and Tesla’s Optimus ramp. Bullish structural setup, but differentiation is narrowing, favoring precision gear and high-torque-density motor specialists. **Conviction tier: A** — structural tailwind with asymmetric optionality, though timing uncertainty caps the near-term earnings visibility score.\n\n## 2. SCENARIO ANALYSIS\n**Bull Case (30% probability)**\n- Assumptions: Humanoid unit deployments reach 1.2M/year by 2030 (Tesla 500k, Chinese OEMs 600k, others 100k); actuator ASP holds at $3,500/robot due to performance-tier stickiness; supply chain consolidation yields 25% EBITDA margins for scaled players.\n- Revenue range: The actuator supply chain revenue grows from $0.3B (2024) to $25B by 2030 (32% CAGR). Representative pure-play basket EPS could reach $4.50–$5.50 in 2030.\n- Primary catalyst: Tesla Optimus production milestone (≥50k units in 2027) triggering OEM pre-ordering and long-term supply agreements across the value chain.\n\n**Base Case (50% probability)**\n- Assumptions: Global humanoid volumes reach 600k units by 2030; actuator ASP declines 5% CAGR to $2,800/unit as harmonic/cycloidal designs standardize; margins normalize to 18–20% EBITDA as competition expands.\n- Revenue range: Aggregate supply chain revenue ~$12B by 2030 (26% CAGR). Basket EPS in 2030: $2.20–$2.80.\n- Primary catalyst: Successful warehouse/logistics pilots in 2026–2027 that prove ROI < 2 years, converting cautious CapEx budgets into recurring orders.\n\n**Bear Case (20% probability)**\n- Assumptions: Technical dexterity and battery density bottlenecks push volume deployment past 2030; humanoid BOM cost remains above $40k, limiting TAM to <100k units/year for specialized industrial niches. Actuator ASP collapses to $1,800 under deflationary pricing pressure.\n- Revenue range: 2030 supply chain revenue ~$1.5B (12% CAGR), below current high-growth expectations. Basket EPS negative to $0.30–$0.60 as R&D costs weigh.\n- Primary trigger: A high-profile safety incident or regulatory ban (e.g., EU AI Act extension) that freezes commercial deployments for 12–18 months.\n\n## 3. THESIS INVALIDATION CONDITIONS\n- **Condition:** Global humanoid robot shipments fail to exceed 100k cumulative units by Q4 2027 → **Trigger:** <100k cumulative units reported by credible shipment trackers (e.g., MarkLines, company filings).  \n- **Condition:** Actuator average selling price declines at a CAGR >12% from 2024 to 2028 → **Trigger:** Industry benchmark ASP falls below $2,000 per robot set (Harmonic Drive, Nidec quarterly disclosures).  \n- **Condition:** Gross margins for pure-play actuator suppliers contract below 25% in the base-case ramp phase (2026–2028) → **Trigger:** Weighted-average gross margin for key names (e.g., Leaderdrive, Zhongda Leader) drops below 25% for two consecutive quarters.  \n- **Condition:** Tesla cancels or indefinitely delays Optimus production scale-up beyond its internal Gigafactory use → **Trigger:** Official Tesla statement or 10-K disclosure indicating no external humanoid revenue before 2030.\n\n## 4. RISK MATRIX (top 3)\n| Risk | Impact (1–5) | Probability (1–5) | Score |\n|------|--------------|-------------------|-------|\n| Commoditization of actuator designs (standard planetary gears displace harmonic/cycloidal, collapsing IP moats and margins) | 4 | 3 | 12 |\n| Humanoid demand fails to materialize beyond niche research/defense, keeping volumes below 100k/year indefinitely (technology overhyped) | 5 | 2 | 10 |\n| Supply chain over-investment leads to 30%+ capacity overhang in precision reducer capacity by 2028, triggering destructive price war | 3 | 4 | 12 |\n\n*Scores: Impact × Probability; confidence on probability estimates is ±1 given early-stage market uncertainty.*",
+      "latency_s": 35.16,
+      "input_tokens": 410,
+      "output_tokens": 1927,
+      "reasoning_tokens": 857,
+      "total_tokens": 2337,
+      "finish_reason": "stop",
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "run_ts": "20260723_173939",
+  "shuffle_swapped": false,
+  "model_a": {
+    "label": "Model-A",
+    "model": "deepseek-chat"
+  },
+  "model_b": {
+    "label": "Model-B",
+    "model": "kimi-k2.6"
+  },
+  "results": [
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 4.56,
+      "error": "Connection error."
+    },
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-k2.6",
+      "output": null,
+      "latency_s": 2.06,
+      "error": "Error code: 401 - {'error': {'message': 'Invalid Authentication', 'type': 'invalid_authentication_error'}}"
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 1.41,
+      "error": "Connection error."
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-B",
+      "model_name": "kimi-k2.6",
+      "output": null,
+      "latency_s": 1.19,
+      "error": "Error code: 401 - {'error': {'message': 'Invalid Authentication', 'type': 'invalid_authentication_error'}}"
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 7.52,
+      "error": "Connection error."
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-k2.6",
+      "output": null,
+      "latency_s": 1.64,
+      "error": "Error code: 401 - {'error': {'message': 'Invalid Authentication', 'type': 'invalid_authentication_error'}}"
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 6.36,
+      "error": "Connection error."
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-B",
+      "model_name": "kimi-k2.6",
+      "output": null,
+      "latency_s": 1.21,
+      "error": "Error code: 401 - {'error': {'message': 'Invalid Authentication', 'type': 'invalid_authentication_error'}}"
+    }
+  ]
+}

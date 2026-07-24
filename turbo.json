@@ -41,7 +41,8 @@
     "GITHUB_CLIENT_SECRET",
     "GOOGLE_CLIENT_ID",
     "GOOGLE_CLIENT_SECRET",
-    "CONTACT_EMAIL"
+    "CONTACT_EMAIL",
+    "KIMI_API_KEY"
   ],
   "globalPassThroughEnv": [
     "AIRESEARCH_PLUGIN_DIR",

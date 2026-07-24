@@ -1,0 +1,106 @@
+{
+  "run_ts": "20260723_174416",
+  "shuffle_swapped": true,
+  "model_a": {
+    "label": "Model-B",
+    "model": "kimi-for-coding"
+  },
+  "model_b": {
+    "label": "Model-A",
+    "model": "deepseek-chat"
+  },
+  "results": [
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "## 1. INVESTMENT THESIS\n\nWe reiterate **Overweight / Buy** on a 12–18 month horizon. The market is mispricing the **durability of AI compute demand** and the **CUDA ecosystem moat**, treating the Blackwell transition as a cyclical peak rather than a structural architecture upgrade. We believe supply, not demand, remains the binding constraint, and that software/services attach, sovereign AI deployments, and enterprise inference workloads are underappreciated offsets to China and hyperscaler custom-silicon fears. **Conviction: BUY — execution visibility is rising, and the multiple already discounts a meaningful demand deceleration.**\n\n## 2. SCENARIO ANALYSIS\n\n**Bull Case (30% probability)**\n- **Assumptions:** Blackwell demand exceeds supply through 2H CY2025; AI inference attach accelerates; sovereign/national AI deployments add >$5B annual revenue.\n- **Metric range:** Data Center revenue +50–65% YoY; forward EPS $3.80–$4.50.\n- **Catalyst:** Two consecutive quarters of >20% sequential Data Center growth and Blackwell gross margin >75%.\n\n**Base Case (50% probability)**\n- **Assumptions:** Blackwell ramp on plan; hyperscaler capex remains elevated but no incremental step-up; China restrictions stable; gross margin 72–75%.\n- **Metric range:** Data Center revenue +30–40% YoY; forward EPS $2.90–$3.60.\n- **Catalyst:** In-line beats with stable guidance raises.\n\n**Bear Case (20% probability)**\n- **Assumptions:** Further China export restrictions tighten; hyperscaler custom silicon captures >20% of new training accelerator slots; pricing pressure emerges.\n- **Metric range:** Data Center revenue +10–20% YoY; forward EPS $2.00–$2.60.\n- **",
+      "latency_s": 22.81,
+      "input_tokens": 247,
+      "output_tokens": 2000,
+      "total_tokens": 2247,
+      "error": null
+    },
+    {
+      "case_id": "NVDA",
+      "case_type": "ticker",
+      "target": "NVIDIA Corporation (NVDA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "",
+      "latency_s": 109.08,
+      "input_tokens": 250,
+      "output_tokens": 2000,
+      "total_tokens": 2250,
+      "error": null
+    },
+    {
+      "case_id": "6324.T",
+      "case_type": "ticker",
+      "target": "Harmonic Drive Systems (6324.T)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "",
+      "latency_s": 17.55,
+      "input_tokens": 247,
+      "output_tokens": 2000,
+      "total_tokens": 2247,
+      "error": null
+    },
+    {
+      "case_id": "BABA",
+      "case_type": "ticker",
+      "target": "Alibaba Group (BABA)",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-B",
+      "model_name": "kimi-for-coding",
+      "output": "",
+      "latency_s": 20.65,
+      "input_tokens": 248,
+      "output_tokens": 2000,
+      "total_tokens": 2248,
+      "error": null
+    },
+    {
+      "case_id": "THEMATIC_ROBOT",
+      "case_type": "thematic",
+      "target": "Humanoid robot actuator supply chain",
+      "model_label": "Model-A",
+      "model_name": "deepseek-chat",
+      "output": null,
+      "latency_s": 0,
+      "error": "No API key configured"
+    }
+  ]
+}
