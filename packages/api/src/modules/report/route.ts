@@ -540,22 +540,58 @@ Style: data-driven (cite actual figures), balanced bull/bear, professional yet r
 Use a solution-consulting workflow: decision brief first, then scenarios, role-based takeaways, monitorable metrics, and next actions.
 Output strict JSON only — no markdown fences.`;
 
-    const modeLabel = {
-      snapshot:
-        "Investment snapshot: decide in 3 minutes whether the stock deserves deeper work",
-      earnings:
-        "Earnings review: focus on growth quality, margins, cash flow, and execution",
-      competition:
-        "Competitive landscape: moat, substitution risk, pricing power, and industry position",
-      risk: "Risk scan: valuation, balance sheet, cash flow, cyclicality, and crowded narrative risk",
-      poc: "Tracking plan: convert the thesis into 30-90 day measurable validation points",
+    const modeConfig = {
+      snapshot: {
+        label:
+          "Investment snapshot: decide in 3 minutes whether the stock deserves deeper work",
+        focus:
+          "Balance breadth vs depth. Cover thesis, valuation, risks, and catalysts at equal weight. The decisionBrief should answer: does this stock deserve deeper research right now?",
+        emphasis: "overview, investmentThesis, decisionBrief",
+      },
+      earnings: {
+        label:
+          "Earnings review: focus on growth quality, margins, cash flow, and execution",
+        focus:
+          "Deep-dive revenue trajectory, margin evolution (gross → operating → net), FCF conversion, and earnings surprise history. Weight growthDrivers and profitability sections 2x heavier than other sections. Include quarter-over-quarter trends and segment breakdowns.",
+        emphasis:
+          "growthDrivers, profitability, topJudgments (margin/cash flow focus)",
+      },
+      competition: {
+        label:
+          "Competitive landscape: moat, substitution risk, pricing power, and industry position",
+        focus:
+          "Analyze market share trends, moat durability (brand/tech/network/switching cost), Porter's Five Forces summary, peer benchmarking (top 3-5 competitors), and substitution threats. Weight the overview section around competitive dynamics.",
+        emphasis:
+          "overview (competitive framing), risks (disruption/substitution), scenarioMatrix (market share scenarios)",
+      },
+      risk: {
+        label:
+          "Risk scan: valuation, balance sheet, cash flow, cyclicality, and crowded narrative risk",
+        focus:
+          "Invert the analysis — lead with what can go wrong. Weight risks section 3x: balance sheet fragility, cash flow quality under stress, valuation downside, cyclicality exposure, and narrative crowding. Each risk must have a numeric trigger. The decisionBrief should focus on risk/reward asymmetry.",
+        emphasis:
+          "risks (primary focus), valuation (downside scenarios), scenarioMatrix (bear case details)",
+      },
+      poc: {
+        label:
+          "Tracking plan: convert the thesis into 30-90 day measurable validation points",
+        focus:
+          "Focus on the watchlist and monitorPanel sections. For each thesis driver, define: (1) a specific metric to track, (2) current value, (3) trigger threshold, (4) data source, (5) check frequency. The decisionBrief should outline a 30-90 day monitoring cadence. Light on narrative, heavy on actionable metrics.",
+        emphasis: "watchlist, monitorPanel, nextSteps, evidenceNeeds",
+      },
     }[mode];
 
     const userPrompt = `
 Analyze ${m.companyName} (${ticker}) and generate a research report based on the following REAL financial data:
 
 ## Analysis Mode
-${modeLabel}
+${modeConfig.label}
+
+### Focus Areas for This Mode
+${modeConfig.focus}
+
+### Sections to Emphasize
+${modeConfig.emphasis}
 
 ${hasFundamentals ? "" : "Important: Yahoo Finance fundamentals are temporarily unavailable for this request. Base the report on the live price data below, clearly state that full fundamentals are unavailable, and avoid inventing revenue, margin, EPS, cash flow, or valuation metrics."}
 
