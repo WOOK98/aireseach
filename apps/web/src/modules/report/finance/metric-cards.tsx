@@ -37,7 +37,8 @@ function fmt(n: number | null | undefined, decimals = 1, suffix = "") {
   return n.toFixed(decimals) + suffix;
 }
 
-function fmtB(n: number): string {
+function fmtB(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "N/A";
   if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
   if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
   return `$${n.toFixed(0)}`;
@@ -58,13 +59,13 @@ export function MetricsGrid({ m }: { m: FinancialMetrics }) {
     {
       label: "Net Margin",
       value: fmt(m.netMargin, 1, "%"),
-      trend: m.netMargin > 0 ? "up" : "down",
+      trend: (m.netMargin ?? 0) > 0 ? "up" : "down",
     },
     {
       label: "EPS (TTM)",
       value: `$${fmt(m.eps, 2)}`,
       sub: `Growth ${fmt(m.epsGrowthYoy, 1)}%`,
-      trend: m.epsGrowthYoy > 0 ? "up" : "down",
+      trend: (m.epsGrowthYoy ?? 0) > 0 ? "up" : "down",
     },
     {
       label: "P/E (TTM)",
@@ -79,12 +80,12 @@ export function MetricsGrid({ m }: { m: FinancialMetrics }) {
       label: "Free Cash Flow",
       value: fmtB(m.freeCashFlow),
       sub: `FCF margin ${fmt(m.fcfMargin, 1)}%`,
-      trend: m.freeCashFlow > 0 ? "up" : "down",
+      trend: (m.freeCashFlow ?? 0) > 0 ? "up" : "down",
     },
     {
       label: "Net Cash",
       value: fmtB(m.netCash),
-      trend: m.netCash > 0 ? "up" : "down",
+      trend: (m.netCash ?? 0) > 0 ? "up" : "down",
     },
     {
       label: "Market Cap",
