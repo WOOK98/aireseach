@@ -50,3 +50,10 @@ knowledge/
 # Playwright test artifacts
 test-results/
 tests/workflow/playwright-report/
+
+# test coverage
+coverage/
+coverage.json
+
+# morning-brief skip markers (briefs/*.md are committed)
+briefs/*.skip
