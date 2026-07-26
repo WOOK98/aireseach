@@ -111,7 +111,7 @@ describe("sanitizeFinancialMetrics", () => {
 
     expect(report.withheld).toContain("operatingMargin");
     expect(report.reasons.operatingMargin).toMatch(/exceeds gross margin/);
-    expect(metrics.operatingMargin).toBe(0); // will render as N/A
+    expect(metrics.operatingMargin).toBeNull();
   });
 
   // ── Cross-currency derived ratios ───────────────────────────────────────
@@ -141,7 +141,7 @@ describe("sanitizeFinancialMetrics", () => {
 
     // FCF is 25.8T KRW but marketCap is 61.5B USD — clearly magnitude error
     expect(report.withheld).toContain("freeCashFlow");
-    expect(metrics.freeCashFlow).toBe(0);
+    expect(metrics.freeCashFlow).toBeNull();
   });
 
   // ── EPS sanity ──────────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ describe("sanitizeFinancialMetrics", () => {
 
     // EPS 21000 KRW vs price 85.2 USD — magnitude error
     expect(report.withheld).toContain("eps");
-    expect(metrics.eps).toBe(0);
+    expect(metrics.eps).toBeNull();
   });
 
   // ── Margin bounds ───────────────────────────────────────────────────────
@@ -165,8 +165,8 @@ describe("sanitizeFinancialMetrics", () => {
 
     expect(report.withheld).toContain("grossMargin");
     expect(report.withheld).toContain("netMargin");
-    expect(metrics.grossMargin).toBe(0);
-    expect(metrics.netMargin).toBe(0);
+    expect(metrics.grossMargin).toBeNull();
+    expect(metrics.netMargin).toBeNull();
   });
 
   // ── No false positives on same-currency foreign stocks ──────────────────
@@ -200,18 +200,16 @@ describe("sanitizeFinancialMetrics", () => {
   it("SKHY: produces zero garbage values after sanitization", () => {
     const { metrics, report } = sanitizeFinancialMetrics(skhyRaw);
 
-    // No impossible margin combo
-    expect(metrics.operatingMargin).not.toBeGreaterThan(metrics.grossMargin);
+    // No impossible margin combo — operating margin was nullified because it exceeded gross margin
+    expect(metrics.operatingMargin).toBeNull();
 
     // No cross-currency ratios rendered
     expect(metrics.peRatio).toBeNull();
     expect(metrics.forwardPE).toBeNull();
     expect(metrics.evEbitda).toBeNull();
 
-    // No trillion-scale magnitude errors
-    expect(Math.abs(metrics.freeCashFlow)).toBeLessThan(
-      Math.abs(metrics.marketCap),
-    );
+    // No trillion-scale magnitude errors — FCF should be null, not a huge number
+    expect(metrics.freeCashFlow).toBeNull();
 
     // Withheld fields documented
     expect(report.withheld.length).toBeGreaterThanOrEqual(5);
