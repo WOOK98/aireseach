@@ -85,6 +85,25 @@ class SerenityRequest(BaseModel):
     skill_prompt: Optional[str] = Field(None, description="Custom system prompt for the skill")
 
 
+class EarningsRequest(BaseModel):
+    ticker: str = Field(..., min_length=1, max_length=10, description="Stock ticker symbol")
+    quarter: Optional[str] = Field(None, description="Specific quarter to analyze, e.g. 'Q2 2026'. Defaults to latest.")
+    api_key: Optional[str] = Field(None, description="Model API key")
+    base_url: Optional[str] = Field(None, description="OpenAI-compatible API base URL")
+    model: Optional[str] = Field(None, description="Model name")
+    language: Optional[str] = Field("en", description="Output language")
+
+
+class PostEarningsMoveRequest(BaseModel):
+    ticker: str = Field(..., min_length=1, max_length=10, description="Stock ticker symbol")
+    move_pct: Optional[float] = Field(None, description="Post-earnings price move percentage, e.g. -15.0")
+    quarter: Optional[str] = Field(None, description="Quarter that triggered the move, e.g. 'Q2 2026'")
+    api_key: Optional[str] = Field(None, description="Model API key")
+    base_url: Optional[str] = Field(None, description="OpenAI-compatible API base URL")
+    model: Optional[str] = Field(None, description="Model name")
+    language: Optional[str] = Field("en", description="Output language")
+
+
 SYSTEM_PROMPT = """
 You are a senior equity research analyst at a top-tier investment bank (think J.P. Morgan, Goldman Sachs, Morgan Stanley). Your analysis style is institutional-grade: evidence-first, quantitative, structured, and written for sophisticated investors.
 
@@ -658,6 +677,285 @@ async def generate_report_stream(request: ReportRequest):
             yield f"\n\nReport generation failed: {exc}"
 
     return StreamingResponse(stream_report(), media_type="text/markdown; charset=utf-8")
+
+
+# ──────────────────────────────────────────────
+# Earnings Deep Dive Analysis
+# ──────────────────────────────────────────────
+
+EARNINGS_SYSTEM_PROMPT = """You are a senior equity research analyst at a top-tier investment bank, specializing in post-earnings analysis. Your job is to dissect quarterly earnings reports with surgical precision — every sentence must carry analytical weight and be anchored to specific numbers from the filing.
+
+OUTPUT FORMAT: Return a single JSON object with the following structure. All text fields should use Markdown formatting. Use **bold** for key numbers and critical findings — these will be rendered with a highlighter visual effect.
+
+IMPORTANT HIGHLIGHTER RULES:
+- Wrap every critical data point, surprise metric, or key finding in **bold** — these get the yellow highlighter treatment
+- Wrap negative surprises, red flags, and misses in **==double equals==** — these get the red highlighter treatment
+- Wrap positive surprises, beats, and upgrades in **~~strikethrough~~** — these get the green highlighter treatment
+- Every section must have at least 2 highlighted items
+
+STRUCTURE:
+{
+  "earningsSnapshot": {
+    "quarter": "Q2 2026",
+    "reportDate": "2026-07-22",
+    "epsActual": "$0.85",
+    "epsEstimate": "$0.78",
+    "epsSurprise": "+8.97% beat",
+    "revenueActual": "$25.5B",
+    "revenueEstimate": "$24.8B",
+    "revenueSurprise": "+2.82% beat",
+    "stockMoveAfterHours": "-15.2%",
+    "verdict": "Miss on margins despite revenue beat — guidance cut spooked the market"
+  },
+  "revenueAnalysis": {
+    "title": "Revenue & Growth Breakdown",
+    "content": "<detailed markdown analysis>",
+    "highlights": ["key finding 1", "key finding 2"],
+    "sentiment": "positive|negative|mixed"
+  },
+  "marginAnalysis": { "title": "...", "content": "...", "highlights": [...], "sentiment": "..." },
+  "cashFlowAnalysis": { "title": "...", "content": "...", "highlights": [...], "sentiment": "..." },
+  "guidanceAnalysis": { "title": "...", "content": "...", "highlights": [...], "sentiment": "..." },
+  "managementTone": { "title": "...", "content": "...", "highlights": [...], "sentiment": "..." },
+  "analystReaction": { "title": "...", "content": "...", "highlights": [...], "sentiment": "..." },
+  "keyTakeaways": ["Takeaway 1 with **bolded key number**", "..."],
+  "watchNext": ["Metric to watch", "..."]
+}
+
+RULES:
+- Use REAL financial terminology and specific numbers
+- Every content field must have at least 2 **bolded** key data points
+- Sentiment must accurately reflect whether the section is positive, negative, or mixed
+- keyTakeaways: exactly 3-5 items, each with a bolded number
+- watchNext: exactly 2-3 items
+- Write professionally, no emoji, evidence-led
+- If specific data is unavailable, note it clearly rather than fabricating
+"""
+
+
+def build_earnings_messages(
+    ticker: str,
+    quarter: str | None,
+    language: str,
+) -> list[dict[str, str]]:
+    """Build messages for earnings deep-dive analysis."""
+    quarter_str = quarter or "the most recent quarter"
+    user_content = (
+        f"Generate a comprehensive earnings deep-dive analysis for **{ticker}** ({quarter_str}).\n\n"
+        f"Search for the latest earnings report, financial filings, earnings call transcripts, "
+        f"and post-earnings stock price movement. Use real data from the most recent filing.\n\n"
+        f"Analyze:\n"
+        f"1. Revenue trajectory — segment breakdown, YoY/QoQ, geographic mix\n"
+        f"2. Margin evolution — gross, operating, net, with specific drivers\n"
+        f"3. Cash flow — FCF, capex, working capital, buybacks\n"
+        f"4. Forward guidance — next quarter and full-year, any raises/cuts\n"
+        f"5. Management tone — what they emphasized, hedged, or avoided\n"
+        f"6. Market reaction — stock move, options implied move, analyst actions\n\n"
+        f"Return the analysis as a JSON object following the system prompt schema."
+    )
+
+    lang_instruction = ""
+    lang_names = {
+        "zh-TW": "Traditional Chinese (繁體中文)",
+        "zh-CN": "Simplified Chinese (简体中文)",
+        "ja": "Japanese (日本語)",
+        "ko": "Korean (한국어)",
+        "es": "Spanish",
+        "de": "German",
+        "fr": "French",
+        "en": "English",
+    }
+    if language and language != "en":
+        lang_name = lang_names.get(language, language)
+        lang_instruction = f"\n\nIMPORTANT: Write the ENTIRE analysis in {lang_name}."
+
+    return [
+        {"role": "system", "content": EARNINGS_SYSTEM_PROMPT + lang_instruction},
+        {"role": "user", "content": user_content},
+    ]
+
+
+@app.post("/api/analyze_earnings")
+async def analyze_earnings(request: EarningsRequest):
+    ticker = request.ticker.strip().upper()
+    if not ticker:
+        raise HTTPException(status_code=400, detail="Enter a ticker symbol.")
+
+    api_key = validate_header_value(clean_optional_text(request.api_key), "API Key")
+    if not api_key:
+        api_key = LLM_API_KEY
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Enter your model API key.")
+
+    base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
+    model = clean_optional_text(request.model) or LLM_MODEL
+    language = request.language or "en"
+
+    messages = build_earnings_messages(ticker, request.quarter, language)
+
+    def stream():
+        try:
+            client = OpenAI(api_key=api_key, base_url=base_url)
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=True,
+                max_tokens=16384,
+            )
+            for chunk in response:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+        except Exception as exc:
+            yield f"\n\nEarnings analysis failed: {normalize_model_error(exc)}"
+
+    return StreamingResponse(stream(), media_type="text/markdown; charset=utf-8")
+
+
+# ──────────────────────────────────────────────
+# Post-Earnings Price Move Analysis
+# ──────────────────────────────────────────────
+
+POST_EARNINGS_MOVE_PROMPT = """You are a senior equity research analyst specializing in post-earnings price action analysis. Your job is to explain WHY a stock moved after earnings — not just what happened, but the specific factors that drove the market's reaction.
+
+OUTPUT FORMAT: Return a single JSON object. Use **bold** for key numbers and findings.
+
+{
+  "moveVerdict": {
+    "direction": "up|down|flat",
+    "magnitude": "-15.2%",
+    "impliedMove": "plus-minus 8%",
+    "exceededImplied": true,
+    "oneLineExplanation": "<one sentence explaining the move>"
+  },
+  "primaryDrivers": [
+    {
+      "factor": "<factor name>",
+      "impact": "high|medium|low",
+      "direction": "positive|negative",
+      "explanation": "<detailed explanation with **bolded numbers**>"
+    }
+  ],
+  "earningsVsExpectations": {
+    "eps": { "actual": "$0.85", "estimate": "$0.78", "surprise": "+8.97%", "verdict": "beat" },
+    "revenue": { "actual": "$25.5B", "estimate": "$24.8B", "surprise": "+2.82%", "verdict": "beat" },
+    "guidance": { "status": "raised|maintained|cut|no guidance", "details": "<details>" },
+    "narrative": "<paragraph explaining what the earnings data actually said vs what was expected>"
+  },
+  "whatTheMarketFocusedOn": "<paragraph explaining which specific metric the market fixated on. **Bold** the key items.>",
+  "technicalContext": {
+    "preEarningsRun": "<how the stock moved into earnings>",
+    "optionsImplied": "<what options market was pricing in>",
+    "volumeAnalysis": "<volume vs average>"
+  },
+  "comparableReactions": [
+    { "company": "<peer ticker>", "event": "<what happened>", "move": "<stock move>", "relevance": "<why this comparison matters>" }
+  ],
+  "forwardImplications": {
+    "shortTerm": "<next 1-4 weeks>",
+    "mediumTerm": "<next 1-3 months>",
+    "thesisImpact": "<does this change the investment thesis?>"
+  },
+  "keyLevels": {
+    "support": "<price level>",
+    "resistance": "<price level>",
+    "nextCatalyst": "<next event>"
+  }
+}
+
+RULES:
+- Explain the move with SPECIFIC numbers, not vague narratives
+- primaryDrivers: 3-5 drivers, ranked by impact
+- comparableReactions: 2-3 relevant peer comparisons
+- Every explanation paragraph must have at least 2 **bolded** data points
+- Write professionally, no emoji
+- If data is unavailable, state it clearly
+- This is analysis, not investment advice
+"""
+
+
+def build_post_earnings_move_messages(
+    ticker: str,
+    move_pct: float | None,
+    quarter: str | None,
+    language: str,
+) -> list[dict[str, str]]:
+    """Build messages for post-earnings price move analysis."""
+    quarter_str = quarter or "the most recent quarter"
+    move_str = f"The stock moved {move_pct:+.1f}%" if move_pct is not None else "Analyze the stock's post-earnings price movement"
+
+    user_content = (
+        f"Analyze the post-earnings price movement of **{ticker}** after {quarter_str} earnings.\n\n"
+        f"{move_str}.\n\n"
+        f"Search for:\n"
+        f"1. The actual earnings results (EPS, revenue, guidance vs expectations)\n"
+        f"2. What management said on the earnings call\n"
+        f"3. How the stock moved (after-hours, next-day, and subsequent days)\n"
+        f"4. Analyst reactions and rating changes\n"
+        f"5. Options market implied move vs actual move\n"
+        f"6. How peers have moved on similar earnings\n\n"
+        f"Explain WHY the market reacted this way. What specific numbers, guidance, or management comments drove the move?\n\n"
+        f"Return the analysis as a JSON object following the system prompt schema."
+    )
+
+    lang_instruction = ""
+    lang_names = {
+        "zh-TW": "Traditional Chinese (繁體中文)",
+        "zh-CN": "Simplified Chinese (简体中文)",
+        "ja": "Japanese (日本語)",
+        "ko": "Korean (한국어)",
+        "es": "Spanish",
+        "de": "German",
+        "fr": "French",
+        "en": "English",
+    }
+    if language and language != "en":
+        lang_name = lang_names.get(language, language)
+        lang_instruction = f"\n\nIMPORTANT: Write the ENTIRE analysis in {lang_name}."
+
+    return [
+        {"role": "system", "content": POST_EARNINGS_MOVE_PROMPT + lang_instruction},
+        {"role": "user", "content": user_content},
+    ]
+
+
+@app.post("/api/post_earnings_move")
+async def post_earnings_move(request: PostEarningsMoveRequest):
+    ticker = request.ticker.strip().upper()
+    if not ticker:
+        raise HTTPException(status_code=400, detail="Enter a ticker symbol.")
+
+    api_key = validate_header_value(clean_optional_text(request.api_key), "API Key")
+    if not api_key:
+        api_key = LLM_API_KEY
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Enter your model API key.")
+
+    base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
+    model = clean_optional_text(request.model) or LLM_MODEL
+    language = request.language or "en"
+
+    messages = build_post_earnings_move_messages(
+        ticker, request.move_pct, request.quarter, language
+    )
+
+    def stream():
+        try:
+            client = OpenAI(api_key=api_key, base_url=base_url)
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=True,
+                max_tokens=16384,
+            )
+            for chunk in response:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+        except Exception as exc:
+            yield f"\n\nPost-earnings analysis failed: {normalize_model_error(exc)}"
+
+    return StreamingResponse(stream(), media_type="text/markdown; charset=utf-8")
 
 
 if __name__ == "__main__":
