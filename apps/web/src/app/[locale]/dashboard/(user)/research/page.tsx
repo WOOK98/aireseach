@@ -262,11 +262,11 @@ function getFriendlyAnalysisError(rawMessage?: string | null) {
   }
 
   if (
-    /api key|deepseek|invalid character|bytestring|not configured/i.test(
+    /api key|deepseek|openai|llm|provider|invalid character|bytestring|not configured/i.test(
       rawMessage,
     )
   ) {
-    return "Base financial data is loaded, but the AI narrative is unavailable. The model API key needs to be updated.";
+    return "Base financial data is loaded, but the AI narrative is temporarily unavailable.";
   }
 
   return rawMessage;
@@ -290,7 +290,11 @@ function AnalysisNotice({
       <div className="space-y-2">
         <div>
           <p className="text-sm font-medium">AI analysis unavailable</p>
-          <p className="text-xs leading-relaxed opacity-80">{message}</p>
+          <p className="text-xs leading-relaxed opacity-80">
+            <span className="notranslate" translate="no">
+              {message}
+            </span>
+          </p>
         </div>
         <Button
           variant="ghost"
@@ -320,7 +324,10 @@ function FilingCandidates({
 }) {
   return (
     <Section label="Official Filing Candidates" icon={FileSearch}>
-      <div className="overflow-hidden rounded-xl border">
+      <div
+        className="notranslate overflow-hidden rounded-xl border"
+        translate="no"
+      >
         <div className="bg-muted/30 text-muted-foreground hidden grid-cols-[0.7fr_1fr_1fr_1fr_2fr] gap-3 border-b px-4 py-2 font-mono text-[10px] tracking-widest uppercase md:grid">
           <span>Form</span>
           <span>Filed</span>
@@ -371,7 +378,10 @@ function FilingCandidates({
                 >
                   {officialHost(candidate.url)}
                 </span>
-                <span className="text-sm leading-snug">
+                <span
+                  className="notranslate text-sm leading-snug"
+                  translate="no"
+                >
                   {candidate.description}
                 </span>
               </button>
@@ -460,7 +470,7 @@ function FilingAnalysisResult({
     monitors.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="notranslate space-y-6" translate="no">
       <div className="rounded-xl border border-blue-200 bg-blue-50/60 px-4 py-3 dark:border-blue-900/60 dark:bg-blue-950/30">
         <p className="mb-1 font-mono text-[10px] tracking-widest text-blue-900 uppercase dark:text-blue-100">
           Filing Source Lock
@@ -515,7 +525,10 @@ function FilingAnalysisResult({
                 <p className="text-muted-foreground mb-2 font-mono text-[10px] tracking-widest">
                   {["I", "II", "III"][index]}
                 </p>
-                <p className="text-sm leading-relaxed font-medium">
+                <p
+                  className="notranslate text-sm leading-relaxed font-medium"
+                  translate="no"
+                >
                   {item.judgment}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -531,7 +544,10 @@ function FilingAnalysisResult({
                   />
                 </div>
                 <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-                  Wrong if: {item.wrongIf}
+                  <span>Wrong if: </span>
+                  <span className="notranslate" translate="no">
+                    {item.wrongIf}
+                  </span>
                 </p>
               </div>
             ))}
@@ -551,7 +567,9 @@ function FilingAnalysisResult({
                   <div>
                     <p className="text-sm font-medium">{item.metric}</p>
                     <p className="text-muted-foreground mt-1 text-xs">
-                      {item.period} · {item.change}
+                      <span className="notranslate" translate="no">
+                        {item.period} · {item.change}
+                      </span>
                     </p>
                   </div>
                   <div className="text-right">
@@ -594,7 +612,9 @@ function FilingAnalysisResult({
                   />
                 </div>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  {item.change}
+                  <span className="notranslate" translate="no">
+                    {item.change}
+                  </span>
                 </p>
               </div>
             ))}
@@ -621,7 +641,12 @@ function FilingAnalysisResult({
                       dataPoint={item.dataPoint}
                     />
                   </div>
-                  <p className="text-sm leading-relaxed">{item.risk}</p>
+                  <p
+                    className="notranslate text-sm leading-relaxed"
+                    translate="no"
+                  >
+                    {item.risk}
+                  </p>
                 </div>
               </div>
             ))}
@@ -1230,7 +1255,8 @@ export default function ResearchPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="space-y-6"
+                  className="notranslate space-y-6"
+                  translate="no"
                 >
                   <div>
                     <p className="text-muted-foreground mb-0.5 font-mono text-[10px] tracking-widest uppercase">
@@ -1283,13 +1309,16 @@ export default function ResearchPage() {
                 key="filing-error"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100"
+                className="notranslate flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100"
+                translate="no"
               >
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="space-y-2">
                   <p className="text-sm font-medium">No filing analysis</p>
                   <p className="text-xs leading-relaxed opacity-80">
-                    {filingError}
+                    <span className="notranslate" translate="no">
+                      {filingError}
+                    </span>
                   </p>
                   <Button
                     variant="ghost"
@@ -1337,7 +1366,8 @@ export default function ResearchPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="space-y-4"
+                className="notranslate space-y-4"
+                translate="no"
               >
                 <div>
                   <p className="text-muted-foreground mb-0.5 font-mono text-[10px] tracking-widest uppercase">
@@ -1407,7 +1437,8 @@ export default function ResearchPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="space-y-6"
+                className="notranslate space-y-6"
+                translate="no"
               >
                 {/* Header */}
                 <div>
