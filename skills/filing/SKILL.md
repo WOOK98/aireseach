@@ -47,13 +47,13 @@ User: "NVDA 最新年报"
 
 Search SEC EDGAR for company filings.
 
-| Parameter  | Type     | Required | Description                                    |
-| ---------- | -------- | -------- | ---------------------------------------------- |
-| `query`    | string   | ✅       | Company name or ticker (e.g., "NVDA", "Apple") |
-| `forms`    | string[] |          | Filter: ["10-K"], ["10-Q"], ["20-F"], etc.     |
-| `startYear`| number   |          | Start year filter (e.g., 2023)                 |
-| `endYear`  | number   |          | End year filter (e.g., 2025)                   |
-| `limit`    | number   |          | Max results (default: 20)                      |
+| Parameter   | Type     | Required | Description                                    |
+| ----------- | -------- | -------- | ---------------------------------------------- |
+| `query`     | string   | ✅       | Company name or ticker (e.g., "NVDA", "Apple") |
+| `forms`     | string[] |          | Filter: ["10-K"], ["10-Q"], ["20-F"], etc.     |
+| `startYear` | number   |          | Start year filter (e.g., 2023)                 |
+| `endYear`   | number   |          | End year filter (e.g., 2025)                   |
+| `limit`     | number   |          | Max results (default: 20)                      |
 
 **Returns**: `{ ok, candidates[], totalResults, source }` or `{ ok: false, reason, message }`
 
@@ -61,9 +61,9 @@ Search SEC EDGAR for company filings.
 
 Fetch and parse a filing's content with page indexing.
 
-| Parameter | Type   | Required | Description                              |
-| --------- | ------ | -------- | ---------------------------------------- |
-| `url`     | string | ✅       | Filing URL from search_filings (SEC only)|
+| Parameter | Type   | Required | Description                               |
+| --------- | ------ | -------- | ----------------------------------------- |
+| `url`     | string | ✅       | Filing URL from search_filings (SEC only) |
 
 **Returns**: `{ ok, text, pages[], isScanned, contentType }` or `{ ok: false, reason, message }`
 
@@ -84,6 +84,7 @@ Top judgments from filing analysis are logged to the L3 Ledger via
 ## Scanned PDF Handling
 
 If `isScanned: true`:
+
 - Do NOT attempt to analyze the content
 - Return a clear message: "This filing is a scanned PDF. OCR processing is required."
 - Suggest the user convert via OCR service before analysis
