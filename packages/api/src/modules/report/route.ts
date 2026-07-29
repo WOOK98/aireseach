@@ -16,6 +16,11 @@ import { getCustomersWithPurchasesByReferenceId } from "@workspace/billing/serve
 import { and, count, eq, gte } from "@workspace/db";
 import { aiUsageLog, ledgerJudgment } from "@workspace/db/schema";
 import { db } from "@workspace/db/server";
+import {
+  SHARED_HARD_RULES,
+  MODE_PERSPECTIVES,
+  type AnalysisMode,
+} from "@workspace/shared/skill-contract";
 
 import { env } from "../../env";
 import {
@@ -537,51 +542,15 @@ reportRoute.post(
       (m.eps != null && m.eps !== 0) ||
       m.revenueHistory.length > 0;
 
-    const systemPrompt = `You are a professional equity research analyst. Write institutional-quality research reports.
+    const systemPrompt = `${SHARED_HARD_RULES}
+
+You are a professional equity research analyst. Write institutional-quality research reports.
 Style: data-driven (cite actual figures), balanced bull/bear, professional yet readable.
 Use a solution-consulting workflow: decision brief first, then scenarios, role-based takeaways, monitorable metrics, and next actions.
 Output strict JSON only — no markdown fences.`;
 
-    const modeConfig = {
-      snapshot: {
-        label:
-          "Investment snapshot: decide in 3 minutes whether the stock deserves deeper work",
-        focus:
-          "Balance breadth vs depth. Cover thesis, valuation, risks, and catalysts at equal weight. The decisionBrief should answer: does this stock deserve deeper research right now?",
-        emphasis: "overview, investmentThesis, decisionBrief",
-      },
-      earnings: {
-        label:
-          "Earnings review: focus on growth quality, margins, cash flow, and execution",
-        focus:
-          "Deep-dive revenue trajectory, margin evolution (gross → operating → net), FCF conversion, and earnings surprise history. Weight growthDrivers and profitability sections 2x heavier than other sections. Include quarter-over-quarter trends and segment breakdowns.",
-        emphasis:
-          "growthDrivers, profitability, topJudgments (margin/cash flow focus)",
-      },
-      competition: {
-        label:
-          "Competitive landscape: moat, substitution risk, pricing power, and industry position",
-        focus:
-          "Analyze market share trends, moat durability (brand/tech/network/switching cost), Porter's Five Forces summary, peer benchmarking (top 3-5 competitors), and substitution threats. Weight the overview section around competitive dynamics.",
-        emphasis:
-          "overview (competitive framing), risks (disruption/substitution), scenarioMatrix (market share scenarios)",
-      },
-      risk: {
-        label:
-          "Risk scan: valuation, balance sheet, cash flow, cyclicality, and crowded narrative risk",
-        focus:
-          "Invert the analysis — lead with what can go wrong. Weight risks section 3x: balance sheet fragility, cash flow quality under stress, valuation downside, cyclicality exposure, and narrative crowding. Each risk must have a numeric trigger. The decisionBrief should focus on risk/reward asymmetry.",
-        emphasis:
-          "risks (primary focus), valuation (downside scenarios), scenarioMatrix (bear case details)",
-      },
-      poc: {
-        label:
-          "Tracking plan: convert the thesis into 30-90 day measurable validation points",
-        focus:
-          "Focus on the watchlist and monitorPanel sections. For each thesis driver, define: (1) a specific metric to track, (2) current value, (3) trigger threshold, (4) data source, (5) check frequency. The decisionBrief should outline a 30-90 day monitoring cadence. Light on narrative, heavy on actionable metrics.",
-        emphasis: "watchlist, monitorPanel, nextSteps, evidenceNeeds",
-      },
-    }[mode];
+    const modeConfig =
+      MODE_PERSPECTIVES[mode] ?? MODE_PERSPECTIVES.snapshot;
 
     const userPrompt = `
 Analyze ${m.companyName} (${ticker}) and generate a research report based on the following REAL financial data:
@@ -942,7 +911,9 @@ reportRoute.post(
       )
       .join("\n\n");
 
-    const systemPrompt = `You are the chair of an evidence-led investment committee.
+    const systemPrompt = `${SHARED_HARD_RULES}
+
+You are the chair of an evidence-led investment committee.
 You do not impersonate investors or attribute claims to famous people. You apply six generic analytical frameworks: Value, Growth, Macro, Trend, Quant, and Skeptic.
 Separate observed facts from inferences and opinions. Cite only source IDs supplied by the user. Never invent a URL, filing, metric, or quotation.
 Return strict JSON only, with no markdown fences. This is decision support, not financial advice.`;

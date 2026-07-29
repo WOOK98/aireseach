@@ -14,6 +14,11 @@ const mirrors = [
     mirror: new URL("../skills/deep-dive/SKILL.md", import.meta.url),
     stripMirrorHeader: true,
   },
+  {
+    source: resolve(pluginRoot, "skills/filing/SKILL.md"),
+    mirror: new URL("../skills/filing/SKILL.md", import.meta.url),
+    stripMirrorHeader: false,
+  },
 ];
 
 const stripMirrorHeader = (text) =>
