@@ -11,8 +11,16 @@ import {
 
 import { getSession } from "~/lib/auth/server";
 import { getMetadata } from "~/lib/metadata";
+import { CompanyReportLayer } from "~/modules/company/company-report-layer";
 import { EntitySearch } from "~/modules/company/entity-search";
 import { WatchlistStar } from "~/modules/company/watchlist-star";
+import {
+  MARKET_LABELS,
+  marketState,
+  stateColor,
+  stateLabel,
+  type MarketId,
+} from "~/modules/dashboard/market-sessions";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
 import type { Metadata } from "next";
@@ -208,6 +216,46 @@ function buildMetrics(metrics: FinancialMetrics, asOf: string) {
   ].filter((item): item is NonNullable<typeof item> => Boolean(item));
 }
 
+function SessionRail({ now }: { now: Date }) {
+  const markets: MarketId[] = ["NYSE", "HKEX", "KRX"];
+
+  return (
+    <div className="border-line bg-panel grid overflow-hidden rounded-xl border md:grid-cols-3">
+      {markets.map((market) => {
+        const status = marketState(market, now);
+        return (
+          <div
+            key={market}
+            className="border-line flex items-center justify-between gap-4 border-b px-4 py-3 md:border-r md:border-b-0 last:md:border-r-0"
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className="notranslate font-mono text-sm font-semibold"
+                translate="no"
+              >
+                {MARKET_LABELS[market]}
+              </span>
+              <span
+                className={`rounded-full border px-2 py-0.5 font-mono text-[10px] ${stateColor(
+                  status.state,
+                )}`}
+              >
+                {stateLabel(status.state)}
+              </span>
+            </div>
+            <span
+              className="notranslate text-ink-2 font-mono text-xs"
+              translate="no"
+            >
+              {status.localTime}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ── Data fetching ───────────────────────────────────────────────────────────── */
 
 async function getCompanyData(symbol: string) {
@@ -246,15 +294,6 @@ export async function generateMetadata({
 
 /* ── Page ────────────────────────────────────────────────────────────────────── */
 
-const LENS_ITEMS = [
-  { name: "Supply chain", color: "var(--l1)" },
-  { name: "Fundamentals", color: "var(--l2)" },
-  { name: "Macro", color: "var(--l3)" },
-  { name: "Technical", color: "var(--l4)" },
-  { name: "Sentiment", color: "var(--l5)" },
-  { name: "Risk", color: "var(--l6)" },
-] as const;
-
 export default async function CompanyPage({ params }: PageProps) {
   const { symbol } = await params;
   const data = await getCompanyData(symbol);
@@ -287,6 +326,10 @@ export default async function CompanyPage({ params }: PageProps) {
       </div>
 
       <main className="mx-auto w-full max-w-6xl px-4 py-0">
+        <div className="py-4">
+          <SessionRail now={new Date()} />
+        </div>
+
         {/* ── Hero banner (JPM gradient) ── */}
         <section className="from-lock to-lock/80 -mx-4 bg-gradient-to-r px-8 py-8 text-white md:py-10">
           <div className="flex items-start justify-between gap-6">
@@ -385,74 +428,12 @@ export default async function CompanyPage({ params }: PageProps) {
           )}
         </section>
 
-        {/* ── Six Lens + Invalidation ── */}
-        <section className="grid gap-8 py-8 lg:grid-cols-[1.2fr_0.8fr]">
-          {/* Six Lens */}
-          <div>
-            <SectionHeader label="Six Lens Analysis" />
-            <div className="bg-panel border-line rounded-xl border p-6">
-              <div className="mb-5 flex items-center justify-between gap-3">
-                <p className="text-ink-2 text-sm">
-                  Deep-dive summaries will appear here when a cached report
-                  exists.
-                </p>
-                {user ? (
-                  <button
-                    type="button"
-                    className="bg-ink text-paper shrink-0 rounded-full px-4 py-2 text-sm font-medium transition hover:opacity-90"
-                  >
-                    Generate deep dive
-                  </button>
-                ) : (
-                  <Link
-                    href={`/auth/login?redirectTo=${encodeURIComponent(`/t/${data.entity.ticker}`)}`}
-                    className="bg-ink text-paper shrink-0 rounded-full px-4 py-2 text-sm font-medium transition hover:opacity-90"
-                  >
-                    Sign in to generate
-                  </Link>
-                )}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {LENS_ITEMS.map((lens) => (
-                  <div
-                    key={lens.name}
-                    className="group border-line hover:border-lock/30 relative overflow-hidden rounded-lg border p-4 transition"
-                  >
-                    {/* Color accent bar */}
-                    <div
-                      className="absolute top-0 left-0 h-full w-0.5"
-                      style={{ backgroundColor: lens.color }}
-                    />
-                    <p className="font-medium">{lens.name}</p>
-                    <p className="text-ink-2 mt-2 text-xs leading-relaxed">
-                      Awaiting cached report.
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Invalidation & Monitors */}
-          <div>
-            <SectionHeader label="Invalidation & Monitors" />
-            <div className="bg-panel border-line rounded-xl border p-6">
-              <p className="text-ink-2 text-sm leading-6">
-                Monitor rows are generated from deep-dive reports. When
-                available, each row can be added to the company watchlist.
-              </p>
-              <div className="border-line bg-tint/30 mt-5 rounded-lg border p-4">
-                <p className="text-ink-2 font-mono text-xs">
-                  No monitor panel cached for{" "}
-                  <span className="notranslate" translate="no">
-                    {data.entity.ticker}
-                  </span>
-                  .
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        <CompanyReportLayer
+          authenticated={Boolean(user)}
+          companyName={data.entity.companyName}
+          metrics={data.financials}
+          symbol={data.entity.ticker}
+        />
       </main>
 
       {/* ── Footer ── */}
