@@ -8,6 +8,77 @@
  */
 
 import { ttlMemoize } from "./cache";
+import { resolveEntity } from "./entity-resolution";
+
+// ── Non-US Entity Detection ─────────────────────────────────────────────────
+
+/**
+ * Detect non-US tickers/exchanges that EDGAR cannot serve.
+ * Returns a rejection reason if the query looks non-US, or null if it's likely US.
+ */
+const detectNonUsEntity = (
+  query: string,
+): { reason: string; exchange: string } | null => {
+  const q = query.trim();
+
+  // Hong Kong: 0700.HK, 9988.HK, etc.
+  if (/^\d{1,5}\.HK$/i.test(q)) {
+    return {
+      reason: `"${query}" is a Hong Kong-listed ticker. SEC EDGAR only covers US-listed filers. Use HKEX 披露易 for HK filings.`,
+      exchange: "HKEX",
+    };
+  }
+
+  // A-share (Shanghai): 600011.SS, 600519.SH
+  if (/^\d{6}\.(SS|SH)$/i.test(q)) {
+    return {
+      reason: `"${query}" is an A-share ticker. SEC EDGAR only covers US-listed filers. Use 巨潮 (CNINFO) for A-share filings.`,
+      exchange: "SSE/SZSE",
+    };
+  }
+
+  // A-share (Shenzhen): 000001.SZ
+  if (/^\d{6}\.SZ$/i.test(q)) {
+    return {
+      reason: `"${query}" is an A-share ticker. SEC EDGAR only covers US-listed filers. Use 巨潮 (CNINFO) for A-share filings.`,
+      exchange: "SZSE",
+    };
+  }
+
+  // Korea: 000660.KS, 005930.KQ
+  if (/^\d{6}\.(KS|KQ)$/i.test(q)) {
+    return {
+      reason: `"${query}" is a Korean-listed ticker. SEC EDGAR only covers US-listed filers.`,
+      exchange: "KRX",
+    };
+  }
+
+  // Japan: 7203.T, 9984.T
+  if (/^\d{4,5}\.T$/i.test(q)) {
+    return {
+      reason: `"${query}" is a Japanese-listed ticker. SEC EDGAR only covers US-listed filers.`,
+      exchange: "TSE",
+    };
+  }
+
+  // London: VOD.L, HSBA.L
+  if (/^[A-Z0-9]{2,5}\.L$/i.test(q)) {
+    return {
+      reason: `"${query}" is a London-listed ticker. SEC EDGAR only covers US-listed filers.`,
+      exchange: "LSE",
+    };
+  }
+
+  // Frankfurt: SAP.DE, BMW.DE
+  if (/^[A-Z0-9]{2,5}\.DE$/i.test(q)) {
+    return {
+      reason: `"${query}" is a Frankfurt-listed ticker. SEC EDGAR only covers US-listed filers.`,
+      exchange: "XETRA",
+    };
+  }
+
+  return null;
+};
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -404,17 +475,60 @@ export const searchFilings = async (
       };
     }
 
-    // Company filing list mode: resolve company → CIK → filings
+    // ── Entity gate: reject non-US entities early ──
+    const nonUs = detectNonUsEntity(query);
+    if (nonUs) {
+      return {
+        ok: false,
+        query,
+        reason: "no_results",
+        message: nonUs.reason,
+      };
+    }
+
+    // ── Entity gate: resolve via Yahoo Finance first ──
+    const entity = await resolveEntity(query);
+
+    // If entity resolution found it's an industry/theme, not a company
+    if (!entity.ok && entity.mode === "industry") {
+      return {
+        ok: false,
+        query,
+        reason: "no_results",
+        message: `"${query}" looks like an industry/theme, not a company. SEC EDGAR filing search requires a specific company name or ticker.`,
+      };
+    }
+
+    // If entity resolution has multiple candidates, pass them through
+    // but still use the original query for EDGAR lookup
+    const resolvedTicker = entity.ok ? entity.ticker : null;
+    const resolvedName = entity.ok ? entity.companyName : null;
+
+    // ── EDGAR lookup: use resolved entity name/ticker ──
     const tickers = await cachedCompanyTickers();
-    const normalizedQuery = query.trim().toUpperCase();
+    const lookupKey = resolvedTicker ?? query.trim().toUpperCase();
+    const normalizedLookup = lookupKey.toUpperCase();
 
     // Try exact ticker match first
-    let matches = tickers.get(normalizedQuery) ?? [];
+    let matches = tickers.get(normalizedLookup) ?? [];
 
-    // If no ticker match, try fuzzy name search
-    if (matches.length === 0) {
+    // If no exact match, try the company name
+    if (matches.length === 0 && resolvedName) {
+      const nameKey = resolvedName.toUpperCase();
+      matches = tickers.get(nameKey) ?? [];
+    }
+
+    // If still no match, try conservative substring (min 3 chars, ticker only)
+    if (matches.length === 0 && normalizedLookup.length >= 3) {
       for (const [key, entries] of tickers) {
-        if (key.includes(normalizedQuery) || normalizedQuery.includes(key)) {
+        // Only match if the lookup key starts with or equals the ticker
+        // This prevents "0700.HK" matching "H" (Hyatt Hotels)
+        if (
+          key.length >= 2 &&
+          (key === normalizedLookup ||
+            (key.startsWith(normalizedLookup) &&
+              normalizedLookup.length >= key.length / 2))
+        ) {
           matches.push(...entries);
         }
       }
@@ -432,77 +546,60 @@ export const searchFilings = async (
         ok: false,
         query,
         reason: "no_results",
-        message: `No SEC EDGAR company found matching "${query}". The company may not be SEC-registered (e.g., A-share or HK-listed only).`,
+        message: entity.ok
+          ? `No SEC EDGAR filings found for ${entity.companyName} (${entity.ticker}). The company may not file with the SEC.`
+          : `No SEC EDGAR company found matching "${query}". The company may not be SEC-registered (e.g., A-share or HK-listed only).`,
       };
     }
 
-    // If multiple companies match, fetch filings for each
-    if (matches.length > 1 && matches.length <= 10) {
-      const allCandidates: FilingCandidate[] = [];
-      for (const match of matches.slice(0, 5)) {
-        const filings = await fetchCompanyFilings(match.cik_str);
-        allCandidates.push(...filings);
-      }
+    // ── Fetch filings for matched companies ──
+    const fetchTargets =
+      matches.length > 1 && matches.length <= 10
+        ? matches.slice(0, 5)
+        : [matches[0]!];
 
-      if (allCandidates.length === 0) {
+    const allCandidates: FilingCandidate[] = [];
+    for (const match of fetchTargets) {
+      const filings = await fetchCompanyFilings(match.cik_str);
+      allCandidates.push(...filings);
+    }
+
+    if (allCandidates.length === 0) {
+      return {
+        ok: false,
+        query,
+        reason: "no_results",
+        message: `Found ${matches.length} company/companies matching "${query}" but no financial filings available in EDGAR.`,
+      };
+    }
+
+    // ── Result validation: filter out filings that don't match the resolved entity ──
+    let validated = allCandidates;
+    if (resolvedName) {
+      const normalizedResolvedName = resolvedName.toUpperCase();
+      validated = allCandidates.filter((f) => {
+        const filingCompany = f.companyName.toUpperCase();
+        // Exact match or filing company contains the resolved name
+        return (
+          filingCompany === normalizedResolvedName ||
+          filingCompany.includes(normalizedResolvedName) ||
+          normalizedResolvedName.includes(filingCompany)
+        );
+      });
+
+      // If validation filtered everything, the entity is likely non-SEC
+      if (validated.length === 0) {
         return {
           ok: false,
           query,
           reason: "no_results",
-          message: `Found ${matches.length} company/companies matching "${query}" but no financial filings available.`,
+          message: `${resolvedName} (${resolvedTicker ?? query}) does not appear to file with SEC EDGAR. The company may be listed on a non-US exchange.`,
         };
       }
-
-      // Apply date filters
-      let filtered = allCandidates;
-      if (startYear) {
-        filtered = filtered.filter(
-          (f) => parseInt(f.filingDate.substring(0, 4)) >= startYear,
-        );
-      }
-      if (endYear) {
-        filtered = filtered.filter(
-          (f) => parseInt(f.filingDate.substring(0, 4)) <= endYear,
-        );
-      }
-      if (forms && forms.length > 0) {
-        const formSet = new Set(forms);
-        filtered = filtered.filter((f) => formSet.has(f.form));
-      }
-
-      return {
-        ok: true,
-        query,
-        candidates: filtered.slice(0, limit),
-        totalResults: filtered.length,
-        source: "sec_edgar",
-      };
     }
 
-    // Single match — fetch filings
-    const company = matches[0];
-    if (!company) {
-      return {
-        ok: false,
-        query,
-        reason: "no_results",
-        message: `No SEC EDGAR company found matching "${query}".`,
-      };
-    }
-
-    const filings = await fetchCompanyFilings(company.cik_str);
-
-    if (filings.length === 0) {
-      return {
-        ok: false,
-        query,
-        reason: "no_results",
-        message: `Found ${company.title} (CIK ${company.cik_str}) but no financial filings available in EDGAR.`,
-      };
-    }
-
-    // Apply date filters
-    let filtered = filings;
+    // Apply date and form filters
+    let filtered = validated;
     if (startYear) {
       filtered = filtered.filter(
         (f) => parseInt(f.filingDate.substring(0, 4)) >= startYear,
@@ -516,6 +613,15 @@ export const searchFilings = async (
     if (forms && forms.length > 0) {
       const formSet = new Set(forms);
       filtered = filtered.filter((f) => formSet.has(f.form));
+    }
+
+    if (filtered.length === 0) {
+      return {
+        ok: false,
+        query,
+        reason: "no_results",
+        message: `Found ${validated.length} filing(s) for ${resolvedName ?? query} but none match the specified filters (forms/date range).`,
+      };
     }
 
     return {
