@@ -24,6 +24,7 @@ import {
   sanitizeFinancialMetrics,
   cachedResolveEntity,
 } from "./data-sources";
+import { cachedSearchFilings, cachedFetchFilingContent } from "./filings";
 import { buildIndustryUniverse } from "./industry";
 import { formatImaKnowledgeForPrompt, searchImaKnowledge } from "./knowledge";
 
@@ -1315,6 +1316,326 @@ reportRoute.post(
       mode: "industry",
       universe,
       constituents: constituentFinancials,
+    });
+  },
+);
+
+// ─── GET /api/report/filings/search ─────────────────────────────────────────
+// Search SEC EDGAR for company filings.
+reportRoute.get(
+  "/filings/search",
+  zValidator(
+    "query",
+    z.object({
+      query: z.string().min(1).max(120),
+      forms: z.string().optional(),
+      startYear: z.coerce.number().optional(),
+      endYear: z.coerce.number().optional(),
+      limit: z.coerce.number().optional(),
+    }),
+  ),
+  async (c) => {
+    const { query, forms, startYear, endYear, limit } = c.req.valid("query");
+
+    const formList = forms
+      ? forms.split(",").map((f) => f.trim().toUpperCase())
+      : undefined;
+
+    const result = await cachedSearchFilings({
+      query,
+      forms: formList,
+      startYear,
+      endYear,
+      limit,
+    });
+
+    return c.json(result, result.ok ? 200 : 422);
+  },
+);
+
+// ─── POST /api/report/filing/analyze ────────────────────────────────────────
+// Analyze a specific SEC filing with page-number anchors.
+const filingAnalyzeSchema = z.object({
+  ticker: z.string().min(1).max(10),
+  filingUrl: z.string().url(),
+  language: z.enum(["zh", "en"]).default("en"),
+});
+
+reportRoute.post(
+  "/filing/analyze",
+  zValidator("json", filingAnalyzeSchema),
+  async (c) => {
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    const user = session?.user ?? null;
+
+    if (!user) {
+      throw new HTTPException(401, { message: "Authentication required." });
+    }
+
+    let isPaidUser = false;
+    try {
+      const customers = await getCustomersWithPurchasesByReferenceId(user.id);
+      for (const customer of customers) {
+        for (const subscription of customer.subscriptions) {
+          if (
+            ACTIVE_SUBSCRIPTION_STATUSES.includes(
+              subscription.status as never,
+            ) &&
+            PAID_VARIANTS.has(subscription.variantId)
+          ) {
+            isPaidUser = true;
+            break;
+          }
+        }
+        if (isPaidUser) break;
+      }
+    } catch {
+      // Treat billing lookup failures as free access.
+    }
+
+    if (!isPaidUser) {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      try {
+        const countResult = await db
+          .select({ value: count() })
+          .from(aiUsageLog)
+          .where(
+            and(
+              eq(aiUsageLog.userId, user.id),
+              eq(aiUsageLog.feature, "report"),
+              gte(aiUsageLog.createdAt, monthStart),
+            ),
+          );
+
+        if ((countResult[0]?.value ?? 0) >= FREE_REPORT_MONTHLY_LIMIT) {
+          throw new HTTPException(429, {
+            message: `Free plan limit reached (${FREE_REPORT_MONTHLY_LIMIT} reports/month). Upgrade to Pro for unlimited reports.`,
+          });
+        }
+      } catch (error) {
+        if (error instanceof HTTPException) throw error;
+      }
+    }
+
+    const { ticker, filingUrl, language } = c.req.valid("json");
+    const symbol = ticker.toUpperCase();
+
+    // Safety: only allow SEC URLs
+    if (
+      !filingUrl.startsWith("https://www.sec.gov/") &&
+      !filingUrl.startsWith("https://efts.sec.gov/") &&
+      !filingUrl.startsWith("https://data.sec.gov/")
+    ) {
+      throw new HTTPException(422, {
+        message: "Only SEC EDGAR URLs are allowed.",
+      });
+    }
+
+    // Fetch filing content
+    const content = await cachedFetchFilingContent(filingUrl);
+
+    if (!content.ok) {
+      return c.json(
+        {
+          ok: false,
+          reason: content.reason,
+          message: content.message,
+        },
+        422,
+      );
+    }
+
+    if (content.isScanned) {
+      return c.json(
+        {
+          ok: false,
+          reason: "scanned_pdf",
+          message:
+            "This filing appears to be a scanned PDF (image-based). OCR processing is required before analysis. Please use an OCR service to convert the document to text first.",
+        },
+        422,
+      );
+    }
+
+    // Build page context for the prompt (limit to ~30K chars to stay within context)
+    const PAGE_CONTEXT_LIMIT = 30_000;
+    let pageContext = "";
+    let charCount = 0;
+    for (const page of content.pages) {
+      const pageHeader = `\n--- PAGE ${page.pageNumber} ---\n`;
+      if (
+        charCount + pageHeader.length + page.text.length >
+        PAGE_CONTEXT_LIMIT
+      ) {
+        const remaining = PAGE_CONTEXT_LIMIT - charCount - pageHeader.length;
+        if (remaining > 200) {
+          pageContext += pageHeader + page.text.slice(0, remaining);
+        }
+        pageContext += `\n--- [TRUNCATED: ${content.pages.length - page.pageNumber} more pages omitted] ---`;
+        break;
+      }
+      pageContext += pageHeader + page.text;
+      charCount += pageHeader.length + page.text.length;
+    }
+
+    const model = getReportModelConfig();
+
+    const systemPrompt = `You are a professional equity research analyst specializing in SEC filing analysis.
+Analyze the provided filing content and extract key insights.
+Every numeric claim MUST include a page number reference in dataPoint as "p.XX".
+If a number appears on page 5, cite "p.5" in the dataPoint field.
+If you cannot find a specific number in the filing, say so — do not invent.
+Output strict JSON only — no markdown fences.`;
+
+    const userPrompt = `Analyze this SEC filing for ${symbol}.
+
+Filing URL: ${filingUrl}
+Content type: ${content.contentType}
+Total pages: ${content.pages.length}
+
+FILING CONTENT (page-indexed):
+${pageContext}
+
+Return ONLY this JSON structure (all text in ${language === "zh" ? "Chinese" : "English"}):
+{
+  "companyName": "<company name from filing>",
+  "filingType": "<10-K, 10-Q, etc.>",
+  "periodEnding": "<fiscal period ending date>",
+  "executiveSummary": "<2-3 sentence overview>",
+  "keyChanges": [
+    {
+      "area": "<area of change>",
+      "change": "<what changed>",
+      "significance": "High" | "Medium" | "Low",
+      "dataPoint": "<page reference, e.g. p.35>"
+    }
+  ],
+  "financialHighlights": [
+    {
+      "metric": "<metric name>",
+      "value": "<numeric value>",
+      "period": "<period>",
+      "change": "<YoY or QoQ change>",
+      "dataPoint": "<page reference, e.g. p.12>"
+    }
+  ],
+  "riskFactors": [
+    {
+      "risk": "<risk description>",
+      "severity": "High" | "Medium" | "Low",
+      "dataPoint": "<page reference>"
+    }
+  ],
+  "managementDiscussion": "<2-3 sentences on MD&A key points>",
+  "topJudgments": [
+    {
+      "judgment": "<one falsifiable thesis sentence>",
+      "keyNumber": "<numeric anchor from filing>",
+      "wrongIf": "<numeric condition that invalidates this>",
+      "dataPoint": "<source: filing name + page, e.g. 10-K FY2025 p.35>"
+    }
+  ],
+  "monitorPanel": {
+    "schema_version": 1,
+    "monitors": [
+      {
+        "metric": "<metric>",
+        "current": "<current value from filing>",
+        "trigger": "<numeric trigger>",
+        "tolerance": "<tolerance or empty>",
+        "freq": "Quarterly" | "Event-driven",
+        "source": "<filing name + page>"
+      }
+    ]
+  },
+  "nextSteps": ["<action 1>", "<action 2>", "<action 3>"]
+}
+
+Hard rules:
+- Every numeric claim MUST cite a page number in dataPoint (e.g., "p.35").
+- If a number is not in the filing, do not include it.
+- Include exactly three topJudgments with numeric keyNumber, numeric wrongIf, and dataPoint with page reference.
+- Include monitorPanel.schema_version = 1 and 3-6 monitors.
+- Do not output target prices, buy/sell ratings, entry levels, stop levels, portfolio weights, or position sizing.
+`;
+
+    const fallbackText = JSON.stringify({
+      companyName: symbol,
+      filingType: "unknown",
+      periodEnding: "unknown",
+      executiveSummary: "Filing analysis failed validation. Rerun required.",
+      keyChanges: [],
+      financialHighlights: [],
+      riskFactors: [],
+      managementDiscussion: "Unavailable in degraded mode.",
+      topJudgments: [
+        {
+          judgment: "Filing analysis failed output validation.",
+          keyNumber: "1 failure",
+          wrongIf: "0 failures on rerun",
+          dataPoint: "N/A",
+        },
+        {
+          judgment: "Monitor panel schema preserved.",
+          keyNumber: "schema_version 1",
+          wrongIf: "schema_version != 1",
+          dataPoint: "N/A",
+        },
+        {
+          judgment: "Report should be rerun.",
+          keyNumber: "1 rerun needed",
+          wrongIf: "3 validated judgments",
+          dataPoint: "N/A",
+        },
+      ],
+      monitorPanel: {
+        schema_version: 1,
+        monitors: [
+          {
+            metric: "Validation status",
+            current: "Failed",
+            trigger: "Pass",
+            tolerance: "",
+            freq: "Event-driven",
+            source: "Validator",
+          },
+        ],
+      },
+      nextSteps: ["Rerun the analysis", "Check filing URL"],
+    });
+
+    return stream(c, async (s) => {
+      const result = await generateValidatedJson({
+        model,
+        system: systemPrompt,
+        prompt: userPrompt,
+        temperature: 0.3,
+        maxOutputTokens: REPORT_MAX_OUTPUT_TOKENS,
+        schema: financeReportOutputSchema,
+        label: "filing analysis",
+        fallbackText,
+      });
+
+      await s.write(result.text);
+
+      try {
+        const usage = result.usage;
+        const inputTokens = usage?.inputTokens ?? 0;
+        const outputTokens = usage?.outputTokens ?? 0;
+        await db.insert(aiUsageLog).values({
+          userId: user.id,
+          feature: "report",
+          model: getReportModelName(),
+          promptTokens: inputTokens,
+          completionTokens: outputTokens,
+          totalTokens: inputTokens + outputTokens,
+        });
+      } catch {
+        // ignore logging failures
+      }
     });
   },
 );
