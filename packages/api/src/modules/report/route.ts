@@ -1356,7 +1356,7 @@ reportRoute.get(
 // ─── POST /api/report/filing/analyze ────────────────────────────────────────
 // Analyze a specific SEC filing with page-number anchors.
 const filingAnalyzeSchema = z.object({
-  ticker: z.string().min(1).max(10),
+  ticker: z.string().min(1).max(120),
   filingUrl: z.string().url(),
   language: z.enum(["zh", "en"]).default("en"),
 });
@@ -1481,7 +1481,14 @@ reportRoute.post(
       charCount += pageHeader.length + page.text.length;
     }
 
-    const model = getReportModelConfig();
+    let model: ReturnType<typeof getReportModelConfig>;
+    try {
+      model = getReportModelConfig();
+    } catch {
+      throw new HTTPException(500, {
+        message: "Filing analysis is temporarily unavailable.",
+      });
+    }
 
     const systemPrompt = `You are a professional equity research analyst specializing in SEC filing analysis.
 Analyze the provided filing content and extract key insights.
