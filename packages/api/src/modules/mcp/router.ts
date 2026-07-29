@@ -94,7 +94,7 @@ const tools = [
   {
     name: "search_filings",
     description:
-      "Search SEC EDGAR for company filings (10-K, 10-Q, 20-F, 6-K). Returns real filing URLs — never fabricates links. Use this when the user asks for a company's annual report, quarterly filing, or any SEC document.",
+      "Search SEC EDGAR for US-listed company filings (10-K, 10-Q, 20-F, 6-K). Returns real filing URLs — never fabricates links. Only covers US-listed filers; non-US tickers (HK, A-share, etc.) are rejected with a clear reason. Use this when the user asks for a US company's annual report, quarterly filing, or any SEC document.",
     inputSchema: {
       type: "object",
       properties: {
@@ -128,7 +128,7 @@ const tools = [
   {
     name: "fetch_filing_content",
     description:
-      "Fetch and parse the content of an SEC EDGAR filing. Returns text with page indexing for page-number anchors. Returns isScanned=true for scanned PDFs (OCR required). Does NOT store full text (copyright).",
+      "Fetch and parse the content of an SEC EDGAR filing. Returns text with page indexing for page-number anchors. Returns isScanned=true for scanned PDFs (OCR required). Does NOT store full text (copyright). Only SEC URLs are accepted.",
     inputSchema: {
       type: "object",
       properties: {
