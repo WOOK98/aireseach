@@ -148,6 +148,7 @@ function buildFallbackReport(
           "Margins improve",
           "Free cash flow remains positive",
         ],
+        wrongIf: "Revenue growth falls below 10% or FCF margin turns negative.",
       },
       {
         scenario: "Base",
@@ -158,12 +159,15 @@ function buildFallbackReport(
           "Valuation holds current range",
           "Cash flow stays stable",
         ],
+        wrongIf: "Growth, margins, or cash flow break below current levels.",
       },
       {
         scenario: "Bear",
         probability: 20,
         keyMetric: "Growth slows or FCF margin turns negative",
         drivers: ["Growth slows", "Margins compress", "Multiples derate"],
+        wrongIf:
+          "Growth reaccelerates above 10% and FCF margin remains positive.",
       },
     ],
     roleBriefs: [
@@ -290,6 +294,7 @@ function normalizeReportPayload(
     },
     decisionBrief: payload.decisionBrief,
     scenarioMatrix: payload.scenarioMatrix,
+    tqs: payload.tqs,
     roleBriefs: payload.roleBriefs,
     watchlist: payload.watchlist,
     monitorPanel: monitorPanel?.success

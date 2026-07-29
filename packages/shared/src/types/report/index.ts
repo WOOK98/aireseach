@@ -74,6 +74,7 @@ export interface ReportData {
     judgment: string;
     keyNumber: string;
     wrongIf: string;
+    dataPoint?: string;
   }>;
   investmentThesis: string;
   sections: {
@@ -95,7 +96,18 @@ export interface ReportData {
     probability: number;
     keyMetric: string;
     drivers: string[];
+    wrongIf?: string;
   }>;
+  tqs?: {
+    score: number;
+    label?: string;
+    factors?: Array<{
+      name: string;
+      score: number;
+      rationale?: string;
+    }>;
+    disclaimer?: string;
+  };
   roleBriefs?: Array<{
     role: string;
     takeaway: string;

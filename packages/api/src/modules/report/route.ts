@@ -132,7 +132,7 @@ const getReportModelConfig = () => {
   if (!apiKey) {
     throw new HTTPException(500, {
       message:
-        "Finance report generation is not configured. Set OPENAI_API_KEY or DEEPSEEK_API_KEY.",
+        "Finance report generation is temporarily unavailable. Current metrics remain available.",
     });
   }
 
@@ -142,7 +142,7 @@ const getReportModelConfig = () => {
 
   if (invalidCharacter) {
     throw new HTTPException(500, {
-      message: `${providerName} API key contains an invalid character (${invalidCharacter}). Replace the Vercel environment variable with the full raw API key, not a shortened or masked value.`,
+      message: `${providerName} configuration is invalid. Current metrics remain available.`,
     });
   }
 
@@ -663,19 +663,22 @@ Return ONLY this JSON structure (all text in English):
       "scenario": "Bull",
       "probability": <number 0-100>,
       "keyMetric": "<numeric validation metric, not a price target>",
-      "drivers": ["<driver 1>", "<driver 2>"]
+      "drivers": ["<driver 1>", "<driver 2>"],
+      "wrongIf": "<numeric condition that would invalidate this scenario>"
     },
     {
       "scenario": "Base",
       "probability": <number 0-100>,
       "keyMetric": "<numeric validation metric, not a price target>",
-      "drivers": ["<driver 1>", "<driver 2>"]
+      "drivers": ["<driver 1>", "<driver 2>"],
+      "wrongIf": "<numeric condition that would invalidate this scenario>"
     },
     {
       "scenario": "Bear",
       "probability": <number 0-100>,
       "keyMetric": "<numeric validation metric, not a price target>",
-      "drivers": ["<driver 1>", "<driver 2>"]
+      "drivers": ["<driver 1>", "<driver 2>"],
+      "wrongIf": "<numeric condition that would invalidate this scenario>"
     }
   ],
   "roleBriefs": [
@@ -712,6 +715,7 @@ Return ONLY this JSON structure (all text in English):
 
 Hard rules:
 - Include exactly three topJudgments. Every judgment must have a numeric keyNumber, a numeric wrongIf condition, and a dataPoint field (source + period, e.g. "Company 10-K FY2025").
+- Include Bull/Base/Bear scenarioMatrix rows. Each scenario must include a numeric keyMetric and a numeric wrongIf invalidation condition. These are scenario quality checks, not price targets.
 - Include monitorPanel.schema_version = 1 and 3-6 monitorPanel.monitors rows. These rows are consumed by watchlist monitors and morning-brief checks.
 - Do not output target prices, buy/sell ratings, entry levels, stop levels, portfolio weights, or position sizing.
 - Conviction/thesis tier evaluates evidence quality only, not whether the user should transact.
