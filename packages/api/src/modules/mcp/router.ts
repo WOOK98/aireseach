@@ -10,6 +10,10 @@ import {
   cachedResolveEntity,
 } from "../report/data-sources";
 import {
+  cachedSearchFilings,
+  cachedFetchFilingContent,
+} from "../report/filings";
+import {
   buildIndustryUniverse,
   formatIndustryContext,
 } from "../report/industry";
@@ -85,6 +89,56 @@ const tools = [
         },
       },
       required: ["ticker"],
+    },
+  },
+  {
+    name: "search_filings",
+    description:
+      "Search SEC EDGAR for company filings (10-K, 10-Q, 20-F, 6-K). Returns real filing URLs — never fabricates links. Use this when the user asks for a company's annual report, quarterly filing, or any SEC document.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            'Company name or ticker (e.g., "NVDA", "NVIDIA", "Alibaba").',
+        },
+        forms: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            'Filter by form types. Common: ["10-K"] for annual, ["10-Q"] for quarterly, ["20-F"] for foreign private issuer. Default: all report forms.',
+        },
+        startYear: {
+          type: "number",
+          description: "Start year for date range filter (e.g., 2023).",
+        },
+        endYear: {
+          type: "number",
+          description: "End year for date range filter (e.g., 2025).",
+        },
+        limit: {
+          type: "number",
+          description: "Max results to return (default: 20).",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "fetch_filing_content",
+    description:
+      "Fetch and parse the content of an SEC EDGAR filing. Returns text with page indexing for page-number anchors. Returns isScanned=true for scanned PDFs (OCR required). Does NOT store full text (copyright).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description:
+            "Filing URL from search_filings results. Must be a real SEC URL — do not fabricate.",
+        },
+      },
+      required: ["url"],
     },
   },
   {
@@ -241,6 +295,52 @@ const callTool = async (params: ToolCallParams) => {
           ? { technicalContext: formatTechnicalContext(data) }
           : {}),
       });
+    }
+
+    case "search_filings": {
+      const query = getStringArgument(args, "query");
+      if (!query) throw new Error("search_filings requires query.");
+
+      const forms = Array.isArray(args.forms)
+        ? (args.forms as string[]).filter((f) => typeof f === "string")
+        : undefined;
+      const startYear =
+        typeof args.startYear === "number" ? args.startYear : undefined;
+      const endYear =
+        typeof args.endYear === "number" ? args.endYear : undefined;
+      const limit = typeof args.limit === "number" ? args.limit : undefined;
+
+      return textContent(
+        await cachedSearchFilings({
+          query,
+          forms,
+          startYear,
+          endYear,
+          limit,
+        }),
+      );
+    }
+
+    case "fetch_filing_content": {
+      const url = getStringArgument(args, "url");
+      if (!url) throw new Error("fetch_filing_content requires url.");
+
+      // Safety: only allow SEC URLs to prevent SSRF
+      if (
+        !url.startsWith("https://www.sec.gov/") &&
+        !url.startsWith("https://efts.sec.gov/") &&
+        !url.startsWith("https://data.sec.gov/")
+      ) {
+        return textContent({
+          ok: false,
+          url,
+          reason: "invalid_url",
+          message:
+            "Only SEC EDGAR URLs are allowed (www.sec.gov, efts.sec.gov, data.sec.gov).",
+        });
+      }
+
+      return textContent(await cachedFetchFilingContent(url));
     }
 
     case "get_etf_holdings": {
