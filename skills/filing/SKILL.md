@@ -68,6 +68,7 @@ When the user provides a company name or ticker:
 Search SEC EDGAR for company filings.
 
 **Parameters:**
+
 - `query` (string, required): Company name or ticker
 - `forms` (string[]): Filter by form types, e.g. `["10-K"]`, `["10-Q"]`
 - `startYear` / `endYear` (number): Date range filter
@@ -77,6 +78,7 @@ Search SEC EDGAR for company filings.
 `{ ok: false, reason, message }`
 
 For non-US queries, the response includes an exchange hint:
+
 ```
 { ok: false, reason: "no_results",
   message: "\"0700.HK\" is a Hong Kong-listed ticker. SEC EDGAR only
@@ -88,6 +90,7 @@ For non-US queries, the response includes an exchange hint:
 Fetch and parse a filing's content with page indexing.
 
 **Parameters:**
+
 - `url` (string, required): Filing URL from `search_filings` (SEC only)
 
 **Returns:** `{ ok: true, text, pages[], isScanned, contentType }` or
@@ -109,6 +112,7 @@ SOURCE: SEC EDGAR (p.1–87)
 ### 2. Key Changes
 
 3–5 significant changes from the filing, each with:
+
 - What changed
 - Why it matters
 - Page reference (e.g., "p.35")
@@ -116,6 +120,7 @@ SOURCE: SEC EDGAR (p.1–87)
 ### 3. Financial Highlights
 
 Key metrics extracted from the filing, each with:
+
 - Metric name + value + period
 - YoY/QoQ change
 - Page reference
@@ -123,6 +128,7 @@ Key metrics extracted from the filing, each with:
 ### 4. Three Falsifiable Judgments
 
 Exactly three `topJudgments`, each with:
+
 - `judgment` — one falsifiable thesis sentence
 - `keyNumber` — numeric anchor from the filing
 - `wrongIf` — numeric condition that invalidates the judgment
@@ -171,6 +177,7 @@ Top judgments from filing analysis are logged to the L3 Ledger via
 ## Scanned PDF Handling
 
 If `isScanned: true`:
+
 - Do NOT attempt to analyze the content
 - Return: "This filing is a scanned PDF (image-based). OCR processing is
   required to extract text. Please use an OCR service to convert the

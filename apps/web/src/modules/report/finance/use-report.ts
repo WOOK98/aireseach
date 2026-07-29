@@ -51,7 +51,8 @@ export type ResearchMode =
   | "earnings"
   | "competition"
   | "risk"
-  | "poc";
+  | "poc"
+  | "filings";
 
 const monitorPanelSchema = z.object({
   schema_version: z.literal(1),
