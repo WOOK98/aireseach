@@ -1,0 +1,53 @@
+# Editorial Preflight Constraints
+#
+# 内容生产的机器可读约束。写作前读取，而不是成稿后补救。
+# 与产品红线同源——产品怎么要求报告，内容就怎么要求文章。
+#
+# 用法：Codex 承接改写任务时，先读本文件，再动笔。
+# 审查方（Claude）postflight 时按同一份文件核对，避免两套标准。
+
+version: 1
+updated: 2026-07-30
+
+prohibited:
+  - id: target_price
+    rule: 不得出现目标价、目标价区间、价格预测
+    why: 产品红线；launch 文案公开承诺 "invalidation conditions instead of price targets"
+  - id: buy_sell_rating
+    rule: 不得出现买入/卖出/持有、增持/减持、OW/N/UW 类评级
+    why: 同上；conviction tier 与 TQS 是替代物，且必须注明评的是论点质量
+  - id: position_sizing
+    rule: 不得给出仓位、配置比例、加减仓建议
+  - id: vendor_names
+    rule: 数据供应商名不出现在面向读者的文本
+    why: 红线⑦
+  - id: env_and_paths
+    rule: 不出现环境变量名、内部路径、内部服务名
+    why: 红线⑥
+  - id: channel_overclaim
+    rule: 不得声称已上架任何官方插件目录
+    why: 社区市场审核中；OpenAI 目录未通过。正确表述见 promo/distribution-checklist.md
+  - id: unsupported_forecast
+    rule: 无来源的前瞻性断言不得写成事实
+
+required:
+  - id: numeric_period_labels
+    rule: 每个数字带期标（Q1 FY26 / TTM / as of YYYY-MM-DD）
+  - id: source_for_each_key_number
+    rule: 每个关键数字可追溯到来源；filing 类须带页码锚点
+  - id: fact_inference_separation
+    rule: 事实 / 引述他人观点 / 本文推断，三者措辞上可区分
+  - id: invalidation_conditions
+    rule: 有判断就有失效条件——"什么情况下这个说法不成立"
+  - id: disclaimer
+    rule: 收尾注明决策支持、非投资建议
+  - id: data_recency_note
+    rule: 注明数据截止日期，提示发布前复核
+
+# 事实/数字的搬运规则：源材料里被 withheld 的字段，内容里同样不得出现
+inherit_from_report:
+  - withheld_fields_stay_withheld
+  - landing_rate_below_threshold_means_do_not_publish_that_claim
+
+# 渠道无关母稿优先：先写 canonical，再按渠道编译，不得以某平台版本直接改投另一平台
+canonical_first: true
