@@ -113,7 +113,7 @@ export const fetchYahooSearchCandidates = async (
   );
 };
 
-const fetchTickerMeta = async (
+export const fetchTickerMeta = async (
   ticker: string,
 ): Promise<YahooChartMeta | null> => {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=5d`;
