@@ -17,14 +17,14 @@ The user does not pick lenses — every Deep Dive includes all of them. Each
 lens has a methodology file in `references/`; read the relevant file(s)
 before writing that section.
 
-| # | Section | Reference file | Target length |
-|---|---------|----------------|---------------|
-| 1 | Supply Chain & Value Flow | `references/supply-chain.md` | 300–500 words |
-| 2 | Fundamentals | `references/fundamentals.md` | 250–400 words |
-| 3 | Macro Context | `references/macro.md` | 150–300 words |
-| 4 | Technicals | `references/technicals.md` | 150–250 words |
-| 5 | Sentiment & Positioning | `references/sentiment.md` | 150–250 words |
-| 6 | Risk Matrix & Conviction | `references/risk-matrix.md` | 250–400 words |
+| #   | Section                   | Reference file               | Target length |
+| --- | ------------------------- | ---------------------------- | ------------- |
+| 1   | Supply Chain & Value Flow | `references/supply-chain.md` | 300–500 words |
+| 2   | Fundamentals              | `references/fundamentals.md` | 250–400 words |
+| 3   | Macro Context             | `references/macro.md`        | 150–300 words |
+| 4   | Technicals                | `references/technicals.md`   | 150–250 words |
+| 5   | Sentiment & Positioning   | `references/sentiment.md`    | 150–250 words |
+| 6   | Risk Matrix & Conviction  | `references/risk-matrix.md`  | 250–400 words |
 
 ## Workflow
 
@@ -135,7 +135,7 @@ primary constituent table, run one expansion pass:
    pull real multiples and add a **cross-market valuation gap** table:
    same-layer US peer vs A/H peer, same multiple, both period-labeled.
    State the gap as a fact ("trades at 18x TTM vs US peer 45x, a 60%
-   discount") and explain the *structural reasons* for it (liquidity,
+   discount") and explain the _structural reasons_ for it (liquidity,
    capital controls, governance premium, index inclusion) — this is
    analysis, not a rating.
 3. Never write "undervalued, should buy". The compliant form is:
@@ -150,17 +150,17 @@ primary constituent table, run one expansion pass:
 Produce:
 
 (a) **Value chain map** of the industry (Lens 1 methodology applied to the
-    sector) — upstream, midstream, downstream layers.
+sector) — upstream, midstream, downstream layers.
 (b) **Constituent table**: key LISTED players per chain layer with tickers,
-    exchanges, market caps, and (when available) avg portfolio weight and
-    ETF consensus.
+exchanges, market caps, and (when available) avg portfolio weight and
+ETF consensus.
 (c) **Bottleneck analysis**: which layers show bottleneck dynamics
-    (sole-source, pricing power, small % of downstream BOM).
+(sole-source, pricing power, small % of downstream BOM).
 (d) **Cross-market valuation gap** (when A/H peers resolve in the data
-    layer): same-layer, same-multiple, period-labeled comparison with
-    structural discount/premium reasons.
+layer): same-layer, same-multiple, period-labeled comparison with
+structural discount/premium reasons.
 (e) **Deep Dive offer**: suggest 2–3 constituents worth a full six-lens
-    Deep Dive, with a one-line reason for each.
+Deep Dive, with a one-line reason for each.
 
 ### Hard rules for Industry Mode
 
@@ -218,10 +218,11 @@ length, plus the one-line disclaimer. Valid focus values: `supply-chain`,
      evidence completeness and logical closure, not whether to buy, sell,
      hold, size, or allocate.
   8. **Disclaimer**.
+
 - Every quantitative claim gets a date or period attached ("Q1 FY26",
   "as of 2026-07-03"). Distinguish facts from estimates from opinion.
-- Close with one line: *Decision-support analysis, not financial advice.
-  Verify prices and fundamentals before acting.*
+- Close with one line: _Decision-support analysis, not financial advice.
+  Verify prices and fundamentals before acting._
 
 ## Hard rules
 

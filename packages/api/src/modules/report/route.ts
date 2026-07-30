@@ -19,7 +19,6 @@ import { db } from "@workspace/db/server";
 import {
   SHARED_HARD_RULES,
   MODE_PERSPECTIVES,
-  type AnalysisMode,
 } from "@workspace/shared/skill-contract";
 
 import { env } from "../../env";
@@ -549,8 +548,7 @@ Style: data-driven (cite actual figures), balanced bull/bear, professional yet r
 Use a solution-consulting workflow: decision brief first, then scenarios, role-based takeaways, monitorable metrics, and next actions.
 Output strict JSON only — no markdown fences.`;
 
-    const modeConfig =
-      MODE_PERSPECTIVES[mode] ?? MODE_PERSPECTIVES.snapshot;
+    const modeConfig = MODE_PERSPECTIVES[mode] ?? MODE_PERSPECTIVES.snapshot;
 
     const userPrompt = `
 Analyze ${m.companyName} (${ticker}) and generate a research report based on the following REAL financial data:
