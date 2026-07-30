@@ -14,7 +14,7 @@ import { resolve } from "node:path";
 const hasSkillMirror = (root: string): boolean =>
   existsSync(resolve(root, "skills", "deep-dive", "SKILL.md"));
 
-const resolveRepoRoot = (): string => {
+const resolveRepoRoot = (): string | null => {
   const importMetaDir =
     typeof import.meta.dirname === "string" ? import.meta.dirname : undefined;
   const candidates = [
@@ -23,15 +23,8 @@ const resolveRepoRoot = (): string => {
     importMetaDir ? resolve(importMetaDir, "../../..") : undefined,
   ].filter((candidate): candidate is string => Boolean(candidate));
 
-  const repoRoot = candidates.find(hasSkillMirror);
-  if (!repoRoot) {
-    throw new Error("Unable to locate skill mirror contract.");
-  }
-
-  return repoRoot;
+  return candidates.find(hasSkillMirror) ?? null;
 };
-
-const REPO_ROOT = resolveRepoRoot();
 
 const stripMirrorHeader = (text: string): string =>
   text
@@ -41,18 +34,59 @@ const stripMirrorHeader = (text: string): string =>
     )
     .trim();
 
-const loadSkill = (skillName: string): string => {
-  const path = resolve(REPO_ROOT, "skills", skillName, "SKILL.md");
-  return stripMirrorHeader(readFileSync(path, "utf-8"));
+const loadSkill = (skillName: string): string | null => {
+  const repoRoot = resolveRepoRoot();
+  if (!repoRoot) return null;
+  try {
+    const path = resolve(repoRoot, "skills", skillName, "SKILL.md");
+    return stripMirrorHeader(readFileSync(path, "utf-8"));
+  } catch {
+    return null;
+  }
 };
+
+// ── Built-in fallback methodology (used when skill mirrors not available) ───
+// Minimal version — enough to produce valid output, not a replacement for the
+// full skill. Production builds should inline the full skill at build time.
+const FALLBACK_DEEP_DIVE = `
+# Deep Dive — Six-Lens Equity Research Report
+
+Produce ONE integrated report covering ALL SIX lenses: Supply Chain,
+Fundamentals, Macro, Technicals, Sentiment, and Risk Matrix.
+
+## Hard Rules
+- Resolve input to exactly ONE verified listed entity before ANY analysis.
+- Never fabricate financial figures. If unavailable, say so.
+- Never output target prices, buy/sell ratings, or portfolio instructions.
+- Reports end with invalidation conditions, not price targets.
+- Every quantitative claim gets a date or period attached.
+`.trim();
+
+const FALLBACK_FILING = `
+# Filing Analysis — SEC EDGAR
+
+Search and analyze SEC filings for the resolved entity.
+Use EDGAR full-text search. Cite filing date, form type, and page anchors.
+`.trim();
 
 // ── Canonical methodology ────────────────────────────────────────────────────
 
+const _deepDive = loadSkill("deep-dive");
+const _filing = loadSkill("filing");
+
+if (!_deepDive || !_filing) {
+  console.warn(
+    "[skill-contract] Skill mirrors not found in serverless environment. " +
+      "Using built-in fallback methodology. " +
+      "This is a degraded mode — inline skills at build time for production.",
+  );
+}
+
 /** Full deep-dive skill — six-lens research report methodology */
-export const DEEP_DIVE_METHODOLOGY = loadSkill("deep-dive");
+export const DEEP_DIVE_METHODOLOGY = _deepDive ?? FALLBACK_DEEP_DIVE;
 
 /** Filing skill — SEC EDGAR search & analysis methodology */
-export const FILING_METHODOLOGY = loadSkill("filing");
+export const FILING_METHODOLOGY = _filing ?? FALLBACK_FILING;
 
 // ── Shared constraints (extracted from skill, used by all modes) ─────────────
 
