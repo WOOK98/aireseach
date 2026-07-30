@@ -45,9 +45,9 @@ scripts/redline-wordlist.txt
 
 Both CI enforcement paths MUST read from this same file:
 
-| Path | Mechanism | Reads from |
-|------|-----------|------------|
-| GitHub Actions (Redline grep) | `scripts/redline-grep.sh` | `scripts/redline-wordlist.txt` |
+| Path                             | Mechanism                 | Reads from                     |
+| -------------------------------- | ------------------------- | ------------------------------ |
+| GitHub Actions (Redline grep)    | `scripts/redline-grep.sh` | `scripts/redline-wordlist.txt` |
 | Playwright smoke (`VENDOR_LEAK`) | `e2e/vendor-leak.spec.ts` | `scripts/redline-wordlist.txt` |
 
 **Never maintain separate wordlists.** Adding a blocked term to one gate but not
@@ -71,6 +71,7 @@ The wordlist applies to **user-visible copy** (UI text, prompt templates shipped
 to users, API response messages, error messages displayed to users).
 
 **Exempt from the wordlist:**
+
 - Server-side function names (`cachedFetchYahooFinance`, `searchImaKnowledge`)
 - Environment variable names (`YAHOO_API_KEY`)
 - Internal type names, interfaces, comments
@@ -85,18 +86,56 @@ If yes → blocked. If no → exempt.
 
 User-visible text MUST NOT name data suppliers. Use neutral alternatives:
 
-| ❌ Blocked | ✅ Replacement |
-|-----------|---------------|
-| "Yahoo Finance" | "market data provider" / "the data source" |
-| "Yahoo returns null" | "the data source returns null" / "data unavailable" |
-| "sourced from Yahoo Finance" | "sourced from market data search" |
-| "hosted DeepSeek" | "the hosted model" / "the analysis engine" |
-| "unlimited Jina searches" | "unlimited web searches" |
+| ❌ Blocked                   | ✅ Replacement                                      |
+| ---------------------------- | --------------------------------------------------- |
+| "Yahoo Finance"              | "market data provider" / "the data source"          |
+| "Yahoo returns null"         | "the data source returns null" / "data unavailable" |
+| "sourced from Yahoo Finance" | "sourced from market data search"                   |
+| "hosted DeepSeek"            | "the hosted model" / "the analysis engine"          |
+| "unlimited Jina searches"    | "unlimited web searches"                            |
 
 **Rationale:** Naming suppliers exposes infrastructure to users, creates
 support liability, and makes supplier changes a user-facing event.
 
 ---
+
+---
+
+## Rule 5: Honest Degradation Applies to Code Paths, Not Just Data
+
+We already require honest degradation for **data** — a number that cannot be
+verified is withheld, never faked. **The same rule governs code.** A dependency
+that cannot be loaded MUST degrade, not crash.
+
+**Never throw at module load.** A throw in module-level initialization takes
+down every route that transitively imports it, including routes that never use
+the failed dependency.
+
+| ❌ Wrong                                            | ✅ Required                                    |
+| --------------------------------------------------- | ---------------------------------------------- |
+| `const X = mustLoad()` throwing at module top level | Return `null`, degrade at the call site        |
+| Silent fallback that looks like success             | Fallback that is **labeled** in its own output |
+| `catch {}` swallowing the reason                    | `console.warn` with what failed and where      |
+
+**A fallback MUST announce itself.** Degraded output has to say it is degraded —
+in logs, and in the payload itself when that payload feeds a model or a user.
+A silent fallback is indistinguishable from working software, which is worse
+than a crash: the crash at least tells you.
+
+**Safety invariants survive degradation.** When the full contract cannot load,
+the hard rules (entity gate, no target prices, period labels, invalidation
+conditions) MUST still be enforced from an inlined constant. Degraded ≠ unsafe.
+
+**Incident of record (2026-07-30):** `skill-contract` resolved the repo root at
+module load and threw when `skills/` was absent. Because `packages/api/src/index.ts`
+imports `reportRoute`, which imports that module, the throw took down the entire
+API app — `/api/mcp` and `/api/report/*` returned 500 in production while page
+routes stayed 200, so page-level health checks looked fine. The serverless bundle
+never contained `skills/`, so every cold start failed. Root fix (build-time
+inlining) tracked in #67; incident in #68.
+
+**Enforcement:** Any module-level `throw`, `readFileSync`, or network call in a
+shared package is a review blocker. Move it behind a function with a fallback.
 
 ## Enforcement Checklist
 
@@ -107,11 +146,14 @@ Before any PR merge, verify:
 - [ ] Redline grep passes (wordlist check)
 - [ ] Playwright VENDOR_LEAK passes (same wordlist)
 - [ ] No supplier names in user-visible copy (manual review for new UI text)
+- [ ] No module-level throw / file read / network call in shared packages (Rule 5)
+- [ ] Every fallback labels itself in logs and in its own output (Rule 5)
 
 ---
 
 ## Version History
 
-| Date | Change |
-|------|--------|
-| 2026-07-30 | Initial directive. Codex PR #63 review prompted by OpenClaw #58 Redline ⑦ leak. |
+| Date       | Change                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------ |
+| 2026-07-30 | Initial directive. Codex PR #63 review prompted by OpenClaw #58 Redline ⑦ leak.                  |
+| 2026-07-30 | Rule 5 added after the P0 API outage (#68): honest degradation extended from data to code paths. |
