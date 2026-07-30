@@ -14,7 +14,7 @@ import { resolve } from "node:path";
 const hasSkillMirror = (root: string): boolean =>
   existsSync(resolve(root, "skills", "deep-dive", "SKILL.md"));
 
-const resolveRepoRoot = (): string => {
+const resolveRepoRoot = (): string | null => {
   const importMetaDir =
     typeof import.meta.dirname === "string" ? import.meta.dirname : undefined;
   const candidates = [
@@ -23,12 +23,11 @@ const resolveRepoRoot = (): string => {
     importMetaDir ? resolve(importMetaDir, "../../..") : undefined,
   ].filter((candidate): candidate is string => Boolean(candidate));
 
-  const repoRoot = candidates.find(hasSkillMirror);
-  if (!repoRoot) {
-    throw new Error("Unable to locate skill mirror contract.");
-  }
-
-  return repoRoot;
+  // Returns null instead of throwing: this module is imported at the top of
+  // the API app, so a throw here takes down EVERY route (2026-07-30 outage —
+  // /api/mcp and /api/report/* all 500'd because skills/ is not bundled into
+  // the serverless function). Degrade honestly instead of crashing.
+  return candidates.find(hasSkillMirror) ?? null;
 };
 
 const REPO_ROOT = resolveRepoRoot();
@@ -41,10 +40,49 @@ const stripMirrorHeader = (text: string): string =>
     )
     .trim();
 
+/**
+ * Emitted in place of the full methodology when the skill mirror cannot be
+ * read (e.g. serverless bundles that exclude skills/). The invariant hard
+ * rules are inlined below and remain in force — only the detailed per-lens
+ * methodology is missing, and the marker says so rather than pretending the
+ * contract loaded.
+ */
+const methodologyUnavailable = (skillName: string): string =>
+  [
+    `## ANALYSIS CONTRACT — REDUCED (${skillName} methodology unavailable in this environment)`,
+    "",
+    "The detailed methodology file could not be loaded. Apply the shared hard",
+    "rules below in full. Do not invent methodology detail to fill the gap —",
+    "if a step is undefined here, state what you could not apply.",
+  ].join("\n");
+
+/** Set when any skill fell back; surfaced via `isContractDegraded()`. */
+let contractDegraded = false;
+
 const loadSkill = (skillName: string): string => {
-  const path = resolve(REPO_ROOT, "skills", skillName, "SKILL.md");
-  return stripMirrorHeader(readFileSync(path, "utf-8"));
+  if (REPO_ROOT === null) {
+    contractDegraded = true;
+    console.warn(
+      `[skill-contract] skill mirror not found for "${skillName}" (cwd=${process.cwd()}); ` +
+        "falling back to shared hard rules only. Build-time inlining is tracked in issue #67.",
+    );
+    return methodologyUnavailable(skillName);
+  }
+  try {
+    const path = resolve(REPO_ROOT, "skills", skillName, "SKILL.md");
+    return stripMirrorHeader(readFileSync(path, "utf-8"));
+  } catch (error) {
+    contractDegraded = true;
+    console.warn(
+      `[skill-contract] failed to read "${skillName}" SKILL.md: ${String(error)}; ` +
+        "falling back to shared hard rules only.",
+    );
+    return methodologyUnavailable(skillName);
+  }
 };
+
+/** True when any methodology fell back — callers may surface this to logs. */
+export const isContractDegraded = (): boolean => contractDegraded;
 
 // ── Canonical methodology ────────────────────────────────────────────────────
 
