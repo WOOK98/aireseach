@@ -222,6 +222,9 @@ Mark data confidence: 🟢 Verified | 🟡 Partial | 🔴 Unverified
 - Professional, institutional tone — no emoji, no casual language
 - When data is unavailable, write "Data unavailable — [what to verify]" — never fabricate
 - Preserve source names, dates, and URLs
+
+## CROSS-MARKET A/H EXPANSION — ANTI-HALLUCINATION RULE
+When the methodology calls for A-share or H-share peer comparison, every listed peer MUST come from search results with a citable source (ETF holdings, filings, financial media). If no sourced A/H peer exists for a chain layer, write "No listed A-share/H-share pure play found in sources" — never fill the gap from memory. Fabricating peer names is the same failure as fabricating financial figures.
 """
 
 

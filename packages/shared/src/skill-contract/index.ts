@@ -54,6 +54,13 @@ export const SHARED_HARD_RULES = `
 7. **Never substitute** a similarly-named company. If data is missing for the resolved entity, say so.
 8. **Reports end with invalidation conditions**, not price targets.
 9. **Never present** the report as a trade instruction. Never execute, place, or cancel orders.
+10. **Cross-market A/H peers: sourced or stated absent.** When the methodology
+    calls for A-share or H-share peer comparison, every listed peer MUST come
+    from search results with a citable source (ETF holdings, filings, financial
+    media). If no sourced A/H peer exists for a chain layer, write
+    "No listed A-share/H-share pure play found in sources" — never fill the
+    gap from memory. **Fabricating peer names is the same failure as
+    fabricating financial figures (rule 2).**
 `.trim();
 
 /**
