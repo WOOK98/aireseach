@@ -1,18 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-declare const process: {
-  env: Record<string, string | undefined>;
-  cwd: () => string;
-};
-declare function require(id: string): Record<string, unknown>;
-
-/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
-const readFileSync = require("fs").readFileSync as (
-  p: string,
-  enc: string,
-) => string;
-const resolve = require("path").resolve as (...args: string[]) => string;
-
 /**
  * Loop Gate — Playwright smoke tests (五闸).
  *
@@ -54,22 +41,12 @@ async function gotoCompanyOrSkip(
 }
 
 /* ── Banned text patterns ── */
-// Single source of truth: scripts/redline-wordlist.txt (see docs/agents/DISCIPLINE.md Rule 3)
-function loadVendorLeakPattern(): RegExp {
-  try {
-    const wordlist = resolve(process.cwd(), "scripts/redline-wordlist.txt");
-    const patterns = readFileSync(wordlist, "utf-8")
-      .split("\n")
-      .filter((line: string) => line.trim() && !line.startsWith("#"))
-      .filter((p: string) => !p.includes("process\\.env")) // env pattern handled separately
-      .join("|");
-    return new RegExp(patterns, "i");
-  } catch {
-    // Fallback if wordlist not found (e.g. in isolated test env)
-    return /Yahoo\s*Finance|Yahoo API|DeepSeek API|Jina API|hosted DeepSeek|unlimited Jina/i;
-  }
-}
-const VENDOR_LEAK = loadVendorLeakPattern();
+// Source of truth: scripts/redline-wordlist.txt
+// The redline-grep CI job reads from the wordlist file directly.
+// This regex is the user-visible subset — keep in sync manually.
+// See: docs/agents/DISCIPLINE.md Rule 3
+const VENDOR_LEAK =
+  /Yahoo\s*Finance|Yahoo API|DeepSeek API|Jina API|hosted DeepSeek|unlimited Jina/i;
 const INTERNAL_PATH_LEAK =
   /\/api\/report|\/api\/mcp|process\.env\.[A-Z_]|__NEXT_DATA__.*"env"/;
 const FALLBACK_COPY = /(?<!\d)0\.0%/; // standalone 0.0% only, not 10.0% etc.
