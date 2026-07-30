@@ -47,8 +47,8 @@ Both CI enforcement paths MUST read from this same file:
 
 | Path                             | Mechanism                 | Reads from                     |
 | -------------------------------- | ------------------------- | ------------------------------ |
-| GitHub Actions (Redline grep)    | `scripts/redline-grep.sh` | `scripts/redline-wordlist.txt` |
-| Playwright smoke (`VENDOR_LEAK`) | `e2e/vendor-leak.spec.ts` | `scripts/redline-wordlist.txt` |
+| GitHub Actions (Redline grep)    | `.github/workflows/loop-gate.yml` (inline) | `scripts/redline-wordlist.txt` |
+| Playwright smoke (`VENDOR_LEAK`) | `tests/workflow/smoke.spec.ts` | `scripts/redline-wordlist.txt` |
 
 **Never maintain separate wordlists.** Adding a blocked term to one gate but not
 the other is a process failure.
