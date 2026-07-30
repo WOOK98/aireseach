@@ -429,6 +429,7 @@ export default async function CompanyPage({ params }: PageProps) {
         </section>
 
         <CompanyReportLayer
+          asOf={asOf}
           authenticated={Boolean(user)}
           companyName={data.entity.companyName}
           metrics={data.financials}

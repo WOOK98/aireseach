@@ -8,11 +8,30 @@
  * ONE EDIT TO THE SKILL = BOTH OUTPUTS CHANGE.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// Resolve from repo root — works in both dev (ts-node) and built (dist/)
-const REPO_ROOT = resolve(import.meta.dirname, "../../..");
+const hasSkillMirror = (root: string): boolean =>
+  existsSync(resolve(root, "skills", "deep-dive", "SKILL.md"));
+
+const resolveRepoRoot = (): string => {
+  const importMetaDir =
+    typeof import.meta.dirname === "string" ? import.meta.dirname : undefined;
+  const candidates = [
+    process.cwd(),
+    resolve(process.cwd(), "../.."),
+    importMetaDir ? resolve(importMetaDir, "../../..") : undefined,
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  const repoRoot = candidates.find(hasSkillMirror);
+  if (!repoRoot) {
+    throw new Error("Unable to locate skill mirror contract.");
+  }
+
+  return repoRoot;
+};
+
+const REPO_ROOT = resolveRepoRoot();
 
 const stripMirrorHeader = (text: string): string =>
   text
