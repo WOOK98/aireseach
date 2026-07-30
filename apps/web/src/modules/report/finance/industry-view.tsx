@@ -324,9 +324,10 @@ export function IndustryView({
         <div className="text-muted-foreground flex items-start gap-2 text-xs">
           <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-500" />
           <p>
-            A/H peers sourced from Yahoo Finance search, verified through entity
-            gate (live quote confirmation). Valuation gap comparisons use
-            EV/EBITDA and P/B (P/E withheld for A-shares — Yahoo returns null).
+            A/H peers are sourced from market-data search and verified through
+            the entity gate (live quote confirmation). Valuation gap comparisons
+            use EV/EBITDA and P/B; P/E is withheld for A-shares because the data
+            source returns no value.
           </p>
         </div>
       ) : (
