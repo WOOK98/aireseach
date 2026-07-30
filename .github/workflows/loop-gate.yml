@@ -53,7 +53,10 @@ jobs:
           # - VIBELOFT_AUTH_KEY — telemetry site token that the vendor
           #   contract requires to be emitted into public HTML; it is not a
           #   secret (approved by Wook, 2026-07-19).
-          if grep -nE 'Target price|Buy-Hold-Sell|hosted DeepSeek|unlimited Jina|process\.env\.[A-Z0-9_]*(KEY|SECRET|TOKEN)' "${files[@]}" \
+          # Read patterns from shared wordlist (single source of truth — see docs/agents/DISCIPLINE.md Rule 3)
+          wordlist="scripts/redline-wordlist.txt"
+          patterns=$(grep -Ev '^#|^$' "$wordlist" | paste -sd '|' -)
+          if grep -nE "$patterns" "${files[@]}" \
             | grep -v -e 'redline-allow:' -e 'process\.env\.VIBELOFT_AUTH_KEY'; then
             echo "Redline grep failed: banned wording or env/provider leakage found."
             exit 1

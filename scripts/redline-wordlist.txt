@@ -1,0 +1,23 @@
+# Redline Wordlist — Single Source of Truth
+# Both CI paths (GitHub Actions grep + Playwright VENDOR_LEAK) read from here.
+# One pattern per line. Comments start with #.
+#
+# Scope: USER-VISIBLE surface only (UI, prompts shipped to users, API messages).
+# Exempt: server-side function names, env vars, internal types, comments, logs.
+#
+# See: docs/agents/DISCIPLINE.md — Rule 3 & 4
+
+# Investment advice language
+Target price
+Buy-Hold-Sell
+
+# Supplier names — user-visible copy only
+Yahoo Finance
+Yahoo API
+DeepSeek API
+Jina API
+hosted DeepSeek
+unlimited Jina
+
+# Env/secret leakage (function names exempt — this catches process.env.*)
+process\.env\.[A-Z0-9_]*(KEY|SECRET|TOKEN)
