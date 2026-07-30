@@ -25,6 +25,7 @@
     "blogger:sync": "node scripts/blogger/publish.mjs --sync",
     "blogger:list": "node scripts/blogger/publish.mjs --list",
     "check:skill-mirrors": "node scripts/check-skill-mirrors.mjs",
+  "generate:skill-contract": "node scripts/generate-skill-contract.mjs",
     "with-env": "dotenv -c --"
   },
   "dependencies": {
