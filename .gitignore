@@ -50,3 +50,7 @@ knowledge/
 # Playwright test artifacts
 test-results/
 tests/workflow/playwright-report/
+
+# Test coverage artifacts (build output — never tracked)
+coverage.json
+coverage/
