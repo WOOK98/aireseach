@@ -45,10 +45,10 @@ scripts/redline-wordlist.txt
 
 Both CI enforcement paths MUST read from this same file:
 
-| Path | Mechanism | Reads from |
-|------|-----------|------------|
-| GitHub Actions (Redline grep) | `.github/workflows/loop-gate.yml` (redline-grep job) | `scripts/redline-wordlist.txt` |
-| Playwright smoke (`VENDOR_LEAK`) | `tests/workflow/smoke.spec.ts` | `scripts/redline-wordlist.txt` |
+| Path                             | Mechanism                                            | Reads from                     |
+| -------------------------------- | ---------------------------------------------------- | ------------------------------ |
+| GitHub Actions (Redline grep)    | `.github/workflows/loop-gate.yml` (redline-grep job) | `scripts/redline-wordlist.txt` |
+| Playwright smoke (`VENDOR_LEAK`) | `tests/workflow/smoke.spec.ts`                       | `scripts/redline-wordlist.txt` |
 
 **Never maintain separate wordlists.** Adding a blocked term to one gate but not
 the other is a process failure.
@@ -71,6 +71,7 @@ The wordlist applies to **user-visible copy** (UI text, prompt templates shipped
 to users, API response messages, error messages displayed to users).
 
 **Exempt from the wordlist:**
+
 - Server-side function names (`cachedFetchYahooFinance`, `searchImaKnowledge`)
 - Environment variable names (`YAHOO_API_KEY`)
 - Internal type names, interfaces, comments
@@ -85,13 +86,13 @@ If yes → blocked. If no → exempt.
 
 User-visible text MUST NOT name data suppliers. Use neutral alternatives:
 
-| ❌ Blocked | ✅ Replacement |
-|-----------|---------------|
-| "Yahoo Finance" | "market data provider" / "the data source" |
-| "Yahoo returns null" | "the data source returns null" / "data unavailable" |
-| "sourced from Yahoo Finance" | "sourced from market data search" |
-| "hosted DeepSeek" | "the hosted model" / "the analysis engine" |
-| "unlimited Jina searches" | "unlimited web searches" |
+| ❌ Blocked                   | ✅ Replacement                                      |
+| ---------------------------- | --------------------------------------------------- |
+| "Yahoo Finance"              | "market data provider" / "the data source"          |
+| "Yahoo returns null"         | "the data source returns null" / "data unavailable" |
+| "sourced from Yahoo Finance" | "sourced from market data search"                   |
+| "hosted DeepSeek"            | "the hosted model" / "the analysis engine"          |
+| "unlimited Jina searches"    | "unlimited web searches"                            |
 
 **Rationale:** Naming suppliers exposes infrastructure to users, creates
 support liability, and makes supplier changes a user-facing event.
@@ -112,6 +113,6 @@ Before any PR merge, verify:
 
 ## Version History
 
-| Date | Change |
-|------|--------|
+| Date       | Change                                                                          |
+| ---------- | ------------------------------------------------------------------------------- |
 | 2026-07-30 | Initial directive. Codex PR #63 review prompted by OpenClaw #58 Redline ⑦ leak. |
