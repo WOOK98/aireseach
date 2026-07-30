@@ -414,13 +414,13 @@ def build_report_request(request: ReportRequest):
     if report_mode == "jina_llm":
         request_jina_key = validate_header_value(
             clean_optional_text(request.jina_api_key),
-            "Jina API Key",
+            "Jina API Key",  # redline-allow: internal config label, not user-visible
         )
         search_context, search_warning = fetch_search_context(
             target,
             analysis_years,
             analysis_lens,
-            validate_header_value(request_jina_key or JINA_API_KEY, "Jina API Key"),
+            validate_header_value(request_jina_key or JINA_API_KEY, "Jina API Key"),  # redline-allow: internal config label, not user-visible
         )
     return (
         api_key,
