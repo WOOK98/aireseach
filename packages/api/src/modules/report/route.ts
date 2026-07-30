@@ -19,7 +19,6 @@ import { db } from "@workspace/db/server";
 import {
   SHARED_HARD_RULES,
   MODE_PERSPECTIVES,
-  type AnalysisMode,
 } from "@workspace/shared/skill-contract";
 
 import { env } from "../../env";
@@ -30,7 +29,7 @@ import {
   cachedResolveEntity,
 } from "./data-sources";
 import { cachedSearchFilings, cachedFetchFilingContent } from "./filings";
-import { buildIndustryUniverse } from "./industry";
+import { buildIndustryUniverse, expandWithAHPeers } from "./industry";
 import { formatImaKnowledgeForPrompt, searchImaKnowledge } from "./knowledge";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
@@ -549,8 +548,7 @@ Style: data-driven (cite actual figures), balanced bull/bear, professional yet r
 Use a solution-consulting workflow: decision brief first, then scenarios, role-based takeaways, monitorable metrics, and next actions.
 Output strict JSON only — no markdown fences.`;
 
-    const modeConfig =
-      MODE_PERSPECTIVES[mode] ?? MODE_PERSPECTIVES.snapshot;
+    const modeConfig = MODE_PERSPECTIVES[mode] ?? MODE_PERSPECTIVES.snapshot;
 
     const userPrompt = `
 Analyze ${m.companyName} (${ticker}) and generate a research report based on the following REAL financial data:
@@ -1252,9 +1250,9 @@ reportRoute.post(
     }
 
     const candidates = resolution.ok ? [] : resolution.candidates;
-    const universe = await buildIndustryUniverse(query, candidates);
+    const baseUniverse = await buildIndustryUniverse(query, candidates);
 
-    if (!universe) {
+    if (!baseUniverse) {
       return c.json({
         ok: false,
         mode: "industry",
@@ -1263,7 +1261,11 @@ reportRoute.post(
       });
     }
 
-    const topConstituents = universe.constituents.slice(0, 12);
+    // Cross-market A/H expansion: search → entity gate → add to universe
+    const universe = await expandWithAHPeers(baseUniverse);
+
+    // US constituents capped at 12; A/H peers capped at 6 (from expandWithAHPeers)
+    const topConstituents = universe.constituents;
     const financials = await Promise.allSettled(
       topConstituents.map(async (c) => {
         const raw = await cachedFetchYahooFinance(c.symbol);

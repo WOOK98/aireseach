@@ -13,6 +13,8 @@ export interface ThemeConstituent {
   name: string;
   avgWeightPct: number;
   heldByEtfs: number;
+  source: "etf" | "search";
+  exchange?: string;
   financials:
     | (FinancialMetrics & { _sanitization?: SanitizationReport })
     | null;

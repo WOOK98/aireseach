@@ -34,12 +34,23 @@ interface IndustryViewProps {
 function ConstituentRow({ c, rank }: { c: ThemeConstituent; rank: number }) {
   const f = c.financials;
   const hasData = f != null;
+  const isAH = c.source === "search";
 
   return (
-    <tr className="border-border/50 border-b last:border-0">
+    <tr
+      className={
+        "border-border/50 border-b last:border-0" +
+        (isAH ? " bg-blue-50/30 dark:bg-blue-950/10" : "")
+      }
+    >
       <td className="py-2 pr-3 text-xs">
         <span className="text-muted-foreground mr-1.5">{rank}.</span>
         <span className="font-mono font-semibold">{c.symbol}</span>
+        {isAH && (
+          <span className="ml-1 inline-flex items-center rounded bg-blue-100 px-1 py-0.5 text-[9px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+            {c.exchange ?? "A/H"}
+          </span>
+        )}
       </td>
       <td className="py-2 pr-3">
         <p className="max-w-[160px] truncate text-xs">{c.name}</p>
@@ -241,6 +252,10 @@ export function IndustryView({
     byCurrency.set(d.currency, group);
   }
 
+  // Split by source
+  const etfConstituents = constituents.filter((c) => c.source === "etf");
+  const ahConstituents = constituents.filter((c) => c.source === "search");
+
   return (
     <div className="space-y-6">
       {/* ETF Sources */}
@@ -263,8 +278,10 @@ export function IndustryView({
           ))}
         </div>
         <p className="text-muted-foreground mt-1.5 text-[10px]">
-          Universe as of {universe.asOf} · Top {constituents.length}{" "}
-          constituents by ETF consensus
+          Universe as of {universe.asOf} · {etfConstituents.length} ETF
+          constituents
+          {ahConstituents.length > 0 &&
+            ` + ${ahConstituents.length} A/H peers (search-sourced, entity-gate verified)`}
         </p>
       </div>
 
@@ -281,11 +298,20 @@ export function IndustryView({
           ))}
         </div>
       ) : (
-        <ConstituentTable
-          title="Theme Constituents"
-          icon={TrendingUp}
-          constituents={constituents}
-        />
+        <>
+          <ConstituentTable
+            title="Theme Constituents (ETF)"
+            icon={TrendingUp}
+            constituents={etfConstituents}
+          />
+          {ahConstituents.length > 0 && (
+            <ConstituentTable
+              title="Cross-Market A/H Peers"
+              icon={Globe}
+              constituents={ahConstituents}
+            />
+          )}
+        </>
       )}
 
       <Separator />
@@ -293,16 +319,25 @@ export function IndustryView({
       {/* Cross-market valuation comparison */}
       <ValuationDiffTable diffs={valuationDiffs} />
 
-      {/* Empty state for layers without A/H data */}
-      <div className="text-muted-foreground flex items-start gap-2 text-xs">
-        <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <p>
-          A/H stock expansion requires web search for cross-market supply chain
-          mapping. Layer-level valuation comparisons are available for
-          constituents with Yahoo Finance data. Cross-currency ratios are
-          automatically withheld when quote and reporting currencies differ.
-        </p>
-      </div>
+      {/* Info about A/H sourcing */}
+      {ahConstituents.length > 0 ? (
+        <div className="text-muted-foreground flex items-start gap-2 text-xs">
+          <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-500" />
+          <p>
+            A/H peers sourced from Yahoo Finance search, verified through entity
+            gate (live quote confirmation). Valuation gap comparisons use
+            EV/EBITDA and P/B (P/E withheld for A-shares — Yahoo returns null).
+          </p>
+        </div>
+      ) : (
+        <div className="text-muted-foreground flex items-start gap-2 text-xs">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <p>
+            No A-share/H-share peers found in search results for this theme.
+            Cross-market valuation comparison requires sourced A/H constituents.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
