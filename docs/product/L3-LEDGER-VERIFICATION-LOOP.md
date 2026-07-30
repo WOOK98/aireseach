@@ -43,11 +43,11 @@
 
 ```typescript
 // 四态结果，不是二态
-type VerificationOutcome = 
-  | "confirmed"           // 数据可获取 + wrongIf 条件未触发
-  | "invalidated"         // 数据可获取 + wrongIf 条件已触发
+type VerificationOutcome =
+  | "confirmed" // 数据可获取 + wrongIf 条件未触发
+  | "invalidated" // 数据可获取 + wrongIf 条件已触发
   | "needs_manual_review" // 数据不可获取 或 wrongIf 不可机器判定
-  | "insufficient_data";  // 数据源完全不可达
+  | "insufficient_data"; // 数据源完全不可达
 ```
 
 - 如果指标取不到 → `needs_manual_review`，不能是 `confirmed`
@@ -127,40 +127,40 @@ type VerificationOutcome =
 
 现存判断的 `wrongIf` 字段有三种形态：
 
-| 形态 | 示例 | 可机器判定？ | 处理 |
-|------|------|-------------|------|
-| **数字比较** | "Revenue growth drops below 8%" | ✅ | 自动核验 |
-| **区间/阈值** | "Gross margin falls below 65%" | ✅ | 自动核验 |
-| **复合条件** | "Revenue growth < 5% for 2 consecutive quarters" | ⚠️ 部分 | 需要历史数据 |
-| **定性描述** | "Management loses confidence" | ❌ | needs_manual_review |
-| **事件触发** | "Key customer churns" | ❌ | needs_manual_review |
+| 形态          | 示例                                             | 可机器判定？ | 处理                |
+| ------------- | ------------------------------------------------ | ------------ | ------------------- |
+| **数字比较**  | "Revenue growth drops below 8%"                  | ✅           | 自动核验            |
+| **区间/阈值** | "Gross margin falls below 65%"                   | ✅           | 自动核验            |
+| **复合条件**  | "Revenue growth < 5% for 2 consecutive quarters" | ⚠️ 部分      | 需要历史数据        |
+| **定性描述**  | "Management loses confidence"                    | ❌           | needs_manual_review |
+| **事件触发**  | "Key customer churns"                            | ❌           | needs_manual_review |
 
 **解析策略（v1 规则引擎）：**
 
 ```typescript
 interface ParsedCondition {
-  metric: string;        // "revenueGrowthYoy", "grossMargin", etc.
+  metric: string; // "revenueGrowthYoy", "grossMargin", etc.
   operator: "<" | ">" | "<=" | ">=" | "==" | "!=";
-  threshold: number;     // 8, 65, etc.
-  unit?: string;         // "%", "$B", etc.
-  duration?: string;     // "2 consecutive quarters"
+  threshold: number; // 8, 65, etc.
+  unit?: string; // "%", "$B", etc.
+  duration?: string; // "2 consecutive quarters"
   machineVerifiable: boolean;
 }
 
-function parseWrongIf(wrongIf: string, metric?: string): ParsedCondition | null {
+function parseWrongIf(
+  wrongIf: string,
+  metric?: string,
+): ParsedCondition | null {
   // 1. 尝试提取数字比较模式
   //    "drops below 8%" → { operator: "<", threshold: 8, unit: "%" }
   //    "falls below 65%" → { operator: "<", threshold: 65, unit: "%" }
   //    "exceeds 50%" → { operator: ">", threshold: 50, unit: "%" }
-  
   // 2. 尝试提取 metric 映射
   //    如果 judgment 有 metric 字段，直接使用
   //    否则从 wrongIf 文本中推断（"revenue growth" → revenueGrowthYoy）
-  
   // 3. 判断可判定性
   //    有明确数字 + 有 metric 映射 = machineVerifiable: true
   //    纯定性描述 = machineVerifiable: false
-  
   // 4. 返回 null 表示无法解析
 }
 ```
@@ -180,10 +180,14 @@ function parseWrongIf(wrongIf: string, metric?: string): ParsedCondition | null 
  * 核验结果
  */
 export interface VerificationOutcome {
-  result: "confirmed" | "invalidated" | "needs_manual_review" | "insufficient_data";
-  dataPoint: string;      // 当前观测值（如 "Gross Margin 72.3%"）
-  evidenceUrl: string;    // 数据源 URL
-  notes: string;          // 机器评估理由
+  result:
+    | "confirmed"
+    | "invalidated"
+    | "needs_manual_review"
+    | "insufficient_data";
+  dataPoint: string; // 当前观测值（如 "Gross Margin 72.3%"）
+  evidenceUrl: string; // 数据源 URL
+  notes: string; // 机器评估理由
 }
 
 /**
@@ -236,6 +240,7 @@ export function extractMetricValue(
 ```
 
 **验收标准：**
+
 - 纯函数，无副作用
 - 30+ 个 test case 覆盖各种 wrongIf 模式
 - 处理所有边界条件（null、NaN、无法解析等）
@@ -251,7 +256,7 @@ export function extractMetricValue(
  */
 export async function runVerificationBatch(opts: {
   batchSize?: number; // default 50
-  dryRun?: boolean;   // default false
+  dryRun?: boolean; // default false
 }): Promise<{
   processed: number;
   confirmed: number;
@@ -267,7 +272,7 @@ export async function runVerificationBatch(opts: {
 ```typescript
 export async function runVerificationBatch(opts) {
   const batchSize = opts.batchSize ?? 50;
-  
+
   // 1. 查询到期且未核验的判断
   const dueJudgments = await db
     .select()
@@ -276,7 +281,7 @@ export async function runVerificationBatch(opts) {
       and(
         lte(ledgerJudgment.checkAfter, new Date()),
         // 排除已有核验记录的
-        notInArray(ledgerJudgment.id, 
+        notInArray(ledgerJudgment.id,
           db.select({ id: ledgerVerification.judgmentId })
             .from(ledgerVerification)
             .where(ne(ledgerVerification.result, "pending"))
@@ -284,14 +289,14 @@ export async function runVerificationBatch(opts) {
       )
     )
     .limit(batchSize);
-  
+
   // 2. 按 ticker 分组（减少 API 调用）
   const byTicker = groupBy(dueJudgments, "ticker");
-  
+
   // 3. 逐 ticker 获取数据
   for (const [ticker, judgments] of Object.entries(byTicker)) {
     let metrics: FinancialMetrics | null = null;
-    
+
     try {
       const raw = await cachedFetchYahooFinance(ticker);
       metrics = sanitizeFinancialMetrics(raw).metrics;
@@ -307,7 +312,7 @@ export async function runVerificationBatch(opts) {
       }
       continue;
     }
-    
+
     // 4. 逐判断核验
     for (const j of judgments) {
       // 红线：不可判定 → needs_manual_review
@@ -320,7 +325,7 @@ export async function runVerificationBatch(opts) {
         });
         continue;
       }
-      
+
       // 解析条件
       const condition = parseWrongIf(j.wrongIf, j.metric);
       if (!condition) {
@@ -332,7 +337,7 @@ export async function runVerificationBatch(opts) {
         });
         continue;
       }
-      
+
       // 提取当前值
       const currentValue = extractMetricValue(metrics, condition.metric);
       if (currentValue === null) {
@@ -344,10 +349,10 @@ export async function runVerificationBatch(opts) {
         });
         continue;
       }
-      
+
       // 评估条件
       const evaluation = evaluateCondition(condition, currentValue);
-      
+
       await writeVerification(j.id, {
         result: evaluation.triggered ? "invalidated" : "confirmed",
         dataPoint: `${condition.metric}: ${currentValue}${condition.unit ?? ""}`,
@@ -356,7 +361,7 @@ export async function runVerificationBatch(opts) {
       });
     }
   }
-  
+
   // 5. 返回汇总
   return { ... };
 }
@@ -371,7 +376,7 @@ export async function runVerificationBatch(opts) {
 ledgerRoute.post("/verify/run", async (c) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) throw new HTTPException(401);
-  
+
   // 可选：限制为 admin 用户
   const result = await runVerificationBatch({ batchSize: 50 });
   return c.json({ ok: true, ...result });
@@ -380,11 +385,11 @@ ledgerRoute.post("/verify/run", async (c) => {
 
 **Cron 触发方案（选一个）：**
 
-| 方案 | 优点 | 缺点 |
-|------|------|------|
-| A. GitHub Actions cron | 和现有 CI 一致，免费 | 需要 Vercel API token |
-| B. Vercel Cron Jobs | 原生集成，简单 | 仅 Pro 计划支持 |
-| C. 外部 cron → POST endpoint | 最灵活 | 多一个依赖 |
+| 方案                         | 优点                 | 缺点                  |
+| ---------------------------- | -------------------- | --------------------- |
+| A. GitHub Actions cron       | 和现有 CI 一致，免费 | 需要 Vercel API token |
+| B. Vercel Cron Jobs          | 原生集成，简单       | 仅 Pro 计划支持       |
+| C. 外部 cron → POST endpoint | 最灵活               | 多一个依赖            |
 
 **推荐方案 A：** GitHub Actions cron，和现有 workflows 一致。
 
@@ -394,8 +399,8 @@ name: L3 Ledger Verify
 
 on:
   schedule:
-    - cron: "0 6 * * *"  # 每日 UTC 06:00 (北京 14:00)
-  workflow_dispatch:  # 支持手动触发
+    - cron: "0 6 * * *" # 每日 UTC 06:00 (北京 14:00)
+  workflow_dispatch: # 支持手动触发
 
 jobs:
   verify:
@@ -423,10 +428,11 @@ export type VerificationResult =
   | "invalidated"
   | "pending"
   | "insufficient_data"
-  | "needs_manual_review";  // 新增
+  | "needs_manual_review"; // 新增
 ```
 
 生成 migration：
+
 ```bash
 pnpm with-env pnpm -F @workspace/db db:generate
 pnpm with-env pnpm -F @workspace/db db:migrate
@@ -438,13 +444,15 @@ pnpm with-env pnpm -F @workspace/db db:migrate
 
 ```typescript
 // TQS 校准查询（未来 L4 的输入）
-async function getCalibrationData(): Promise<{
-  tier: string;
-  totalJudgments: number;
-  confirmedRate: number;
-  invalidatedRate: number;
-  needsReviewRate: number;
-}[]> {
+async function getCalibrationData(): Promise<
+  {
+    tier: string;
+    totalJudgments: number;
+    confirmedRate: number;
+    invalidatedRate: number;
+    needsReviewRate: number;
+  }[]
+> {
   return db
     .select({
       tier: ledgerJudgment.tqsTier,
@@ -454,7 +462,10 @@ async function getCalibrationData(): Promise<{
       needsReviewRate: sql`COUNT(CASE WHEN v.result = 'needs_manual_review' THEN 1 END)::float / COUNT(*)`,
     })
     .from(ledgerJudgment)
-    .leftJoin(ledgerVerification, eq(ledgerJudgment.id, ledgerVerification.judgmentId))
+    .leftJoin(
+      ledgerVerification,
+      eq(ledgerJudgment.id, ledgerVerification.judgmentId),
+    )
     .where(eq(ledgerJudgment.tqsTier, sql`tier`))
     .groupBy(ledgerJudgment.tqsTier);
 }
@@ -481,6 +492,7 @@ async function writeVerification(
 ```
 
 每条核验记录包含：
+
 - `result`: 四态结果
 - `dataPoint`: 当前观测值（如 "Gross Margin: 72.3%"）
 - `evidenceUrl`: 数据源 URL（Yahoo Finance / SEC EDGAR 等）

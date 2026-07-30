@@ -3,15 +3,15 @@ import { test, expect } from "@playwright/test";
 declare const process: {
   env: Record<string, string | undefined>;
   cwd: () => string;
+  getBuiltinModule: (id: string) => unknown;
 };
-declare function require(id: string): Record<string, unknown>;
 
-/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
-const readFileSync = require("fs").readFileSync as (
-  p: string,
-  enc: string,
-) => string;
-const resolve = require("path").resolve as (...args: string[]) => string;
+const { readFileSync } = process.getBuiltinModule("fs") as {
+  readFileSync: (p: string, enc: string) => string;
+};
+const { resolve } = process.getBuiltinModule("path") as {
+  resolve: (...args: string[]) => string;
+};
 
 /**
  * Loop Gate — Playwright smoke tests (五闸).
