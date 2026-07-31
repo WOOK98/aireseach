@@ -105,7 +105,7 @@ export async function runVerificationBatch(
             result: "insufficient_data",
             dataPoint: "Data source unreachable",
             evidenceUrl: "",
-            notes: `Yahoo Finance API failed for ${ticker}`,
+            notes: `Market data API failed for ${ticker}`,
           });
         }
       }

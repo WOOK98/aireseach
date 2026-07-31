@@ -438,7 +438,7 @@ export function verifyJudgment(
       result: "needs_manual_review",
       dataPoint: `Metric "${condition.metric}" not available`,
       evidenceUrl,
-      notes: `Could not extract metric "${condition.metric}" from Yahoo Finance data for ${ticker}.`,
+      notes: `Could not extract metric "${condition.metric}" from market data for ${ticker}.`,
     };
   }
 
