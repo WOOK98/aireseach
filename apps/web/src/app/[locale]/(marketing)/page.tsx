@@ -3,6 +3,7 @@
 import { getMetadata } from "~/lib/metadata";
 import { EntitySearch } from "~/modules/company/entity-search";
 import { WatchlistBadges } from "~/modules/company/watchlist-badges";
+import { InstallSection } from "~/modules/install/install-section";
 
 export const revalidate = 300;
 
@@ -33,11 +34,8 @@ export default function HomePage() {
           <WatchlistBadges />
         </div>
 
-        <div className="bg-muted/20 mt-10 rounded-2xl border p-4">
-          <p className="text-muted-foreground text-sm">Claude Code plugin</p>
-          <code className="mt-2 block overflow-x-auto font-mono text-sm">
-            /deep-dive {"{SYMBOL}"}
-          </code>
+        <div className="mt-10">
+          <InstallSection />
         </div>
       </section>
     </div>
