@@ -11,7 +11,7 @@
  * See: docs/product/L3-LEDGER-VERIFICATION-LOOP.md
  */
 
-import { and, lte, notInArray, sql } from "@workspace/db";
+import { and, notInArray, sql } from "@workspace/db";
 import { ledgerJudgment, ledgerVerification } from "@workspace/db/schema";
 import { db } from "@workspace/db/server";
 
@@ -67,7 +67,8 @@ export async function runVerificationBatch(
     .from(ledgerJudgment)
     .where(
       and(
-        lte(ledgerJudgment.checkAfter, new Date()),
+        // checkAfter null = immediate (eligible now)
+        sql`(${ledgerJudgment.checkAfter} IS NULL OR ${ledgerJudgment.checkAfter} <= NOW())`,
         notInArray(
           ledgerJudgment.id,
           sql`SELECT ${ledgerVerification.judgmentId} FROM ${ledgerVerification} WHERE ${ledgerVerification.result} != 'pending'`,

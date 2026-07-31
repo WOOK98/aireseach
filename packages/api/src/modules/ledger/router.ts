@@ -137,7 +137,13 @@ ledgerRoute.get(
 // ─── POST /api/ledger/verify — 核验 ──────────────────────────────────────────
 const verifySchema = z.object({
   judgmentId: z.string().min(1),
-  result: z.enum(["confirmed", "invalidated", "pending", "insufficient_data"]),
+  result: z.enum([
+    "confirmed",
+    "invalidated",
+    "pending",
+    "insufficient_data",
+    "needs_manual_review",
+  ]),
   dataPoint: z.string().optional(),
   evidenceUrl: z.string().url().optional(),
   notes: z.string().optional(),
@@ -230,34 +236,21 @@ ledgerRoute.get(
 );
 
 // ─── POST /api/ledger/verify/run — 批量核验 ─────────────────────────────────
-// Auth: accepts either session cookie OR Bearer token (LEDGER_VERIFY_TOKEN).
-// Token auth is used by the cron workflow; session auth is for admin UI.
+// Auth: Bearer token ONLY (LEDGER_VERIFY_TOKEN secret).
+// Session auth is NOT allowed here — any logged-in user must not be able
+// to trigger a global batch that reads/writes across all users' judgments.
 ledgerRoute.post("/verify/run", async (c) => {
-  // 1. Try Bearer token auth (for cron)
   const authHeader = c.req.header("Authorization");
   const verifyToken = env.LEDGER_VERIFY_TOKEN;
-  let authorized = false;
 
-  if (authHeader?.startsWith("Bearer ") && verifyToken) {
-    const token = authHeader.slice(7);
-    if (token === verifyToken) {
-      authorized = true;
-    }
-  }
-
-  // 2. Fall back to session auth (for admin UI)
-  if (!authorized) {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
-    if (!session?.user) {
-      throw new HTTPException(401, { message: "Authentication required." });
-    }
-    // Only admin users can trigger via session (token is already gated by secret)
-    // For now, any authenticated user can trigger — tighten when roles exist.
-    authorized = true;
-  }
-
-  if (!authorized) {
-    throw new HTTPException(401, { message: "Authentication required." });
+  if (
+    !verifyToken ||
+    !authHeader?.startsWith("Bearer ") ||
+    authHeader.slice(7) !== verifyToken
+  ) {
+    throw new HTTPException(401, {
+      message: "Invalid or missing verification token.",
+    });
   }
 
   const body = await c.req.json().catch(() => ({}));
