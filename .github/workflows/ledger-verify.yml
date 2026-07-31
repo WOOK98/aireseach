@@ -1,0 +1,35 @@
+name: L3 Ledger Verify
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 每日 UTC 06:00 (北京 14:00)
+  workflow_dispatch: # 支持手动触发
+
+concurrency:
+  group: ledger-verify
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger verification
+        env:
+          VERIFY_URL: ${{ secrets.VERIFY_URL || format('{0}/api/ledger/verify/run', secrets.VERCEL_URL) }}
+          VERIFY_TOKEN: ${{ secrets.LEDGER_VERIFY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$VERIFY_URL" ]; then
+            echo "::error::VERIFY_URL or VERCEL_URL secret not set"
+            exit 1
+          fi
+          echo "Triggering verification at $VERIFY_URL"
+          curl -sf -X POST "$VERIFY_URL" \
+            -H "Authorization: Bearer $VERIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"batchSize": 50}' \
+            | jq .

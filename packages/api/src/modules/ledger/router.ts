@@ -226,3 +226,19 @@ ledgerRoute.get(
     return c.json({ ok: true, ticker: ticker.toUpperCase(), history });
   },
 );
+
+// ─── POST /api/ledger/verify/run — 批量核验 ─────────────────────────────────
+ledgerRoute.post("/verify/run", async (c) => {
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session?.user)
+    throw new HTTPException(401, { message: "Authentication required." });
+
+  const body = await c.req.json().catch(() => ({}));
+  const batchSize = typeof body.batchSize === "number" ? body.batchSize : 50;
+  const dryRun = body.dryRun === true;
+
+  const { runVerificationBatch } = await import("./verify-runner");
+  const result = await runVerificationBatch({ batchSize, dryRun });
+
+  return c.json({ ok: true, dryRun, ...result });
+});
