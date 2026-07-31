@@ -8,6 +8,8 @@ import { and, desc, eq, inArray } from "@workspace/db";
 import { ledgerJudgment, ledgerVerification } from "@workspace/db/schema";
 import { db } from "@workspace/db/server";
 
+import { env } from "../../env";
+
 export const ledgerRoute = new Hono();
 
 // ─── POST /api/ledger/judgments — 入账 ───────────────────────────────────────
@@ -135,7 +137,13 @@ ledgerRoute.get(
 // ─── POST /api/ledger/verify — 核验 ──────────────────────────────────────────
 const verifySchema = z.object({
   judgmentId: z.string().min(1),
-  result: z.enum(["confirmed", "invalidated", "pending", "insufficient_data"]),
+  result: z.enum([
+    "confirmed",
+    "invalidated",
+    "pending",
+    "insufficient_data",
+    "needs_manual_review",
+  ]),
   dataPoint: z.string().optional(),
   evidenceUrl: z.string().url().optional(),
   notes: z.string().optional(),
@@ -226,3 +234,31 @@ ledgerRoute.get(
     return c.json({ ok: true, ticker: ticker.toUpperCase(), history });
   },
 );
+
+// ─── POST /api/ledger/verify/run — 批量核验 ─────────────────────────────────
+// Auth: Bearer token ONLY (LEDGER_VERIFY_TOKEN secret).
+// Session auth is NOT allowed here — any logged-in user must not be able
+// to trigger a global batch that reads/writes across all users' judgments.
+ledgerRoute.post("/verify/run", async (c) => {
+  const authHeader = c.req.header("Authorization");
+  const verifyToken = env.LEDGER_VERIFY_TOKEN;
+
+  if (
+    !verifyToken ||
+    !authHeader?.startsWith("Bearer ") ||
+    authHeader.slice(7) !== verifyToken
+  ) {
+    throw new HTTPException(401, {
+      message: "Invalid or missing verification token.",
+    });
+  }
+
+  const body = await c.req.json().catch(() => ({}));
+  const batchSize = typeof body.batchSize === "number" ? body.batchSize : 50;
+  const dryRun = body.dryRun === true;
+
+  const { runVerificationBatch } = await import("./verify-runner");
+  const result = await runVerificationBatch({ batchSize, dryRun });
+
+  return c.json({ ok: true, dryRun, ...result });
+});

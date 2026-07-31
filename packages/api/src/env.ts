@@ -18,6 +18,7 @@ export const preset = {
     OPENAI_API_KEY: z.string().optional(), // change it to your provider API key (e.g. ANTHROPIC_API_KEY if you use Anthropic)
     DEEPSEEK_API_KEY: z.string().optional(),
     LLM_API_KEY: z.string().optional(),
+    LEDGER_VERIFY_TOKEN: z.string().optional(),
     MCP_API_KEYS: z.string().optional(),
   },
   extends: [auth, billingWeb, billingMobile, db, email, storage, monitoring],
@@ -30,7 +31,7 @@ export const env = defineEnv({
     ...process.env,
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY, // redline-allow: env declaration file, not user-visible
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },
 });

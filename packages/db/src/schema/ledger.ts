@@ -35,7 +35,8 @@ export type VerificationResult =
   | "confirmed"
   | "invalidated"
   | "pending"
-  | "insufficient_data";
+  | "insufficient_data"
+  | "needs_manual_review";
 
 // ─── Judgment records ────────────────────────────────────────────────────────
 
