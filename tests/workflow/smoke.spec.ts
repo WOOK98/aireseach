@@ -1,17 +1,6 @@
 import { test, expect } from "@playwright/test";
-
-declare const process: {
-  env: Record<string, string | undefined>;
-  cwd: () => string;
-  getBuiltinModule: (id: string) => unknown;
-};
-
-const { readFileSync } = process.getBuiltinModule("fs") as {
-  readFileSync: (p: string, enc: string) => string;
-};
-const { resolve } = process.getBuiltinModule("path") as {
-  resolve: (...args: string[]) => string;
-};
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 /**
  * Loop Gate — Playwright smoke tests (五闸).
