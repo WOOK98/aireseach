@@ -2,15 +2,22 @@
 /**
  * generate-skill-contract.mjs
  *
- * Reads skills/deep-dive/SKILL.md and skills/filing/SKILL.md, strips mirror
- * headers, and writes a .ts constants file that can be imported at build time.
+ * Single source of truth for the shared analysis contract.
+ * Reads skills/*.md and writes ALL generated artifacts:
+ *   - generated.ts  (TS constants for route.ts / shared package)
+ *   - generated_methodology.txt (plain text for server.py)
+ *   - hard_rules.json + mode_perspectives.json (JSON bridge for server.py)
  *
- * This eliminates runtime readFileSync — the skill content is baked into the
- * bundle at build time. See: #67
+ * ONE EDIT TO THE SKILL = REGENERATE = BOTH OUTPUTS CHANGE.
  *
  * Usage: node scripts/generate-skill-contract.mjs
  * Called by: pnpm generate:skill-contract (package.json script)
  * Verified by: scripts/check-skill-mirrors.mjs (CI check)
+ *
+ * IDEMPOTENCY: generated.ts must be stable across re-runs.
+ * - Only `${` is escaped in template literals (bare `$` is fine).
+ * - MODE_PERSPECTIVES uses TS object literal syntax (unquoted keys) to match
+ *   oxfmt formatting, so `pnpm generate && pnpm format` is idempotent.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -28,8 +35,16 @@ const stripMirrorHeader = (text) =>
     )
     .trim();
 
+/**
+ * Escape text for use inside a JS template literal.
+ *
+ * IMPORTANT: only `${` needs escaping (to `\${`) — a bare `$` without a
+ * following `{` is safe in template literals. Over-escaping (`\$130.5B`)
+ * causes non-idempotent generation because the committed file has `\$` but
+ * the source text has `$`.
+ */
 const escapeForTemplate = (text) =>
-  text.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$/g, "\\$");
+  text.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
 
 const deepDive = stripMirrorHeader(
   readFileSync(resolve(skillsDir, "deep-dive", "SKILL.md"), "utf-8"),
@@ -37,6 +52,110 @@ const deepDive = stripMirrorHeader(
 const filing = stripMirrorHeader(
   readFileSync(resolve(skillsDir, "filing", "SKILL.md"), "utf-8"),
 );
+
+// ── Shared constants (single source — used by TS + JSON) ────────────────────
+
+const SHARED_HARD_RULES = `
+## SHARED HARD RULES (from analysis contract — applies to ALL modes)
+
+1. **Entity Gate (MANDATORY).** Resolve input to exactly ONE verified listed entity before ANY analysis. Never analyze a blend. If ambiguous, STOP and ask.
+2. **Never fabricate financial figures.** If a number can't be verified, say "Data unavailable — [what to verify]".
+3. **Never output** target prices, buy/sell ratings, entry levels, stop levels, portfolio weights, position sizing, or personalized investment instructions.
+4. **Conviction tier** (S/A/B/C/D/F) evaluates evidence quality only — not whether to buy, sell, hold, size, or allocate.
+5. **Every quantitative claim** gets a date or period attached. Distinguish facts from estimates from opinion.
+6. **GAAP first.** If citing non-GAAP, name the excluded items.
+7. **Never substitute** a similarly-named company. If data is missing for the resolved entity, say so.
+8. **Reports end with invalidation conditions**, not price targets.
+9. **Never present** the report as a trade instruction. Never execute, place, or cancel orders.
+10. **Cross-market A/H peers: sourced or stated absent.** When the methodology
+    calls for A-share or H-share peer comparison, every listed peer MUST come
+    from search results with a citable source (ETF holdings, filings, financial
+    media). If no sourced A/H peer exists for a chain layer, write
+    "No listed A-share/H-share pure play found in sources" — never fill the
+    gap from memory. **Fabricating peer names is the same failure as
+    fabricating financial figures (rule 2).**
+`.trim();
+
+const MONITOR_JSON_SCHEMA = `{
+  "schema_version": 1,
+  "monitors": [
+    {
+      "metric": "<metric to monitor>",
+      "current": "<current value or N/A>",
+      "trigger": "<numeric trigger line>",
+      "tolerance": "<optional tolerance band or empty string>",
+      "freq": "Daily | Weekly | Quarterly | Event-driven",
+      "source": "<data source>"
+    }
+  ]
+}`;
+
+const MODE_PERSPECTIVES = {
+  snapshot: {
+    label:
+      "Investment snapshot: decide in 3 minutes whether the stock deserves deeper work",
+    focus:
+      "Balance breadth vs depth. Cover thesis, valuation, risks, and catalysts at equal weight. The decisionBrief should answer: does this stock deserve deeper research right now?",
+    emphasis: "overview, investmentThesis, decisionBrief",
+  },
+  earnings: {
+    label:
+      "Earnings review: focus on growth quality, margins, cash flow, and execution",
+    focus:
+      "Deep-dive revenue trajectory, margin evolution (gross → operating → net), FCF conversion, and earnings surprise history. Weight growthDrivers and profitability sections 2x heavier than other sections. Include quarter-over-quarter trends and segment breakdowns.",
+    emphasis:
+      "growthDrivers, profitability, topJudgments (margin/cash flow focus)",
+  },
+  competition: {
+    label:
+      "Competitive landscape: moat, substitution risk, pricing power, and industry position",
+    focus:
+      "Analyze market share trends, moat durability (brand/tech/network/switching cost), Porter's Five Forces summary, peer benchmarking (top 3-5 competitors), and substitution threats. Weight the overview section around competitive dynamics.",
+    emphasis:
+      "overview (competitive framing), risks (disruption/substitution), scenarioMatrix (market share scenarios)",
+  },
+  risk: {
+    label:
+      "Risk scan: valuation, balance sheet, cash flow, cyclicality, and crowded narrative risk",
+    focus:
+      "Invert the analysis — lead with what can go wrong. Weight risks section 3x: balance sheet fragility, cash flow quality under stress, valuation downside, cyclicality exposure, and narrative crowding. Each risk must have a numeric trigger. The decisionBrief should focus on risk/reward asymmetry.",
+    emphasis:
+      "risks (primary focus), valuation (downside scenarios), scenarioMatrix (bear case details)",
+  },
+  poc: {
+    label:
+      "Tracking plan: convert the thesis into 30-90 day measurable validation points",
+    focus:
+      "Focus on the watchlist and monitorPanel sections. For each thesis driver, define: (1) a specific metric to track, (2) current value, (3) trigger threshold, (4) data source, (5) check frequency. The decisionBrief should outline a 30-90 day monitoring cadence. Light on narrative, heavy on actionable metrics.",
+    emphasis: "watchlist, monitorPanel, nextSteps, evidenceNeeds",
+  },
+};
+
+/**
+ * Serialize a JS object as a TS object literal with unquoted keys.
+ * This matches oxfmt's preferred style, ensuring `pnpm generate && pnpm format`
+ * is idempotent. JSON.stringify produces `"snapshot":` but oxfmt wants `snapshot:`.
+ */
+function serializeTsObject(obj, indent = 0) {
+  const pad = "  ".repeat(indent);
+  const pad1 = "  ".repeat(indent + 1);
+  const entries = Object.entries(obj)
+    .map(([key, value]) => {
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
+        const inner = Object.entries(value)
+          .map(([k, v]) => `${pad1}  ${k}: ${JSON.stringify(v)},`)
+          .join("\n");
+        return `${pad1}${key}: {\n${inner}\n${pad1}},`;
+      }
+      return `${pad1}${key}: ${JSON.stringify(value)},`;
+    })
+    .join("\n");
+  return `{\n${entries}\n${pad}}`;
+}
 
 // ── TypeScript constants (for route.ts / shared package) ─────────────────────
 const tsContent = `/**
@@ -48,6 +167,14 @@ const tsContent = `/**
 export const DEEP_DIVE_METHODOLOGY = \`${escapeForTemplate(deepDive)}\`;
 
 export const FILING_METHODOLOGY = \`${escapeForTemplate(filing)}\`;
+
+export const SHARED_HARD_RULES = \`${escapeForTemplate(SHARED_HARD_RULES)}\`;
+
+export const MONITOR_JSON_SCHEMA = \`${escapeForTemplate(MONITOR_JSON_SCHEMA)}\`;
+
+export const MODE_PERSPECTIVES = ${serializeTsObject(MODE_PERSPECTIVES)} as const;
+
+export type AnalysisMode = keyof typeof MODE_PERSPECTIVES;
 `;
 
 const tsOutPath = resolve(
@@ -66,3 +193,21 @@ const txtOutPath = resolve(
 );
 writeFileSync(txtOutPath, deepDive, "utf-8");
 console.log(`Generated ${txtOutPath} (${deepDive.length} chars)`);
+
+// ── JSON exports (for server.py / Python report-agent) ──────────────────────
+// Python can't import TypeScript, so we export the shared contract as JSON
+// files that server.py reads at startup. Same data as above — one source.
+const jsonDir = resolve(repoRoot, "packages/shared/src/skill-contract");
+writeFileSync(
+  resolve(jsonDir, "hard_rules.json"),
+  JSON.stringify({ rules: SHARED_HARD_RULES }, null, 2) + "\n",
+  "utf-8",
+);
+console.log(`Generated hard_rules.json`);
+
+writeFileSync(
+  resolve(jsonDir, "mode_perspectives.json"),
+  JSON.stringify(MODE_PERSPECTIVES, null, 2) + "\n",
+  "utf-8",
+);
+console.log(`Generated mode_perspectives.json`);
