@@ -11,6 +11,7 @@ concurrency:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   verify:
@@ -21,7 +22,7 @@ jobs:
         id: verify
         env:
           VERIFY_URL: ${{ secrets.VERIFY_URL || format('{0}/api/ledger/verify/run', secrets.VERCEL_URL) }}
-          VERIFY_TOKEN: *** secrets.LEDGER_VERIFY_TOKEN }}
+          VERIFY_TOKEN: ${{ secrets.LEDGER_VERIFY_TOKEN }}
         run: |
           set -euo pipefail
           if [ -z "$VERIFY_URL" ]; then
@@ -47,5 +48,5 @@ jobs:
               repo: context.repo.repo,
               title: `[auto] L3 Ledger Verify failed — ${today}`,
               body: `The daily ledger verification workflow failed.\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nPlease investigate.`,
-              labels: ['bug', 'ledger'],
+              labels: ['bug'],
             });
