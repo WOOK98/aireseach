@@ -392,7 +392,7 @@ ${suffix}`;
 };
 
 // ─── GET /api/report/financials/:ticker ──────────────────────────────────────
-// Proxy Yahoo Finance data — keeps API calls server-side, hides user-agent tricks
+// Proxy market data — keeps API calls server-side, hides user-agent tricks
 reportRoute.get(
   "/financials/:ticker",
   zValidator("param", z.object({ ticker: z.string().min(1).max(10) })),
@@ -563,7 +563,7 @@ ${modeConfig.focus}
 ### Sections to Emphasize
 ${modeConfig.emphasis}
 
-${hasFundamentals ? "" : "Important: Yahoo Finance fundamentals are temporarily unavailable for this request. Base the report on the live price data below, clearly state that full fundamentals are unavailable, and avoid inventing revenue, margin, EPS, cash flow, or valuation metrics."}
+${hasFundamentals ? "" : "Important: Market data fundamentals are temporarily unavailable for this request. Base the report on the live price data below, clearly state that full fundamentals are unavailable, and avoid inventing revenue, margin, EPS, cash flow, or valuation metrics."}
 
 ## Company
 - Sector: ${m.sector} / ${m.industry}
@@ -889,7 +889,7 @@ reportRoute.post(
         id: "S1",
         title: `${m.companyName} market and financial data`,
         date: new Date().toISOString().slice(0, 10),
-        publisher: "Yahoo Finance",
+        publisher: "Market data",
         url: `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}/`,
         excerpt: `Price ${fmt(m.currentPrice, 2)}; market cap ${fmtB(m.marketCap)}; revenue growth ${fmt(m.revenueGrowthYoy)}%; gross margin ${fmt(m.grossMargin)}%; free cash flow ${fmtB(m.freeCashFlow)}.`,
       },
