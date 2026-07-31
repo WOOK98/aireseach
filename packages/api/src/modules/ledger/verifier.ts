@@ -379,3 +379,86 @@ export function isSuspiciouslyZero(value: number | null | undefined): boolean {
   if (value === null || value === undefined) return true;
   return value === 0;
 }
+
+// ── verifyJudgment ──────────────────────────────────────────────────────────
+
+export interface JudgmentVerificationResult {
+  result: VerificationOutcome;
+  dataPoint: string;
+  evidenceUrl: string;
+  notes: string;
+}
+
+/**
+ * Verify a single judgment against current financial metrics.
+ * Pure function — no side effects, no DB access.
+ *
+ * Redline: NEVER auto-confirm when data is missing or wrongIf is unparseable.
+ */
+export function verifyJudgment(
+  judgment: {
+    id: string;
+    ticker: string;
+    judgment: string;
+    keyNumber: string;
+    wrongIf: string;
+    metric?: string | null;
+    trigger?: string | null;
+  },
+  metrics: FinancialMetrics,
+): JudgmentVerificationResult {
+  const ticker = judgment.ticker;
+  const evidenceUrl = `https://finance.yahoo.com/quote/${encodeURIComponent(ticker)}/`;
+
+  // Redline: qualitative wrongIf → needs_manual_review
+  if (!isMachineVerifiable(judgment)) {
+    return {
+      result: "needs_manual_review",
+      dataPoint: "N/A — wrongIf not machine-verifiable",
+      evidenceUrl,
+      notes: `wrongIf "${judgment.wrongIf}" contains qualitative or event-based conditions that cannot be automatically evaluated.`,
+    };
+  }
+
+  // Parse the condition
+  const condition = parseWrongIf(judgment.wrongIf, judgment.metric);
+  if (!condition) {
+    return {
+      result: "needs_manual_review",
+      dataPoint: "N/A — could not parse wrongIf",
+      evidenceUrl,
+      notes: `Failed to parse wrongIf "${judgment.wrongIf}" into a machine-evaluable condition.`,
+    };
+  }
+
+  // Extract current value
+  const currentValue = extractMetricValue(metrics, condition.metric);
+  if (currentValue === null) {
+    return {
+      result: "needs_manual_review",
+      dataPoint: `Metric "${condition.metric}" not available`,
+      evidenceUrl,
+      notes: `Could not extract metric "${condition.metric}" from Yahoo Finance data for ${ticker}.`,
+    };
+  }
+
+  // Redline: 0.0% suspicious — needs manual review
+  if (isSuspiciouslyZero(currentValue)) {
+    return {
+      result: "needs_manual_review",
+      dataPoint: `${condition.metric}: ${currentValue}${condition.unit ?? ""} (suspicious zero)`,
+      evidenceUrl,
+      notes: `Metric "${condition.metric}" is exactly 0 — this may indicate missing data rather than a real value. Needs manual verification.`,
+    };
+  }
+
+  // Evaluate the condition
+  const evaluation = evaluateCondition(condition, currentValue);
+
+  return {
+    result: evaluation.triggered ? "invalidated" : "confirmed",
+    dataPoint: `${condition.metric}: ${currentValue}${condition.unit ?? ""}`,
+    evidenceUrl,
+    notes: evaluation.explanation,
+  };
+}
