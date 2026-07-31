@@ -488,3 +488,79 @@ Output to user:
 
   [Do NOT say "no reports found" or offer web search as fallback]
 \`\`\``;
+
+export const SHARED_HARD_RULES = `## SHARED HARD RULES (from analysis contract — applies to ALL modes)
+
+1. **Entity Gate (MANDATORY).** Resolve input to exactly ONE verified listed entity before ANY analysis. Never analyze a blend. If ambiguous, STOP and ask.
+2. **Never fabricate financial figures.** If a number can't be verified, say "Data unavailable — [what to verify]".
+3. **Never output** target prices, buy/sell ratings, entry levels, stop levels, portfolio weights, position sizing, or personalized investment instructions.
+4. **Conviction tier** (S/A/B/C/D/F) evaluates evidence quality only — not whether to buy, sell, hold, size, or allocate.
+5. **Every quantitative claim** gets a date or period attached. Distinguish facts from estimates from opinion.
+6. **GAAP first.** If citing non-GAAP, name the excluded items.
+7. **Never substitute** a similarly-named company. If data is missing for the resolved entity, say so.
+8. **Reports end with invalidation conditions**, not price targets.
+9. **Never present** the report as a trade instruction. Never execute, place, or cancel orders.
+10. **Cross-market A/H peers: sourced or stated absent.** When the methodology
+    calls for A-share or H-share peer comparison, every listed peer MUST come
+    from search results with a citable source (ETF holdings, filings, financial
+    media). If no sourced A/H peer exists for a chain layer, write
+    "No listed A-share/H-share pure play found in sources" — never fill the
+    gap from memory. **Fabricating peer names is the same failure as
+    fabricating financial figures (rule 2).**`;
+
+export const MONITOR_JSON_SCHEMA = `{
+  "schema_version": 1,
+  "monitors": [
+    {
+      "metric": "<metric to monitor>",
+      "current": "<current value or N/A>",
+      "trigger": "<numeric trigger line>",
+      "tolerance": "<optional tolerance band or empty string>",
+      "freq": "Daily | Weekly | Quarterly | Event-driven",
+      "source": "<data source>"
+    }
+  ]
+}`;
+
+export const MODE_PERSPECTIVES = {
+  snapshot: {
+    label:
+      "Investment snapshot: decide in 3 minutes whether the stock deserves deeper work",
+    focus:
+      "Balance breadth vs depth. Cover thesis, valuation, risks, and catalysts at equal weight. The decisionBrief should answer: does this stock deserve deeper research right now?",
+    emphasis: "overview, investmentThesis, decisionBrief",
+  },
+  earnings: {
+    label:
+      "Earnings review: focus on growth quality, margins, cash flow, and execution",
+    focus:
+      "Deep-dive revenue trajectory, margin evolution (gross → operating → net), FCF conversion, and earnings surprise history. Weight growthDrivers and profitability sections 2x heavier than other sections. Include quarter-over-quarter trends and segment breakdowns.",
+    emphasis:
+      "growthDrivers, profitability, topJudgments (margin/cash flow focus)",
+  },
+  competition: {
+    label:
+      "Competitive landscape: moat, substitution risk, pricing power, and industry position",
+    focus:
+      "Analyze market share trends, moat durability (brand/tech/network/switching cost), Porter's Five Forces summary, peer benchmarking (top 3-5 competitors), and substitution threats. Weight the overview section around competitive dynamics.",
+    emphasis:
+      "overview (competitive framing), risks (disruption/substitution), scenarioMatrix (market share scenarios)",
+  },
+  risk: {
+    label:
+      "Risk scan: valuation, balance sheet, cash flow, cyclicality, and crowded narrative risk",
+    focus:
+      "Invert the analysis — lead with what can go wrong. Weight risks section 3x: balance sheet fragility, cash flow quality under stress, valuation downside, cyclicality exposure, and narrative crowding. Each risk must have a numeric trigger. The decisionBrief should focus on risk/reward asymmetry.",
+    emphasis:
+      "risks (primary focus), valuation (downside scenarios), scenarioMatrix (bear case details)",
+  },
+  poc: {
+    label:
+      "Tracking plan: convert the thesis into 30-90 day measurable validation points",
+    focus:
+      "Focus on the watchlist and monitorPanel sections. For each thesis driver, define: (1) a specific metric to track, (2) current value, (3) trigger threshold, (4) data source, (5) check frequency. The decisionBrief should outline a 30-90 day monitoring cadence. Light on narrative, heavy on actionable metrics.",
+    emphasis: "watchlist, monitorPanel, nextSteps, evidenceNeeds",
+  },
+} as const;
+
+export type AnalysisMode = keyof typeof MODE_PERSPECTIVES;
