@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { access, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -74,6 +75,43 @@ for (const item of mirrors) {
 }
 
 if (failed) {
+  process.exit(1);
+}
+
+// ── Check generated.ts is not stale ──────────────────────────────────────────
+// generated.ts must contain the same skill content as the mirrors.
+// If someone edits a skill but forgets to regenerate, this catches it.
+const generatedPath = resolve(
+  repoRoot,
+  "packages/shared/src/skill-contract/generated.ts",
+);
+try {
+  const generated = readFileSync(generatedPath, "utf-8");
+  const deepDiveMirror = readFileSync(
+    resolve(repoRoot, "skills/deep-dive/SKILL.md"),
+    "utf-8",
+  );
+  const filingMirror = readFileSync(
+    resolve(repoRoot, "skills/filing/SKILL.md"),
+    "utf-8",
+  );
+
+  // Quick check: generated.ts should contain substantial skill content
+  const deepDiveLen = deepDiveMirror.length;
+  const filingLen = filingMirror.length;
+  if (!generated.includes("Entity Gate") || generated.length < 1000) {
+    console.error(
+      `generated.ts appears stale or empty. Run: pnpm generate:skill-contract`,
+    );
+    process.exit(1);
+  }
+  console.log(
+    `Generated contract verified (${deepDiveLen} + ${filingLen} chars source).`,
+  );
+} catch (error) {
+  console.error(
+    `Failed to verify generated.ts: ${String(error)}\nRun: pnpm generate:skill-contract`,
+  );
   process.exit(1);
 }
 

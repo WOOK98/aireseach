@@ -1,17 +1,6 @@
 import { test, expect } from "@playwright/test";
-
-declare const process: {
-  env: Record<string, string | undefined>;
-  cwd: () => string;
-};
-declare function require(id: string): Record<string, unknown>;
-
-/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
-const readFileSync = require("fs").readFileSync as (
-  p: string,
-  enc: string,
-) => string;
-const resolve = require("path").resolve as (...args: string[]) => string;
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 /**
  * Loop Gate — Playwright smoke tests (五闸).
