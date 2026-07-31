@@ -30,14 +30,16 @@ export default defineConfig({
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
     video: "retain-on-failure",
-    // Vercel Protection Bypass for Automation — inject bypass headers
-    // only when the secret is available (CI preview deploys).
+    // Vercel Protection Bypass for Automation — inject the bypass header
+    // only when the secret is available (CI preview deploys). Do not send
+    // x-vercel-set-bypass-cookie on every navigation; repeated cookie-setting
+    // redirects can turn the smoke suite into a protection-loop test instead
+    // of an app test.
     ...(process.env.VERCEL_AUTOMATION_BYPASS_SECRET
       ? {
           extraHTTPHeaders: {
             "x-vercel-protection-bypass":
               process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
-            "x-vercel-set-bypass-cookie": "true",
           },
         }
       : {}),
