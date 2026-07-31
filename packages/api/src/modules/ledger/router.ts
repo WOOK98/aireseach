@@ -8,6 +8,8 @@ import { and, desc, eq, inArray } from "@workspace/db";
 import { ledgerJudgment, ledgerVerification } from "@workspace/db/schema";
 import { db } from "@workspace/db/server";
 
+import { env } from "../../env";
+
 export const ledgerRoute = new Hono();
 
 // ─── POST /api/ledger/judgments — 入账 ───────────────────────────────────────
@@ -228,10 +230,35 @@ ledgerRoute.get(
 );
 
 // ─── POST /api/ledger/verify/run — 批量核验 ─────────────────────────────────
+// Auth: accepts either session cookie OR Bearer token (LEDGER_VERIFY_TOKEN).
+// Token auth is used by the cron workflow; session auth is for admin UI.
 ledgerRoute.post("/verify/run", async (c) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  if (!session?.user)
+  // 1. Try Bearer token auth (for cron)
+  const authHeader = c.req.header("Authorization");
+  const verifyToken = env.LEDGER_VERIFY_TOKEN;
+  let authorized = false;
+
+  if (authHeader?.startsWith("Bearer ") && verifyToken) {
+    const token = authHeader.slice(7);
+    if (token === verifyToken) {
+      authorized = true;
+    }
+  }
+
+  // 2. Fall back to session auth (for admin UI)
+  if (!authorized) {
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    if (!session?.user) {
+      throw new HTTPException(401, { message: "Authentication required." });
+    }
+    // Only admin users can trigger via session (token is already gated by secret)
+    // For now, any authenticated user can trigger — tighten when roles exist.
+    authorized = true;
+  }
+
+  if (!authorized) {
     throw new HTTPException(401, { message: "Authentication required." });
+  }
 
   const body = await c.req.json().catch(() => ({}));
   const batchSize = typeof body.batchSize === "number" ? body.batchSize : 50;

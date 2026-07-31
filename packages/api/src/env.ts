@@ -18,6 +18,7 @@ export const preset = {
     OPENAI_API_KEY: z.string().optional(), // change it to your provider API key (e.g. ANTHROPIC_API_KEY if you use Anthropic)
     DEEPSEEK_API_KEY: z.string().optional(),
     LLM_API_KEY: z.string().optional(),
+    LEDGER_VERIFY_TOKEN: z.string().optional(),
     MCP_API_KEYS: z.string().optional(),
   },
   extends: [auth, billingWeb, billingMobile, db, email, storage, monitoring],

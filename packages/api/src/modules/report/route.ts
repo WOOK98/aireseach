@@ -82,6 +82,7 @@ async function autoInsertLedgerJudgments(opts: {
             source: j.source ?? null,
             freq: j.freq ?? null,
             publishedAt: now,
+            checkAfter: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days after publish
           })
           .onConflictDoNothing();
       } catch (err) {
