@@ -1,0 +1,16 @@
+{
+  "name": "airesearch",
+  "displayName": "AIResearch",
+  "description": "Claude Code first, Codex-compatible company research with entity lock, six-lens deep dives, snapshots, morning briefs, and filing evidence.",
+  "version": "0.5.0",
+  "repository": "https://github.com/WOOK98/aireseach",
+  "website": "https://www.airesearchs.com",
+  "documentation": "docs/codex-install.md",
+  "contact": "hello@airesearchs.com",
+  "tags": [
+    "research",
+    "finance",
+    "filings",
+    "decision-support"
+  ]
+}

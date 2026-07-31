@@ -25,6 +25,7 @@ const pathsConfig = {
   },
   marketing: {
     report: "/report",
+    install: "/install",
     pricing: "/pricing",
     contact: "/contact",
     privacy: "/privacy",
