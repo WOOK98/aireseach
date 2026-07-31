@@ -127,6 +127,24 @@ jobs:
       - name: Compile report agent
         run: python -m py_compile apps/report-agent/server.py
 
+  contract-fallback-tests:
+    name: Contract fallback tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run contract fallback tests
+        run: python -m pytest tests/contract/test_contract_fallback.py -v
+
   playwright-smoke:
     name: Playwright smoke
     runs-on: ubuntu-latest

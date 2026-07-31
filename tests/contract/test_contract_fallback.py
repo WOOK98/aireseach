@@ -166,7 +166,8 @@ def test_json_and_ts_mode_perspectives_consistency():
 
     for mode in ["snapshot", "earnings", "competition", "risk", "poc"]:
         assert mode in json_modes, f"JSON missing mode: {mode}"
-        assert f'"{mode}"' in ts_content, f"generated.ts missing mode: {mode}"
+        # generated.ts uses unquoted keys (serializeTsObject) or quoted keys
+        assert f'{mode}:' in ts_content or f'"{mode}"' in ts_content, f"generated.ts missing mode: {mode}"
 
 
 def test_generator_produces_consistent_outputs(tmp_path):
