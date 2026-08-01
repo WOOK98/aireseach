@@ -169,9 +169,10 @@ async function buildFeed(userId: string): Promise<FeedItem[]> {
     const latestJudgment = tickerJudgments[0] ?? null;
 
     // Collect all verifications for this ticker's judgments
-    const allVerifications = tickerJudgments.flatMap(
-      (j) => verificationsByJudgment.get(j.id) ?? [],
-    );
+    // Exclude "pending" — a pending verification hasn't actually evaluated anything.
+    const allVerifications = tickerJudgments
+      .flatMap((j) => verificationsByJudgment.get(j.id) ?? [])
+      .filter((v) => v.result !== "pending");
     const sortedVerifications = allVerifications.sort(
       (a, b) =>
         new Date(b.verifiedAt).getTime() - new Date(a.verifiedAt).getTime(),
@@ -186,8 +187,11 @@ async function buildFeed(userId: string): Promise<FeedItem[]> {
       verificationStatus = "never_generated";
     } else {
       // Find the earliest checkAfter that hasn't been verified yet
+      // A judgment with only "pending" verifications is still unverified.
       const unverified = tickerJudgments.filter((j) => {
-        const jVerifications = verificationsByJudgment.get(j.id) ?? [];
+        const jVerifications = (verificationsByJudgment.get(j.id) ?? []).filter(
+          (v) => v.result !== "pending",
+        );
         return jVerifications.length === 0;
       });
 
@@ -262,6 +266,24 @@ async function buildFeed(userId: string): Promise<FeedItem[]> {
 }
 
 export const watchlistRouter = new Hono()
+  // ── GET /feed — enriched watchlist with judgment + verification data ──
+  // MUST be before /:symbol to avoid "feed" being captured as a symbol.
+  .get("/feed", async (c) => {
+    const user = await getUser(c.req.raw.headers);
+    if (!user) {
+      return c.json({ ok: true, authenticated: false, items: [] });
+    }
+
+    await ensureStorage();
+
+    const feed = await buildFeed(user.id);
+
+    return c.json({
+      ok: true,
+      authenticated: true,
+      items: feed,
+    });
+  })
   .get("/", async (c) => {
     const user = await getUser(c.req.raw.headers);
     if (!user) {
@@ -375,21 +397,4 @@ export const watchlistRouter = new Hono()
 
       return c.json({ ok: true });
     },
-  )
-  // ── GET /feed — enriched watchlist with judgment + verification data ──
-  .get("/feed", async (c) => {
-    const user = await getUser(c.req.raw.headers);
-    if (!user) {
-      return c.json({ ok: true, authenticated: false, items: [] });
-    }
-
-    await ensureStorage();
-
-    const feed = await buildFeed(user.id);
-
-    return c.json({
-      ok: true,
-      authenticated: true,
-      items: feed,
-    });
-  });
+  );

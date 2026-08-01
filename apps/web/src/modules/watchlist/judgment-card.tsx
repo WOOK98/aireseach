@@ -117,15 +117,19 @@ function formatFutureDate(iso: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-/** Parse wrongIf into a human-readable distance description */
-function invalidationDistance(item: FeedItem): string | null {
+interface DistanceInfo {
+  text: string;
+  level: "triggered" | "approaching" | "safe";
+}
+
+/** Parse wrongIf into a structured distance description. */
+function invalidationDistance(item: FeedItem): DistanceInfo | null {
   const j = item.latestJudgment;
   if (!j?.trigger) return null;
 
   const v = item.latestVerification;
   if (!v?.dataPoint) return null;
 
-  // Try to extract numeric values for distance
   const triggerMatch = j.trigger.match(/([<>]=?)\s*([\d,.]+)/);
   const dataMatch = v.dataPoint.match(/([\d,.]+)/);
 
@@ -134,17 +138,40 @@ function invalidationDistance(item: FeedItem): string | null {
     const threshold = parseFloat(triggerMatch[2]!.replace(/,/g, ""));
     const current = parseFloat(dataMatch[1]!.replace(/,/g, ""));
 
-    if (!isNaN(threshold) && !isNaN(current)) {
+    if (!isNaN(threshold) && !isNaN(current) && threshold !== 0) {
       const diff = current - threshold;
+      const absDiff = Math.abs(diff);
       const unit = j.trigger.replace(/[<>]=?\s*[\d,.]+/, "").trim();
-      const direction = op.includes("<")
-        ? diff > 0
-          ? "above"
-          : "below"
-        : diff < 0
-          ? "below"
-          : "above";
-      return `${Math.abs(diff).toFixed(1)}${unit} ${direction} trigger`;
+
+      // Determine direction relative to trigger
+      let direction: string;
+      if (op.includes("<")) {
+        // wrongIf: value drops below threshold → trigger fires when value < threshold
+        direction = diff >= 0 ? "above" : "below";
+      } else {
+        // wrongIf: value exceeds threshold → trigger fires when value > threshold
+        direction = diff <= 0 ? "below" : "above";
+      }
+
+      // Determine danger level
+      // percentage of threshold — within 10% is "approaching"
+      const pctOfThreshold = absDiff / Math.abs(threshold);
+      let level: DistanceInfo["level"];
+
+      if (direction === "below") {
+        // Past the trigger line → invalidated
+        level = "triggered";
+      } else if (pctOfThreshold < 0.1) {
+        // Within 10% of trigger → close
+        level = "approaching";
+      } else {
+        level = "safe";
+      }
+
+      return {
+        text: `${absDiff.toFixed(1)}${unit} ${direction} trigger`,
+        level,
+      };
     }
   }
 
@@ -180,25 +207,40 @@ function ChangeStrength({ count }: { count: number }) {
   );
 }
 
-function DistanceBadge({ distance }: { distance: string | null }) {
+function DistanceBadge({ distance }: { distance: DistanceInfo | null }) {
   if (!distance) return null;
 
-  const isClose = /\bbelow\b|triggered/i.test(distance);
+  const levelConfig = {
+    triggered: {
+      border: "border-red-200 dark:border-red-800",
+      bg: "bg-red-50 dark:bg-red-950/30",
+      text: "text-red-700 dark:text-red-300",
+      Icon: ArrowDownRight,
+    },
+    approaching: {
+      border: "border-amber-200 dark:border-amber-800",
+      bg: "bg-amber-50 dark:bg-amber-950/30",
+      text: "text-amber-700 dark:text-amber-300",
+      Icon: ArrowDownRight,
+    },
+    safe: {
+      border: "border-emerald-200 dark:border-emerald-800",
+      bg: "bg-emerald-50 dark:bg-emerald-950/30",
+      text: "text-emerald-700 dark:text-emerald-300",
+      Icon: ArrowUpRight,
+    },
+  } as const;
+
+  const config = levelConfig[distance.level];
+  const Icon = config.Icon;
+
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] ${
-        isClose
-          ? "border-red-200 bg-red-50 text-red-700"
-          : "border-border text-muted-foreground"
-      }`}
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] ${config.border} ${config.bg} ${config.text}`}
     >
-      {isClose ? (
-        <ArrowDownRight className="h-2.5 w-2.5" />
-      ) : (
-        <ArrowUpRight className="h-2.5 w-2.5" />
-      )}
+      <Icon className="h-2.5 w-2.5" />
       <span className="notranslate" translate="no">
-        {distance}
+        {distance.text}
       </span>
     </span>
   );
@@ -227,7 +269,10 @@ export function JudgmentCard({ item }: { item: FeedItem }) {
             >
               {item.symbol}
             </Link>
-            <span className="text-muted-foreground font-mono text-xs">
+            <span
+              className="notranslate text-muted-foreground font-mono text-xs"
+              translate="no"
+            >
               {item.market}
             </span>
             <StatusBadge status={item.verificationStatus} />
