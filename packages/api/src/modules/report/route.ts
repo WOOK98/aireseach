@@ -31,7 +31,9 @@ import {
 import { cachedSearchFilings, cachedFetchFilingContent } from "./filings";
 import { buildIndustryUniverse, expandWithAHPeers } from "./industry";
 import { formatImaKnowledgeForPrompt, searchImaKnowledge } from "./knowledge";
+import { computeTQS } from "./tqs";
 
+import type { TQSResult, TQSInput } from "./tqs";
 import type { FinancialMetrics } from "@workspace/shared/types/report";
 
 // ── L3 Ledger: shared auto-insert helper ────────────────────────────────────
@@ -42,6 +44,7 @@ async function autoInsertLedgerJudgments(opts: {
   ticker: string;
   companyName: string;
   rawJson: string;
+  tqs?: TQSResult;
 }) {
   try {
     const parsed = JSON.parse(opts.rawJson) as {
@@ -83,6 +86,18 @@ async function autoInsertLedgerJudgments(opts: {
             freq: j.freq ?? null,
             publishedAt: now,
             checkAfter: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days after publish
+            // TQS fields — same for all judgments in this report
+            tqsScore: opts.tqs?.score ?? null,
+            tqsTier: opts.tqs?.tier ?? null,
+            tqsFactors: opts.tqs?.factors ?? null,
+            tqsFactorDetails: opts.tqs
+              ? Object.fromEntries(
+                  Object.entries(opts.tqs.factors).map(([k, v]) => [
+                    k,
+                    v.reason,
+                  ]),
+                )
+              : null,
           })
           .onConflictDoNothing();
       } catch (err) {
@@ -778,7 +793,51 @@ Hard rules:
         fallbackText,
       });
 
-      await s.write(result.text);
+      // ── L2 TQS: compute thesis quality score ───────────────────────────
+      let tqsResult: TQSResult | undefined;
+      let responseText = result.text;
+      try {
+        const parsed = JSON.parse(result.text) as Record<string, unknown>;
+        const topJudgments = (parsed.topJudgments ??
+          []) as TQSInput["topJudgments"];
+        const landingRate = (parsed.landingRate as number) ?? 0;
+        const thesisBreakers = (parsed.thesisBreakers ??
+          []) as TQSInput["thesisBreakers"];
+        const risks =
+          (parsed.sections as { risks?: string[] } | undefined)?.risks ?? [];
+        const bearCase = parsed.bearCase as string[] | undefined;
+        const monitorPanel = parsed.monitorPanel as TQSInput["monitorPanel"];
+
+        tqsResult = computeTQS({
+          landingRate,
+          topJudgments,
+          thesisBreakers,
+          risks,
+          bearCase,
+          reportDate: new Date().toISOString().slice(0, 10),
+          monitorPanel,
+        });
+
+        // Attach TQS to the response JSON and re-serialize
+        parsed.tqs = {
+          score: tqsResult.score,
+          tier: tqsResult.tier,
+          unreliable: tqsResult.unreliable,
+          label: `TQS ${tqsResult.tier}`,
+          factors: Object.entries(tqsResult.factors).map(([name, f]) => ({
+            name,
+            score: f.score,
+            rationale: f.reason,
+          })),
+          disclaimer: tqsResult.disclaimer,
+        };
+        responseText = JSON.stringify(parsed);
+      } catch (tqsErr) {
+        // TQS is best-effort — never blocks the report
+        console.warn(`[report] TQS computation failed for ${symbol}:`, tqsErr);
+      }
+
+      await s.write(responseText);
 
       // Log usage after stream completes (best-effort)
       try {
@@ -804,7 +863,8 @@ Hard rules:
         reportId: reportId1,
         ticker: symbol,
         companyName: m.companyName,
-        rawJson: result.text,
+        rawJson: responseText,
+        tqs: tqsResult,
       });
     });
   },
@@ -1153,7 +1213,49 @@ Requirements:
         fallbackText,
       });
 
-      await s.write(result.text);
+      // ── L2 TQS: compute thesis quality score ───────────────────────────
+      let tqsResult2: TQSResult | undefined;
+      let responseText2 = result.text;
+      try {
+        const parsed = JSON.parse(result.text) as Record<string, unknown>;
+        const topJudgments = (parsed.topJudgments ??
+          []) as TQSInput["topJudgments"];
+        const landingRate = (parsed.landingRate as number) ?? 0;
+        const thesisBreakers = (parsed.thesisBreakers ??
+          []) as TQSInput["thesisBreakers"];
+        const risks =
+          (parsed.sections as { risks?: string[] } | undefined)?.risks ?? [];
+        const bearCase = parsed.bearCase as string[] | undefined;
+        const monitorPanel = parsed.monitorPanel as TQSInput["monitorPanel"];
+
+        tqsResult2 = computeTQS({
+          landingRate,
+          topJudgments,
+          thesisBreakers,
+          risks,
+          bearCase,
+          reportDate: new Date().toISOString().slice(0, 10),
+          monitorPanel,
+        });
+
+        parsed.tqs = {
+          score: tqsResult2.score,
+          tier: tqsResult2.tier,
+          unreliable: tqsResult2.unreliable,
+          label: `TQS ${tqsResult2.tier}`,
+          factors: Object.entries(tqsResult2.factors).map(([name, f]) => ({
+            name,
+            score: f.score,
+            rationale: f.reason,
+          })),
+          disclaimer: tqsResult2.disclaimer,
+        };
+        responseText2 = JSON.stringify(parsed);
+      } catch (tqsErr) {
+        console.warn(`[report] TQS computation failed for ${symbol}:`, tqsErr);
+      }
+
+      await s.write(responseText2);
 
       try {
         const usage = result.usage;
@@ -1178,7 +1280,8 @@ Requirements:
         reportId: reportId2,
         ticker: symbol,
         companyName: m.companyName,
-        rawJson: result.text,
+        rawJson: responseText2,
+        tqs: tqsResult2,
       });
     });
   },

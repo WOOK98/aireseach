@@ -1,5 +1,7 @@
 import {
   index,
+  integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -64,6 +66,11 @@ export const ledgerJudgment = pgTable(
     freq: text(), // "Daily" | "Weekly" | "Quarterly" | "Event-driven"
     // Schema version — aligned with monitorPanel.schema_version
     schemaVersion: text().notNull().default(String(LEDGER_SCHEMA_VERSION)),
+    // TQS (Thesis Quality Score) — L2 quality assessment at time of publication
+    tqsScore: integer("tqs_score"), // 0–100 weighted score
+    tqsTier: text("tqs_tier"), // S/A/B/C/D/F
+    tqsFactors: jsonb("tqs_factors"), // per-factor scores { F1: 85, F2: 70, ... }
+    tqsFactorDetails: jsonb("tqs_factor_details"), // per-factor reasons
     // Timing
     publishedAt: timestamp().notNull(), // when the report was published
     checkAfter: timestamp(), // earliest verification time (null = immediate)
