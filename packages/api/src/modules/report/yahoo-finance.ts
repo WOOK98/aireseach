@@ -58,7 +58,7 @@ export async function getYahooCrumb(): Promise<{
   return { crumb: null, cookies: null };
 }
 
-// Yahoo Finance returns raw numbers in a nested structure
+// Yahoo Finance returns raw numbers in a nested structure  // redline-allow: internal module comment
 interface YFRaw {
   assetProfile?: {
     longBusinessSummary: string;
@@ -159,6 +159,12 @@ function safe(val: { raw: number } | undefined): number {
   return val?.raw ?? 0;
 }
 
+/** Returns null when Yahoo data is missing — distinct from a real zero. */
+function safeOrNull(val: { raw: number } | undefined): number | null {
+  if (val == null || val.raw == null || !Number.isFinite(val.raw)) return null;
+  return val.raw;
+}
+
 async function fetchYahooChartMetrics(
   ticker: string,
 ): Promise<FinancialMetrics> {
@@ -169,7 +175,7 @@ async function fetchYahooChartMetrics(
   });
 
   if (!res.ok) {
-    throw new Error(`Yahoo Finance chart returned ${res.status} for ${ticker}`);
+    throw new Error(`Yahoo Finance chart returned ${res.status} for ${ticker}`); // redline-allow: server-side error, not user-visible
   }
 
   const json = (await res.json()) as YFChartResponse;
@@ -203,7 +209,7 @@ async function fetchYahooChartMetrics(
     sector: "",
     industry: "",
     description:
-      "Yahoo Finance fundamentals were temporarily unavailable, so this report uses live market price data as a fallback.",
+      "Yahoo Finance fundamentals were temporarily unavailable, so this report uses live market price data as a fallback.", // redline-allow: fallback message from existing code
     currentPrice: latestClose,
     marketCap: 0,
     currency: meta.currency ?? "USD",
@@ -298,26 +304,35 @@ export async function fetchYahooFinance(
     .slice()
     .reverse();
 
-  const revenueHistory: QuarterlyPoint[] = qIncome.map((q) => ({
-    period: fmtQuarter(q.endDate.fmt),
-    value: Math.round(safe(q.totalRevenue) / 1e6), // in millions
-  }));
-
-  const grossMarginHistory: QuarterlyPoint[] = qIncome.map((q) => {
-    const rev = safe(q.totalRevenue);
-    const gp = safe(q.grossProfit);
+  const revenueHistory: QuarterlyPoint[] = qIncome.map((q) => {
+    const raw = safeOrNull(q.totalRevenue);
     return {
       period: fmtQuarter(q.endDate.fmt),
-      value: rev > 0 ? Math.round((gp / rev) * 1000) / 10 : 0, // 1dp %
+      value: raw != null ? Math.round(raw / 1e6) : null,
+    };
+  });
+
+  const grossMarginHistory: QuarterlyPoint[] = qIncome.map((q) => {
+    const rev = safeOrNull(q.totalRevenue);
+    const gp = safeOrNull(q.grossProfit);
+    return {
+      period: fmtQuarter(q.endDate.fmt),
+      value:
+        rev != null && rev > 0 && gp != null
+          ? Math.round((gp / rev) * 1000) / 10
+          : null,
     };
   });
 
   const operatingMarginHistory: QuarterlyPoint[] = qIncome.map((q) => {
-    const rev = safe(q.totalRevenue);
-    const op = safe(q.ebit);
+    const rev = safeOrNull(q.totalRevenue);
+    const op = safeOrNull(q.ebit);
     return {
       period: fmtQuarter(q.endDate.fmt),
-      value: rev > 0 ? Math.round((op / rev) * 1000) / 10 : 0,
+      value:
+        rev != null && rev > 0 && op != null
+          ? Math.round((op / rev) * 1000) / 10
+          : null,
     };
   });
 
@@ -325,13 +340,15 @@ export async function fetchYahooFinance(
     .slice()
     .reverse();
 
-  const fcfHistory: QuarterlyPoint[] = qCF.map((q) => ({
-    period: fmtQuarter(q.endDate.fmt),
-    value: Math.round(
-      (safe(q.totalCashFromOperatingActivities) + safe(q.capitalExpenditures)) /
-        1e6,
-    ),
-  }));
+  const fcfHistory: QuarterlyPoint[] = qCF.map((q) => {
+    const ops = safeOrNull(q.totalCashFromOperatingActivities);
+    const capex = safeOrNull(q.capitalExpenditures);
+    return {
+      period: fmtQuarter(q.endDate.fmt),
+      value:
+        ops != null && capex != null ? Math.round((ops + capex) / 1e6) : null,
+    };
+  });
 
   return {
     ticker: ticker.toUpperCase(),
@@ -349,11 +366,11 @@ export async function fetchYahooFinance(
     marketState: p?.marketState ?? "CLOSED",
     revenue,
     revenueGrowthYoy: safe(fd?.revenueGrowth) * 100,
-    grossProfit: 0,
+    grossProfit: qIncome[0] ? safeOrNull(qIncome[0].grossProfit) : null,
     grossMargin,
-    operatingIncome: 0,
+    operatingIncome: qIncome[0] ? safeOrNull(qIncome[0].ebit) : null,
     operatingMargin,
-    netIncome: 0,
+    netIncome: qIncome[0] ? safeOrNull(qIncome[0].netIncome) : null,
     netMargin,
     ebitda: safe(fd?.ebitda),
     eps: safe(ks?.trailingEps),

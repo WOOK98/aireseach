@@ -19,11 +19,11 @@ export interface FinancialMetrics {
   // Income Statement
   revenue: number;
   revenueGrowthYoy: number; // %
-  grossProfit: number;
+  grossProfit: number | null;
   grossMargin: number | null; // %
-  operatingIncome: number;
+  operatingIncome: number | null;
   operatingMargin: number | null; // %
-  netIncome: number;
+  netIncome: number | null;
   netMargin: number | null; // %
   ebitda: number | null;
   eps: number | null;
@@ -54,7 +54,7 @@ export interface FinancialMetrics {
 
 export interface QuarterlyPoint {
   period: string; // e.g. "Q1 2024"
-  value: number;
+  value: number | null; // null = data unavailable (not zero)
 }
 
 export interface ReportSection {
