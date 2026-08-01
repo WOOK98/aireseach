@@ -139,37 +139,46 @@ function invalidationDistance(item: FeedItem): DistanceInfo | null {
     const current = parseFloat(dataMatch[1]!.replace(/,/g, ""));
 
     if (!isNaN(threshold) && !isNaN(current) && threshold !== 0) {
-      const diff = current - threshold;
-      const absDiff = Math.abs(diff);
+      const absDiff = Math.abs(current - threshold);
       const unit = j.trigger.replace(/[<>]=?\s*[\d,.]+/, "").trim();
+      const pctOfThreshold = absDiff / Math.abs(threshold);
 
-      // Determine direction relative to trigger
-      let direction: string;
-      if (op.includes("<")) {
-        // wrongIf: value drops below threshold → trigger fires when value < threshold
-        direction = diff >= 0 ? "above" : "below";
-      } else {
-        // wrongIf: value exceeds threshold → trigger fires when value > threshold
-        direction = diff <= 0 ? "below" : "above";
+      // Operator-aware: does the current value actually trigger the condition?
+      //   "<" means wrongIf fires when value < threshold
+      //   ">" means wrongIf fires when value > threshold
+      let triggered = false;
+      switch (op) {
+        case "<":
+          triggered = current < threshold;
+          break;
+        case "<=":
+          triggered = current <= threshold;
+          break;
+        case ">":
+          triggered = current > threshold;
+          break;
+        case ">=":
+          triggered = current >= threshold;
+          break;
+        default:
+          break;
       }
 
-      // Determine danger level
-      // percentage of threshold — within 10% is "approaching"
-      const pctOfThreshold = absDiff / Math.abs(threshold);
       let level: DistanceInfo["level"];
-
-      if (direction === "below") {
-        // Past the trigger line → invalidated
+      if (triggered) {
         level = "triggered";
       } else if (pctOfThreshold < 0.1) {
-        // Within 10% of trigger → close
         level = "approaching";
       } else {
         level = "safe";
       }
 
+      // Build human-readable text:
+      // "5.2% above trigger" / "2.1% below trigger"
+      const aboveBelow = current >= threshold ? "above" : "below";
+
       return {
-        text: `${absDiff.toFixed(1)}${unit} ${direction} trigger`,
+        text: `${absDiff.toFixed(1)}${unit} ${aboveBelow} trigger`,
         level,
       };
     }
