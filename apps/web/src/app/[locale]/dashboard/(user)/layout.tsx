@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { BarChart3 } from "lucide-react";
+import { Activity, BarChart3 } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { getBillingSummaryResponseSchema } from "@workspace/api/schema";
@@ -21,6 +21,11 @@ const menu = [
   {
     label: "platform",
     items: [
+      {
+        title: "Watchlist",
+        href: pathsConfig.dashboard.user.watchlist,
+        icon: <Activity />,
+      },
       {
         title: "Research",
         href: pathsConfig.dashboard.user.research,
