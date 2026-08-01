@@ -47,6 +47,7 @@ const pathsConfig = {
   dashboard: {
     user: {
       index: DASHBOARD_PREFIX,
+      watchlist: `${DASHBOARD_PREFIX}/watchlist`,
       research: `${DASHBOARD_PREFIX}/research`,
       settings: {
         index: `${DASHBOARD_PREFIX}/settings`,

@@ -54,3 +54,4 @@ tests/workflow/playwright-report/
 # Test coverage artifacts (build output — never tracked)
 coverage.json
 coverage/
+playwright-report/
