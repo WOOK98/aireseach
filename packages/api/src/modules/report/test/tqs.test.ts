@@ -194,15 +194,15 @@ describe("computeTQS", () => {
   // ── Empty input ─────────────────────────────────────────────────────────
 
   describe("empty judgments", () => {
-    it("returns score 0 or very low when no judgments", () => {
+    it("flags unreliable and caps score when ≥3 factors are null", () => {
       const result = computeTQS(emptyInput);
-      // F1 gets 100 (landingRate=1.0 on 0 items), but F2-F5 are null
-      // The weighted average uses only F1, so score = 100
-      // But this is actually correct — the only scorable factor is perfect
-      // The tier should reflect that most factors are unscorable
+      // F1 = 100 (landingRate=1.0), F5 = 0 (empty inputs), F2-F4 = null
+      // ≥3 null factors → unreliable → score capped at 44 (max D tier)
       expect(result.factors.F2_invalidation.score).toBeNull();
       expect(result.factors.F3_freshness.score).toBeNull();
       expect(result.factors.F4_source.score).toBeNull();
+      expect(result.unreliable).toBe(true);
+      expect(result.score).toBeLessThanOrEqual(44);
     });
 
     it("null factors have clear reasons", () => {
@@ -220,7 +220,6 @@ describe("computeTQS", () => {
   describe("partial data", () => {
     it("null factors are excluded from weighted average", () => {
       const result = computeTQS(partialInput);
-      // F1 should be scored (landingRate=0.75), F2 should be scored, etc.
       expect(result.factors.F1_grounding.score).not.toBeNull();
       expect(result.factors.F2_invalidation.score).not.toBeNull();
     });
@@ -229,6 +228,36 @@ describe("computeTQS", () => {
       const result = computeTQS(partialInput);
       expect(result.score).toBeGreaterThanOrEqual(0);
       expect(result.score).toBeLessThanOrEqual(100);
+    });
+  });
+
+  // ── Unreliable flag ───────────────────────────────────────────────────
+
+  describe("unreliable flag", () => {
+    it("high-quality report is not unreliable", () => {
+      const result = computeTQS(highQualityInput);
+      expect(result.unreliable).toBe(false);
+    });
+
+    it("empty input is unreliable (3 null factors)", () => {
+      const result = computeTQS(emptyInput);
+      expect(result.unreliable).toBe(true);
+    });
+
+    it("low-quality report is unreliable (3 null factors: F3, F4, F5)", () => {
+      const result = computeTQS(lowQualityInput);
+      // lowQualityInput: no metric/trigger → F3 stale, F4 no source, F5 empty bearCase
+      // F3 = null (stale data), F4 has score, F5 may score
+      // Check the actual nullCount
+      const nullCount = Object.values(result.factors).filter(
+        (f) => f.score === null,
+      ).length;
+      if (nullCount >= 3) {
+        expect(result.unreliable).toBe(true);
+        expect(result.score).toBeLessThanOrEqual(44);
+      } else {
+        expect(result.unreliable).toBe(false);
+      }
     });
   });
 

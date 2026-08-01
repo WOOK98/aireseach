@@ -821,10 +821,12 @@ Hard rules:
         // Attach TQS to the response JSON and re-serialize
         parsed.tqs = {
           score: tqsResult.score,
+          tier: tqsResult.tier,
+          unreliable: tqsResult.unreliable,
           label: `TQS ${tqsResult.tier}`,
           factors: Object.entries(tqsResult.factors).map(([name, f]) => ({
             name,
-            score: f.score ?? 0,
+            score: f.score,
             rationale: f.reason,
           })),
           disclaimer: tqsResult.disclaimer,
@@ -1238,10 +1240,12 @@ Requirements:
 
         parsed.tqs = {
           score: tqsResult2.score,
+          tier: tqsResult2.tier,
+          unreliable: tqsResult2.unreliable,
           label: `TQS ${tqsResult2.tier}`,
           factors: Object.entries(tqsResult2.factors).map(([name, f]) => ({
             name,
-            score: f.score ?? 0,
+            score: f.score,
             rationale: f.reason,
           })),
           disclaimer: tqsResult2.disclaimer,
