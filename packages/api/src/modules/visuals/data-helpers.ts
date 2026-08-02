@@ -260,7 +260,7 @@ export function buildManifest(lastRefreshed: Date | null): VisualsManifest {
           total: "number",
         },
         lastRefreshed: refreshed,
-        sourcePaths: ["ledger_verification", "ledger_judgment"],
+        sourcePaths: ["L3 verification ledger", "L3 judgment ledger"],
       },
       {
         id: "tqs-distribution",
@@ -278,7 +278,7 @@ export function buildManifest(lastRefreshed: Date | null): VisualsManifest {
           total: "number",
         },
         lastRefreshed: refreshed,
-        sourcePaths: ["ledger_judgment"],
+        sourcePaths: ["L3 judgment ledger"],
       },
       {
         id: "company-fundamentals-timeline",
@@ -293,7 +293,7 @@ export function buildManifest(lastRefreshed: Date | null): VisualsManifest {
           fcfHistory: "QuarterlyPoint[]",
         },
         lastRefreshed: refreshed,
-        sourcePaths: ["financial_data"],
+        sourcePaths: ["financial statement metrics"],
       },
       {
         id: "evidence-source-mix",
@@ -310,7 +310,7 @@ export function buildManifest(lastRefreshed: Date | null): VisualsManifest {
           total: "number",
         },
         lastRefreshed: refreshed,
-        sourcePaths: ["ledger_judgment"],
+        sourcePaths: ["L3 judgment ledger"],
       },
     ],
     lastRefreshed: refreshed,

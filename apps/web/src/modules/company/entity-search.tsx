@@ -49,9 +49,12 @@ function normalizeSymbol(value: string) {
 export function EntitySearch({
   initialValue = "",
   compact = false,
+  onResolve,
 }: {
   initialValue?: string;
   compact?: boolean;
+  /** Called when entity is locked. If omitted, navigates to /t/[symbol]. */
+  onResolve?: (entity: ResolvedEntity) => void;
 }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -72,48 +75,52 @@ export function EntitySearch({
     [router],
   );
 
-  const resolve = useCallback(async (value: string) => {
-    const next = value.trim();
-    if (!next) {
-      setState("empty");
-      setEntity(null);
-      setCandidates([]);
-      return;
-    }
-
-    setState("loading");
-    try {
-      const response = await fetch(
-        `/api/report/resolve/${encodeURIComponent(next)}`,
-      );
-      const result = (await response.json()) as EntityResolution;
-
-      if (result.ok) {
-        setState("locked");
-        setEntity(result);
+  const resolve = useCallback(
+    async (value: string) => {
+      const next = value.trim();
+      if (!next) {
+        setState("empty");
+        setEntity(null);
         setCandidates([]);
         return;
       }
 
-      setEntity(null);
-      if (result.mode === "clarify" && result.candidates.length > 0) {
-        setState("ambiguous");
-        setCandidates(result.candidates);
-        return;
+      setState("loading");
+      try {
+        const response = await fetch(
+          `/api/report/resolve/${encodeURIComponent(next)}`,
+        );
+        const result = (await response.json()) as EntityResolution;
+
+        if (result.ok) {
+          setState("locked");
+          setEntity(result);
+          setCandidates([]);
+          onResolve?.(result);
+          return;
+        }
+
+        setEntity(null);
+        if (result.mode === "clarify" && result.candidates.length > 0) {
+          setState("ambiguous");
+          setCandidates(result.candidates);
+          return;
+        }
+        if (result.mode === "industry") {
+          setState("theme");
+          setCandidates(result.candidates);
+          return;
+        }
+        setState("no-match");
+        setCandidates([]);
+      } catch {
+        setState("no-match");
+        setEntity(null);
+        setCandidates([]);
       }
-      if (result.mode === "industry") {
-        setState("theme");
-        setCandidates(result.candidates);
-        return;
-      }
-      setState("no-match");
-      setCandidates([]);
-    } catch {
-      setState("no-match");
-      setEntity(null);
-      setCandidates([]);
-    }
-  }, []);
+    },
+    [onResolve],
+  );
 
   const handleChange = useCallback(
     (value: string) => {

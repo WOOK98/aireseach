@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { Activity, BarChart3 } from "lucide-react";
+import { Activity, BarChart3, Map } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { getBillingSummaryResponseSchema } from "@workspace/api/schema";
@@ -30,6 +30,11 @@ const menu = [
         title: "Research",
         href: pathsConfig.dashboard.user.research,
         icon: <BarChart3 />,
+      },
+      {
+        title: "Data Atlas",
+        href: pathsConfig.dashboard.user.visuals,
+        icon: <Map />,
       },
     ],
   },

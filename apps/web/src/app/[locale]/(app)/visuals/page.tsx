@@ -8,16 +8,15 @@ import {
   HelpCircle,
   Loader2,
   RefreshCcw,
-  Search,
   Shield,
   TrendingUp,
 } from "lucide-react";
 import { useEffect, useCallback, useState } from "react";
 
 import { Button } from "@workspace/ui-web/button";
-import { Input } from "@workspace/ui-web/input";
 import { Skeleton } from "@workspace/ui-web/skeleton";
 
+import { EntitySearch } from "~/modules/company/entity-search";
 import {
   VerificationFlowChart,
   TQSDistributionChart,
@@ -56,6 +55,18 @@ interface FundamentalsData {
 interface SourceMixData {
   tiers: Record<string, number>;
   total: number;
+}
+
+// ── fetchJson wrapper ────────────────────────────────────────────────────────
+
+async function fetchJson<T>(url: string): Promise<T | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
 }
 
 // ── Panel wrapper ────────────────────────────────────────────────────────────
@@ -117,7 +128,6 @@ function EmptyPanel({ message }: { message?: string }) {
 
 export default function VisualsPage() {
   const [mounted, setMounted] = useState(false);
-  const [tickerInput, setTickerInput] = useState("");
   const [activeTicker, setActiveTicker] = useState<string | null>(null);
 
   // Data states
@@ -141,71 +151,47 @@ export default function VisualsPage() {
   // Fetch aggregate panels on mount
   const fetchAggregatePanels = useCallback(async () => {
     setLoading(true);
-    try {
-      const [manifest, vf30, vf90, tqs, sm] = await Promise.all([
-        fetch("/api/visuals/manifest").then(
-          (r) => r.json() as Promise<{ lastRefreshed: string | null }>,
-        ),
-        fetch("/api/visuals/verification-flow?days=30").then(
-          (r) => r.json() as Promise<VerificationFlowData>,
-        ),
-        fetch("/api/visuals/verification-flow?days=90").then(
-          (r) => r.json() as Promise<VerificationFlowData>,
-        ),
-        fetch("/api/visuals/tqs-distribution").then(
-          (r) => r.json() as Promise<TQSDistributionData>,
-        ),
-        fetch("/api/visuals/source-mix").then(
-          (r) => r.json() as Promise<SourceMixData>,
-        ),
-      ]);
+    const [manifest, vf30, vf90, tqs, sm] = await Promise.all([
+      fetchJson<{ lastRefreshed: string | null }>("/api/visuals/manifest"),
+      fetchJson<VerificationFlowData>("/api/visuals/verification-flow?days=30"),
+      fetchJson<VerificationFlowData>("/api/visuals/verification-flow?days=90"),
+      fetchJson<TQSDistributionData>("/api/visuals/tqs-distribution"),
+      fetchJson<SourceMixData>("/api/visuals/source-mix"),
+    ]);
 
-      setVerificationFlow({ d30: vf30, d90: vf90 });
-      setTqsDist(tqs);
-      setSourceMix(sm);
-      setLastRefreshed(manifest.lastRefreshed);
-    } catch {
-      // Silently fail — panels show empty state
-    } finally {
-      setLoading(false);
-    }
+    setVerificationFlow({ d30: vf30, d90: vf90 });
+    setTqsDist(tqs);
+    setSourceMix(sm);
+    setLastRefreshed(manifest?.lastRefreshed ?? null);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     void fetchAggregatePanels();
   }, [fetchAggregatePanels]);
 
-  // Fetch fundamentals when ticker changes
-  const handleTickerSubmit = useCallback(async () => {
-    const ticker = tickerInput.trim().toUpperCase();
-    if (!ticker) return;
-
-    setActiveTicker(ticker);
-    setFundamentalsLoading(true);
-
-    try {
-      const res = await fetch(
-        `/api/visuals/fundamentals?ticker=${encodeURIComponent(ticker)}`,
-      );
-      const data = (await res.json()) as FundamentalsData;
-      setFundamentals(data);
-    } catch {
-      setFundamentals(null);
-    } finally {
-      setFundamentalsLoading(false);
-    }
-  }, [tickerInput]);
+  // EntitySearch onResolve — loads fundamentals when entity is locked
+  const handleEntityResolve = useCallback(
+    (entity: { ticker: string; companyName: string }) => {
+      setActiveTicker(entity.ticker);
+      setFundamentalsLoading(true);
+      void fetchJson<FundamentalsData>(
+        `/api/visuals/fundamentals?ticker=${encodeURIComponent(entity.ticker)}`,
+      )
+        .then((data) => setFundamentals(data))
+        .finally(() => setFundamentalsLoading(false));
+    },
+    [],
+  );
 
   const handleRefresh = useCallback(() => {
     void fetchAggregatePanels();
     if (activeTicker) {
       setFundamentalsLoading(true);
-      fetch(
+      void fetchJson<FundamentalsData>(
         `/api/visuals/fundamentals?ticker=${encodeURIComponent(activeTicker)}`,
       )
-        .then((r) => r.json() as Promise<FundamentalsData>)
         .then((data) => setFundamentals(data))
-        .catch(() => setFundamentals(null))
         .finally(() => setFundamentalsLoading(false));
     }
   }, [fetchAggregatePanels, activeTicker]);
@@ -264,33 +250,9 @@ export default function VisualsPage() {
       {/* ── Content ── */}
       <div className="flex-1 overflow-y-auto px-4 py-5">
         <div className="mx-auto w-full max-w-5xl space-y-6">
-          {/* ── Persistent search box ── */}
+          {/* ── Entity Lock search box ── */}
           <div className="bg-background/95 sticky top-0 z-10 -mx-4 -mt-5 px-4 pt-5 pb-3 backdrop-blur">
-            <div className="relative">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
-              <Input
-                value={tickerInput}
-                onChange={(e) => setTickerInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void handleTickerSubmit();
-                }}
-                placeholder="Enter ticker to load fundamentals (e.g. AAPL, NVDA)..."
-                className="pl-9 font-mono text-sm uppercase placeholder:font-sans placeholder:normal-case"
-              />
-              <Button
-                size="sm"
-                onClick={handleTickerSubmit}
-                disabled={!tickerInput.trim() || fundamentalsLoading}
-                className="absolute top-1 right-1 h-8 gap-1.5"
-              >
-                {fundamentalsLoading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <TrendingUp className="h-3 w-3" />
-                )}
-                Load
-              </Button>
-            </div>
+            <EntitySearch compact onResolve={handleEntityResolve} />
           </div>
 
           {/* ── Panel 1: Watchlist Verification Flow ── */}
