@@ -74,6 +74,24 @@ function fmtCompactNum(value: number | null | undefined): string | null {
   return `${sign}${abs.toFixed(2)}`;
 }
 
+/** fmtCompactNum with currency prefix for absolute monetary values. */
+function fmtCompactMoney(
+  value: number | null | undefined,
+  currency: string,
+): string | null {
+  const compact = fmtCompactNum(value);
+  if (compact == null) return null;
+  const sym =
+    currency === "JPY"
+      ? "¥"
+      : currency === "EUR"
+        ? "€"
+        : currency === "GBP"
+          ? "£"
+          : "$";
+  return `${sym}${compact}`;
+}
+
 function fmtMoney(
   value: number | null | undefined,
   currency: string,
@@ -89,6 +107,22 @@ function fmtMoney(
 function fmtRatio(value: number | null | undefined): string | null {
   if (value == null || !Number.isFinite(value)) return null;
   return `${value.toFixed(1)}x`;
+}
+
+/** Derive actual data period from quarterly history. */
+function dataPeriod(m: FinancialMetrics): string | null {
+  const histories = [
+    m.revenueHistory,
+    m.grossMarginHistory,
+    m.operatingMarginHistory,
+    m.fcfHistory,
+  ];
+  for (const h of histories) {
+    for (let i = h.length - 1; i >= 0; i--) {
+      if (h[i]!.value != null) return h[i]!.period;
+    }
+  }
+  return null;
 }
 
 // ── Dimension builders ───────────────────────────────────────────────────────
@@ -291,15 +325,13 @@ function buildFinancialDimensions(
     });
   };
 
-  const asOf = new Date().toISOString().slice(0, 10);
-
   addDim(
     "currentPrice",
     "Current Price",
     (m) => ({
       value: fmtMoney(m.currentPrice, m.currency),
       raw: m.currentPrice,
-      period: `Market data · ${asOf}`,
+      period: dataPeriod(m),
     }),
     "financial",
   );
@@ -308,9 +340,9 @@ function buildFinancialDimensions(
     "marketCap",
     "Market Cap",
     (m) => ({
-      value: fmtCompactNum(m.marketCap),
+      value: fmtCompactMoney(m.marketCap, m.currency),
       raw: m.marketCap,
-      period: `Market data · ${asOf}`,
+      period: dataPeriod(m),
     }),
     "financial",
   );
@@ -321,7 +353,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtNum(m.revenueGrowthYoy, "%"),
       raw: m.revenueGrowthYoy,
-      period: `Market data · ${asOf}`,
+      period: dataPeriod(m),
     }),
     "financial",
   );
@@ -332,7 +364,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtNum(m.grossMargin, "%"),
       raw: m.grossMargin,
-      period: `Market data · ${asOf}`,
+      period: dataPeriod(m),
     }),
     "financial",
   );
@@ -343,7 +375,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtNum(m.operatingMargin, "%"),
       raw: m.operatingMargin,
-      period: `Market data · ${asOf}`,
+      period: dataPeriod(m),
     }),
     "financial",
   );
@@ -354,7 +386,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtNum(m.netMargin, "%"),
       raw: m.netMargin,
-      period: `Market data · ${asOf}`,
+      period: dataPeriod(m),
     }),
     "financial",
   );
@@ -365,7 +397,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtMoney(m.eps, m.currency),
       raw: m.eps,
-      period: `Market data · ${asOf}`,
+      period: dataPeriod(m),
     }),
     "financial",
   );
@@ -374,9 +406,9 @@ function buildFinancialDimensions(
     "freeCashFlow",
     "Free Cash Flow",
     (m) => ({
-      value: fmtCompactNum(m.freeCashFlow),
+      value: fmtCompactMoney(m.freeCashFlow, m.currency),
       raw: m.freeCashFlow,
-      period: `Market data · ${asOf}`,
+      period: dataPeriod(m),
     }),
     "cashflow",
   );
@@ -387,7 +419,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtRatio(m.peRatio),
       raw: m.peRatio,
-      period: `Market data · ${asOf}`,
+      period: dataPeriod(m),
     }),
     "valuation",
     { isRatio: true },
@@ -399,7 +431,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtRatio(m.evEbitda),
       raw: m.evEbitda,
-      period: `Market data · ${asOf}`,
+      period: dataPeriod(m),
     }),
     "valuation",
     { isRatio: true },
@@ -418,15 +450,17 @@ export const compareRouter = new Hono().get(
       tickers: z
         .string()
         .min(1)
-        .transform((s) =>
-          s
-            .split(",")
-            .map((t) => t.trim().toUpperCase())
-            .filter(Boolean),
-        )
+        .transform((s) => [
+          ...new Set(
+            s
+              .split(",")
+              .map((t) => t.trim().toUpperCase())
+              .filter(Boolean),
+          ),
+        ])
         .refine(
           (arr) => arr.length >= 2 && arr.length <= 4,
-          "Provide 2–4 tickers",
+          "Provide 2–4 unique tickers",
         ),
     }),
   ),
