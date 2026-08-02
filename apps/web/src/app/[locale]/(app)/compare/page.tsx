@@ -426,9 +426,9 @@ function CompareContent() {
 
       {/* Footer */}
       <p className="text-muted-foreground/60 border-border border-t pt-4 text-[10px]">
-        Financial data from Yahoo Finance. Judgment data from L3 ledger. Missing
-        values are shown as "—" — never filled with 0 or other tickers' values.
-        TQS evaluates thesis quality, not stock quality.
+        Financial data from market data providers. Judgment data from L3 ledger.
+        Missing values are shown as "—" — never filled with 0 or other tickers'
+        values. TQS evaluates thesis quality, not stock quality.
       </p>
     </div>
   );
