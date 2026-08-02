@@ -1,67 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-// ── Helper functions extracted for testing ───────────────────────────────────
-// These mirror the functions in router.ts but are tested in isolation.
-
-function fmtNum(value: number | null | undefined, suffix = ""): string | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  return `${value.toFixed(1)}${suffix}`;
-}
-
-function fmtCompactNum(value: number | null | undefined): string | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  const abs = Math.abs(value);
-  const sign = value < 0 ? "-" : "";
-  if (abs >= 1e12) return `${sign}${(abs / 1e12).toFixed(2)}T`;
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(2)}M`;
-  if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(1)}K`;
-  return `${sign}${abs.toFixed(2)}`;
-}
-
-function fmtMoney(
-  value: number | null | undefined,
-  currency: string,
-): string | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: value >= 100 ? 0 : 2,
-  }).format(value);
-}
-
-function fmtRatio(value: number | null | undefined): string | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  return `${value.toFixed(1)}x`;
-}
-
-// ── Period mismatch detection ────────────────────────────────────────────────
-
-function detectPeriodMismatch(
-  periodLabels: Record<string, string | null>,
-): boolean {
-  const periods = Object.values(periodLabels).filter(Boolean);
-  const unique = new Set(periods);
-  return periods.length > 1 && unique.size > 1;
-}
-
-// ── Cross-currency detection ─────────────────────────────────────────────────
-
-function detectCrossCurrency(
-  currencies: Record<string, string | undefined>,
-): boolean {
-  const unique = new Set(Object.values(currencies).filter(Boolean));
-  return unique.size > 1;
-}
-
-// ── Null-coercion check ─────────────────────────────────────────────────────
-// Ensures null values are never converted to 0 or filled with other data.
-
-function nullSafeExtract(value: number | null | undefined): number | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  return value;
-}
+import {
+  fmtNum,
+  fmtCompactNum,
+  fmtCompactMoney,
+  fmtMoney,
+  fmtRatio,
+} from "../format";
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
@@ -122,6 +67,28 @@ describe("compare helpers", () => {
     });
   });
 
+  describe("fmtCompactMoney", () => {
+    it("uses ISO code for USD", () => {
+      expect(fmtCompactMoney(1.5e9, "USD")).toBe("USD 1.50B");
+    });
+
+    it("uses ISO code for CNY (no ¥ symbol)", () => {
+      expect(fmtCompactMoney(10e9, "CNY")).toBe("CNY 10.00B");
+    });
+
+    it("uses ISO code for JPY (no ¥ symbol)", () => {
+      expect(fmtCompactMoney(500e9, "JPY")).toBe("JPY 500.00B");
+    });
+
+    it("uses ISO code for EUR", () => {
+      expect(fmtCompactMoney(2.3e12, "EUR")).toBe("EUR 2.30T");
+    });
+
+    it("returns null for null", () => {
+      expect(fmtCompactMoney(null, "USD")).toBeNull();
+    });
+  });
+
   describe("fmtMoney", () => {
     it("formats USD", () => {
       const result = fmtMoney(150.5, "USD");
@@ -156,104 +123,6 @@ describe("compare helpers", () => {
 
     it("returns null for NaN", () => {
       expect(fmtRatio(NaN)).toBeNull();
-    });
-  });
-
-  describe("detectPeriodMismatch", () => {
-    it("returns false when all periods match", () => {
-      expect(
-        detectPeriodMismatch({
-          NVDA: "Q2 2025",
-          AMD: "Q2 2025",
-          INTC: "Q2 2025",
-        }),
-      ).toBe(false);
-    });
-
-    it("returns true when periods differ", () => {
-      expect(
-        detectPeriodMismatch({
-          NVDA: "Q2 2025",
-          AMD: "Q1 2025",
-          INTC: "Q2 2025",
-        }),
-      ).toBe(true);
-    });
-
-    it("returns false when only one ticker has a period", () => {
-      expect(
-        detectPeriodMismatch({
-          NVDA: "Q2 2025",
-          AMD: null,
-        }),
-      ).toBe(false);
-    });
-
-    it("returns false when all are null", () => {
-      expect(
-        detectPeriodMismatch({
-          NVDA: null,
-          AMD: null,
-        }),
-      ).toBe(false);
-    });
-  });
-
-  describe("detectCrossCurrency", () => {
-    it("returns false when all currencies match", () => {
-      expect(
-        detectCrossCurrency({
-          NVDA: "USD",
-          AMD: "USD",
-        }),
-      ).toBe(false);
-    });
-
-    it("returns true when currencies differ", () => {
-      expect(
-        detectCrossCurrency({
-          NVDA: "USD",
-          TSM: "TWD",
-        }),
-      ).toBe(true);
-    });
-
-    it("returns false when only one ticker has currency", () => {
-      expect(
-        detectCrossCurrency({
-          NVDA: "USD",
-          AMD: undefined,
-        }),
-      ).toBe(false);
-    });
-  });
-
-  describe("nullSafeExtract", () => {
-    it("returns value when present", () => {
-      expect(nullSafeExtract(42)).toBe(42);
-    });
-
-    it("returns null for null", () => {
-      expect(nullSafeExtract(null)).toBeNull();
-    });
-
-    it("returns null for undefined", () => {
-      expect(nullSafeExtract(undefined)).toBeNull();
-    });
-
-    it("returns null for NaN", () => {
-      expect(nullSafeExtract(NaN)).toBeNull();
-    });
-
-    it("NEVER coerces null to 0", () => {
-      // This is the critical redline: missing values must not become 0
-      expect(nullSafeExtract(null)).not.toBe(0);
-      expect(nullSafeExtract(undefined)).not.toBe(0);
-    });
-
-    it("preserves actual 0 values", () => {
-      // Legitimate zero values should be preserved
-      expect(nullSafeExtract(0)).toBe(0);
     });
   });
 });

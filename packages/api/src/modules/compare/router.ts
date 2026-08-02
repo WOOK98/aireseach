@@ -11,6 +11,7 @@ import {
   cachedFetchYahooFinance,
   sanitizeFinancialMetrics,
 } from "../report/data-sources";
+import { fmtNum, fmtCompactMoney, fmtMoney, fmtRatio } from "./format";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
 
@@ -58,69 +59,12 @@ const getUser = async (headers: Headers) => {
   return session?.user ?? null;
 };
 
-function fmtNum(value: number | null | undefined, suffix = ""): string | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  return `${value.toFixed(1)}${suffix}`;
-}
-
-function fmtCompactNum(value: number | null | undefined): string | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  const abs = Math.abs(value);
-  const sign = value < 0 ? "-" : "";
-  if (abs >= 1e12) return `${sign}${(abs / 1e12).toFixed(2)}T`;
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(2)}M`;
-  if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(1)}K`;
-  return `${sign}${abs.toFixed(2)}`;
-}
-
-/** fmtCompactNum with currency prefix for absolute monetary values. */
-function fmtCompactMoney(
-  value: number | null | undefined,
-  currency: string,
+/** Get last non-null period from a specific history array. */
+function lastPeriod(
+  history: Array<{ period: string; value: number | null }>,
 ): string | null {
-  const compact = fmtCompactNum(value);
-  if (compact == null) return null;
-  const sym =
-    currency === "JPY"
-      ? "¥"
-      : currency === "EUR"
-        ? "€"
-        : currency === "GBP"
-          ? "£"
-          : "$";
-  return `${sym}${compact}`;
-}
-
-function fmtMoney(
-  value: number | null | undefined,
-  currency: string,
-): string | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: value >= 100 ? 0 : 2,
-  }).format(value);
-}
-
-function fmtRatio(value: number | null | undefined): string | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  return `${value.toFixed(1)}x`;
-}
-
-/** Derive actual data period from quarterly history. */
-function dataPeriod(m: FinancialMetrics): string | null {
-  const histories = [
-    m.revenueHistory,
-    m.grossMarginHistory,
-    m.operatingMarginHistory,
-    m.fcfHistory,
-  ];
-  for (const h of histories) {
-    for (let i = h.length - 1; i >= 0; i--) {
-      if (h[i]!.value != null) return h[i]!.period;
-    }
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i]!.value != null) return history[i]!.period;
   }
   return null;
 }
@@ -331,7 +275,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtMoney(m.currentPrice, m.currency),
       raw: m.currentPrice,
-      period: dataPeriod(m),
+      period: null, // snapshot, no quarterly period
     }),
     "financial",
   );
@@ -342,7 +286,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtCompactMoney(m.marketCap, m.currency),
       raw: m.marketCap,
-      period: dataPeriod(m),
+      period: null, // snapshot, no quarterly period
     }),
     "financial",
   );
@@ -353,7 +297,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtNum(m.revenueGrowthYoy, "%"),
       raw: m.revenueGrowthYoy,
-      period: dataPeriod(m),
+      period: lastPeriod(m.revenueHistory),
     }),
     "financial",
   );
@@ -364,7 +308,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtNum(m.grossMargin, "%"),
       raw: m.grossMargin,
-      period: dataPeriod(m),
+      period: lastPeriod(m.grossMarginHistory),
     }),
     "financial",
   );
@@ -375,7 +319,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtNum(m.operatingMargin, "%"),
       raw: m.operatingMargin,
-      period: dataPeriod(m),
+      period: lastPeriod(m.operatingMarginHistory),
     }),
     "financial",
   );
@@ -386,7 +330,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtNum(m.netMargin, "%"),
       raw: m.netMargin,
-      period: dataPeriod(m),
+      period: lastPeriod(m.operatingMarginHistory), // same income statement source
     }),
     "financial",
   );
@@ -397,7 +341,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtMoney(m.eps, m.currency),
       raw: m.eps,
-      period: dataPeriod(m),
+      period: null, // trailing, no quarterly period
     }),
     "financial",
   );
@@ -408,7 +352,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtCompactMoney(m.freeCashFlow, m.currency),
       raw: m.freeCashFlow,
-      period: dataPeriod(m),
+      period: lastPeriod(m.fcfHistory),
     }),
     "cashflow",
   );
@@ -419,7 +363,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtRatio(m.peRatio),
       raw: m.peRatio,
-      period: dataPeriod(m),
+      period: null, // trailing, no quarterly period
     }),
     "valuation",
     { isRatio: true },
@@ -431,7 +375,7 @@ function buildFinancialDimensions(
     (m) => ({
       value: fmtRatio(m.evEbitda),
       raw: m.evEbitda,
-      period: dataPeriod(m),
+      period: null, // trailing, no quarterly period
     }),
     "valuation",
     { isRatio: true },
