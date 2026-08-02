@@ -21,6 +21,7 @@ import { mcpRouter } from "./modules/mcp/router";
 import { organizationRouter } from "./modules/organization/router";
 import { reportRoute } from "./modules/report/route";
 import { storageRouter } from "./modules/storage/router";
+import { visualsRouter } from "./modules/visuals/router";
 import { watchlistRouter } from "./modules/watchlist/router";
 import { webhooksRouter } from "./modules/webhooks/router";
 import { onError } from "./utils/on-error";
@@ -75,6 +76,7 @@ const appRouter = new Hono()
   .route("/watchlist", watchlistRouter)
   .route("/report", reportRoute)
   .route("/ledger", ledgerRoute)
+  .route("/visuals", visualsRouter)
   .route("/webhooks", webhooksRouter)
   .onError(onError);
 
