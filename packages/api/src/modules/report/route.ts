@@ -552,10 +552,10 @@ reportRoute.post(
 
     const hasFundamentals =
       (m.revenue != null && m.revenue > 0) ||
-      m.marketCap > 0 ||
+      (m.marketCap != null && m.marketCap > 0) ||
       (m.grossMargin != null && m.grossMargin > 0) ||
       (m.eps != null && m.eps !== 0) ||
-      m.revenueHistory.length > 0;
+      m.revenueHistory.some((p) => p.value != null);
 
     const systemPrompt = `${SHARED_HARD_RULES}
 
@@ -602,10 +602,20 @@ ${hasFundamentals ? "" : "Important: Market data fundamentals are temporarily un
 - Cash: ${fmtB(m.totalCash)} | Debt: ${fmtB(m.totalDebt)} | Net Cash: ${fmtB(m.netCash)}
 
 ## Quarterly Revenue Trend (millions)
-${m.revenueHistory.map((p) => `${p.period}: $${p.value}M`).join(" | ")}
+${
+  m.revenueHistory
+    .filter((p) => p.value != null)
+    .map((p) => `${p.period}: $${p.value}M`)
+    .join(" | ") || "N/A"
+}
 
 ## Quarterly Gross Margin Trend
-${m.grossMarginHistory.map((p) => `${p.period}: ${p.value}%`).join(" | ")}
+${
+  m.grossMarginHistory
+    .filter((p) => p.value != null)
+    .map((p) => `${p.period}: ${p.value}%`)
+    .join(" | ") || "N/A"
+}
 
 ## Relevant ima Knowledge Base Evidence
 Use these snippets as supporting context when relevant. Cite the Source path in catalysts, risks, or evidence fields when you use a claim.

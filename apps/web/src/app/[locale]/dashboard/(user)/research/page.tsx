@@ -1479,23 +1479,28 @@ export default function ResearchPage() {
                   <MetricsGrid m={financials.data} />
                 </Section>
 
-                {/* Revenue chart */}
-                {financials.data.revenueHistory.length > 0 && (
-                  <RevenueChart data={financials.data.revenueHistory} />
-                )}
+                {/* Revenue chart — hide when all values are null (data unavailable) */}
+                {financials.data.revenueHistory.length > 0 &&
+                  financials.data.revenueHistory.some(
+                    (p) => p.value != null,
+                  ) && <RevenueChart data={financials.data.revenueHistory} />}
 
                 {/* Margin chart */}
-                {financials.data.grossMarginHistory.length > 0 && (
-                  <MarginChart
-                    grossMargin={financials.data.grossMarginHistory}
-                    operatingMargin={financials.data.operatingMarginHistory}
-                  />
-                )}
+                {financials.data.grossMarginHistory.length > 0 &&
+                  financials.data.grossMarginHistory.some(
+                    (p) => p.value != null,
+                  ) && (
+                    <MarginChart
+                      grossMargin={financials.data.grossMarginHistory}
+                      operatingMargin={financials.data.operatingMarginHistory}
+                    />
+                  )}
 
                 {/* FCF chart */}
-                {financials.data.fcfHistory.length > 0 && (
-                  <FCFChart data={financials.data.fcfHistory} />
-                )}
+                {financials.data.fcfHistory.length > 0 &&
+                  financials.data.fcfHistory.some((p) => p.value != null) && (
+                    <FCFChart data={financials.data.fcfHistory} />
+                  )}
 
                 <Separator />
 

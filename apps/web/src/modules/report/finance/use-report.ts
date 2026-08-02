@@ -83,7 +83,7 @@ function buildFallbackReport(
   metrics: FinancialMetrics,
   _language: "zh" | "en",
 ): ReportData {
-  const growthHealthy = metrics.revenueGrowthYoy >= 10;
+  const growthHealthy = (metrics.revenueGrowthYoy ?? 0) >= 10;
   const cashGenerative =
     (metrics.freeCashFlow ?? 0) > 0 && (metrics.fcfMargin ?? 0) > 0;
   const profitable = (metrics.netMargin ?? 0) > 0;
