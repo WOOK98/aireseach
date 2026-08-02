@@ -43,7 +43,12 @@ export function MetricsGrid({ m }: { m: FinancialMetrics }) {
     {
       label: "Revenue Growth YoY",
       value: fmt(m.revenueGrowthYoy, 1, "%"),
-      trend: m.revenueGrowthYoy > 0 ? "up" : "down",
+      trend:
+        m.revenueGrowthYoy == null
+          ? "neutral"
+          : m.revenueGrowthYoy > 0
+            ? "up"
+            : "down",
     },
     {
       label: "Gross Margin",
