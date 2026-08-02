@@ -194,14 +194,6 @@ async function fetchYahooChartMetrics(
       .find((value): value is number => typeof value === "number") ??
     meta.regularMarketPrice ??
     0;
-  const firstClose = closes.find(
-    (value): value is number => typeof value === "number",
-  );
-  const revenueGrowthYoy =
-    firstClose && firstClose !== 0
-      ? ((latestClose - firstClose) / firstClose) * 100
-      : 0;
-
   return {
     ticker: (meta.symbol ?? ticker).toUpperCase(),
     companyName: meta.longName ?? meta.shortName ?? ticker.toUpperCase(),
@@ -211,33 +203,33 @@ async function fetchYahooChartMetrics(
     description:
       "Yahoo Finance fundamentals were temporarily unavailable, so this report uses live market price data as a fallback.", // redline-allow: fallback message from existing code
     currentPrice: latestClose,
-    marketCap: 0,
+    marketCap: null,
     currency: meta.currency ?? "USD",
     financialCurrency: meta.currency ?? "USD", // chart fallback has no separate financialCurrency
     priceChange: null,
     priceChangePercent: null,
     marketState: "CLOSED",
-    revenue: 0,
-    revenueGrowthYoy,
-    grossProfit: 0,
-    grossMargin: 0,
-    operatingIncome: 0,
-    operatingMargin: 0,
-    netIncome: 0,
-    netMargin: 0,
-    ebitda: 0,
-    eps: 0,
-    epsGrowthYoy: 0,
-    totalCash: 0,
-    totalDebt: 0,
-    netCash: 0,
+    revenue: null,
+    revenueGrowthYoy: null,
+    grossProfit: null,
+    grossMargin: null,
+    operatingIncome: null,
+    operatingMargin: null,
+    netIncome: null,
+    netMargin: null,
+    ebitda: null,
+    eps: null,
+    epsGrowthYoy: null,
+    totalCash: null,
+    totalDebt: null,
+    netCash: null,
     peRatio: null,
     forwardPE: null,
     pbRatio: null,
     psRatio: null,
     evEbitda: null,
-    freeCashFlow: 0,
-    fcfMargin: 0,
+    freeCashFlow: null,
+    fcfMargin: null,
     revenueHistory: [],
     grossMarginHistory: [],
     operatingMarginHistory: [],

@@ -44,6 +44,69 @@ function computeFcf(
   return null;
 }
 
+/** Simulates the fallback object shape from fetchYahooChartMetrics() */
+function chartFallbackMetrics() {
+  // Chart-only endpoint has no fundamental data — all these must be null
+  return {
+    marketCap: null as number | null,
+    revenue: null as number | null,
+    revenueGrowthYoy: null as number | null,
+    grossProfit: null as number | null,
+    grossMargin: null as number | null,
+    operatingIncome: null as number | null,
+    operatingMargin: null as number | null,
+    netIncome: null as number | null,
+    netMargin: null as number | null,
+    ebitda: null as number | null,
+    eps: null as number | null,
+    epsGrowthYoy: null as number | null,
+    totalCash: null as number | null,
+    totalDebt: null as number | null,
+    netCash: null as number | null,
+    freeCashFlow: null as number | null,
+    fcfMargin: null as number | null,
+  };
+}
+
+type QP = { period: string; value: number | null };
+
+/** Mirrors the route.ts prompt builder logic for revenue */
+function serializeRevenue(history: QP[]): string {
+  return (
+    history
+      .filter((p) => p.value != null)
+      .map((p) => `${p.period}: $${p.value}M`)
+      .join(" | ") || "N/A"
+  );
+}
+
+/** Mirrors the route.ts prompt builder logic for margin */
+function serializeMargin(history: QP[]): string {
+  return (
+    history
+      .filter((p) => p.value != null)
+      .map((p) => `${p.period}: ${p.value}%`)
+      .join(" | ") || "N/A"
+  );
+}
+
+/** Mirrors the updated hasFundamentals logic from route.ts */
+function hasFundamentals(m: {
+  revenue: number | null;
+  marketCap: number | null;
+  grossMargin: number | null;
+  eps: number | null;
+  revenueHistory: QP[];
+}): boolean {
+  return (
+    (m.revenue != null && m.revenue > 0) ||
+    (m.marketCap != null && m.marketCap > 0) ||
+    (m.grossMargin != null && m.grossMargin > 0) ||
+    (m.eps != null && m.eps !== 0) ||
+    m.revenueHistory.some((p) => p.value != null)
+  );
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────
 
 describe("#57 missing != 0 — sentinel logic", () => {
@@ -184,6 +247,117 @@ describe("#57 missing != 0 — sentinel logic", () => {
 
       const shouldRender = partial.some((p) => p.value != null);
       expect(shouldRender).toBe(true);
+    });
+  });
+
+  // ── Issue: fallback path returning 0 for missing fundamentals ─────────
+  describe("fetchYahooChartMetrics fallback — null for missing fundamentals", () => {
+    it("all fundamental scalars are null (not 0)", () => {
+      const m = chartFallbackMetrics();
+      const nullKeys = Object.entries(m)
+        .filter(([, v]) => v === null)
+        .map(([k]) => k);
+      expect(nullKeys).toHaveLength(Object.keys(m).length);
+    });
+
+    it("null fundamentals are distinguishable from real 0", () => {
+      const m = chartFallbackMetrics();
+      // null = missing, 0 = real zero — must not collapse
+      expect(m.grossMargin).toBeNull();
+      expect(m.grossMargin).not.toBe(0);
+    });
+  });
+
+  // ── Issue: prompt serialization producing $nullM / null% ──────────────
+  describe("prompt serialization — no $nullM or null%", () => {
+    it("filters out null values before joining", () => {
+      const history: QP[] = [
+        { period: "Q1 2025", value: 100 },
+        { period: "Q2 2025", value: null },
+        { period: "Q3 2025", value: 120 },
+      ];
+      const result = serializeRevenue(history);
+      expect(result).not.toContain("null");
+      expect(result).toBe("Q1 2025: $100M | Q3 2025: $120M");
+    });
+
+    it("all-null history shows N/A", () => {
+      const history: QP[] = [
+        { period: "Q1 2025", value: null },
+        { period: "Q2 2025", value: null },
+      ];
+      expect(serializeRevenue(history)).toBe("N/A");
+      expect(serializeMargin(history)).toBe("N/A");
+    });
+
+    it("preserves real 0 in margin (0% is valid)", () => {
+      const history: QP[] = [{ period: "Q1 2025", value: 0 }];
+      const result = serializeMargin(history);
+      expect(result).toBe("Q1 2025: 0%");
+    });
+
+    it("never produces $nullM substring", () => {
+      const history: QP[] = [
+        { period: "Q1 2025", value: null },
+        { period: "Q2 2025", value: 50 },
+        { period: "Q3 2025", value: null },
+      ];
+      const result = serializeRevenue(history);
+      expect(result).not.toMatch(/\$null/);
+      expect(result).not.toContain("null%");
+    });
+  });
+
+  // ── Issue: hasFundamentals checking array length vs valid values ─────
+  describe("hasFundamentals — checks values, not just array length", () => {
+    it("false when history has entries but all values are null", () => {
+      const m = {
+        revenue: null,
+        marketCap: null,
+        grossMargin: null,
+        eps: null,
+        revenueHistory: [
+          { period: "Q1 2025", value: null },
+          { period: "Q2 2025", value: null },
+        ] as QP[],
+      };
+      expect(hasFundamentals(m)).toBe(false);
+    });
+
+    it("true when history has at least one non-null value", () => {
+      const m = {
+        revenue: null,
+        marketCap: null,
+        grossMargin: null,
+        eps: null,
+        revenueHistory: [
+          { period: "Q1 2025", value: null },
+          { period: "Q2 2025", value: 100 },
+        ] as QP[],
+      };
+      expect(hasFundamentals(m)).toBe(true);
+    });
+
+    it("true when scalars have valid values (no history needed)", () => {
+      const m = {
+        revenue: 1000,
+        marketCap: null,
+        grossMargin: null,
+        eps: null,
+        revenueHistory: [] as QP[],
+      };
+      expect(hasFundamentals(m)).toBe(true);
+    });
+
+    it("false when all scalars null and history empty", () => {
+      const m = {
+        revenue: null,
+        marketCap: null,
+        grossMargin: null,
+        eps: null,
+        revenueHistory: [] as QP[],
+      };
+      expect(hasFundamentals(m)).toBe(false);
     });
   });
 });

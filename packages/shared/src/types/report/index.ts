@@ -9,7 +9,7 @@ export interface FinancialMetrics {
 
   // Price
   currentPrice: number;
-  marketCap: number;
+  marketCap: number | null;
   currency: string; // quote currency (from price feed)
   financialCurrency?: string; // reporting currency (from financial statements)
   priceChange: number | null; // absolute change
@@ -17,8 +17,8 @@ export interface FinancialMetrics {
   marketState: string; // "REGULAR" | "PRE" | "POST" | "CLOSED"
 
   // Income Statement
-  revenue: number;
-  revenueGrowthYoy: number; // %
+  revenue: number | null;
+  revenueGrowthYoy: number | null; // %
   grossProfit: number | null;
   grossMargin: number | null; // %
   operatingIncome: number | null;
@@ -30,8 +30,8 @@ export interface FinancialMetrics {
   epsGrowthYoy: number | null; // %
 
   // Balance Sheet
-  totalCash: number;
-  totalDebt: number;
+  totalCash: number | null;
+  totalDebt: number | null;
   netCash: number | null;
 
   // Valuation
