@@ -44,6 +44,7 @@ const pathsConfig = {
     updatePassword: `${AUTH_PREFIX}/password/update`,
     error: `${AUTH_PREFIX}/error`,
   },
+  compare: "/compare",
   dashboard: {
     user: {
       index: DASHBOARD_PREFIX,
