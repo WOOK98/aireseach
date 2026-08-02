@@ -135,13 +135,10 @@ export default function WatchlistPage() {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [search, setSearch] = useState("");
 
-  const {
-    data: items,
-    isLoading,
-    isError,
-    refetch,
-    isFetching,
-  } = useWatchlistFeed();
+  const { data, isLoading, isError, refetch, isFetching } = useWatchlistFeed();
+
+  const allItems = data?.items ?? [];
+  const degraded = data?.degraded ?? false;
 
   useEffect(() => setMounted(true), []);
 
@@ -162,8 +159,6 @@ export default function WatchlistPage() {
       </div>
     );
   }
-
-  const allItems = items ?? [];
   const hasWatchlist = allItems.length > 0;
   const hasJudgments = allItems.some((i) => i.hasJudgments);
   const allNotDue =
@@ -249,12 +244,28 @@ export default function WatchlistPage() {
             </div>
           )}
 
+          {/* Degraded state — ledger unavailable but basic watchlist visible */}
+          {!isError && !isLoading && degraded && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+              <p className="text-sm font-medium">
+                Judgment verification temporarily unavailable
+              </p>
+              <p className="mt-1 text-xs opacity-80">
+                Your watchlist items are shown below, but judgment and
+                verification data could not be loaded. Status indicators are not
+                available until the ledger recovers.
+              </p>
+            </div>
+          )}
+
           {/* Empty states */}
           {!isError && !isLoading && !hasWatchlist && <EmptyStateNoWatchlist />}
-          {!isError && !isLoading && hasWatchlist && !hasJudgments && (
-            <EmptyStateNoJudgments count={allItems.length} />
-          )}
-          {!isError && !isLoading && hasJudgments && allNotDue && (
+          {!isError &&
+            !isLoading &&
+            hasWatchlist &&
+            !hasJudgments &&
+            !degraded && <EmptyStateNoJudgments count={allItems.length} />}
+          {!isError && !isLoading && hasJudgments && allNotDue && !degraded && (
             <EmptyStateAllNotDue />
           )}
 
