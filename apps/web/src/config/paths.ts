@@ -49,6 +49,7 @@ const pathsConfig = {
       index: DASHBOARD_PREFIX,
       watchlist: `${DASHBOARD_PREFIX}/watchlist`,
       research: `${DASHBOARD_PREFIX}/research`,
+      visuals: "/visuals",
       settings: {
         index: `${DASHBOARD_PREFIX}/settings`,
         security: `${DASHBOARD_PREFIX}/settings/security`,
