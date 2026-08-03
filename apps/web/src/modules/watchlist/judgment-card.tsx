@@ -88,6 +88,15 @@ const STATUS_MAP: Record<VerificationStatus, StatusConfig> = {
     icon: AlertTriangle,
     description: "Market data was unavailable at verification time.",
   },
+  degraded: {
+    label: "Service Limited",
+    color: "text-amber-700 dark:text-amber-300",
+    bgColor: "bg-amber-50 dark:bg-amber-950/30",
+    borderColor: "border-amber-200 dark:border-amber-800",
+    icon: AlertTriangle,
+    description:
+      "Judgment data is temporarily unavailable. Basic watchlist info is shown.",
+  },
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────

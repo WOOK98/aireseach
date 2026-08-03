@@ -31,7 +31,8 @@ export type VerificationStatus =
   | "confirmed"
   | "invalidated"
   | "needs_manual_review"
-  | "insufficient_data";
+  | "insufficient_data"
+  | "degraded";
 
 export interface FeedItem {
   watchlistId: string;
@@ -53,16 +54,22 @@ interface FeedResponse {
   ok: boolean;
   authenticated: boolean;
   items: FeedItem[];
+  degraded?: boolean;
+}
+
+export interface WatchlistFeedResult {
+  items: FeedItem[];
+  degraded: boolean;
 }
 
 // ── Fetcher ──────────────────────────────────────────────────────────────
 
-async function fetchFeed(): Promise<FeedItem[]> {
+async function fetchFeed(): Promise<WatchlistFeedResult> {
   const res = await fetch("/api/watchlist/feed");
   if (!res.ok) throw new Error(`Feed fetch failed (${res.status})`);
   const data = (await res.json()) as FeedResponse;
-  if (!data.authenticated) return [];
-  return data.items ?? [];
+  if (!data.authenticated) return { items: [], degraded: false };
+  return { items: data.items ?? [], degraded: data.degraded ?? false };
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────

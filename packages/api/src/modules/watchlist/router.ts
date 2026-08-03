@@ -99,7 +99,8 @@ export interface FeedItem {
     | "confirmed"
     | "invalidated"
     | "needs_manual_review"
-    | "insufficient_data";
+    | "insufficient_data"
+    | "degraded"; // L3 ledger query failed — data unavailable
   lastVerifiedAt: string | null;
   nextCheckAfter: string | null;
   // Latest verification detail
@@ -110,7 +111,9 @@ export interface FeedItem {
 
 // ── Feed endpoint ───────────────────────────────────────────────────────────
 
-async function buildFeed(userId: string): Promise<FeedItem[]> {
+async function buildFeed(
+  userId: string,
+): Promise<{ feed: FeedItem[]; degraded: boolean }> {
   // 1. Get watchlist items
   const items = await db
     .select()
@@ -118,47 +121,60 @@ async function buildFeed(userId: string): Promise<FeedItem[]> {
     .where(eq(watchlist.userId, userId))
     .orderBy(desc(watchlist.createdAt));
 
-  if (items.length === 0) return [];
+  if (items.length === 0) return { feed: [], degraded: false };
 
   const symbols = items.map((i) => i.symbol);
 
   // 2. Get all judgments for these tickers, grouped by ticker
-  const judgments = await db
-    .select()
-    .from(ledgerJudgment)
-    .where(
-      and(
-        eq(ledgerJudgment.userId, userId),
-        inArray(ledgerJudgment.ticker, symbols),
-      ),
-    )
-    .orderBy(desc(ledgerJudgment.publishedAt));
+  // If ledger queries fail, degrade gracefully — return basic watchlist.
+  let judgmentsByTicker = new Map<
+    string,
+    (typeof ledgerJudgment.$inferSelect)[]
+  >();
+  let verificationsByJudgment = new Map<
+    string,
+    (typeof ledgerVerification.$inferSelect)[]
+  >();
+  let ledgerAvailable = true;
 
-  // Group judgments by ticker
-  const judgmentsByTicker = new Map<string, typeof judgments>();
-  for (const j of judgments) {
-    const existing = judgmentsByTicker.get(j.ticker) ?? [];
-    existing.push(j);
-    judgmentsByTicker.set(j.ticker, existing);
-  }
-
-  // 3. Get all verifications for these judgments
-  const judgmentIds = judgments.map((j) => j.id);
-  let verifications: Array<typeof ledgerVerification.$inferSelect> = [];
-  if (judgmentIds.length > 0) {
-    verifications = await db
+  try {
+    const judgments = await db
       .select()
-      .from(ledgerVerification)
-      .where(inArray(ledgerVerification.judgmentId, judgmentIds))
-      .orderBy(desc(ledgerVerification.verifiedAt));
-  }
+      .from(ledgerJudgment)
+      .where(
+        and(
+          eq(ledgerJudgment.userId, userId),
+          inArray(ledgerJudgment.ticker, symbols),
+        ),
+      )
+      .orderBy(desc(ledgerJudgment.publishedAt));
 
-  // Group verifications by judgmentId
-  const verificationsByJudgment = new Map<string, typeof verifications>();
-  for (const v of verifications) {
-    const existing = verificationsByJudgment.get(v.judgmentId) ?? [];
-    existing.push(v);
-    verificationsByJudgment.set(v.judgmentId, existing);
+    for (const j of judgments) {
+      const existing = judgmentsByTicker.get(j.ticker) ?? [];
+      existing.push(j);
+      judgmentsByTicker.set(j.ticker, existing);
+    }
+
+    // 3. Get all verifications for these judgments
+    const judgmentIds = judgments.map((j) => j.id);
+    if (judgmentIds.length > 0) {
+      const verifications = await db
+        .select()
+        .from(ledgerVerification)
+        .where(inArray(ledgerVerification.judgmentId, judgmentIds))
+        .orderBy(desc(ledgerVerification.verifiedAt));
+
+      for (const v of verifications) {
+        const existing = verificationsByJudgment.get(v.judgmentId) ?? [];
+        existing.push(v);
+        verificationsByJudgment.set(v.judgmentId, existing);
+      }
+    }
+  } catch (error) {
+    // Ledger query failed — degrade gracefully
+    ledgerAvailable = false;
+    // Log for ops but don't expose internals to user
+    console.error("[watchlist/feed] ledger query failed, degrading:", error);
   }
 
   // 4. Build feed items
@@ -245,24 +261,28 @@ async function buildFeed(userId: string): Promise<FeedItem[]> {
             checkAfter: latestJudgment.checkAfter?.toISOString() ?? null,
           }
         : null,
-      verificationStatus,
-      lastVerifiedAt: latestV?.verifiedAt.toISOString() ?? null,
-      nextCheckAfter,
-      latestVerification: latestV
-        ? {
-            id: latestV.id,
-            result: latestV.result,
-            dataPoint: latestV.dataPoint,
-            evidenceUrl: latestV.evidenceUrl,
-            notes: latestV.notes,
-            verifiedAt: latestV.verifiedAt.toISOString(),
-          }
+      verificationStatus: ledgerAvailable ? verificationStatus : "degraded",
+      lastVerifiedAt: ledgerAvailable
+        ? (latestV?.verifiedAt.toISOString() ?? null)
         : null,
-      recentVerificationCount,
+      nextCheckAfter: ledgerAvailable ? nextCheckAfter : null,
+      latestVerification: ledgerAvailable
+        ? latestV
+          ? {
+              id: latestV.id,
+              result: latestV.result,
+              dataPoint: latestV.dataPoint,
+              evidenceUrl: latestV.evidenceUrl,
+              notes: latestV.notes,
+              verifiedAt: latestV.verifiedAt.toISOString(),
+            }
+          : null
+        : null,
+      recentVerificationCount: ledgerAvailable ? recentVerificationCount : 0,
     };
   });
 
-  return feed;
+  return { feed, degraded: !ledgerAvailable };
 }
 
 export const watchlistRouter = new Hono()
@@ -276,12 +296,13 @@ export const watchlistRouter = new Hono()
 
     await ensureStorage();
 
-    const feed = await buildFeed(user.id);
+    const result = await buildFeed(user.id);
 
     return c.json({
       ok: true,
       authenticated: true,
-      items: feed,
+      items: result.feed,
+      ...(result.degraded ? { degraded: true } : {}),
     });
   })
   .get("/", async (c) => {
