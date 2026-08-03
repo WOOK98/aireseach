@@ -274,7 +274,7 @@ export async function fetchYahooFinance(
 }
 
 /**
- * Parse a Yahoo Finance quoteSummary result into FinancialMetrics.
+ * Parse a market-data quoteSummary result into FinancialMetrics.
  * Exported for testing — no I/O, pure data transformation.
  */
 export function parseYahooQuoteSummary(
@@ -287,8 +287,8 @@ export function parseYahooQuoteSummary(
   const ap = d.assetProfile;
 
   const currentPrice = safe(p?.regularMarketPrice);
-  const totalCash = safe(fd?.totalCash);
-  const totalDebt = safe(fd?.totalDebt);
+  const totalCash = safeOrNull(fd?.totalCash);
+  const totalDebt = safeOrNull(fd?.totalDebt);
   const grossMarginRaw = safeOrNull(fd?.grossMargins);
   const grossMargin = grossMarginRaw != null ? grossMarginRaw * 100 : null;
   const operatingMarginRaw = safeOrNull(fd?.operatingMargins);
@@ -396,7 +396,8 @@ export function parseYahooQuoteSummary(
         : null,
     totalCash,
     totalDebt,
-    netCash: totalCash - totalDebt,
+    netCash:
+      totalCash != null && totalDebt != null ? totalCash - totalDebt : null,
     peRatio: safeOrNull(ks?.trailingPE),
     forwardPE: safeOrNull(ks?.forwardPE),
     pbRatio: safeOrNull(ks?.priceToBook),
