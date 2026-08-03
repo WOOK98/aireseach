@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { Checkbox } from "@workspace/ui-web/checkbox";
+
 import type { FeedItem, VerificationStatus } from "./use-feed";
 
 // ── Status config ────────────────────────────────────────────────────────
@@ -266,7 +268,17 @@ function DistanceBadge({ distance }: { distance: DistanceInfo | null }) {
 
 // ── Main card ────────────────────────────────────────────────────────────
 
-export function JudgmentCard({ item }: { item: FeedItem }) {
+export function JudgmentCard({
+  item,
+  selected,
+  onToggle,
+  selectable,
+}: {
+  item: FeedItem;
+  selected?: boolean;
+  onToggle?: () => void;
+  selectable?: boolean;
+}) {
   const statusConfig = STATUS_MAP[item.verificationStatus];
   const distance = invalidationDistance(item);
   const j = item.latestJudgment;
@@ -280,6 +292,14 @@ export function JudgmentCard({ item }: { item: FeedItem }) {
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-1.5 flex flex-wrap items-center gap-2">
+            {selectable && onToggle && (
+              <Checkbox
+                checked={selected}
+                onCheckedChange={() => onToggle()}
+                aria-label={`Select ${item.symbol} for comparison`}
+                className="mt-0.5"
+              />
+            )}
             <Link
               href={`/t/${item.symbol}`}
               className="notranslate font-serif text-lg font-semibold hover:underline"

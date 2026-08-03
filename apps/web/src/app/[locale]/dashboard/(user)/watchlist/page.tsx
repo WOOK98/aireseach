@@ -2,9 +2,9 @@
 
 /* oxlint-disable i18next/no-literal-string */
 
-import { Loader2, RefreshCcw, Search } from "lucide-react";
+import { BarChart3, Loader2, RefreshCcw, Search } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@workspace/ui-web/button";
 import { Input } from "@workspace/ui-web/input";
@@ -134,6 +134,22 @@ export default function WatchlistPage() {
   const [mounted, setMounted] = useState(false);
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const toggleSelect = useCallback((symbol: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(symbol)) {
+        next.delete(symbol);
+      } else if (next.size < 4) {
+        next.add(symbol);
+      }
+      return next;
+    });
+  }, []);
+
+  const compareHref =
+    selected.size >= 2 ? `/compare?tickers=${[...selected].join(",")}` : null;
 
   const { data, isLoading, isError, refetch, isFetching } = useWatchlistFeed();
 
@@ -316,7 +332,13 @@ export default function WatchlistPage() {
                 {filtered.length > 0 ? (
                   <div className="space-y-3">
                     {filtered.map((item) => (
-                      <JudgmentCard key={item.watchlistId} item={item} />
+                      <JudgmentCard
+                        key={item.watchlistId}
+                        item={item}
+                        selectable
+                        selected={selected.has(item.symbol)}
+                        onToggle={() => toggleSelect(item.symbol)}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -337,8 +359,28 @@ export default function WatchlistPage() {
               never fabricated — unverified items show as awaiting.
             </p>
           )}
+
+          {/* Selection hint */}
+          {!isError && !isLoading && hasWatchlist && hasJudgments && (
+            <p className="text-muted-foreground/50 text-[10px]">
+              Select 2–4 tickers to compare them side by side.
+            </p>
+          )}
         </div>
       </div>
+
+      {/* ── Floating compare button ── */}
+      {compareHref && (
+        <div className="fixed right-6 bottom-6 z-30">
+          <Link
+            href={compareHref}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold shadow-lg transition"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Compare {selected.size} tickers
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
