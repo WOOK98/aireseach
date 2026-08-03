@@ -151,13 +151,10 @@ export default function WatchlistPage() {
   const compareHref =
     selected.size >= 2 ? `/compare?tickers=${[...selected].join(",")}` : null;
 
-  const {
-    data: items,
-    isLoading,
-    isError,
-    refetch,
-    isFetching,
-  } = useWatchlistFeed();
+  const { data, isLoading, isError, refetch, isFetching } = useWatchlistFeed();
+
+  const allItems = data?.items ?? [];
+  const degraded = data?.degraded ?? false;
 
   useEffect(() => setMounted(true), []);
 
@@ -178,8 +175,6 @@ export default function WatchlistPage() {
       </div>
     );
   }
-
-  const allItems = items ?? [];
   const hasWatchlist = allItems.length > 0;
   const hasJudgments = allItems.some((i) => i.hasJudgments);
   const allNotDue =
@@ -278,64 +273,67 @@ export default function WatchlistPage() {
           {isLoading && <FeedSkeleton />}
 
           {/* Feed content */}
-          {!isError && !isLoading && hasWatchlist && hasJudgments && (
-            <>
-              {/* Summary */}
-              <FeedSummary items={allItems} />
+          {!isError &&
+            !isLoading &&
+            hasWatchlist &&
+            (hasJudgments || degraded) && (
+              <>
+                {/* Summary */}
+                <FeedSummary items={allItems} />
 
-              {/* Filters + search */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex gap-1">
-                  {FILTERS.map((f) => (
-                    <button
-                      key={f.id}
-                      type="button"
-                      onClick={() => setFilter(f.id)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                        filter === f.id
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="relative w-full sm:w-56">
-                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Filter by symbol..."
-                    className="pl-9 text-sm"
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Cards */}
-              {filtered.length > 0 ? (
-                <div className="space-y-3">
-                  {filtered.map((item) => (
-                    <JudgmentCard
-                      key={item.watchlistId}
-                      item={item}
-                      selectable
-                      selected={selected.has(item.symbol)}
-                      onToggle={() => toggleSelect(item.symbol)}
+                {/* Filters + search */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex gap-1">
+                    {FILTERS.map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setFilter(f.id)}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                          filter === f.id
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="relative w-full sm:w-56">
+                    <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Filter by symbol..."
+                      className="pl-9 text-sm"
                     />
-                  ))}
+                  </div>
                 </div>
-              ) : (
-                <div className="py-12 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    No items match the current filter.
-                  </p>
-                </div>
-              )}
-            </>
-          )}
+
+                <Separator />
+
+                {/* Cards */}
+                {filtered.length > 0 ? (
+                  <div className="space-y-3">
+                    {filtered.map((item) => (
+                      <JudgmentCard
+                        key={item.watchlistId}
+                        item={item}
+                        selectable
+                        selected={selected.has(item.symbol)}
+                        onToggle={() => toggleSelect(item.symbol)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      No items match the current filter.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
 
           {/* Footer */}
           {!isError && !isLoading && hasWatchlist && (
