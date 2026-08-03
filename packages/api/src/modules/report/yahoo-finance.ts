@@ -270,7 +270,17 @@ export async function fetchYahooFinance(
   const result = json?.quoteSummary?.result?.[0];
   if (!result) throw new Error(`No data found for ticker: ${ticker}`);
 
-  const d = result;
+  return parseYahooQuoteSummary(ticker, result);
+}
+
+/**
+ * Parse a Yahoo Finance quoteSummary result into FinancialMetrics.
+ * Exported for testing — no I/O, pure data transformation.
+ */
+export function parseYahooQuoteSummary(
+  ticker: string,
+  d: YFRaw,
+): FinancialMetrics {
   const p = d.price;
   const fd = d.financialData;
   const ks = d.defaultKeyStatistics;
@@ -279,15 +289,26 @@ export async function fetchYahooFinance(
   const currentPrice = safe(p?.regularMarketPrice);
   const totalCash = safe(fd?.totalCash);
   const totalDebt = safe(fd?.totalDebt);
-  const grossMargin = safe(fd?.grossMargins) * 100;
-  const operatingMargin = safe(fd?.operatingMargins) * 100;
-  const netMargin = safe(fd?.profitMargins) * 100;
-  const fcf = safe(fd?.freeCashflow);
+  const grossMarginRaw = safeOrNull(fd?.grossMargins);
+  const grossMargin = grossMarginRaw != null ? grossMarginRaw * 100 : null;
+  const operatingMarginRaw = safeOrNull(fd?.operatingMargins);
+  const operatingMargin =
+    operatingMarginRaw != null ? operatingMarginRaw * 100 : null;
+  const netMarginRaw = safeOrNull(fd?.profitMargins);
+  const netMargin = netMarginRaw != null ? netMarginRaw * 100 : null;
+  const fcf = safeOrNull(fd?.freeCashflow);
+  const ebitdaVal = safeOrNull(fd?.ebitda);
+  const operatingMarginsVal = safeOrNull(fd?.operatingMargins);
   const revenue =
-    fd?.ebitda && fd?.grossMargins
-      ? safe(fd.ebitda) / Math.max(safe(fd.operatingMargins), 0.01)
-      : 0;
-  const fcfMargin = revenue > 0 ? (fcf / revenue) * 100 : 0;
+    ebitdaVal != null &&
+    operatingMarginsVal != null &&
+    operatingMarginsVal !== 0
+      ? ebitdaVal / Math.abs(operatingMarginsVal)
+      : null;
+  const fcfMargin =
+    revenue != null && revenue > 0 && fcf != null
+      ? (fcf / revenue) * 100
+      : null;
 
   // Build quarterly history (most recent last → oldest first)
   const qIncome = (
@@ -350,31 +371,37 @@ export async function fetchYahooFinance(
     industry: ap?.industry ?? "",
     description: ap?.longBusinessSummary ?? "",
     currentPrice,
-    marketCap: safe(p?.marketCap),
+    marketCap: safeOrNull(p?.marketCap),
     currency: p?.currency ?? "USD",
     financialCurrency: p?.financialCurrency ?? p?.currency ?? "USD",
     priceChange: safe(p?.regularMarketChange) || null,
     priceChangePercent: safe(p?.regularMarketChangePercent) || null,
     marketState: p?.marketState ?? "CLOSED",
     revenue,
-    revenueGrowthYoy: safe(fd?.revenueGrowth) * 100,
+    revenueGrowthYoy:
+      safeOrNull(fd?.revenueGrowth) != null
+        ? safeOrNull(fd?.revenueGrowth)! * 100
+        : null,
     grossProfit: qIncome[0] ? safeOrNull(qIncome[0].grossProfit) : null,
     grossMargin,
     operatingIncome: qIncome[0] ? safeOrNull(qIncome[0].ebit) : null,
     operatingMargin,
     netIncome: qIncome[0] ? safeOrNull(qIncome[0].netIncome) : null,
     netMargin,
-    ebitda: safe(fd?.ebitda),
-    eps: safe(ks?.trailingEps),
-    epsGrowthYoy: safe(ks?.earningsQuarterlyGrowth) * 100,
+    ebitda: ebitdaVal,
+    eps: safeOrNull(ks?.trailingEps),
+    epsGrowthYoy:
+      safeOrNull(ks?.earningsQuarterlyGrowth) != null
+        ? safeOrNull(ks?.earningsQuarterlyGrowth)! * 100
+        : null,
     totalCash,
     totalDebt,
     netCash: totalCash - totalDebt,
-    peRatio: safe(ks?.trailingPE) || null,
-    forwardPE: safe(ks?.forwardPE) || null,
-    pbRatio: safe(ks?.priceToBook) || null,
-    psRatio: safe(ks?.priceToSalesTrailing12Months) || null,
-    evEbitda: safe(ks?.enterpriseToEbitda) || null,
+    peRatio: safeOrNull(ks?.trailingPE),
+    forwardPE: safeOrNull(ks?.forwardPE),
+    pbRatio: safeOrNull(ks?.priceToBook),
+    psRatio: safeOrNull(ks?.priceToSalesTrailing12Months),
+    evEbitda: safeOrNull(ks?.enterpriseToEbitda),
     freeCashFlow: fcf,
     fcfMargin,
     revenueHistory,
