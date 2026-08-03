@@ -328,28 +328,28 @@ export default function WatchlistPage() {
 
                 <Separator />
 
-              {/* Cards */}
-              {filtered.length > 0 ? (
-                <div className="space-y-3">
-                  {filtered.map((item) => (
-                    <JudgmentCard
-                      key={item.watchlistId}
-                      item={item}
-                      selectable
-                      selected={selected.has(item.symbol)}
-                      onToggle={() => toggleSelect(item.symbol)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    No items match the current filter.
-                  </p>
-                </div>
-              )}
-            </>
-          )}
+                {/* Cards */}
+                {filtered.length > 0 ? (
+                  <div className="space-y-3">
+                    {filtered.map((item) => (
+                      <JudgmentCard
+                        key={item.watchlistId}
+                        item={item}
+                        selectable
+                        selected={selected.has(item.symbol)}
+                        onToggle={() => toggleSelect(item.symbol)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      No items match the current filter.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
 
           {/* Footer */}
           {!isError && !isLoading && hasWatchlist && (
