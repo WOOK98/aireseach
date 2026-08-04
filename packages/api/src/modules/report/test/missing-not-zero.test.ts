@@ -44,6 +44,13 @@ function computeFcf(
   return null;
 }
 
+function computeNetCash(
+  totalCash: number | null,
+  totalDebt: number | null,
+): number | null {
+  return totalCash != null && totalDebt != null ? totalCash - totalDebt : null;
+}
+
 /** Simulates the fallback object shape from fetchYahooChartMetrics() */
 function chartFallbackMetrics() {
   // Chart-only endpoint has no fundamental data — all these must be null
@@ -358,6 +365,33 @@ describe("#57 missing != 0 — sentinel logic", () => {
         revenueHistory: [] as QP[],
       };
       expect(hasFundamentals(m)).toBe(false);
+    });
+  });
+
+  // ── Issue: netCash must use null semantics, not manufacture 0 ────────
+  describe("netCash — null when either side missing", () => {
+    it("missing totalCash → netCash null", () => {
+      expect(computeNetCash(null, 500)).toBeNull();
+    });
+
+    it("missing totalDebt → netCash null", () => {
+      expect(computeNetCash(1000, null)).toBeNull();
+    });
+
+    it("both missing → netCash null", () => {
+      expect(computeNetCash(null, null)).toBeNull();
+    });
+
+    it("both present → computed value (real 0 preserved)", () => {
+      expect(computeNetCash(1000, 1000)).toBe(0);
+    });
+
+    it("both present → positive net cash", () => {
+      expect(computeNetCash(5000, 2000)).toBe(3000);
+    });
+
+    it("both present → negative net cash (net debt)", () => {
+      expect(computeNetCash(1000, 3000)).toBe(-2000);
     });
   });
 });
