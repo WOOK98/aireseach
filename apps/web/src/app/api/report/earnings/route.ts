@@ -71,9 +71,10 @@ export async function POST(request: Request) {
     const body = (await request.json()) as Record<string, unknown>;
     const userPlan = await getUserPlan(request.headers);
 
-    // Paid users: use hosted Kimi key
+    // Paid users: use hosted Kimi key (K3 mode)
     if (userPlan !== "free") {
       body.api_key = KIMI_API_KEY;
+      body.report_mode = "kimi_llm";
       delete body.base_url;
       delete body.model;
     }
