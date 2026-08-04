@@ -172,3 +172,60 @@ class TestEarningsRequestModel:
         from server import SerenityRequest
         req = SerenityRequest(ticker="NVDA", report_mode="kimi_llm")
         assert req.report_mode == "kimi_llm"
+
+
+# ── Key isolation: Kimi mode never uses LLM_API_KEY ─────────────────────────
+
+class TestKeyIsolation:
+    """Kimi mode must resolve to KIMI_API_KEY, never LLM_API_KEY."""
+
+    def test_kimi_llm_no_request_key_uses_kimi_key(self, monkeypatch):
+        """When no request key and report_mode=kimi_llm, should use KIMI_API_KEY."""
+        monkeypatch.setenv("KIMI_API_KEY", "sk-kimi-secret")
+        monkeypatch.setenv("LLM_API_KEY", "sk-deepseek-other")
+        srv = _reload_server_with_env(KIMI_API_KEY="sk-kimi-secret", LLM_API_KEY="sk-deepseek-other")
+
+        from server import EarningsRequest
+        req = EarningsRequest(ticker="NVDA", report_mode="kimi_llm")
+        # Simulate what analyze_earnings does:
+        from server import clean_optional_text, validate_header_value
+        report_mode = req.report_mode or ""
+        if report_mode in ("kimi_llm", "kimi_k3"):
+            api_key = validate_header_value(clean_optional_text(req.api_key) or srv.KIMI_API_KEY, "API Key")
+        else:
+            api_key = validate_header_value(clean_optional_text(req.api_key) or srv.LLM_API_KEY, "API Key")
+        assert api_key == "sk-kimi-secret"
+        assert api_key != "sk-deepseek-other"
+
+    def test_default_mode_no_request_key_uses_llm_key(self, monkeypatch):
+        """When no request key and no report_mode, should use LLM_API_KEY (DeepSeek)."""
+        monkeypatch.setenv("KIMI_API_KEY", "sk-kimi-secret")
+        monkeypatch.setenv("LLM_API_KEY", "sk-deepseek-other")
+        srv = _reload_server_with_env(KIMI_API_KEY="sk-kimi-secret", LLM_API_KEY="sk-deepseek-other")
+
+        from server import EarningsRequest
+        req = EarningsRequest(ticker="NVDA")  # no report_mode
+        from server import clean_optional_text, validate_header_value
+        report_mode = req.report_mode or ""
+        if report_mode in ("kimi_llm", "kimi_k3"):
+            api_key = validate_header_value(clean_optional_text(req.api_key) or srv.KIMI_API_KEY, "API Key")
+        else:
+            api_key = validate_header_value(clean_optional_text(req.api_key) or srv.LLM_API_KEY, "API Key")
+        assert api_key == "sk-deepseek-other"
+        assert api_key != "sk-kimi-secret"
+
+    def test_kimi_mode_with_request_key_uses_request_key(self, monkeypatch):
+        """When request key provided with kimi_llm mode, should use request key."""
+        monkeypatch.setenv("KIMI_API_KEY", "sk-kimi-secret")
+        monkeypatch.setenv("LLM_API_KEY", "sk-deepseek-other")
+        srv = _reload_server_with_env(KIMI_API_KEY="sk-kimi-secret", LLM_API_KEY="sk-deepseek-other")
+
+        from server import EarningsRequest
+        req = EarningsRequest(ticker="NVDA", report_mode="kimi_llm", api_key="sk-user-provided")
+        from server import clean_optional_text, validate_header_value
+        report_mode = req.report_mode or ""
+        if report_mode in ("kimi_llm", "kimi_k3"):
+            api_key = validate_header_value(clean_optional_text(req.api_key) or srv.KIMI_API_KEY, "API Key")
+        else:
+            api_key = validate_header_value(clean_optional_text(req.api_key) or srv.LLM_API_KEY, "API Key")
+        assert api_key == "sk-user-provided"

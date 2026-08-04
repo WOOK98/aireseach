@@ -663,17 +663,17 @@ async def analyze_serenity(request: SerenityRequest):
     if not ticker:
         raise HTTPException(status_code=400, detail="Enter a ticker symbol.")
 
-    api_key = validate_header_value(clean_optional_text(request.api_key), "API Key")
-    if not api_key:
-        api_key = LLM_API_KEY
-    if not api_key:
-        raise HTTPException(status_code=400, detail="Enter your model API key.")
-
     report_mode = request.report_mode or ""
     if report_mode in ("kimi_llm", "kimi_k3"):
+        api_key = validate_header_value(clean_optional_text(request.api_key) or KIMI_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your Kimi API key.")
         base_url = clean_optional_text(request.base_url) or KIMI_BASE_URL
         model = clean_optional_text(request.model) or ("kimi-k3" if report_mode == "kimi_k3" else KIMI_MODEL)
     else:
+        api_key = validate_header_value(clean_optional_text(request.api_key) or LLM_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your model API key.")
         base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
         model = clean_optional_text(request.model) or LLM_MODEL
     language = request.language or "en"
@@ -877,17 +877,17 @@ async def analyze_earnings(request: EarningsRequest):
     if not ticker:
         raise HTTPException(status_code=400, detail="Enter a ticker symbol.")
 
-    api_key = validate_header_value(clean_optional_text(request.api_key), "API Key")
-    if not api_key:
-        api_key = LLM_API_KEY
-    if not api_key:
-        raise HTTPException(status_code=400, detail="Enter your model API key.")
-
     report_mode = request.report_mode or ""
     if report_mode in ("kimi_llm", "kimi_k3"):
+        api_key = validate_header_value(clean_optional_text(request.api_key) or KIMI_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your Kimi API key.")
         base_url = clean_optional_text(request.base_url) or KIMI_BASE_URL
         model = clean_optional_text(request.model) or ("kimi-k3" if report_mode == "kimi_k3" else KIMI_MODEL)
     else:
+        api_key = validate_header_value(clean_optional_text(request.api_key) or LLM_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your model API key.")
         base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
         model = clean_optional_text(request.model) or LLM_MODEL
     language = request.language or "en"
@@ -1033,17 +1033,17 @@ async def post_earnings_move(request: PostEarningsMoveRequest):
     if not ticker:
         raise HTTPException(status_code=400, detail="Enter a ticker symbol.")
 
-    api_key = validate_header_value(clean_optional_text(request.api_key), "API Key")
-    if not api_key:
-        api_key = LLM_API_KEY
-    if not api_key:
-        raise HTTPException(status_code=400, detail="Enter your model API key.")
-
     report_mode = request.report_mode or ""
     if report_mode in ("kimi_llm", "kimi_k3"):
+        api_key = validate_header_value(clean_optional_text(request.api_key) or KIMI_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your Kimi API key.")
         base_url = clean_optional_text(request.base_url) or KIMI_BASE_URL
         model = clean_optional_text(request.model) or ("kimi-k3" if report_mode == "kimi_k3" else KIMI_MODEL)
     else:
+        api_key = validate_header_value(clean_optional_text(request.api_key) or LLM_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your model API key.")
         base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
         model = clean_optional_text(request.model) or LLM_MODEL
     language = request.language or "en"
