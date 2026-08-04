@@ -10,7 +10,7 @@ import { getCustomersWithPurchasesByReferenceId } from "@workspace/billing/serve
 
 const REPORT_AGENT_URL =
   process.env.REPORT_AGENT_URL || "http://localhost:8000";
-const KIMI_API_KEY = process.env.KIMI_API_KEY ?? "";
+const HOSTED_API_KEY = process.env.KIMI_API_KEY ?? "";
 
 const PRO_PLAN_VARIANTS: string[] =
   billingConfig.plans
@@ -71,9 +71,10 @@ export async function POST(request: Request) {
     const body = (await request.json()) as Record<string, unknown>;
     const userPlan = await getUserPlan(request.headers);
 
-    // Paid users: use hosted Kimi key
+    // Paid users: use hosted key with kimi_llm mode
     if (userPlan !== "free") {
-      body.api_key = KIMI_API_KEY;
+      body.api_key = HOSTED_API_KEY;
+      body.report_mode = "kimi_llm";
       delete body.base_url;
       delete body.model;
     }
