@@ -122,10 +122,17 @@ LLM_API_KEY = os.getenv("LLM_API_KEY") or os.getenv("DEEPSEEK_API_KEY")
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
 LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-chat")
 
-# Kimi (Moonshot AI) — OpenAI-compatible, 256K context, best value
+# Kimi (Moonshot AI) — OpenAI-compatible, 1M context (K3)
 KIMI_API_KEY = os.getenv("KIMI_API_KEY", "")
 KIMI_BASE_URL = os.getenv("KIMI_BASE_URL", "https://api.moonshot.ai/v1")
-KIMI_MODEL = os.getenv("KIMI_MODEL", "k3")
+
+# Alias normalization: legacy "k3" env → canonical "kimi-k3"
+_KIMI_MODEL_RAW = os.getenv("KIMI_MODEL", "kimi-k3").strip()
+KIMI_MODEL = "kimi-k3" if _KIMI_MODEL_RAW in ("k3", "kimi-k3") else _KIMI_MODEL_RAW
+
+# K3 reasoning effort: low | high | max. Default "high" to control cost.
+# "max" reserved for explicit deep-dive mode.
+KIMI_REASONING_EFFORT = os.getenv("KIMI_REASONING_EFFORT", "high")
 
 JINA_API_KEY = os.getenv("JINA_API_KEY", "")
 JINA_SEARCH_BASE_URL = os.getenv("JINA_SEARCH_BASE_URL", "https://s.jina.ai/")
@@ -177,6 +184,7 @@ class SerenityRequest(BaseModel):
     model: Optional[str] = Field(None, description="Model name")
     language: Optional[str] = Field("en", description="Output language")
     skill_prompt: Optional[str] = Field(None, description="Custom system prompt for the skill")
+    report_mode: Optional[str] = Field(None, description="kimi_llm, kimi_k3, or default")
 
 
 class EarningsRequest(BaseModel):
@@ -186,6 +194,7 @@ class EarningsRequest(BaseModel):
     base_url: Optional[str] = Field(None, description="OpenAI-compatible API base URL")
     model: Optional[str] = Field(None, description="Model name")
     language: Optional[str] = Field("en", description="Output language")
+    report_mode: Optional[str] = Field(None, description="kimi_llm, kimi_k3, or default")
 
 
 class PostEarningsMoveRequest(BaseModel):
@@ -196,6 +205,7 @@ class PostEarningsMoveRequest(BaseModel):
     base_url: Optional[str] = Field(None, description="OpenAI-compatible API base URL")
     model: Optional[str] = Field(None, description="Model name")
     language: Optional[str] = Field("en", description="Output language")
+    report_mode: Optional[str] = Field(None, description="kimi_llm, kimi_k3, or default")
 
 
 def _build_system_prompt(mode: str = "snapshot") -> str:
@@ -334,15 +344,17 @@ def get_llm_config(request: ReportRequest):
     request_base_url = clean_optional_text(request.base_url)
     request_model = clean_optional_text(request.model)
 
-    # Kimi mode — best value, 256K context, OpenAI-compatible
-    if report_mode == "kimi_llm":
+    # Kimi mode — K3 (2.8T, 1M context, always-on thinking)
+    # "kimi_k3" forces kimi-k3; "kimi_llm" reads KIMI_MODEL env (normalized).
+    if report_mode in ("kimi_llm", "kimi_k3"):
         api_key = validate_header_value(request_api_key or KIMI_API_KEY, "API Key")
         if not api_key:
             raise HTTPException(
                 status_code=400,
-                detail="Enter your Kimi API key (sk-kimi-...) to generate this report.",
+                detail="Enter your Kimi API key to generate this report.",
             )
-        return api_key, request_base_url or KIMI_BASE_URL, request_model or KIMI_MODEL, report_mode
+        model_override = "kimi-k3" if report_mode == "kimi_k3" else KIMI_MODEL
+        return api_key, request_base_url or KIMI_BASE_URL, request_model or model_override, report_mode
 
     if report_mode == "jina_llm":
         api_key = validate_header_value(request_api_key or LLM_API_KEY, "API Key")
@@ -529,7 +541,7 @@ def load_serenity_references() -> dict[str, str]:
     return refs
 
 
-def _build_serenity_system_prompt(custom_prompt: str | None = None) -> str:
+def _build_serenity_system_prompt(custom_prompt: Optional[str] = None) -> str:
     """Build Serenity system prompt with shared hard rules baseline."""
     if custom_prompt:
         return f"{SHARED_HARD_RULES}\n\n{custom_prompt}"
@@ -560,10 +572,10 @@ CRITICAL RULES:
 def build_serenity_messages(
     ticker: str,
     mode: str,
-    tickers: list[str] | None,
+    tickers: Optional[list[str]],
     refs: dict[str, str],
     language: str = "en",
-    custom_prompt: str | None = None,
+    custom_prompt: Optional[str] = None,
 ) -> list[dict[str, str]]:
     """Build messages for Serenity supply-chain analysis."""
     # Truncate theses to fit context window (keep first 30k chars)
@@ -651,14 +663,19 @@ async def analyze_serenity(request: SerenityRequest):
     if not ticker:
         raise HTTPException(status_code=400, detail="Enter a ticker symbol.")
 
-    api_key = validate_header_value(clean_optional_text(request.api_key), "API Key")
-    if not api_key:
-        api_key = LLM_API_KEY
-    if not api_key:
-        raise HTTPException(status_code=400, detail="Enter your model API key.")
-
-    base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
-    model = clean_optional_text(request.model) or LLM_MODEL
+    report_mode = request.report_mode or ""
+    if report_mode in ("kimi_llm", "kimi_k3"):
+        api_key = validate_header_value(clean_optional_text(request.api_key) or KIMI_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your Kimi API key.")
+        base_url = clean_optional_text(request.base_url) or KIMI_BASE_URL
+        model = clean_optional_text(request.model) or ("kimi-k3" if report_mode == "kimi_k3" else KIMI_MODEL)
+    else:
+        api_key = validate_header_value(clean_optional_text(request.api_key) or LLM_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your model API key.")
+        base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
+        model = clean_optional_text(request.model) or LLM_MODEL
     language = request.language or "en"
 
     refs = load_serenity_references()
@@ -673,12 +690,15 @@ async def analyze_serenity(request: SerenityRequest):
     def stream():
         try:
             client = OpenAI(api_key=api_key, base_url=base_url)
-            response = client.chat.completions.create(
+            kwargs: dict = dict(
                 model=model,
                 messages=messages,
                 stream=True,
                 max_tokens=16384,
             )
+            if report_mode in ("kimi_llm", "kimi_k3"):
+                kwargs["extra_body"] = {"reasoning_effort": KIMI_REASONING_EFFORT}
+            response = client.chat.completions.create(**kwargs)
             for chunk in response:
                 delta = chunk.choices[0].delta.content
                 if delta:
@@ -695,13 +715,17 @@ async def generate_report(request: ReportRequest):
 
     try:
         api_key, base_url, model, messages, search_warning = build_report_request(request)
+        report_mode = request.report_mode or REPORT_MODE
         client = OpenAI(api_key=api_key, base_url=base_url)
-        response = client.chat.completions.create(
+        kwargs: dict = dict(
             model=model,
             messages=messages,
             stream=False,
             max_tokens=16384,
         )
+        if report_mode in ("kimi_llm", "kimi_k3"):
+            kwargs["extra_body"] = {"reasoning_effort": KIMI_REASONING_EFFORT}
+        response = client.chat.completions.create(**kwargs)
         report_content = response.choices[0].message.content
         if search_warning:
             report_content = f"> Search note: {search_warning}\n\n{report_content}"
@@ -726,13 +750,17 @@ async def generate_report_stream(request: ReportRequest):
         try:
             if search_warning:
                 yield f"> Search note: {search_warning}\n\n"
+            report_mode = request.report_mode or REPORT_MODE
             client = OpenAI(api_key=api_key, base_url=base_url)
-            response = client.chat.completions.create(
+            kwargs: dict = dict(
                 model=model,
                 messages=messages,
                 stream=True,
                 max_tokens=16384,
             )
+            if report_mode in ("kimi_llm", "kimi_k3"):
+                kwargs["extra_body"] = {"reasoning_effort": KIMI_REASONING_EFFORT}
+            response = client.chat.completions.create(**kwargs)
             for chunk in response:
                 delta = chunk.choices[0].delta.content
                 if delta:
@@ -803,7 +831,7 @@ RULES:
 
 def build_earnings_messages(
     ticker: str,
-    quarter: str | None,
+    quarter: Optional[str],
     language: str,
 ) -> list[dict[str, str]]:
     """Build messages for earnings deep-dive analysis."""
@@ -849,14 +877,19 @@ async def analyze_earnings(request: EarningsRequest):
     if not ticker:
         raise HTTPException(status_code=400, detail="Enter a ticker symbol.")
 
-    api_key = validate_header_value(clean_optional_text(request.api_key), "API Key")
-    if not api_key:
-        api_key = LLM_API_KEY
-    if not api_key:
-        raise HTTPException(status_code=400, detail="Enter your model API key.")
-
-    base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
-    model = clean_optional_text(request.model) or LLM_MODEL
+    report_mode = request.report_mode or ""
+    if report_mode in ("kimi_llm", "kimi_k3"):
+        api_key = validate_header_value(clean_optional_text(request.api_key) or KIMI_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your Kimi API key.")
+        base_url = clean_optional_text(request.base_url) or KIMI_BASE_URL
+        model = clean_optional_text(request.model) or ("kimi-k3" if report_mode == "kimi_k3" else KIMI_MODEL)
+    else:
+        api_key = validate_header_value(clean_optional_text(request.api_key) or LLM_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your model API key.")
+        base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
+        model = clean_optional_text(request.model) or LLM_MODEL
     language = request.language or "en"
 
     messages = build_earnings_messages(ticker, request.quarter, language)
@@ -864,12 +897,15 @@ async def analyze_earnings(request: EarningsRequest):
     def stream():
         try:
             client = OpenAI(api_key=api_key, base_url=base_url)
-            response = client.chat.completions.create(
+            kwargs: dict = dict(
                 model=model,
                 messages=messages,
                 stream=True,
                 max_tokens=16384,
             )
+            if report_mode in ("kimi_llm", "kimi_k3"):
+                kwargs["extra_body"] = {"reasoning_effort": KIMI_REASONING_EFFORT}
+            response = client.chat.completions.create(**kwargs)
             for chunk in response:
                 delta = chunk.choices[0].delta.content
                 if delta:
@@ -948,8 +984,8 @@ RULES:
 
 def build_post_earnings_move_messages(
     ticker: str,
-    move_pct: float | None,
-    quarter: str | None,
+    move_pct: Optional[float],
+    quarter: Optional[str],
     language: str,
 ) -> list[dict[str, str]]:
     """Build messages for post-earnings price move analysis."""
@@ -997,14 +1033,19 @@ async def post_earnings_move(request: PostEarningsMoveRequest):
     if not ticker:
         raise HTTPException(status_code=400, detail="Enter a ticker symbol.")
 
-    api_key = validate_header_value(clean_optional_text(request.api_key), "API Key")
-    if not api_key:
-        api_key = LLM_API_KEY
-    if not api_key:
-        raise HTTPException(status_code=400, detail="Enter your model API key.")
-
-    base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
-    model = clean_optional_text(request.model) or LLM_MODEL
+    report_mode = request.report_mode or ""
+    if report_mode in ("kimi_llm", "kimi_k3"):
+        api_key = validate_header_value(clean_optional_text(request.api_key) or KIMI_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your Kimi API key.")
+        base_url = clean_optional_text(request.base_url) or KIMI_BASE_URL
+        model = clean_optional_text(request.model) or ("kimi-k3" if report_mode == "kimi_k3" else KIMI_MODEL)
+    else:
+        api_key = validate_header_value(clean_optional_text(request.api_key) or LLM_API_KEY, "API Key")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Enter your model API key.")
+        base_url = clean_optional_text(request.base_url) or LLM_BASE_URL
+        model = clean_optional_text(request.model) or LLM_MODEL
     language = request.language or "en"
 
     messages = build_post_earnings_move_messages(
@@ -1014,12 +1055,15 @@ async def post_earnings_move(request: PostEarningsMoveRequest):
     def stream():
         try:
             client = OpenAI(api_key=api_key, base_url=base_url)
-            response = client.chat.completions.create(
+            kwargs: dict = dict(
                 model=model,
                 messages=messages,
                 stream=True,
                 max_tokens=16384,
             )
+            if report_mode in ("kimi_llm", "kimi_k3"):
+                kwargs["extra_body"] = {"reasoning_effort": KIMI_REASONING_EFFORT}
+            response = client.chat.completions.create(**kwargs)
             for chunk in response:
                 delta = chunk.choices[0].delta.content
                 if delta:
