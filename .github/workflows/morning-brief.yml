@@ -41,14 +41,19 @@ jobs:
           if [ -z "${LLM_API_KEY:-}" ] && [ -z "${DEEPSEEK_KEY:-}" ]; then
             MISSING="LLM_API_KEY or DEEPSEEK_API_KEY"
           fi
+          if [ -z "${WATCHLIST_TICKERS:-}" ] && [ -z "${AIRESEARCH_WATCHLIST:-}" ]; then
+            MISSING="${MISSING:+$MISSING, }WATCHLIST_TICKERS or AIRESEARCH_WATCHLIST"
+          fi
           if [ -n "$MISSING" ]; then
             echo "::error::Missing required secrets: $MISSING"
             echo "Set these in GitHub repo Settings → Secrets → Actions"
             exit 1
           fi
         env:
-          LLM_API_KEY: *** secrets.MORNING_BRIEF_LLM_KEY }}
-          DEEPSEEK_KEY: *** secrets.DEEPSEEK_API_KEY }}
+          LLM_API_KEY: ${{ secrets.MORNING_BRIEF_LLM_KEY }}
+          DEEPSEEK_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          WATCHLIST_TICKERS: ${{ secrets.WATCHLIST_TICKERS }}
+          AIRESEARCH_WATCHLIST: ${{ secrets.AIRESEARCH_WATCHLIST }}
 
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
@@ -61,10 +66,10 @@ jobs:
       - name: 📰 Generate morning brief
         id: generate
         env:
-          LLM_API_KEY: *** secrets.MORNING_BRIEF_LLM_KEY || secrets.DEEPSEEK_API_KEY }}
+          LLM_API_KEY: ${{ secrets.MORNING_BRIEF_LLM_KEY || secrets.DEEPSEEK_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL || 'https://api.deepseek.com/v1' }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
-          JINA_API_KEY: *** secrets.JINA_API_KEY }}
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
           AIRESEARCH_WATCHLIST: ${{ secrets.AIRESEARCH_WATCHLIST }}
           WATCHLIST_TICKERS: ${{ secrets.WATCHLIST_TICKERS }}
         run: |
