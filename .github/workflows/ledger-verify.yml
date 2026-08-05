@@ -3,7 +3,18 @@ name: L3 Ledger Verify
 on:
   schedule:
     - cron: "0 6 * * *" # 每日 UTC 06:00 (北京 14:00)
-  workflow_dispatch: # 支持手动触发
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: "Run in dry-run mode (no DB writes)"
+        required: false
+        default: "false"
+        type: boolean
+      batchSize:
+        description: "Number of judgments to process"
+        required: false
+        default: "50"
+        type: string
 
 concurrency:
   group: ledger-verify
@@ -23,19 +34,58 @@ jobs:
         env:
           VERIFY_URL: ${{ secrets.VERIFY_URL || format('{0}/api/ledger/verify/run', secrets.VERCEL_URL) }}
           VERIFY_TOKEN: ${{ secrets.LEDGER_VERIFY_TOKEN }}
+          VERCEL_BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          DRY_RUN: ${{ inputs.dryRun || 'false' }}
+          BATCH_SIZE: ${{ inputs.batchSize || '50' }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
+
           if [ -z "$VERIFY_URL" ]; then
             echo "::error::VERIFY_URL or VERCEL_URL secret not set"
             exit 1
           fi
-          echo "Triggering verification at $VERIFY_URL"
-          RESPONSE=$(curl -sf -X POST "$VERIFY_URL" \
-            -H "Authorization: Bearer $VERIFY_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"batchSize": 50}')
-          echo "$RESPONSE" | jq .
-          echo "response=$RESPONSE" >> "$GITHUB_OUTPUT"
+
+          if [ -z "$VERIFY_TOKEN" ]; then
+            echo "::error::LEDGER_VERIFY_TOKEN secret not set"
+            exit 1
+          fi
+
+          echo "Triggering verification at $VERIFY_URL (dryRun=$DRY_RUN, batchSize=$BATCH_SIZE)"
+
+          # Build curl headers
+          CURL_HEADERS=(-H "Authorization: Bearer $VERIFY_TOKEN" -H "Content-Type: application/json")
+          if [ -n "$VERCEL_BYPASS" ]; then
+            CURL_HEADERS+=(-H "x-vercel-protection-bypass: $VERCEL_BYPASS")
+            CURL_HEADERS+=(-H "x-vercel-set-bypass-cookie: true")
+            echo "Using Vercel automation bypass"
+          fi
+
+          # Build request body
+          BODY=$(jq -n --argjson bs "$BATCH_SIZE" --argjson dr "$DRY_RUN" '{batchSize: $bs, dryRun: $dr}')
+
+          # Execute — do NOT use -f (we need to capture HTTP status + body)
+          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            -X POST "$VERIFY_URL" \
+            "${CURL_HEADERS[@]}" \
+            -d "$BODY" || true)
+
+          echo "HTTP status: $HTTP_CODE"
+
+          # Print response body (safe — no secrets in response)
+          if [ -f /tmp/response.json ]; then
+            RESPONSE=$(cat /tmp/response.json)
+            echo "Response body:"
+            echo "$RESPONSE" | jq . 2>/dev/null || echo "$RESPONSE"
+            echo "response=$RESPONSE" >> "$GITHUB_OUTPUT"
+          else
+            echo "No response body received"
+          fi
+
+          # Fail if HTTP status is not 2xx
+          if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+            echo "::error::Verification endpoint returned HTTP $HTTP_CODE"
+            exit 1
+          fi
 
       - name: Create issue on failure
         if: failure()
@@ -43,10 +93,32 @@ jobs:
         with:
           script: |
             const today = new Date().toISOString().slice(0, 10);
-            await github.rest.issues.create({
+            const title = `[auto] L3 Ledger Verify failed — ${today}`;
+
+            // Duplicate guard: check if today's issue already exists
+            const { data: existing } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `[auto] L3 Ledger Verify failed — ${today}`,
-              body: `The daily ledger verification workflow failed.\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nPlease investigate.`,
-              labels: ['bug'],
+              state: 'open',
+              labels: 'bug',
+              per_page: 50,
             });
+
+            const duplicate = existing.find(i => i.title === title);
+            if (duplicate) {
+              console.log(`Issue #${duplicate.number} already exists for today, appending run URL`);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: duplicate.number,
+                body: `Another failure: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: `The daily ledger verification workflow failed.\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nPlease investigate.`,
+                labels: ['bug'],
+              });
+            }
