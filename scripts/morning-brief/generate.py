@@ -183,7 +183,12 @@ def call_llm(system: str, user: str) -> str:
         json=payload,
         timeout=120,
     )
-    res.raise_for_status()
+    if not res.ok:
+        body = res.text[:500] if res.text else "(empty body)"
+        print(f"❌ LLM API error: HTTP {res.status_code}")
+        print(f"   Response: {body}")
+        # Do not print key, headers, or full payload
+        res.raise_for_status()
     return res.json()["choices"][0]["message"]["content"]
 
 
