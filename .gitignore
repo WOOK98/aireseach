@@ -55,3 +55,6 @@ tests/workflow/playwright-report/
 coverage.json
 coverage/
 playwright-report/
+
+# Morning brief skip markers (CI artifacts, not committed)
+briefs/*.skip
