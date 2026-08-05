@@ -140,6 +140,6 @@ export async function generateMetadata({
     description: item.description,
     image: item.thumbnail,
     type: "article",
-    canonical: `${appConfig.url}/blog/${item.slug}`,
+    canonical: `/blog/${item.slug}`,
   })({ params });
 }

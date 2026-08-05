@@ -95,6 +95,10 @@ export const getMetadata =
     };
   };
 
+// Canonical domain: always use www to avoid duplicate-content issues.
+// The bare domain (airesearchs.com) should 301-redirect to www via Vercel.
+const CANONICAL_ORIGIN = "https://www.airesearchs.com";
+
 export const DEFAULT_METADATA: Metadata = {
   ...(await getMetadata()({
     params: Promise.resolve({ locale: appConfig.locale }),
@@ -103,7 +107,10 @@ export const DEFAULT_METADATA: Metadata = {
     template: SITE_NAME_TEMPLATE,
     default: `${appConfig.name} — AI Stock Research & Market Intelligence`,
   },
-  metadataBase: appConfig.url ? new URL(appConfig.url) : null,
+  metadataBase: new URL(CANONICAL_ORIGIN),
+  alternates: {
+    canonical: "/",
+  },
 };
 
 export const DEFAULT_VIEWPORT: Viewport = {
