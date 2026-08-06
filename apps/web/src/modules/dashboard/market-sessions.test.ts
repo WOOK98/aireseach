@@ -61,6 +61,21 @@ describe("NYSE holidays", () => {
     const dt = dateInTZ(tz, y, m, d, 10, 30);
     expect(marketState("NYSE", dt).state).toBe("closed");
   });
+
+  // Early-close days are NOT in HOLIDAYS — market is open in the morning
+  it.each([
+    ["2026-11-27", "Day after Thanksgiving (early close 1pm ET)"],
+    ["2026-12-24", "Christmas Eve (early close 1pm ET)"],
+  ])("open on %s (%s) — early close, not full closure", (dateStr, _label) => {
+    const [y, m, d] = dateStr.split("-").map(Number) as [
+      number,
+      number,
+      number,
+    ];
+    // 10:30 AM ET — market is open on early-close days
+    const dt = dateInTZ(tz, y, m, d, 10, 30);
+    expect(marketState("NYSE", dt).state).toBe("open");
+  });
 });
 
 describe("HKEX holidays", () => {
