@@ -119,6 +119,7 @@ failing dependency. Wrap initialization in lazy/deferred patterns instead.
 ### 5.2 Degradation must self-report
 
 When a code path degrades, it MUST:
+
 - Log the degradation with reason (structured log preferred)
 - If output feeds a model or user, mark the output as degraded state
 
@@ -135,6 +136,7 @@ fallback constants. Degradation ≠ loss of constraints.
 
 Any of the following in a shared package's module top-level is a **review
 blocker** and MUST be fixed before merge:
+
 - `throw` statements
 - `readFileSync` / `fs.readFileSync` (sync I/O)
 - Network calls (`fetch`, `axios`, `got`, etc.)
