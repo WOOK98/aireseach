@@ -11,6 +11,7 @@ import {
   Clock,
   FileText,
   HelpCircle,
+  Search,
   ShieldQuestion,
   XCircle,
 } from "lucide-react";
@@ -434,7 +435,13 @@ export function EmptyStateNoWatchlist() {
   );
 }
 
-export function EmptyStateNoJudgments({ count }: { count: number }) {
+export function EmptyStateNoJudgments({
+  count,
+  symbols,
+}: {
+  count: number;
+  symbols?: string[];
+}) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
       <div className="bg-muted rounded-full p-5">
@@ -442,14 +449,41 @@ export function EmptyStateNoJudgments({ count }: { count: number }) {
       </div>
       <div className="space-y-2">
         <h3 className="text-foreground text-lg font-semibold">
-          No Judgments to Track
+          Watchlist Ready — No Reports Yet
         </h3>
         <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
           You have {count} {count === 1 ? "company" : "companies"} in your
-          watchlist, but no reports have been generated yet. Generate a report
-          to create trackable judgments.
+          watchlist, but no reports have been generated yet. Once you generate a
+          report, it creates trackable judgments that appear here with
+          verification status.
         </p>
       </div>
+      {/* Ticker chips — remind user what they're watching */}
+      {symbols && symbols.length > 0 && (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {symbols.slice(0, 3).map((s) => (
+            <span
+              key={s}
+              className="notranslate rounded-full border px-3 py-1 font-mono text-xs font-medium"
+              translate="no"
+            >
+              {s}
+            </span>
+          ))}
+          {symbols.length > 3 && (
+            <span className="text-muted-foreground text-xs">
+              +{symbols.length - 3} more
+            </span>
+          )}
+        </div>
+      )}
+      <Link
+        href="/dashboard/research"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition"
+      >
+        <Search className="h-4 w-4" />
+        Generate first report
+      </Link>
     </div>
   );
 }

@@ -280,7 +280,12 @@ export default function WatchlistPage() {
             !isLoading &&
             hasWatchlist &&
             !hasJudgments &&
-            !degraded && <EmptyStateNoJudgments count={allItems.length} />}
+            !degraded && (
+              <EmptyStateNoJudgments
+                count={allItems.length}
+                symbols={allItems.map((i) => i.symbol)}
+              />
+            )}
           {!isError && !isLoading && hasJudgments && allNotDue && !degraded && (
             <EmptyStateAllNotDue />
           )}
