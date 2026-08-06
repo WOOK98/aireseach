@@ -8,9 +8,11 @@ import {
   HelpCircle,
   Loader2,
   RefreshCcw,
+  Search,
   Shield,
   TrendingUp,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useCallback, useState } from "react";
 
 import { Button } from "@workspace/ui-web/button";
@@ -254,6 +256,44 @@ export default function VisualsPage() {
           <div className="bg-background/95 sticky top-0 z-10 -mx-4 -mt-5 px-4 pt-5 pb-3 backdrop-blur">
             <EntitySearch compact onResolve={handleEntityResolve} />
           </div>
+
+          {/* ── Cold-start guidance ── */}
+          {!loading &&
+            !verificationFlow.d30 &&
+            !verificationFlow.d90 &&
+            !tqsDist &&
+            !sourceMix &&
+            !fundamentals && (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-800 dark:bg-blue-950/30">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 shrink-0">
+                    <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                      No research data yet
+                    </h3>
+                    <p className="text-sm leading-relaxed text-blue-800 dark:text-blue-200">
+                      The panels below — Verification Flow, TQS Distribution,
+                      and Evidence Source Mix — populate after you generate
+                      reports and write judgments to the L3 ledger. Fundamentals
+                      work independently: search a ticker above to load
+                      financial data.
+                    </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      Research → Generate report → L3 ledger → This dashboard
+                    </p>
+                    <Link
+                      href="/dashboard/research"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700"
+                    >
+                      <Search className="h-3.5 w-3.5" />
+                      Go to Research
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
 
           {/* ── Panel 1: Watchlist Verification Flow ── */}
           <Panel
