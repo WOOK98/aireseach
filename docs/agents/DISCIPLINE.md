@@ -99,6 +99,57 @@ support liability, and makes supplier changes a user-facing event.
 
 ---
 
+## Rule 5: Honest Degradation for Code Paths
+
+> Source: P0 production incident 2026-07-30, diagnosed in #68, root-caused in #67.
+> `skill-contract` threw at module top-level during import resolution, cascading
+> via transitive import into `packages/api/src/index.ts` and taking down `/api/mcp`
+> and `/api/report/*` with 500s — while page-level health checks returned 200.
+
+The redline discipline previously applied "honest degradation" only to **data**
+(withhold unverifiable numbers, never fabricate). Rule 5 extends the same
+principle to **code paths**: if a dependency cannot load, degrade — don't crash.
+
+### 5.1 No module-level throw
+
+Shared packages MUST NOT throw at module top-level. A throw during `import`
+cascades to every transitive consumer, including routes that never use the
+failing dependency. Wrap initialization in lazy/deferred patterns instead.
+
+### 5.2 Degradation must self-report
+
+When a code path degrades, it MUST:
+
+- Log the degradation with reason (structured log preferred)
+- If output feeds a model or user, mark the output as degraded state
+
+**Silent degradation is worse than a crash** — a crash at least tells you
+something broke.
+
+### 5.3 Safety invariants survive degradation
+
+When the full contract cannot load, hard rules (entity gating, no-price-target,
+freshness tags, invalidation conditions) MUST still be injected from inline
+fallback constants. Degradation ≠ loss of constraints.
+
+### 5.4 Shared-package module-level throw / readFileSync / network call = review blocker
+
+Any of the following in a shared package's module top-level is a **review
+blocker** and MUST be fixed before merge:
+
+- `throw` statements
+- `readFileSync` / `fs.readFileSync` (sync I/O)
+- Network calls (`fetch`, `axios`, `got`, etc.)
+
+### 5.5 Cross-cutting: degradation in report output
+
+If a report generation code path degrades (data source unavailable, model
+fallback triggered, partial pipeline failure), the report MUST include a
+degradation notice. The user must never receive a degraded report that looks
+complete.
+
+---
+
 ## Enforcement Checklist
 
 Before any PR merge, verify:
@@ -108,6 +159,8 @@ Before any PR merge, verify:
 - [ ] Redline grep passes (wordlist check)
 - [ ] Playwright VENDOR_LEAK passes (same wordlist)
 - [ ] No supplier names in user-visible copy (manual review for new UI text)
+- [ ] No module-level throw / readFileSync / network calls in shared packages
+- [ ] Degradation paths log and self-report (not silent)
 
 ---
 
@@ -116,3 +169,4 @@ Before any PR merge, verify:
 | Date       | Change                                                                          |
 | ---------- | ------------------------------------------------------------------------------- |
 | 2026-07-30 | Initial directive. Codex PR #63 review prompted by OpenClaw #58 Redline ⑦ leak. |
+| 2026-08-06 | Rule 5 added: honest degradation for code paths. Source: #68/#67 P0 incident.   |
