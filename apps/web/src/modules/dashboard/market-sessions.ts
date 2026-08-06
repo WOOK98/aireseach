@@ -90,9 +90,12 @@ export const HOLIDAYS: Record<MarketId, string[]> = {
     "2026-07-03", // Independence Day observed (July 4 is Saturday)
     "2026-09-07", // Labor Day
     "2026-11-26", // Thanksgiving
-    "2026-11-27", // Day after Thanksgiving (early close 1pm ET)
-    "2026-12-24", // Christmas Eve (early close 1pm ET)
+    // Note: Nov 27 (day after Thanksgiving) is early close at 1pm ET, NOT
+    // a full closure. Excluded because the state machine has no early-close
+    // concept; including it would falsely show "closed" during open morning.
     "2026-12-25", // Christmas
+    // Note: Dec 24 (Christmas Eve) is early close at 1pm ET, NOT a full
+    // closure. Excluded for the same reason as Nov 27 above.
     // ── 2027 (source: ICE/NYSE Group announcement) ──
     "2027-01-01", // New Year's Day
     "2027-01-18", // Martin Luther King Jr. Day
@@ -102,7 +105,8 @@ export const HOLIDAYS: Record<MarketId, string[]> = {
     "2027-07-05", // Independence Day observed (July 4 is Sunday)
     "2027-09-06", // Labor Day
     "2027-11-25", // Thanksgiving
-    "2027-11-26", // Day after Thanksgiving (early close 1pm ET)
+    // Note: Nov 26 (day after Thanksgiving) is early close at 1pm ET, NOT
+    // a full closure. Excluded — same rationale as 2026.
     "2027-12-24", // Christmas (falls on Friday)
   ],
 
