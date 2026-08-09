@@ -27,6 +27,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { parseIndustryBrief } from "@workspace/shared/industry-brief";
 import { Button } from "@workspace/ui-web/button";
 import { Input } from "@workspace/ui-web/input";
 import { Separator } from "@workspace/ui-web/separator";
@@ -38,6 +39,7 @@ import {
   MarginChart,
   RevenueChart,
 } from "~/modules/report/finance/charts";
+import { IndustryBriefView } from "~/modules/report/finance/industry-brief-view";
 import { IndustryView } from "~/modules/report/finance/industry-view";
 import { MetricsGrid } from "~/modules/report/finance/metric-cards";
 import {
@@ -1382,6 +1384,17 @@ export default function ResearchPage() {
                   universe={industryResult.universe!}
                   constituents={industryResult.constituents!}
                 />
+                {(() => {
+                  if (!industryResult.brief) return null;
+                  const parsed = parseIndustryBrief(industryResult.brief);
+                  if (!parsed.ok) return null;
+                  return (
+                    <>
+                      <Separator />
+                      <IndustryBriefView brief={parsed.data} />
+                    </>
+                  );
+                })()}
               </motion.div>
             )}
 

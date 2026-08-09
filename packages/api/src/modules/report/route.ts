@@ -30,6 +30,7 @@ import {
 } from "./data-sources";
 import { cachedSearchFilings, cachedFetchFilingContent } from "./filings";
 import { buildIndustryUniverse, expandWithAHPeers } from "./industry";
+import { generateIndustryBrief } from "./industry-brief-generator";
 import { formatImaKnowledgeForPrompt, searchImaKnowledge } from "./knowledge";
 import { computeTQS } from "./tqs";
 
@@ -1402,11 +1403,22 @@ reportRoute.post(
       };
     });
 
+    // Best-effort: generate Industry Research Brief via LLM.
+    // Failure = brief omitted from response, universe table still works.
+    let brief = null;
+    try {
+      const model = getReportModelConfig();
+      brief = await generateIndustryBrief(query, universe, model);
+    } catch {
+      // Brief generation failed — omit silently
+    }
+
     return c.json({
       ok: true,
       mode: "industry",
       universe,
       constituents: constituentFinancials,
+      ...(brief ? { brief } : {}),
     });
   },
 );

@@ -2,6 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 
+import type { IndustryBrief } from "@workspace/shared/industry-brief";
 import type { FinancialMetrics } from "@workspace/shared/types/report";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
@@ -43,6 +44,8 @@ export interface IndustryAnalyzeResult {
   constituents?: ThemeConstituent[];
   resolution?: unknown;
   candidates?: unknown[];
+  /** Industry Research Brief v1 — structured industry overview */
+  brief?: IndustryBrief;
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
