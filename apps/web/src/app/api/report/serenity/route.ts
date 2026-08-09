@@ -7,11 +7,15 @@ import {
   config as billingConfig,
 } from "@workspace/billing";
 import { getCustomersWithPurchasesByReferenceId } from "@workspace/billing/server";
+import {
+  INDUSTRY_BRIEF_METHODOLOGY,
+  INDUSTRY_BRIEF_OUTPUT_STRUCTURE,
+} from "@workspace/shared/industry-brief";
 
 const REPORT_AGENT_URL =
   process.env.REPORT_AGENT_URL || "http://localhost:8000";
 const PLATFORM_API_KEY =
-  process.env.DEEPSEEK_API_KEY || process.env.LLM_API_KEY || "";
+  process.env.DEEPSEEK_API_KEY || process.env.LLM_API_KEY || ""; // redline-allow: internal env lookup, not user-visible
 
 const PRO_PLAN_VARIANTS: string[] =
   billingConfig.plans
@@ -133,14 +137,19 @@ const isTechnicalSkill = (body: Record<string, unknown>) => {
 
 const buildIndustryPrompt = (target: string) =>
   [
-    `INDUSTRY MODE - research target is a theme, material, or industry rather than a single listed stock: "${target}".`,
-    "Produce exactly this structure:",
-    "1. Value chain map of the industry/theme, from end demand to upstream inputs.",
-    "2. Key listed players per chain layer, with tickers, exchanges, and a short role description.",
-    "3. Bottleneck dynamics: which layers have scarce capacity, qualification barriers, pricing power, or critical inputs.",
-    "4. Evidence and open questions: cite current sources, filings, company pages, or recent news where available.",
-    "5. Follow-up candidates: suggest 3-6 listed companies that deserve single-stock Deep Dive follow-up.",
-    "Hard rules: do not output per-stock technicals, price levels, RSI, MACD, support/resistance, entry/stop levels, or conviction tiers. If a listed player cannot be verified, label it as unverified rather than inventing a ticker.",
+    `INDUSTRY MODE — Industry Research Brief v1`,
+    `Research target is a theme, material, or industry rather than a single listed stock: "${target}".`,
+    "",
+    INDUSTRY_BRIEF_METHODOLOGY,
+    "",
+    INDUSTRY_BRIEF_OUTPUT_STRUCTURE,
+    "",
+    "Hard rules:",
+    "- Do not output per-stock technicals, price levels, RSI, MACD, support/resistance, entry/stop levels, or conviction tiers.",
+    "- If a listed player cannot be verified, label it as unverified rather than inventing a ticker.",
+    "- Every quantitative claim needs a date or period and a source.",
+    "- Mark data confidence: 🟢 Verified (Tier 1-2) | 🟡 Partial (Tier 3-5) | 🔴 Unverified (Tier 6-7 or inferred).",
+    "- End with limitations and data gaps, not fabricated completeness.",
   ].join("\n");
 
 const fetchJson = async <T>(url: string) => {
