@@ -74,13 +74,10 @@ export function useArticle(): ArticleState {
 
       const parsed = JSON.parse(accumulated) as ResearchArticle & {
         _degraded?: boolean;
-        _reason?: string;
       };
 
       if (parsed._degraded) {
-        setError(
-          parsed._reason ?? "Article generation degraded. Please retry.",
-        );
+        setError("生成失败，请重试。");
         setArticle(parsed as ResearchArticle);
         setStatus("error");
         return;

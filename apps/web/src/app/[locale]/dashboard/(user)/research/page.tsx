@@ -1221,11 +1221,12 @@ export default function ResearchPage() {
       <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
         <div className="mx-auto w-full max-w-5xl space-y-6">
           <AnimatePresence mode="wait">
-            {/* Empty state */}
+            {/* Empty state — mode-aware */}
             {!activeTicker &&
               !hasIndustryResult &&
               !isIndustryLoading &&
-              filingStatus === "idle" && (
+              filingStatus === "idle" &&
+              article.status === "idle" && (
                 <motion.div
                   key="empty"
                   initial={{ opacity: 0 }}
@@ -1238,11 +1239,12 @@ export default function ResearchPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-foreground text-sm font-medium">
-                      Snapshot
+                      {activeMode === "article" ? "研报文章" : "Snapshot"}
                     </p>
-                    <p className="text-muted-foreground max-w-[200px] text-xs leading-relaxed">
-                      Enter a ticker symbol or a theme (e.g. AI, semiconductors)
-                      to get started.
+                    <p className="text-muted-foreground max-w-[280px] text-xs leading-relaxed">
+                      {activeMode === "article"
+                        ? "输入 ticker 或产业关键词，生成带产业链图和证据矩阵的中文研报文章。"
+                        : "Enter a ticker symbol or a theme (e.g. AI, semiconductors) to get started."}
                     </p>
                   </div>
                 </motion.div>

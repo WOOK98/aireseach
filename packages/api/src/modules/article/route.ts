@@ -18,6 +18,7 @@ import { HTTPException } from "hono/http-exception";
 import { stream } from "hono/streaming";
 import { z } from "zod";
 
+import { researchArticleSchema } from "@workspace/shared/schema/article";
 import { SHARED_HARD_RULES } from "@workspace/shared/skill-contract";
 
 import { env } from "../../env";
@@ -33,116 +34,6 @@ import {
 } from "../report/knowledge";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
-
-// ── Article schema (inline for validation) ───────────────────────────────────
-
-const articleVisualSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("mermaid"),
-    title: z.string().min(1),
-    diagram: z.string().min(10),
-    source: z.string().optional(),
-    date: z.string().optional(),
-  }),
-  z.object({
-    kind: z.literal("matrix"),
-    title: z.string().min(1),
-    columns: z.array(z.string().min(1)).min(2),
-    rows: z.array(z.record(z.string(), z.string())).min(1),
-    source: z.string().optional(),
-    date: z.string().optional(),
-  }),
-  z.object({
-    kind: z.literal("chart"),
-    title: z.string().min(1),
-    chartType: z.enum(["bar", "line", "area"]),
-    labels: z.array(z.string()).min(2),
-    series: z
-      .array(
-        z.object({
-          name: z.string().min(1),
-          values: z.array(z.number()),
-          color: z.string().optional(),
-        }),
-      )
-      .min(1),
-    source: z.string().optional(),
-    date: z.string().optional(),
-  }),
-  z.object({
-    kind: z.literal("empty"),
-    title: z.string().min(1),
-    reason: z.string().min(1),
-  }),
-]);
-
-const researchArticleSchema = z.object({
-  schema_version: z.literal(1),
-  entity: z.object({
-    resolvedName: z.string().min(1),
-    ticker: z.string().optional(),
-    exchange: z.string().optional(),
-    sector: z.string().optional(),
-    industry: z.string().optional(),
-    mode: z.enum(["ticker", "industry"]),
-    dataTimestamp: z.string().min(1),
-  }),
-  coreThesis: z.object({
-    thesis: z.string().min(10),
-    keyDriver: z.string().min(5),
-    nonConsensus: z.string().optional(),
-  }),
-  industryChain: z.object({
-    narrative: z.string().min(20),
-    visual: articleVisualSchema,
-  }),
-  evidenceMatrix: z.object({
-    narrative: z.string().min(20),
-    visual: articleVisualSchema,
-  }),
-  companyLayer: z.object({
-    narrative: z.string().min(20),
-    visual: articleVisualSchema.optional(),
-  }),
-  conclusion: z.object({
-    summary: z.string().min(20),
-    risks: z
-      .array(
-        z.object({
-          risk: z.string().min(3),
-          explanation: z.string().optional(),
-        }),
-      )
-      .min(2)
-      .max(6),
-    invalidationConditions: z
-      .array(
-        z.object({
-          condition: z.string().min(5),
-          metric: z.string().optional(),
-          threshold: z.string().optional(),
-        }),
-      )
-      .min(2)
-      .max(4),
-  }),
-  evidence: z
-    .array(
-      z.object({
-        id: z.string().min(1),
-        claim: z.string().min(1),
-        source: z.string().min(1),
-        date: z.string().min(1),
-        url: z.string().url().optional().or(z.literal("")),
-        confidence: z.enum(["verified", "partial", "unverified"]),
-      }),
-    )
-    .min(3),
-  generatedAt: z.string(),
-  language: z.enum(["zh", "en"]),
-  model: z.string().optional(),
-  disclaimer: z.string().min(1),
-});
 
 // ── Prohibited output patterns ───────────────────────────────────────────────
 
@@ -173,9 +64,6 @@ const getArticleModelConfig = () => {
     ? openaiProvider("gpt-4o-mini")
     : deepseekProvider.chat("deepseek-chat");
 };
-
-const getArticleModelName = () =>
-  env.OPENAI_API_KEY ? "gpt-4o-mini" : "deepseek-chat";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -223,17 +111,17 @@ function buildArticleSystemPrompt(): string {
   },
   "coreThesis": {
     "thesis": "<一句话核心判断>",
-    "keyDriver": "<最关键的驱动因素>",
-    "nonConsensus": "<市场可能忽略的点（可选）>"
+    "keyDriver": "<最关键的驱动因素，必须引用 evidence ID 如 [E1]>",
+    "nonConsensus": "<市场可能忽略的点（可选），必须引用 evidence ID>"
   },
   "industryChain": {
-    "narrative": "<产业链分析正文，200-400字>",
+    "narrative": "<产业链分析正文，200-400字，每个关键数字必须引用 [En]>",
     "visual": {
       "kind": "mermaid",
       "title": "<图表标题>",
-      "diagram": "<Mermaid flowchart/graph 定义，展示产业链上下游关系>",
-      "source": "<数据来源>",
-      "date": "<数据日期>"
+      "diagram": "<Mermaid flowchart/graph 定义>",
+      "source": "<数据来源，必填>",
+      "date": "<数据日期，必填 YYYY-MM-DD 或 YYYY-Qn>"
     }
   },
   "evidenceMatrix": {
@@ -245,8 +133,8 @@ function buildArticleSystemPrompt(): string {
       "rows": [
         {"指标": "<指标名>", "当前值": "<值>", "同比变化": "<变化>", "来源": "<来源>", "日期": "<日期>"}
       ],
-      "source": "<数据来源>",
-      "date": "<数据日期>"
+      "source": "<数据来源，必填>",
+      "date": "<数据日期，必填>"
     }
   },
   "companyLayer": {
@@ -257,21 +145,21 @@ function buildArticleSystemPrompt(): string {
       "chartType": "bar" | "line" | "area",
       "labels": ["<标签1>", "<标签2>", ...],
       "series": [{"name": "<系列名>", "values": [数值1, 数值2, ...]}],
-      "source": "<数据来源>",
-      "date": "<数据日期>"
+      "source": "<数据来源，必填>",
+      "date": "<数据日期，必填>"
     }
   },
   "conclusion": {
     "summary": "<总结，100-200字>",
     "risks": [
-      {"risk": "<风险描述>", "explanation": "<简要解释>"}
+      {"risk": "<风险描述>", "explanation": "<简要解释，引用 evidence ID>"}
     ],
     "invalidationConditions": [
       {"condition": "<失效条件>", "metric": "<观测指标>", "threshold": "<数值阈值>"}
     ]
   },
   "evidence": [
-    {"id": "E1", "claim": "<支撑的论点>", "source": "<来源名称>", "date": "<日期>", "url": "<URL或空>", "confidence": "verified" | "partial" | "unverified"}
+    {"id": "E1", "claim": "<支撑的论点>", "source": "<来源名称>", "date": "<日期>", "url": "<URL或空字符串>", "confidence": "verified" | "partial" | "unverified"}
   ],
   "generatedAt": "<ISO timestamp>",
   "language": "zh",
@@ -280,31 +168,24 @@ function buildArticleSystemPrompt(): string {
 
 ## 8 段固定结构
 
-1. **entity** — 实体锁定：公司名/ticker/交易所/行业，数据时间戳
-2. **coreThesis** — 核心判断：一句话结论 + 关键驱动 + 非共识观点
-3. **industryChain** — 产业链分析：上下游关系 + Mermaid 流程图
-4. **evidenceMatrix** — 证据矩阵：关键数据 + 结构化表格
-5. **companyLayer** — 公司分层：竞争力分析 + 数据图表（如适用）
-6. **conclusion.risks** — 风险提示：2-4 个主要风险
-7. **conclusion.invalidationConditions** — 失效条件：2-4 个可量化条件
-8. **evidence** — 证据清单：3+ 条带来源的证据
+1. **entity** — 实体锁定
+2. **coreThesis** — 核心判断（必须引用 evidence ID）
+3. **industryChain** — 产业链分析 + Mermaid 流程图（source/date 必填）
+4. **evidenceMatrix** — 证据矩阵 + 结构化表格（source/date 必填）
+5. **companyLayer** — 公司分层 + 数据图表（source/date 必填）
+6. **conclusion.risks** — 风险提示（引用 evidence ID）
+7. **conclusion.invalidationConditions** — 失效条件（可量化）
+8. **evidence** — 证据清单（每条必填 source + date + confidence）
 
-## Visual 规则
+## 关键约束
 
-- industryChain.visual 必须是 Mermaid（kind: "mermaid"），展示产业链上下游
-- evidenceMatrix.visual 必须是矩阵表（kind: "matrix"），展示关键财务数据
-- companyLayer.visual 可以是图表（kind: "chart"）或省略
-- 如果某个维度没有可靠数据，用 kind: "empty" 并说明原因
-- 禁止生成包含虚构数字的图片
-
-## 写作规则
-
-- 全文中文
-- 每个关键数字必须带 source + date/period
-- 无数据时诚实降级，写"数据不可用"而非编造
-- 不输出目标价、评级、买卖建议
-- conviction tier 只评证据质量，不评买卖
-- 语气：专业冷静，像一份好的研究报告`;
+- **evidence 交叉引用**：coreThesis、narrative、risks 中每个关键数字必须标注 [E1] 等 evidence ID
+- **visual source/date 必填**：所有非 empty 的 visual 必须有 source 和 date，否则降级为 empty
+- **无数据 = empty visual**：没有可靠来源的维度用 kind: "empty" 并说明原因
+- **禁止虚构数字**：找不到数据就写"数据不可用"，不要编造
+- **不输出目标价、评级、买卖建议**
+- **全文中文**
+- **不暴露模型名称或 provider 信息**`;
 }
 
 function buildArticleUserPrompt(
@@ -361,17 +242,16 @@ ${imaContext ? `## 知识库参考\n${imaContext}` : ""}
 
 请根据以上数据，生成一篇完整的中文研报文章。严格遵循 8 段固定结构，返回 JSON。
 
-重要：
-- 全文中文
-- 每个关键数字必须有来源和日期
-- 如数据不足，用 "数据不可用 — [需核实项]" 标注
-- 不要输出目标价、评级、买卖建议
-- visual 字段必须按规则生成（Mermaid/矩阵/图表/空态）`;
+关键约束：
+- 每个关键数字必须有 evidence ID 引用（如 [E1]）
+- 所有 visual 的 source 和 date 必填
+- 没有可靠来源的维度用 kind: "empty"
+- 不输出模型名称或 provider 信息`;
 }
 
 // ── Degraded fallback ────────────────────────────────────────────────────────
 
-function buildDegradedArticle(query: string, reason: string) {
+function buildDegradedArticle(query: string) {
   const now = new Date().toISOString();
   return {
     schema_version: 1 as const,
@@ -415,18 +295,17 @@ function buildDegradedArticle(query: string, reason: string) {
       {
         id: "E1",
         claim: "报告生成失败",
-        source: "AIResearch 输出验证器",
+        source: "系统",
         date: now.slice(0, 10),
+        url: "",
         confidence: "unverified" as const,
       },
     ],
     generatedAt: now,
     language: "zh" as const,
-    model: getArticleModelName(),
     disclaimer:
       "本报告仅供研究参考，不构成投资建议。所有数据请独立核实后再做决策。",
     _degraded: true,
-    _reason: reason,
   };
 }
 
@@ -511,7 +390,7 @@ articleRoute.post(
             prompt:
               attempt === 0
                 ? userPrompt
-                : `${userPrompt}\n\n上一次输出验证失败。请修正 JSON 结构后重试。确保 schema_version = 1，所有必填字段都有值。`,
+                : `${userPrompt}\n\n上一次输出验证失败。请修正 JSON 结构后重试。确保 schema_version = 1，所有必填字段都有值，visual 的 source/date 必填。`,
             temperature: 0.3,
             maxOutputTokens: ARTICLE_MAX_OUTPUT_TOKENS,
           });
@@ -524,7 +403,7 @@ articleRoute.post(
             continue;
           }
 
-          // Parse & validate
+          // Parse & validate against shared schema
           const parsed = parseArticleJson(text);
           const validation = researchArticleSchema.safeParse(parsed);
 
@@ -535,12 +414,11 @@ articleRoute.post(
             continue;
           }
 
-          // Attach metadata
+          // Attach metadata (no model name exposed)
           const article = {
             ...validation.data,
             generatedAt: new Date().toISOString(),
             language: "zh" as const,
-            model: getArticleModelName(),
           };
 
           await s.write(JSON.stringify(article));
@@ -550,12 +428,9 @@ articleRoute.post(
         }
       }
 
-      // All attempts failed — degrade gracefully
+      // All attempts failed — degrade gracefully (no raw error exposed)
       console.error(`[article] generation failed for "${query}":`, lastError);
-      const degraded = buildDegradedArticle(
-        query,
-        lastError?.message ?? "Unknown error",
-      );
+      const degraded = buildDegradedArticle(query);
       await s.write(JSON.stringify(degraded));
     });
   },

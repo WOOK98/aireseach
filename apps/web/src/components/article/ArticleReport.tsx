@@ -264,7 +264,6 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
           <span>
             生成时间: {new Date(article.generatedAt).toLocaleString("zh-CN")}
           </span>
-          {article.model && <span>模型: {article.model}</span>}
           <span>Schema v{article.schema_version}</span>
         </div>
       </div>

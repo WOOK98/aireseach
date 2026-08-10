@@ -2,6 +2,8 @@
  * Research Article Generator MVP — Zod schema (#116)
  *
  * Validates LLM output. Fails = degrade gracefully, never output empty prose.
+ * source/date REQUIRED on all non-empty visuals.
+ * Evidence IDs required on key claims.
  */
 import { z } from "zod";
 
@@ -11,8 +13,8 @@ const mermaidVisualSchema = z.object({
   kind: z.literal("mermaid"),
   title: z.string().min(1),
   diagram: z.string().min(10),
-  source: z.string().optional(),
-  date: z.string().optional(),
+  source: z.string().min(1),
+  date: z.string().min(1),
 });
 
 const matrixVisualSchema = z.object({
@@ -20,8 +22,8 @@ const matrixVisualSchema = z.object({
   title: z.string().min(1),
   columns: z.array(z.string().min(1)).min(2),
   rows: z.array(z.record(z.string(), z.string())).min(1),
-  source: z.string().optional(),
-  date: z.string().optional(),
+  source: z.string().min(1),
+  date: z.string().min(1),
 });
 
 const chartVisualSchema = z.object({
@@ -38,8 +40,8 @@ const chartVisualSchema = z.object({
       }),
     )
     .min(1),
-  source: z.string().optional(),
-  date: z.string().optional(),
+  source: z.string().min(1),
+  date: z.string().min(1),
 });
 
 const emptyVisualSchema = z.object({
@@ -132,7 +134,6 @@ export const researchArticleSchema = z.object({
 
   generatedAt: z.string(),
   language: z.enum(["zh", "en"]),
-  model: z.string().optional(),
   disclaimer: z.string().min(1),
 });
 
@@ -148,7 +149,6 @@ export function validateArticleOutput(text: string): {
   data?: ValidatedArticle;
   error?: string;
 } {
-  // Compliance redline check
   if (PROHIBITED_ARTICLE_PATTERN.test(text)) {
     return {
       ok: false,
@@ -157,7 +157,6 @@ export function validateArticleOutput(text: string): {
     };
   }
 
-  // Parse JSON
   const clean = text.replace(/```json|```/g, "").trim();
   const start = clean.indexOf("{");
   const end = clean.lastIndexOf("}");
