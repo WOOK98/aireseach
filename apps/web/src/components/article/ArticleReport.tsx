@@ -23,6 +23,22 @@ import { ArticleSection, ArticleVisual } from "./ArticleVisuals";
 
 import type { ResearchArticle } from "@workspace/shared/types/article";
 
+function EvidenceTag({ ids }: { ids: string[] }) {
+  if (!ids || ids.length === 0) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-1">
+      {ids.map((id) => (
+        <span
+          key={id}
+          className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 font-mono text-[10px] text-blue-700 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-300"
+        >
+          {id}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 interface ArticleReportProps {
   article: ResearchArticle;
   className?: string;
@@ -106,6 +122,7 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
             </p>
           )}
         </div>
+        <EvidenceTag ids={coreThesis.evidenceIds} />
       </div>
 
       {/* ── 3. Industry Chain + Mermaid ── */}
@@ -114,6 +131,7 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
           {industryChain.narrative}
         </p>
         <ArticleVisual visual={industryChain.visual} />
+        <EvidenceTag ids={industryChain.evidenceIds} />
       </ArticleSection>
 
       {/* ── 4. Evidence Matrix + Table ── */}
@@ -122,6 +140,7 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
           {evidenceMatrix.narrative}
         </p>
         <ArticleVisual visual={evidenceMatrix.visual} />
+        <EvidenceTag ids={evidenceMatrix.evidenceIds} />
       </ArticleSection>
 
       {/* ── 5. Company Layer ── */}
@@ -130,6 +149,7 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
           {companyLayer.narrative}
         </p>
         {companyLayer.visual && <ArticleVisual visual={companyLayer.visual} />}
+        <EvidenceTag ids={companyLayer.evidenceIds} />
       </ArticleSection>
 
       {/* ── 6. Conclusion: Summary ── */}
@@ -137,6 +157,7 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
         <p className="text-foreground text-sm leading-relaxed font-medium">
           {conclusion.summary}
         </p>
+        <EvidenceTag ids={conclusion.evidenceIds} />
       </ArticleSection>
 
       {/* ── 7. Risks ── */}
@@ -148,13 +169,14 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
               className="flex gap-3 rounded-lg border border-amber-200/50 bg-amber-50/30 px-3 py-2.5 dark:border-amber-900/30 dark:bg-amber-950/10"
             >
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-medium">{r.risk}</p>
                 {r.explanation && (
                   <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
                     {r.explanation}
                   </p>
                 )}
+                <EvidenceTag ids={r.evidenceIds} />
               </div>
             </div>
           ))}

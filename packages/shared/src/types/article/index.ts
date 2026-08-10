@@ -4,6 +4,7 @@
  * Fixed 8-section structure. v1 template locked.
  * Visual priority: Mermaid → candidate matrix → real API time series → honest empty state.
  * source/date REQUIRED on all non-empty visuals.
+ * evidenceIds REQUIRED on all sections — schema-enforced linkage.
  */
 
 // ── Visual definitions ───────────────────────────────────────────────────────
@@ -14,6 +15,7 @@ export interface MermaidVisual {
   diagram: string;
   source: string;
   date: string;
+  evidenceIds: string[];
 }
 
 export interface MatrixVisual {
@@ -23,6 +25,7 @@ export interface MatrixVisual {
   rows: Array<Record<string, string>>;
   source: string;
   date: string;
+  evidenceIds: string[];
 }
 
 export interface ChartVisual {
@@ -37,6 +40,7 @@ export interface ChartVisual {
   }>;
   source: string;
   date: string;
+  evidenceIds: string[];
 }
 
 export interface EmptyVisual {
@@ -62,7 +66,7 @@ export interface EvidenceRef {
   confidence: "verified" | "partial" | "unverified";
 }
 
-// ── Article sections ─────────────────────────────────────────────────────────
+// ── Article sections (with evidenceIds) ──────────────────────────────────────
 
 export interface ArticleEntityLock {
   resolvedName: string;
@@ -78,26 +82,31 @@ export interface ArticleCoreThesis {
   thesis: string;
   keyDriver: string;
   nonConsensus?: string;
+  evidenceIds: string[];
 }
 
 export interface ArticleIndustryChain {
   narrative: string;
   visual: ArticleVisual;
+  evidenceIds: string[];
 }
 
 export interface ArticleEvidenceMatrix {
   narrative: string;
   visual: ArticleVisual;
+  evidenceIds: string[];
 }
 
 export interface ArticleCompanyLayer {
   narrative: string;
   visual?: ArticleVisual;
+  evidenceIds: string[];
 }
 
 export interface ArticleRisk {
   risk: string;
   explanation?: string;
+  evidenceIds: string[];
 }
 
 export interface ArticleInvalidation {
@@ -110,6 +119,7 @@ export interface ArticleConclusion {
   summary: string;
   risks: ArticleRisk[];
   invalidationConditions: ArticleInvalidation[];
+  evidenceIds: string[];
 }
 
 // ── Full article ─────────────────────────────────────────────────────────────

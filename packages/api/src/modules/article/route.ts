@@ -9,6 +9,10 @@
  * Template: fixed 8-section Chinese research article.
  * Visuals: Mermaid / matrix / real API chart / honest empty.
  * Compliance: no target prices, no ratings, no buy/sell.
+ *
+ * BLOCKER FIXES:
+ * - Schema-enforced evidence linkage via superRefine
+ * - Data gate: requires at least one verified input before LLM call
  */
 import { createOpenAI } from "@ai-sdk/openai";
 import { zValidator } from "@hono/zod-validator";
@@ -111,18 +115,21 @@ function buildArticleSystemPrompt(): string {
   },
   "coreThesis": {
     "thesis": "<一句话核心判断>",
-    "keyDriver": "<最关键的驱动因素，必须引用 evidence ID 如 [E1]>",
-    "nonConsensus": "<市场可能忽略的点（可选），必须引用 evidence ID>"
+    "keyDriver": "<最关键的驱动因素>",
+    "nonConsensus": "<市场可能忽略的点（可选）>",
+    "evidenceIds": ["E1", "E2"]
   },
   "industryChain": {
-    "narrative": "<产业链分析正文，200-400字，每个关键数字必须引用 [En]>",
+    "narrative": "<产业链分析正文，200-400字>",
     "visual": {
       "kind": "mermaid",
       "title": "<图表标题>",
       "diagram": "<Mermaid flowchart/graph 定义>",
       "source": "<数据来源，必填>",
-      "date": "<数据日期，必填 YYYY-MM-DD 或 YYYY-Qn>"
-    }
+      "date": "<数据日期，必填>",
+      "evidenceIds": ["E1"]
+    },
+    "evidenceIds": ["E1"]
   },
   "evidenceMatrix": {
     "narrative": "<证据矩阵分析正文，200-400字>",
@@ -134,8 +141,10 @@ function buildArticleSystemPrompt(): string {
         {"指标": "<指标名>", "当前值": "<值>", "同比变化": "<变化>", "来源": "<来源>", "日期": "<日期>"}
       ],
       "source": "<数据来源，必填>",
-      "date": "<数据日期，必填>"
-    }
+      "date": "<数据日期，必填>",
+      "evidenceIds": ["E2"]
+    },
+    "evidenceIds": ["E2"]
   },
   "companyLayer": {
     "narrative": "<公司分层分析正文，200-400字>",
@@ -146,17 +155,20 @@ function buildArticleSystemPrompt(): string {
       "labels": ["<标签1>", "<标签2>", ...],
       "series": [{"name": "<系列名>", "values": [数值1, 数值2, ...]}],
       "source": "<数据来源，必填>",
-      "date": "<数据日期，必填>"
-    }
+      "date": "<数据日期，必填>",
+      "evidenceIds": ["E3"]
+    },
+    "evidenceIds": ["E3"]
   },
   "conclusion": {
     "summary": "<总结，100-200字>",
     "risks": [
-      {"risk": "<风险描述>", "explanation": "<简要解释，引用 evidence ID>"}
+      {"risk": "<风险描述>", "explanation": "<简要解释>", "evidenceIds": ["E2"]}
     ],
     "invalidationConditions": [
       {"condition": "<失效条件>", "metric": "<观测指标>", "threshold": "<数值阈值>"}
-    ]
+    ],
+    "evidenceIds": ["E1", "E2", "E3"]
   },
   "evidence": [
     {"id": "E1", "claim": "<支撑的论点>", "source": "<来源名称>", "date": "<日期>", "url": "<URL或空字符串>", "confidence": "verified" | "partial" | "unverified"}
@@ -166,26 +178,16 @@ function buildArticleSystemPrompt(): string {
   "disclaimer": "本报告仅供研究参考，不构成投资建议。所有数据请独立核实后再做决策。"
 }
 
-## 8 段固定结构
-
-1. **entity** — 实体锁定
-2. **coreThesis** — 核心判断（必须引用 evidence ID）
-3. **industryChain** — 产业链分析 + Mermaid 流程图（source/date 必填）
-4. **evidenceMatrix** — 证据矩阵 + 结构化表格（source/date 必填）
-5. **companyLayer** — 公司分层 + 数据图表（source/date 必填）
-6. **conclusion.risks** — 风险提示（引用 evidence ID）
-7. **conclusion.invalidationConditions** — 失效条件（可量化）
-8. **evidence** — 证据清单（每条必填 source + date + confidence）
-
 ## 关键约束
 
-- **evidence 交叉引用**：coreThesis、narrative、risks 中每个关键数字必须标注 [E1] 等 evidence ID
-- **visual source/date 必填**：所有非 empty 的 visual 必须有 source 和 date，否则降级为 empty
-- **无数据 = empty visual**：没有可靠来源的维度用 kind: "empty" 并说明原因
-- **禁止虚构数字**：找不到数据就写"数据不可用"，不要编造
-- **不输出目标价、评级、买卖建议**
-- **全文中文**
-- **不暴露模型名称或 provider 信息**`;
+1. **evidenceIds 强制关联**：每个 section（coreThesis、industryChain、evidenceMatrix、companyLayer、conclusion）和每个 visual（非 empty）和每个 risk 都必须有 evidenceIds 数组，引用 evidence[] 中的 id。
+2. **双向校验**：evidence[] 中每条必须被至少一个 section 引用；引用的 id 必须在 evidence[] 中存在。
+3. **source/date 必填**：所有非 empty visual 必须有 source 和 date。
+4. **无数据 = empty visual**：没有可靠来源的维度用 kind: "empty" 并说明原因。
+5. **禁止虚构数字**：找不到数据就写"数据不可用"，不要编造。
+6. **不输出目标价、评级、买卖建议。**
+7. **全文中文。**
+8. **不暴露模型名称或 provider 信息。**`;
 }
 
 function buildArticleUserPrompt(
@@ -193,6 +195,7 @@ function buildArticleUserPrompt(
   financials: FinancialMetrics | null,
   industryData: string,
   imaContext: string,
+  verifiedSources: string[],
 ): string {
   let dataSection = "";
 
@@ -231,6 +234,11 @@ ${
 ${m.description?.slice(0, 500) || "N/A"}`;
   }
 
+  const sourcesBlock =
+    verifiedSources.length > 0
+      ? `\n## 已验证数据来源\n${verifiedSources.map((s, i) => `[S${i + 1}] ${s}`).join("\n")}\n\n请基于以上已验证数据生成研报。evidence[] 中的 source 字段必须引用上述来源。`
+      : "";
+
   return `
 分析目标: ${query}
 
@@ -240,13 +248,15 @@ ${industryData ? `## 产业数据\n${industryData}` : ""}
 
 ${imaContext ? `## 知识库参考\n${imaContext}` : ""}
 
+${sourcesBlock}
+
 请根据以上数据，生成一篇完整的中文研报文章。严格遵循 8 段固定结构，返回 JSON。
 
 关键约束：
-- 每个关键数字必须有 evidence ID 引用（如 [E1]）
+- 每个 section / visual / risk 的 evidenceIds 必须引用 evidence[] 中的 id
+- evidence[] 中每条必须被至少一个 evidenceIds 引用
 - 所有 visual 的 source 和 date 必填
-- 没有可靠来源的维度用 kind: "empty"
-- 不输出模型名称或 provider 信息`;
+- 没有可靠来源的维度用 kind: "empty"`;
 }
 
 // ── Degraded fallback ────────────────────────────────────────────────────────
@@ -261,40 +271,57 @@ function buildDegradedArticle(query: string) {
       dataTimestamp: now.slice(0, 10),
     },
     coreThesis: {
-      thesis: `未能为 "${query}" 生成完整研报。模型输出未通过验证。`,
-      keyDriver: "需要重新生成",
+      thesis: `未能为 "${query}" 生成完整研报。缺少可验证的数据来源。`,
+      keyDriver: "需要提供有效的 ticker 或产业关键词",
+      evidenceIds: ["E1"],
     },
     industryChain: {
-      narrative: "产业链分析不可用。模型输出未通过结构化验证。",
+      narrative: "产业链分析不可用。缺少可验证的数据来源。",
       visual: {
         kind: "empty" as const,
         title: "产业链图",
-        reason: "生成失败，需要重新运行",
+        reason: "无法获取可验证的产业数据",
       },
+      evidenceIds: ["E1"],
     },
     evidenceMatrix: {
-      narrative: "证据矩阵不可用。模型输出未通过结构化验证。",
+      narrative: "证据矩阵不可用。缺少可验证的数据来源。",
       visual: {
         kind: "empty" as const,
         title: "关键数据表",
-        reason: "生成失败，需要重新运行",
+        reason: "无法获取可验证的财务数据",
       },
+      evidenceIds: ["E1"],
     },
     companyLayer: {
-      narrative: "公司分层分析不可用。",
+      narrative: "公司分层分析不可用。缺少可验证的数据来源。",
+      evidenceIds: ["E1"],
     },
     conclusion: {
-      summary: "报告生成失败，请重试。",
-      risks: [{ risk: "模型输出验证失败" }, { risk: "数据可能不完整" }],
-      invalidationConditions: [
-        { condition: "重新生成后验证通过" },
-        { condition: "数据源恢复正常" },
+      summary:
+        "无法生成研报：未找到可验证的数据来源。请确认输入的 ticker 或产业关键词是否正确。",
+      risks: [
+        {
+          risk: "无可用数据源",
+          explanation: "未解析到有效的公司实体或产业数据",
+          evidenceIds: ["E1"],
+        },
+        {
+          risk: "输出不可用于研究决策",
+          explanation: "降级报告不包含任何可验证的数据",
+          evidenceIds: ["E1"],
+        },
       ],
+      invalidationConditions: [
+        { condition: "提供有效的 ticker 后重新生成" },
+        { condition: "产业关键词能解析到 ETF 成分股" },
+      ],
+      evidenceIds: ["E1"],
     },
     evidence: [
       {
         id: "E1",
-        claim: "报告生成失败",
+        claim: "未找到可验证的数据来源，报告降级",
         source: "系统",
         date: now.slice(0, 10),
         url: "",
@@ -307,6 +334,47 @@ function buildDegradedArticle(query: string) {
       "本报告仅供研究参考，不构成投资建议。所有数据请独立核实后再做决策。",
     _degraded: true,
   };
+}
+
+// ── Data gate: require at least one verified input ───────────────────────────
+
+interface InputSpine {
+  hasFinancials: boolean;
+  hasIndustryData: boolean;
+  hasImaKnowledge: boolean;
+  verifiedSources: string[];
+}
+
+function buildInputSpine(
+  financials: FinancialMetrics | null,
+  industryData: string,
+  imaContext: string,
+): InputSpine {
+  const sources: string[] = [];
+
+  if (financials) {
+    sources.push(
+      `${financials.companyName} (${financials.ticker ?? "N/A"}) 财务数据 via Yahoo Finance`,
+    );
+  }
+  if (industryData) {
+    sources.push("产业 ETF 成分股数据");
+  }
+  if (imaContext) {
+    sources.push("IMA 知识库文献");
+  }
+
+  return {
+    hasFinancials: !!financials,
+    hasIndustryData: !!industryData,
+    hasImaKnowledge: !!imaContext,
+    verifiedSources: sources,
+  };
+}
+
+function hasVerifiedInput(spine: InputSpine): boolean {
+  // At least one of: financials, industry data, or IMA knowledge
+  return spine.hasFinancials || spine.hasIndustryData || spine.hasImaKnowledge;
 }
 
 // ── Route ────────────────────────────────────────────────────────────────────
@@ -330,16 +398,14 @@ articleRoute.post(
     let industryData = "";
 
     if (resolution.ok && resolution.mode === "ticker") {
-      // Ticker mode: fetch financials
       try {
         const raw = await cachedFetchYahooFinance(resolution.ticker);
         const { metrics } = sanitizeFinancialMetrics(raw);
         financials = metrics;
       } catch {
-        // Financials unavailable — article will degrade gracefully
+        // Financials unavailable
       }
     } else if (!resolution.ok && resolution.mode === "industry") {
-      // Industry mode: build universe
       try {
         const baseUniverse = await buildIndustryUniverse(
           query,
@@ -369,7 +435,18 @@ articleRoute.post(
     });
     const imaContext = formatImaKnowledgeForPrompt(imaKnowledge);
 
-    // 3. Build prompt & generate
+    // 3. Data gate: require at least one verified input
+    const spine = buildInputSpine(financials, industryData, imaContext);
+
+    if (!hasVerifiedInput(spine)) {
+      // No verified data — degrade immediately, don't call LLM
+      return stream(c, async (s) => {
+        const degraded = buildDegradedArticle(query);
+        await s.write(JSON.stringify(degraded));
+      });
+    }
+
+    // 4. Build prompt & generate
     const model = getArticleModelConfig();
     const systemPrompt = buildArticleSystemPrompt();
     const userPrompt = buildArticleUserPrompt(
@@ -377,6 +454,7 @@ articleRoute.post(
       financials,
       industryData,
       imaContext,
+      spine.verifiedSources,
     );
 
     return stream(c, async (s) => {
@@ -390,7 +468,7 @@ articleRoute.post(
             prompt:
               attempt === 0
                 ? userPrompt
-                : `${userPrompt}\n\n上一次输出验证失败。请修正 JSON 结构后重试。确保 schema_version = 1，所有必填字段都有值，visual 的 source/date 必填。`,
+                : `${userPrompt}\n\n上一次输出验证失败（${lastError?.message ?? "schema error"}）。请修正：\n1. 确保每个 section/visual/risk 的 evidenceIds 引用 evidence[] 中存在的 id\n2. 确保 evidence[] 中每条都被至少一个 evidenceIds 引用\n3. 确保非 empty visual 的 source/date 必填`,
             temperature: 0.3,
             maxOutputTokens: ARTICLE_MAX_OUTPUT_TOKENS,
           });
@@ -403,18 +481,19 @@ articleRoute.post(
             continue;
           }
 
-          // Parse & validate against shared schema
+          // Parse & validate against shared schema (with superRefine)
           const parsed = parseArticleJson(text);
           const validation = researchArticleSchema.safeParse(parsed);
 
           if (!validation.success) {
-            lastError = new Error(
-              `Schema validation failed: ${validation.error.message}`,
-            );
+            const errMsgs = validation.error.issues
+              .map((i) => i.message)
+              .join("; ");
+            lastError = new Error(errMsgs);
             continue;
           }
 
-          // Attach metadata (no model name exposed)
+          // Attach metadata
           const article = {
             ...validation.data,
             generatedAt: new Date().toISOString(),
@@ -428,7 +507,7 @@ articleRoute.post(
         }
       }
 
-      // All attempts failed — degrade gracefully (no raw error exposed)
+      // All attempts failed — degrade gracefully
       console.error(`[article] generation failed for "${query}":`, lastError);
       const degraded = buildDegradedArticle(query);
       await s.write(JSON.stringify(degraded));
@@ -437,7 +516,6 @@ articleRoute.post(
 );
 
 // ─── GET /api/article/preview/:query ────────────────────────────────────────
-// Quick preview: resolve entity + fetch data without LLM generation
 articleRoute.get(
   "/preview/:query",
   zValidator("param", z.object({ query: z.string().min(1).max(120) })),

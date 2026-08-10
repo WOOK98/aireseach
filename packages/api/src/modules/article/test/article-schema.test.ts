@@ -1,7 +1,12 @@
 /**
  * Research Article MVP — Schema validation tests (#116)
  *
- * Validates that the schema blocks bad output and accepts good output.
+ * Validates:
+ * - Schema blocks bad output and accepts good output
+ * - evidenceIds linkage enforced (superRefine)
+ * - source/date required on non-empty visuals
+ * - Compliance redline blocks target price / rating language
+ * - Data gate prevents empty-input LLM calls
  */
 import { describe, it, expect } from "vitest";
 
@@ -26,12 +31,13 @@ const VALID_ARTICLE_JSON = JSON.stringify({
   coreThesis: {
     thesis:
       "NVIDIA 在 AI 推理芯片市场的主导地位将持续扩大，数据中心收入占比已超过 80%。",
-    keyDriver: "Hopper/Blackwell 架构在大模型训练中的不可替代性 [E1]",
-    nonConsensus: "市场低估了推理侧对 GPU 的长期需求 [E2]",
+    keyDriver: "Hopper/Blackwell 架构在大模型训练中的不可替代性",
+    nonConsensus: "市场低估了推理侧对 GPU 的长期需求",
+    evidenceIds: ["E1", "E2"],
   },
   industryChain: {
     narrative:
-      "AI 芯片产业链从上游设备材料到下游应用形成完整链条。NVIDIA 处于中游核心位置，向上绑定台积电先进制程，向下通过 CUDA 生态锁定客户 [E1]。2025 年数据中心收入达 1150 亿美元，同比增长 140% [E3]。",
+      "AI 芯片产业链从上游设备材料到下游应用形成完整链条。NVIDIA 处于中游核心位置，向上绑定台积电先进制程，向下通过 CUDA 生态锁定客户。2025 年数据中心收入达 1150 亿美元，同比增长 140%。",
     visual: {
       kind: "mermaid",
       title: "AI 芯片产业链",
@@ -39,11 +45,13 @@ const VALID_ARTICLE_JSON = JSON.stringify({
         "graph LR\n  A[晶圆代工] --> B[芯片设计]\n  B --> C[服务器整机]\n  C --> D[云计算/推理]",
       source: "公开产业链研究",
       date: "2026-08-01",
+      evidenceIds: ["E1"],
     },
+    evidenceIds: ["E1"],
   },
   evidenceMatrix: {
     narrative:
-      "关键财务指标显示 NVIDIA 收入和利润持续高增长，毛利率维持在 75% 以上 [E3]。",
+      "关键财务指标显示 NVIDIA 收入和利润持续高增长，毛利率维持在 75% 以上。",
     visual: {
       kind: "matrix",
       title: "NVIDIA 关键财务数据",
@@ -66,11 +74,13 @@ const VALID_ARTICLE_JSON = JSON.stringify({
       ],
       source: "NVIDIA 10-K FY2026",
       date: "2026-01-31",
+      evidenceIds: ["E3"],
     },
+    evidenceIds: ["E3"],
   },
   companyLayer: {
     narrative:
-      "NVIDIA 在数据中心 GPU 市场份额超过 80%，AMD 和 Intel 尚未形成有效竞争 [E2]。CUDA 生态的软件护城河是核心壁垒。",
+      "NVIDIA 在数据中心 GPU 市场份额超过 80%，AMD 和 Intel 尚未形成有效竞争。CUDA 生态的软件护城河是核心壁垒。",
     visual: {
       kind: "chart",
       title: "数据中心收入趋势",
@@ -79,7 +89,9 @@ const VALID_ARTICLE_JSON = JSON.stringify({
       series: [{ name: "数据中心收入 ($B)", values: [15, 47, 115, 115] }],
       source: "NVIDIA 季度财报",
       date: "2026-01-31",
+      evidenceIds: ["E3"],
     },
+    evidenceIds: ["E3"],
   },
   conclusion: {
     summary:
@@ -88,11 +100,13 @@ const VALID_ARTICLE_JSON = JSON.stringify({
       {
         risk: "大型客户自研 AI 芯片加速",
         explanation:
-          "Google TPU、Amazon Trainium 等可能侵蚀 NVIDIA 数据中心份额 [E2]",
+          "Google TPU、Amazon Trainium 等可能侵蚀 NVIDIA 数据中心份额",
+        evidenceIds: ["E2"],
       },
       {
         risk: "出口管制进一步收紧",
-        explanation: "对华出口限制可能影响约 10-15% 的数据中心收入 [E3]",
+        explanation: "对华出口限制可能影响约 10-15% 的数据中心收入",
+        evidenceIds: ["E3"],
       },
     ],
     invalidationConditions: [
@@ -107,6 +121,7 @@ const VALID_ARTICLE_JSON = JSON.stringify({
         threshold: "60%",
       },
     ],
+    evidenceIds: ["E1", "E2", "E3"],
   },
   evidence: [
     {
@@ -189,7 +204,7 @@ describe("researchArticleSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("accepts empty visual without source/date", () => {
+  it("accepts empty visual without source/date/evidenceIds", () => {
     const parsed = JSON.parse(VALID_ARTICLE_JSON) as Record<string, unknown>;
     const layer = parsed.companyLayer as Record<string, unknown>;
     layer.visual = {
@@ -219,7 +234,7 @@ describe("researchArticleSchema", () => {
   it("rejects fewer than 2 risks", () => {
     const parsed = JSON.parse(VALID_ARTICLE_JSON) as Record<string, unknown>;
     const conclusion = parsed.conclusion as Record<string, unknown>;
-    conclusion.risks = [{ risk: "only one" }];
+    conclusion.risks = [{ risk: "only one", evidenceIds: ["E1"] }];
     const result = researchArticleSchema.safeParse(parsed);
     expect(result.success).toBe(false);
   });
@@ -237,6 +252,65 @@ describe("researchArticleSchema", () => {
   it("rejects missing disclaimer", () => {
     const parsed = JSON.parse(VALID_ARTICLE_JSON) as Record<string, unknown>;
     delete parsed.disclaimer;
+    const result = researchArticleSchema.safeParse(parsed);
+    expect(result.success).toBe(false);
+  });
+
+  // ── Evidence linkage enforcement ─────────────────────────────────────────
+
+  it("rejects evidenceId not found in evidence[]", () => {
+    const parsed = JSON.parse(VALID_ARTICLE_JSON) as Record<string, unknown>;
+    const thesis = parsed.coreThesis as Record<string, unknown>;
+    thesis.evidenceIds = ["E1", "E99"]; // E99 doesn't exist
+    const result = researchArticleSchema.safeParse(parsed);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const msg = result.error.issues.map((i) => i.message).join("; ");
+      expect(msg).toContain("E99");
+    }
+  });
+
+  it("rejects evidence item never referenced by any section", () => {
+    const parsed = JSON.parse(VALID_ARTICLE_JSON) as Record<string, unknown>;
+    // Add an extra evidence item that nothing references
+    const evidence = parsed.evidence as Array<Record<string, unknown>>;
+    evidence.push({
+      id: "E99",
+      claim: "orphan evidence",
+      source: "nowhere",
+      date: "2026-01-01",
+      confidence: "unverified",
+    });
+    const result = researchArticleSchema.safeParse(parsed);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const msg = result.error.issues.map((i) => i.message).join("; ");
+      expect(msg).toContain("E99");
+    }
+  });
+
+  it("rejects section with empty evidenceIds", () => {
+    const parsed = JSON.parse(VALID_ARTICLE_JSON) as Record<string, unknown>;
+    const thesis = parsed.coreThesis as Record<string, unknown>;
+    thesis.evidenceIds = [];
+    const result = researchArticleSchema.safeParse(parsed);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects visual evidenceId not in evidence[]", () => {
+    const parsed = JSON.parse(VALID_ARTICLE_JSON) as Record<string, unknown>;
+    const chain = parsed.industryChain as Record<string, unknown>;
+    const visual = chain.visual as Record<string, unknown>;
+    visual.evidenceIds = ["E_NONEXISTENT"];
+    const result = researchArticleSchema.safeParse(parsed);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects risk evidenceId not in evidence[]", () => {
+    const parsed = JSON.parse(VALID_ARTICLE_JSON) as Record<string, unknown>;
+    const conclusion = parsed.conclusion as Record<string, unknown>;
+    const risks = conclusion.risks as Array<Record<string, unknown>>;
+    risks[0]!.evidenceIds = ["E_FAKE"];
     const result = researchArticleSchema.safeParse(parsed);
     expect(result.success).toBe(false);
   });
