@@ -14,6 +14,7 @@ import { matchesPattern } from "@workspace/shared/utils";
 import { localize, delay } from "./middleware";
 import { adminRouter } from "./modules/admin/router";
 import { aiRouter } from "./modules/ai/router";
+import { articleRoute } from "./modules/article/route";
 import { authRouter } from "./modules/auth/router";
 import { billingRouter } from "./modules/billing/router";
 import { compareRouter } from "./modules/compare/router";
@@ -77,6 +78,7 @@ const appRouter = new Hono()
   .route("/watchlist", watchlistRouter)
   .route("/compare", compareRouter)
   .route("/report", reportRoute)
+  .route("/article", articleRoute)
   .route("/ledger", ledgerRoute)
   .route("/visuals", visualsRouter)
   .route("/webhooks", webhooksRouter)
