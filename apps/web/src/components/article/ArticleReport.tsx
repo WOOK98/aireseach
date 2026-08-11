@@ -64,7 +64,10 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
             <p className="text-muted-foreground mb-1 font-mono text-[10px] tracking-widest uppercase">
               实体锁定
             </p>
-            <h2 className="text-lg leading-tight font-semibold">
+            <h2
+              className="notranslate text-lg leading-tight font-semibold"
+              translate="no"
+            >
               {entity.resolvedName}
             </h2>
             <div className="text-muted-foreground mt-1.5 flex flex-wrap gap-2 text-xs">
@@ -77,17 +80,26 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
                 </span>
               )}
               {entity.exchange && (
-                <span className="rounded-full border px-2 py-0.5">
+                <span
+                  className="notranslate rounded-full border px-2 py-0.5"
+                  translate="no"
+                >
                   {entity.exchange}
                 </span>
               )}
               {entity.sector && (
-                <span className="rounded-full border px-2 py-0.5">
+                <span
+                  className="notranslate rounded-full border px-2 py-0.5"
+                  translate="no"
+                >
                   {entity.sector}
                 </span>
               )}
               {entity.industry && (
-                <span className="rounded-full border px-2 py-0.5">
+                <span
+                  className="notranslate rounded-full border px-2 py-0.5"
+                  translate="no"
+                >
                   {entity.industry}
                 </span>
               )}
@@ -96,7 +108,10 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
               </span>
             </div>
           </div>
-          <span className="text-muted-foreground shrink-0 font-mono text-[10px]">
+          <span
+            className="text-muted-foreground notranslate shrink-0 font-mono text-[10px]"
+            translate="no"
+          >
             {entity.dataTimestamp}
           </span>
         </div>
@@ -191,9 +206,17 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
               <p className="text-sm leading-relaxed">{inv.condition}</p>
               {(inv.metric || inv.threshold) && (
                 <p className="text-muted-foreground mt-1 font-mono text-xs">
-                  {inv.metric && <span>指标: {inv.metric}</span>}
+                  {inv.metric && (
+                    <span className="notranslate" translate="no">
+                      指标: {inv.metric}
+                    </span>
+                  )}
                   {inv.metric && inv.threshold && <span> · </span>}
-                  {inv.threshold && <span>阈值: {inv.threshold}</span>}
+                  {inv.threshold && (
+                    <span className="notranslate" translate="no">
+                      阈值: {inv.threshold}
+                    </span>
+                  )}
                 </p>
               )}
             </div>
@@ -237,7 +260,8 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
                         href={ev.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:underline"
+                        className="text-primary notranslate hover:underline"
+                        translate="no"
                       >
                         {ev.source}
                       </a>
@@ -247,7 +271,10 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
                       </span>
                     )}
                   </td>
-                  <td className="text-muted-foreground px-3 py-2 font-mono text-xs">
+                  <td
+                    className="text-muted-foreground notranslate px-3 py-2 font-mono text-xs"
+                    translate="no"
+                  >
                     {ev.date}
                   </td>
                   <td className="px-3 py-2">
