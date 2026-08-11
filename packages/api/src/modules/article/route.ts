@@ -36,6 +36,7 @@ import {
   searchImaKnowledge,
   formatImaKnowledgeForPrompt,
 } from "../report/knowledge";
+import { buildInputSpine, hasVerifiedInput } from "./data-gate";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
 
@@ -334,47 +335,6 @@ function buildDegradedArticle(query: string) {
       "本报告仅供研究参考，不构成投资建议。所有数据请独立核实后再做决策。",
     _degraded: true,
   };
-}
-
-// ── Data gate: require at least one verified input ───────────────────────────
-
-interface InputSpine {
-  hasFinancials: boolean;
-  hasIndustryData: boolean;
-  hasImaKnowledge: boolean;
-  verifiedSources: string[];
-}
-
-function buildInputSpine(
-  financials: FinancialMetrics | null,
-  industryData: string,
-  imaContext: string,
-): InputSpine {
-  const sources: string[] = [];
-
-  if (financials) {
-    sources.push(
-      `${financials.companyName} (${financials.ticker ?? "N/A"}) 财务数据 via Yahoo Finance`,
-    );
-  }
-  if (industryData) {
-    sources.push("产业 ETF 成分股数据");
-  }
-  if (imaContext) {
-    sources.push("IMA 知识库文献");
-  }
-
-  return {
-    hasFinancials: !!financials,
-    hasIndustryData: !!industryData,
-    hasImaKnowledge: !!imaContext,
-    verifiedSources: sources,
-  };
-}
-
-function hasVerifiedInput(spine: InputSpine): boolean {
-  // At least one of: financials, industry data, or IMA knowledge
-  return spine.hasFinancials || spine.hasIndustryData || spine.hasImaKnowledge;
 }
 
 // ── Route ────────────────────────────────────────────────────────────────────
