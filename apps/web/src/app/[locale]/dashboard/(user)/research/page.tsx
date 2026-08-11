@@ -33,6 +33,7 @@ import { Input } from "@workspace/ui-web/input";
 import { Separator } from "@workspace/ui-web/separator";
 import { Skeleton } from "@workspace/ui-web/skeleton";
 
+import { ArticleReport } from "~/components/article/ArticleReport";
 import { JPMReport } from "~/components/report/JPMReport";
 import {
   FCFChart,
@@ -42,6 +43,7 @@ import {
 import { IndustryBriefView } from "~/modules/report/finance/industry-brief-view";
 import { IndustryView } from "~/modules/report/finance/industry-view";
 import { MetricsGrid } from "~/modules/report/finance/metric-cards";
+import { useArticle } from "~/modules/report/finance/use-article";
 import {
   useIndustryAnalyze,
   isLikelyTicker,
@@ -97,6 +99,12 @@ const analysisModes: Array<{
     label: "Filings",
     description: "Official filings with page anchors",
     icon: FileSearch,
+  },
+  {
+    id: "article",
+    label: "Article",
+    description: "中文深度研报文章，带产业链图和证据矩阵",
+    icon: FileText,
   },
 ];
 
@@ -863,7 +871,7 @@ export default function ResearchPage() {
   const [inputVal, setInputVal] = useState("");
   const [activeTicker, setActiveTicker] = useState<string | null>(null);
   const [activeMode, setActiveMode] = useState<ResearchMode>("snapshot");
-  const [language] = useState<"zh" | "en">("en");
+  const [language] = useState<"zh" | "en">("zh");
   const [industryResult, setIndustryResult] =
     useState<IndustryAnalyzeResult | null>(null);
   const [filingStatus, setFilingStatus] = useState<FilingStatus>("idle");
@@ -882,6 +890,7 @@ export default function ResearchPage() {
   const financials = useFinancials(activeTicker);
   const { status, rawText, report, error, generate, reset } = useReportStream();
   const industryAnalyze = useIndustryAnalyze();
+  const article = useArticle();
 
   const inputRef = useRef<HTMLInputElement>(null);
   const filingAbortRef = useRef<AbortController | null>(null);
@@ -1007,6 +1016,11 @@ export default function ResearchPage() {
 
     if (activeMode === "filings") {
       await handleFilingSearch(query);
+      return;
+    }
+
+    if (activeMode === "article") {
+      await article.generate(query, "zh");
       return;
     }
 
@@ -1150,7 +1164,16 @@ export default function ResearchPage() {
                       setActiveTicker(null);
                       setIndustryResult(null);
                       reset();
+                      article.reset();
                       resetFilings();
+                      return;
+                    }
+                    if (mode.id === "article") {
+                      setActiveTicker(null);
+                      setIndustryResult(null);
+                      reset();
+                      resetFilings();
+                      // Article mode triggers on search
                       return;
                     }
                     if (
@@ -1158,6 +1181,7 @@ export default function ResearchPage() {
                       activeTicker &&
                       status !== "loading"
                     ) {
+                      article.reset();
                       reset();
                       void generate(
                         activeTicker,
@@ -1166,6 +1190,7 @@ export default function ResearchPage() {
                         mode.id,
                       );
                     }
+                    article.reset();
                     resetFilings();
                   }}
                   className={`rounded-lg border px-3 py-2 text-left transition ${
@@ -1196,11 +1221,12 @@ export default function ResearchPage() {
       <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
         <div className="mx-auto w-full max-w-5xl space-y-6">
           <AnimatePresence mode="wait">
-            {/* Empty state */}
+            {/* Empty state — mode-aware */}
             {!activeTicker &&
               !hasIndustryResult &&
               !isIndustryLoading &&
-              filingStatus === "idle" && (
+              filingStatus === "idle" &&
+              article.status === "idle" && (
                 <motion.div
                   key="empty"
                   initial={{ opacity: 0 }}
@@ -1213,11 +1239,12 @@ export default function ResearchPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-foreground text-sm font-medium">
-                      Snapshot
+                      {activeMode === "article" ? "研报文章" : "Snapshot"}
                     </p>
-                    <p className="text-muted-foreground max-w-[200px] text-xs leading-relaxed">
-                      Enter a ticker symbol or a theme (e.g. AI, semiconductors)
-                      to get started.
+                    <p className="text-muted-foreground max-w-[280px] text-xs leading-relaxed">
+                      {activeMode === "article"
+                        ? "输入 ticker 或产业关键词，生成带产业链图和证据矩阵的中文研报文章。"
+                        : "Enter a ticker symbol or a theme (e.g. AI, semiconductors) to get started."}
                     </p>
                   </div>
                 </motion.div>
@@ -1305,6 +1332,85 @@ export default function ResearchPage() {
                     )}
                 </motion.div>
               )}
+
+            {/* Article mode result */}
+            {activeMode === "article" && article.status === "loading" && (
+              <motion.div
+                key="article-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center gap-3 py-16 text-center"
+              >
+                <div className="bg-muted rounded-full p-4">
+                  <FileText className="text-primary h-6 w-6 animate-pulse" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-foreground text-sm font-medium">
+                    正在生成研报文章...
+                  </p>
+                  <p className="text-muted-foreground max-w-[280px] text-xs leading-relaxed">
+                    解析实体、获取数据、构建产业链图和证据矩阵
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {activeMode === "article" &&
+              article.status === "done" &&
+              article.article && (
+                <motion.div
+                  key="article-done"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <ArticleReport article={article.article} />
+                </motion.div>
+              )}
+
+            {activeMode === "article" && article.status === "error" && (
+              <motion.div
+                key="article-error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100"
+              >
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">研报生成失败</p>
+                  <p className="text-xs leading-relaxed opacity-80">
+                    {article.error ?? "请重试"}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 px-2 text-xs text-amber-950 hover:bg-amber-100 dark:text-amber-100 dark:hover:bg-amber-900/40"
+                      onClick={() => {
+                        article.reset();
+                        const query = inputVal.trim();
+                        if (query) void article.generate(query, "zh");
+                      }}
+                    >
+                      <RotateCcw className="h-3 w-3" /> 重新生成
+                    </Button>
+                    {article.article && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={() => {
+                          /* Show degraded article anyway */
+                        }}
+                      >
+                        查看降级版本
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {isFilingMode && filingStatus === "error" && filingError && (
               <motion.div
