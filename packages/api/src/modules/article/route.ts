@@ -36,7 +36,7 @@ import {
   searchImaKnowledge,
   formatImaKnowledgeForPrompt,
 } from "../report/knowledge";
-import { buildInputSpine, hasVerifiedInput } from "./data-gate";
+import { buildInputSpine, hasVerifiedInput, fmt, fmtB } from "./data-gate";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
 
@@ -71,16 +71,6 @@ const getArticleModelConfig = () => {
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-const fmt = (n: number | null | undefined, decimals = 1) =>
-  n == null || n === 0 ? "N/A" : n.toFixed(decimals);
-
-const fmtB = (n: number | null | undefined) => {
-  if (n == null || !Number.isFinite(n)) return "N/A";
-  if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
-  if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  return `$${n.toFixed(0)}`;
-};
 
 const parseArticleJson = (text: string) => {
   const clean = text.replace(/```json|```/g, "").trim();

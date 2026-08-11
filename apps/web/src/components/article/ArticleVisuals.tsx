@@ -35,7 +35,7 @@ function MermaidDiagram({ visual }: { visual: MermaidVisual }) {
         mermaid.initialize({
           startOnLoad: false,
           theme: "neutral",
-          securityLevel: "loose",
+          securityLevel: "strict",
           flowchart: { curve: "basis", padding: 16 },
         });
 
@@ -68,9 +68,17 @@ function MermaidDiagram({ visual }: { visual: MermaidVisual }) {
       />
       {(visual.source || visual.date) && (
         <p className="text-muted-foreground text-[10px]">
-          {visual.source && <span>来源: {visual.source}</span>}
+          {visual.source && (
+            <span className="notranslate" translate="no">
+              来源: {visual.source}
+            </span>
+          )}
           {visual.source && visual.date && <span> · </span>}
-          {visual.date && <span>{visual.date}</span>}
+          {visual.date && (
+            <span className="notranslate" translate="no">
+              {visual.date}
+            </span>
+          )}
         </p>
       )}
     </div>
@@ -113,9 +121,17 @@ function MatrixTable({ visual }: { visual: MatrixVisual }) {
       </div>
       {(visual.source || visual.date) && (
         <p className="text-muted-foreground text-[10px]">
-          {visual.source && <span>来源: {visual.source}</span>}
+          {visual.source && (
+            <span className="notranslate" translate="no">
+              来源: {visual.source}
+            </span>
+          )}
           {visual.source && visual.date && <span> · </span>}
-          {visual.date && <span>{visual.date}</span>}
+          {visual.date && (
+            <span className="notranslate" translate="no">
+              {visual.date}
+            </span>
+          )}
         </p>
       )}
     </div>
@@ -226,9 +242,17 @@ function SimpleBarChart({ visual }: { visual: ChartVisual }) {
       </div>
       {(visual.source || visual.date) && (
         <p className="text-muted-foreground text-[10px]">
-          {visual.source && <span>来源: {visual.source}</span>}
+          {visual.source && (
+            <span className="notranslate" translate="no">
+              来源: {visual.source}
+            </span>
+          )}
           {visual.source && visual.date && <span> · </span>}
-          {visual.date && <span>{visual.date}</span>}
+          {visual.date && (
+            <span className="notranslate" translate="no">
+              {visual.date}
+            </span>
+          )}
         </p>
       )}
     </div>
@@ -341,9 +365,17 @@ function SimpleLineChart({ visual }: { visual: ChartVisual }) {
       </div>
       {(visual.source || visual.date) && (
         <p className="text-muted-foreground text-[10px]">
-          {visual.source && <span>来源: {visual.source}</span>}
+          {visual.source && (
+            <span className="notranslate" translate="no">
+              来源: {visual.source}
+            </span>
+          )}
           {visual.source && visual.date && <span> · </span>}
-          {visual.date && <span>{visual.date}</span>}
+          {visual.date && (
+            <span className="notranslate" translate="no">
+              {visual.date}
+            </span>
+          )}
         </p>
       )}
     </div>
