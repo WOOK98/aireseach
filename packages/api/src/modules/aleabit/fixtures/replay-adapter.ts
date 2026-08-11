@@ -100,7 +100,7 @@ const NO_ENTITY_POST: TriggerPost[] = [
     conversationId: "conv_macro_generic",
     author: "AleaBit",
     authorHandle: "aleabitoreddit",
-    text: "The AI bubble is going to pop eventually. Valuations are insane. Every company is claiming AI but most have no real moat. Be careful out there.",
+    text: "Just got back from a great vacation. The weather was amazing and the food was incredible. Highly recommend visiting if you get the chance.",
     postedAt: "2026-08-08T12:00:00Z",
     url: "https://x.com/aleabitoreddit/status/fixture_macro_001",
     editHistory: ["2026-08-08T12:00:00Z"],
