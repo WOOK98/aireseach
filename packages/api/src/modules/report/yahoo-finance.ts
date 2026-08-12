@@ -201,7 +201,7 @@ async function fetchYahooChartMetrics(
     sector: "",
     industry: "",
     description:
-      "Yahoo Finance fundamentals were temporarily unavailable, so this report uses live market price data as a fallback.", // redline-allow: fallback message from existing code
+      "Fundamentals were temporarily unavailable, so this report uses live market price data as a fallback.", // redline-ok: neutral copy, no vendor name
     currentPrice: latestClose,
     marketCap: null,
     currency: meta.currency ?? "USD",
