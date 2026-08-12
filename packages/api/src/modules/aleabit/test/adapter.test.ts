@@ -142,7 +142,7 @@ describe("Fixture content validity", () => {
     const result = await adapter.fetchThread("conv_macro_generic");
     expect(result.rootPost?.text).not.toMatch(/\$[A-Z]{2,5}\b/);
     expect(result.rootPost?.text).not.toMatch(
-      /\b(NVIDIA|Apple|Tesla|Microsoft)\b/i,
+      /\b(NVIDIA|Apple|Tesla|Microsoft|earnings|revenue|EPS)\b/i,
     );
   });
 

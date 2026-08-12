@@ -13,7 +13,10 @@
     "./report/technicals": "./src/modules/report/technicals.ts",
     "./report/yahoo-finance": "./src/modules/report/yahoo-finance.ts",
     "./report/industry": "./src/modules/report/industry.ts",
-    "./report/data-sources": "./src/modules/report/data-sources.ts"
+    "./report/data-sources": "./src/modules/report/data-sources.ts",
+    "./aleabit/renderer": "./src/modules/aleabit/renderer.ts",
+    "./aleabit/shadow-run": "./src/modules/aleabit/shadow-run.ts",
+    "./aleabit/queue": "./src/modules/aleabit/queue.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .cache .turbo dist node_modules",
