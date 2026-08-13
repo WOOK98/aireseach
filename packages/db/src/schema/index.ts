@@ -4,3 +4,4 @@ export * from "./billing";
 export * from "./knowledge";
 export * from "./watchlist";
 export * from "./ledger";
+export * from "./aleabit";
