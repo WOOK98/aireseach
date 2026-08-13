@@ -10,9 +10,9 @@ import { evidenceGate } from "./gates/evidence";
 import { ReviewQueue } from "./queue";
 import { renderBriefCard, renderDegradedCard } from "./renderer";
 
-import type { QueueItem } from "./queue";
+import type { IReviewQueue, QueueItem } from "./queue-interface";
 /**
- * AleaBit — Shadow-run runner (#121)
+ * AleaBit — Shadow-run runner (#127)
  *
  * Processes replay fixtures through the full pipeline:
  * ingestion → classification → entity gate → evidence gate →
@@ -23,6 +23,9 @@ import type { QueueItem } from "./queue";
  * Other fixtures use author_claim only (gate blocks → needs_review).
  *
  * Used for testing and shadow-runs. Never touches production X API.
+ *
+ * Accepts an optional queue parameter — pass PersistentReviewQueue for
+ * persistent storage, or omit for in-memory (tests/shadow-runs).
  */
 import type {
   TriggerPost,
@@ -32,7 +35,7 @@ import type {
 // ── Shadow-run result ────────────────────────────────────────────────────────
 
 export interface ShadowRunResult {
-  queue: ReviewQueue;
+  queue: IReviewQueue;
   items: QueueItem[];
   summary: {
     total: number;
@@ -64,30 +67,46 @@ const FIXTURE_EVIDENCE_MAP: Record<string, FixtureData> = {
 // ── Process single thread ────────────────────────────────────────────────────
 
 async function processThread(
-  queue: ReviewQueue,
+  queue: IReviewQueue,
   rootPost: TriggerPost,
   allPosts: TriggerPost[],
 ): Promise<void> {
   const itemId = `shadow_${rootPost.conversationId}`;
 
   // 1. Add to queue as detected
-  queue.add({
+  const addedItem = await queue.add({
     id: itemId,
     conversationId: rootPost.conversationId,
     triggerPost: rootPost,
+    editHistory: rootPost.editHistory,
     status: "detected",
     version: 1,
   });
 
+  // If add() returned an existing item in a terminal state, skip reprocessing.
+  // This handles idempotent replay: same conversationId + editHistoryHash.
+  const terminalStatuses = [
+    "ready_for_review",
+    "needs_review",
+    "skipped",
+    "failed",
+    "approved",
+    "rejected",
+    "archived",
+  ];
+  if (terminalStatuses.includes(addedItem.status)) {
+    return;
+  }
+
   // 2. Classify
   const fullText = allPosts.map((p) => p.text).join("\n\n");
   const classification = classifyContent(fullText);
-  queue.setClassification(itemId, classification);
+  await queue.setClassification(itemId, classification);
 
   if (classification.category === "other") {
     const reason = classification.skipReason ?? "Classified as 'other'.";
-    queue.updateStatus(itemId, "skipped", reason);
-    queue.setRenderedHtml(
+    await queue.updateStatus(itemId, "skipped", reason);
+    await queue.setRenderedHtml(
       itemId,
       renderDegradedCard({
         status: "skipped",
@@ -99,14 +118,14 @@ async function processThread(
   }
 
   // 3. Entity resolution — use root post only (not replies)
-  queue.updateStatus(itemId, "researching");
+  await queue.updateStatus(itemId, "researching");
   const entity = resolveEntity(rootPost.text);
-  queue.setEntity(itemId, entity);
+  await queue.setEntity(itemId, entity);
 
   if (!entity.ok) {
     const reason = entity.reviewReason ?? "Entity resolution failed.";
-    queue.updateStatus(itemId, "needs_review", reason);
-    queue.setRenderedHtml(
+    await queue.updateStatus(itemId, "needs_review", reason);
+    await queue.setRenderedHtml(
       itemId,
       renderDegradedCard({
         status: "needs_review",
@@ -119,8 +138,8 @@ async function processThread(
 
   if (entity.needsReview) {
     const reason = entity.reviewReason ?? "Entity needs manual review.";
-    queue.updateStatus(itemId, "needs_review", reason);
-    queue.setRenderedHtml(
+    await queue.updateStatus(itemId, "needs_review", reason);
+    await queue.setRenderedHtml(
       itemId,
       renderDegradedCard({
         company: entity.companyName,
@@ -149,12 +168,12 @@ async function processThread(
   const metrics = fixtureData?.metrics ?? [];
 
   const gate = evidenceGate(evidence, metrics);
-  queue.setEvidenceGate(itemId, gate);
+  await queue.setEvidenceGate(itemId, gate);
 
   if (!gate.allowed) {
     const reason = `Evidence gate blocked: ${gate.reason}`;
-    queue.updateStatus(itemId, "needs_review", reason);
-    queue.setRenderedHtml(
+    await queue.updateStatus(itemId, "needs_review", reason);
+    await queue.setRenderedHtml(
       itemId,
       renderDegradedCard({
         company: entity.companyName,
@@ -170,17 +189,29 @@ async function processThread(
   // 5. Generate brief card
   if (fixtureData?.buildBrief) {
     const brief = fixtureData.buildBrief(rootPost);
-    queue.setBrief(itemId, brief);
-    queue.setRenderedHtml(itemId, renderBriefCard(brief));
+    await queue.setBrief(itemId, brief);
+    await queue.setRenderedHtml(itemId, renderBriefCard(brief));
   }
 
-  queue.updateStatus(itemId, "ready_for_review");
+  await queue.updateStatus(itemId, "ready_for_review");
 }
 
 // ── Run all fixtures ─────────────────────────────────────────────────────────
 
+/**
+ * Run shadow-run with in-memory queue (default for tests).
+ */
 export async function runShadowRun(): Promise<ShadowRunResult> {
   const queue = new ReviewQueue();
+  return runShadowRunWithQueue(queue);
+}
+
+/**
+ * Run shadow-run with any queue implementation (in-memory or persistent).
+ */
+export async function runShadowRunWithQueue(
+  queue: IReviewQueue,
+): Promise<ShadowRunResult> {
   const adapter = new ReplayAdapter();
 
   // Fetch all root posts
@@ -195,7 +226,7 @@ export async function runShadowRun(): Promise<ShadowRunResult> {
     await processThread(queue, thread.rootPost, allPosts);
   }
 
-  const items = queue.getAll();
+  const items = await queue.getAll();
   const summary = {
     total: items.length,
     readyForReview: items.filter((i) => i.status === "ready_for_review").length,

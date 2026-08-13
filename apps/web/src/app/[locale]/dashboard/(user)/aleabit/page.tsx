@@ -11,7 +11,7 @@
 
 import { runShadowRun } from "@workspace/api/aleabit/shadow-run";
 
-import type { QueueItem } from "@workspace/api/aleabit/queue";
+import type { QueueItem } from "@workspace/api/aleabit/queue-interface";
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 
