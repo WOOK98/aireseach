@@ -1,5 +1,5 @@
 /**
- * AleaBit — Queue interface (#121 #126)
+ * AleaBit — Queue interface (#127)
  *
  * Common interface for in-memory (ReviewQueue) and persistent (PersistentReviewQueue)
  * queue implementations. Enables shadow-run to work with both.
@@ -36,8 +36,17 @@ export interface QueueItem {
  * Common queue interface. Both sync (in-memory) and async (persistent)
  * implementations satisfy this — callers should `await` all methods.
  */
+export interface AddQueueItem {
+  id: string;
+  conversationId: string;
+  triggerPost: TriggerPost;
+  status: string;
+  editHistory?: string[];
+  version?: number;
+}
+
 export interface IReviewQueue {
-  add(item: any): Promise<QueueItem> | QueueItem;
+  add(item: AddQueueItem): Promise<QueueItem> | QueueItem;
   updateStatus(
     id: string,
     status: string,

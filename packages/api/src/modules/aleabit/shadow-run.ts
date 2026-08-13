@@ -12,7 +12,7 @@ import { renderBriefCard, renderDegradedCard } from "./renderer";
 
 import type { IReviewQueue, QueueItem } from "./queue-interface";
 /**
- * AleaBit — Shadow-run runner (#121 #126)
+ * AleaBit — Shadow-run runner (#127)
  *
  * Processes replay fixtures through the full pipeline:
  * ingestion → classification → entity gate → evidence gate →
@@ -74,13 +74,29 @@ async function processThread(
   const itemId = `shadow_${rootPost.conversationId}`;
 
   // 1. Add to queue as detected
-  await queue.add({
+  const addedItem = await queue.add({
     id: itemId,
     conversationId: rootPost.conversationId,
     triggerPost: rootPost,
+    editHistory: rootPost.editHistory,
     status: "detected",
     version: 1,
   });
+
+  // If add() returned an existing item in a terminal state, skip reprocessing.
+  // This handles idempotent replay: same conversationId + editHistoryHash.
+  const terminalStatuses = [
+    "ready_for_review",
+    "needs_review",
+    "skipped",
+    "failed",
+    "approved",
+    "rejected",
+    "archived",
+  ];
+  if (terminalStatuses.includes(addedItem.status)) {
+    return;
+  }
 
   // 2. Classify
   const fullText = allPosts.map((p) => p.text).join("\n\n");

@@ -1,4 +1,4 @@
--- AleaBit review queue persistence + audit log (#121 #126)
+-- AleaBit review queue persistence + audit log (#127)
 
 CREATE TABLE IF NOT EXISTS "aleabit_queue" (
   "id" text PRIMARY KEY NOT NULL,

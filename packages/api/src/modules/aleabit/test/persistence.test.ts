@@ -1,5 +1,5 @@
 /**
- * AleaBit — Persistence + audit tests (#121 #126)
+ * AleaBit — Persistence + audit tests (#127)
  *
  * Tests for:
  * - Human review status transitions (pure function)
@@ -16,6 +16,8 @@ import { isValidAleabitTransition } from "@workspace/db/schema";
 
 import { executeReviewAction, getAuditTrail } from "../audit";
 import { buildIdempotencyKey, checkIdempotency } from "../idempotency";
+import { runShadowRunWithQueue } from "../shadow-run";
+import { FakePersistentQueue } from "./fake-persistent-queue";
 
 import type { IdempotencyRecord } from "../idempotency";
 import type { PersistentReviewQueue } from "../queue-pg";
@@ -306,5 +308,93 @@ describe("idempotency key persistence", () => {
     expect(
       "existingVersion" in result ? result.existingVersion : undefined,
     ).toBe(1);
+  });
+});
+
+// ── Shadow-run persistent queue idempotency (#127 验收) ─────────────────────
+
+describe("runShadowRunWithQueue — persistent queue idempotency", () => {
+  it("first run produces 4 items", async () => {
+    const queue = new FakePersistentQueue();
+    const result = await runShadowRunWithQueue(queue);
+
+    expect(result.summary.total).toBe(4);
+    expect(
+      result.summary.readyForReview +
+        result.summary.needsReview +
+        result.summary.skipped +
+        result.summary.failed,
+    ).toBe(4);
+  });
+
+  it("second run on same queue does not duplicate items", async () => {
+    const queue = new FakePersistentQueue();
+
+    const first = await runShadowRunWithQueue(queue);
+    expect(first.summary.total).toBe(4);
+
+    const second = await runShadowRunWithQueue(queue);
+    expect(second.summary.total).toBe(4);
+  });
+
+  it("NVDA item persists brief + renderedHtml after replay", async () => {
+    const queue = new FakePersistentQueue();
+    await runShadowRunWithQueue(queue);
+
+    const items = await queue.getAll();
+    const nvda = items.find(
+      (i) => i.conversationId === "conv_nvda_earnings_q2",
+    );
+    expect(nvda).toBeTruthy();
+    expect(nvda!.status).toBe("ready_for_review");
+    expect(nvda!.brief).toBeTruthy();
+    expect(nvda!.brief!.metrics.length).toBeGreaterThan(0);
+    expect(nvda!.renderedHtml).toContain("<!DOCTYPE html>");
+  });
+
+  it("needs_review and skipped items persist reason", async () => {
+    const queue = new FakePersistentQueue();
+    await runShadowRunWithQueue(queue);
+
+    const items = await queue.getAll();
+    const needsReview = items.filter((i) => i.status === "needs_review");
+    const skipped = items.filter((i) => i.status === "skipped");
+
+    expect(needsReview.length).toBeGreaterThanOrEqual(1);
+    for (const item of needsReview) {
+      expect(
+        item.skipReason ||
+          item.failureReason ||
+          item.entity?.reviewReason ||
+          item.evidenceGate?.reason,
+      ).toBeTruthy();
+    }
+
+    expect(skipped.length).toBeGreaterThanOrEqual(1);
+    for (const item of skipped) {
+      expect(item.skipReason).toBeTruthy();
+    }
+  });
+
+  it("FakePersistentQueue rejects add without editHistory", async () => {
+    const queue = new FakePersistentQueue();
+    await expect(
+      queue.add({
+        id: "test_1",
+        conversationId: "conv_test",
+        triggerPost: {
+          postId: "p1",
+          conversationId: "conv_test",
+          author: "a1",
+          authorHandle: "test",
+          text: "test",
+          postedAt: "2026-08-13T00:00:00Z",
+          url: "https://x.com/test/p1",
+          editHistory: [],
+          fetchedAt: "2026-08-13T00:00:00Z",
+        },
+        status: "detected",
+      }),
+    ).rejects.toThrow("requires editHistory");
   });
 });

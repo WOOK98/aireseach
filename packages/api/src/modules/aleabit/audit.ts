@@ -1,5 +1,5 @@
 /**
- * AleaBit — Human review audit actions (#121 #126)
+ * AleaBit — Human review audit actions (#127)
  *
  * Provides functions for human reviewers to approve/reject/flag items.
  * Each action records an audit log entry with actor + reason.

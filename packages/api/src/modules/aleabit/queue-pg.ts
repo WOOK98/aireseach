@@ -1,5 +1,5 @@
 /**
- * AleaBit — Persistent review queue (PostgreSQL) (#121 #126)
+ * AleaBit — Persistent review queue (PostgreSQL) (#127)
  *
  * Drop-in replacement for the in-memory ReviewQueue.
  * Uses conversationId + editHistoryHash as idempotency key.

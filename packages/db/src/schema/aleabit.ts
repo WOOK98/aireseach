@@ -1,5 +1,5 @@
 /**
- * AleaBit — Persistent review queue + audit log (#121 #126)
+ * AleaBit — Persistent review queue + audit log (#127)
  *
  * Queue items survive restarts. Idempotency key prevents duplicate items
  * from the same conversation+editHistory. Audit log records every status
