@@ -1,7 +1,7 @@
 /**
- * AleaBit Review Queue — Dashboard Page (#121)
+ * AleaBit Review Queue — Dashboard Page (#130)
  *
- * Displays shadow-run results from replay fixtures.
+ * Displays multi-creator ingest results with creator/status filtering.
  * Shows queue status, trigger posts, classification, entity, evidence,
  * structured JSON, and rendered 16:9 brief artifact.
  *
@@ -9,8 +9,12 @@
  */
 /* oxlint-disable i18next/no-literal-string */
 
-import { runShadowRun } from "@workspace/api/aleabit/shadow-run";
+import { BUILTIN_CREATOR_CONFIGS } from "@workspace/api/aleabit/creator-fixtures/builtin-configs";
+import { buildCreatorReplayAdapters } from "@workspace/api/aleabit/creator-fixtures/multi-replay-adapter";
+import { runMultiCreatorIngest } from "@workspace/api/aleabit/creator-ingest";
+import { ReviewQueue } from "@workspace/api/aleabit/queue";
 
+import type { CreatorIngestSummary } from "@workspace/api/aleabit/creator-ingest";
 import type { QueueItem } from "@workspace/api/aleabit/queue-interface";
 
 // ── Status badge ─────────────────────────────────────────────────────────────
@@ -27,6 +31,11 @@ function StatusBadge({ status }: { status: string }) {
       "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
     researching:
       "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+    approved:
+      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+    rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    archived:
+      "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
   };
 
   return (
@@ -40,14 +49,50 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// ── Creator badge ────────────────────────────────────────────────────────────
+
+function CreatorBadge({
+  creatorId,
+  handle,
+}: {
+  creatorId: string;
+  handle: string;
+}) {
+  const colors: Record<string, string> = {
+    aleabitoreddit:
+      "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    serenity:
+      "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+        colors[creatorId] ??
+        "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
+      }`}
+    >
+      @{handle}
+    </span>
+  );
+}
+
 // ── Queue item detail ────────────────────────────────────────────────────────
 
 function QueueItemDetail({ item }: { item: QueueItem }) {
+  // Extract creator id from item id (format: creator_<id>_<conversationId>)
+  const creatorMatch = item.id.match(/^creator_([^_]+)_/);
+  const creatorId = creatorMatch?.[1] ?? "unknown";
+
   return (
     <div className="space-y-3 rounded-lg border p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <StatusBadge status={item.status} />
+          <CreatorBadge
+            creatorId={creatorId}
+            handle={item.triggerPost.authorHandle}
+          />
           <span className="text-muted-foreground font-mono text-xs">
             {item.conversationId}
           </span>
@@ -70,7 +115,10 @@ function QueueItemDetail({ item }: { item: QueueItem }) {
           {item.triggerPost.text.length > 300 ? "..." : ""}
         </p>
         <div className="text-muted-foreground mt-2 flex gap-4 text-[11px]">
-          <span>@{item.triggerPost.authorHandle}</span>
+          <span className="notranslate" translate="no">
+            @{item.triggerPost.authorHandle}
+          </span>
+          <span>{new Date(item.triggerPost.postedAt).toLocaleString()}</span>
         </div>
       </div>
 
@@ -171,47 +219,155 @@ function QueueItemDetail({ item }: { item: QueueItem }) {
   );
 }
 
+// ── Summary card ─────────────────────────────────────────────────────────────
+
+function SummaryCard({ summary }: { summary: CreatorIngestSummary }) {
+  return (
+    <div className="rounded-lg border p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <CreatorBadge creatorId={summary.creatorId} handle={summary.handle} />
+      </div>
+      <div className="grid grid-cols-4 gap-2 text-center">
+        <div>
+          <div className="text-lg font-bold">{summary.fetched}</div>
+          <div className="text-muted-foreground text-[10px]">Fetched</div>
+        </div>
+        <div>
+          <div className="text-lg font-bold text-emerald-500">
+            {summary.readyForReview}
+          </div>
+          <div className="text-muted-foreground text-[10px]">Ready</div>
+        </div>
+        <div>
+          <div className="text-lg font-bold text-amber-500">
+            {summary.needsReview}
+          </div>
+          <div className="text-muted-foreground text-[10px]">Needs Review</div>
+        </div>
+        <div>
+          <div className="text-lg font-bold text-gray-500">
+            {summary.skipped}
+          </div>
+          <div className="text-muted-foreground text-[10px]">Skipped</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Filter bar (client component placeholder — server-side for now) ──────────
+
+function FilterInfo({
+  creators,
+  statuses,
+}: {
+  creators: string[];
+  statuses: string[];
+}) {
+  return (
+    <div className="flex flex-wrap gap-2 text-xs">
+      <span className="text-muted-foreground">Creators:</span>
+      {creators.map((c) => (
+        <span key={c} className="rounded border px-2 py-0.5">
+          {c}
+        </span>
+      ))}
+      <span className="text-muted-foreground ml-4">Statuses:</span>
+      {statuses.map((s) => (
+        <span key={s} className="rounded border px-2 py-0.5">
+          {s.replace(/_/g, " ")}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default async function AleaBitQueuePage() {
-  const result = await runShadowRun();
+  // Build adapters for all enabled built-in creators
+  const adapters = buildCreatorReplayAdapters(BUILTIN_CREATOR_CONFIGS);
+  const queue = new ReviewQueue();
+
+  const result = await runMultiCreatorIngest(queue, adapters, {
+    maxResultsPerCreator: 10,
+  });
+
+  // Collect unique creators and statuses for filter display
+  const uniqueCreators: string[] = [
+    ...new Set(result.summaries.map((s: { creatorId: string }) => s.creatorId)),
+  ];
+  const uniqueStatuses: string[] = [
+    ...new Set(result.items.map((i: { status: string }) => i.status)),
+  ];
 
   return (
     <div className="container mx-auto max-w-5xl space-y-8 py-8">
       <div>
         <h1 className="text-2xl font-bold">AleaBit Review Queue</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Shadow-run results from replay fixtures.
+          Multi-creator ingest results. All content enters review queue — no
+          auto-publish.
         </p>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-5 gap-4">
+      {/* Filter info */}
+      <FilterInfo creators={uniqueCreators} statuses={uniqueStatuses} />
+
+      {/* Per-creator summaries */}
+      <div>
+        <h2 className="mb-3 text-sm font-semibold">Creator Summaries</h2>
+        <div className="grid grid-cols-2 gap-4">
+          {result.summaries.map(
+            (summary: {
+              creatorId: string;
+              handle: string;
+              fetched: number;
+              classified: number;
+              skipped: number;
+              needsReview: number;
+              readyForReview: number;
+              duplicates: number;
+              failed: number;
+            }) => (
+              <SummaryCard key={summary.creatorId} summary={summary} />
+            ),
+          )}
+        </div>
+      </div>
+
+      {/* Total summary */}
+      <div className="grid grid-cols-6 gap-4">
         {[
           {
-            label: "Total",
-            value: result.summary.total,
+            label: "Fetched",
+            value: result.totalSummary.fetched,
             color: "text-foreground",
           },
           {
+            label: "Classified",
+            value: result.totalSummary.classified,
+            color: "text-blue-500",
+          },
+          {
             label: "Ready",
-            value: result.summary.readyForReview,
+            value: result.totalSummary.readyForReview,
             color: "text-emerald-500",
           },
           {
             label: "Needs Review",
-            value: result.summary.needsReview,
+            value: result.totalSummary.needsReview,
             color: "text-amber-500",
           },
           {
             label: "Skipped",
-            value: result.summary.skipped,
+            value: result.totalSummary.skipped,
             color: "text-gray-500",
           },
           {
-            label: "Failed",
-            value: result.summary.failed,
-            color: "text-red-500",
+            label: "Duplicates",
+            value: result.totalSummary.duplicates,
+            color: "text-gray-400",
           },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-lg border p-4 text-center">
@@ -222,15 +378,22 @@ export default async function AleaBitQueuePage() {
       </div>
 
       {/* Queue items */}
-      <div className="space-y-4">
-        {result.items.map((item: QueueItem) => (
-          <QueueItemDetail key={item.id} item={item} />
-        ))}
+      <div>
+        <h2 className="mb-3 text-sm font-semibold">
+          Queue Items ({result.items.length})
+        </h2>
+        <div className="space-y-4">
+          {result.items.map((item: QueueItem) => (
+            <QueueItemDetail key={item.id} item={item} />
+          ))}
+        </div>
       </div>
 
       {/* Footer */}
       <div className="text-muted-foreground border-t pt-4 text-xs">
-        Shadow-run against replay fixtures only. No X publish capability.
+        Multi-creator ingest against replay fixtures only. No X
+        publish/reply/quote/upload capability. Creator configs:{" "}
+        {BUILTIN_CREATOR_CONFIGS.map((c: { id: string }) => c.id).join(", ")}
       </div>
     </div>
   );
