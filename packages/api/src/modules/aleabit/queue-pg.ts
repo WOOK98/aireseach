@@ -45,6 +45,7 @@ export type QueueStatus = BriefStatus | HumanReviewStatus;
 
 export interface QueueItem {
   id: string;
+  creatorId: string;
   conversationId: string;
   editHistoryHash: string;
   triggerPost: TriggerPost;
@@ -102,6 +103,7 @@ export class PersistentReviewQueue {
       .from(aleabitQueue)
       .where(
         and(
+          eq(aleabitQueue.creatorId, params.creatorId ?? "aleabitoreddit"),
           eq(aleabitQueue.conversationId, params.conversationId),
           eq(aleabitQueue.editHistoryHash, key.editHistoryHash),
         ),
@@ -116,6 +118,7 @@ export class PersistentReviewQueue {
       .insert(aleabitQueue)
       .values({
         id: params.id,
+        creatorId: params.creatorId ?? "aleabitoreddit",
         conversationId: params.conversationId,
         editHistoryHash: key.editHistoryHash,
         triggerPost: params.triggerPost,
@@ -269,13 +272,15 @@ export class PersistentReviewQueue {
   async getByIdempotencyKey(
     conversationId: string,
     editHistory: string[],
+    creatorId?: string,
   ): Promise<QueueItem | undefined> {
-    const key = buildIdempotencyKey(conversationId, editHistory);
+    const key = buildIdempotencyKey(conversationId, editHistory, creatorId);
     const rows = await db
       .select()
       .from(aleabitQueue)
       .where(
         and(
+          eq(aleabitQueue.creatorId, creatorId ?? "aleabitoreddit"),
           eq(aleabitQueue.conversationId, conversationId),
           eq(aleabitQueue.editHistoryHash, key.editHistoryHash),
         ),
@@ -362,6 +367,7 @@ export class PersistentReviewQueue {
   private rowToItem(row: typeof aleabitQueue.$inferSelect): QueueItem {
     return {
       id: row.id,
+      creatorId: row.creatorId,
       conversationId: row.conversationId,
       editHistoryHash: row.editHistoryHash,
       triggerPost: row.triggerPost as TriggerPost,

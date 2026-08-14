@@ -9,12 +9,8 @@
  */
 /* oxlint-disable i18next/no-literal-string */
 
-import { BUILTIN_CREATOR_CONFIGS } from "@workspace/api/aleabit/creator-fixtures/builtin-configs";
-import { buildCreatorReplayAdapters } from "@workspace/api/aleabit/creator-fixtures/multi-replay-adapter";
-import { runMultiCreatorIngest } from "@workspace/api/aleabit/creator-ingest";
 import { PersistentReviewQueue } from "@workspace/api/aleabit/queue-pg";
 
-import type { CreatorIngestSummary } from "@workspace/api/aleabit/creator-ingest";
 import type { QueueItem } from "@workspace/api/aleabit/queue-interface";
 
 // ── Status badge ─────────────────────────────────────────────────────────────
@@ -223,44 +219,6 @@ function QueueItemDetail({ item }: { item: QueueItem }) {
   );
 }
 
-// ── Summary card ─────────────────────────────────────────────────────────────
-
-function SummaryCard({ summary }: { summary: CreatorIngestSummary }) {
-  return (
-    <div className="rounded-lg border p-4">
-      <div className="mb-2 flex items-center gap-2">
-        <CreatorBadge creatorId={summary.creatorId} handle={summary.handle} />
-      </div>
-      <div className="grid grid-cols-4 gap-2 text-center">
-        <div>
-          <div className="text-lg font-bold">{summary.fetched}</div>
-          <div className="text-muted-foreground text-[10px]">Fetched</div>
-        </div>
-        <div>
-          <div className="text-lg font-bold text-emerald-500">
-            {summary.readyForReview}
-          </div>
-          <div className="text-muted-foreground text-[10px]">Ready</div>
-        </div>
-        <div>
-          <div className="text-lg font-bold text-amber-500">
-            {summary.needsReview}
-          </div>
-          <div className="text-muted-foreground text-[10px]">Needs Review</div>
-        </div>
-        <div>
-          <div className="text-lg font-bold text-gray-500">
-            {summary.skipped}
-          </div>
-          <div className="text-muted-foreground text-[10px]">Skipped</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Filter bar (client component placeholder — server-side for now) ──────────
-
 function FilterInfo({
   creators,
   statuses,
@@ -289,89 +247,59 @@ function FilterInfo({
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default async function AleaBitQueuePage() {
-  // Build adapters for all enabled built-in creators
-  const adapters = buildCreatorReplayAdapters(BUILTIN_CREATOR_CONFIGS);
+  // Read-only: fetch existing queue items from DB. Ingest runs via POST /api/aleabit/ingest.
   const queue = new PersistentReviewQueue();
-
-  const result = await runMultiCreatorIngest(queue, adapters, {
-    maxResultsPerCreator: 10,
-  });
+  const items = await queue.getAll();
 
   // Collect unique creators and statuses for filter display
   const uniqueCreators: string[] = [
-    ...new Set(result.summaries.map((s: { creatorId: string }) => s.creatorId)),
+    ...new Set(items.map((i) => i.triggerPost.authorHandle)),
   ];
-  const uniqueStatuses: string[] = [
-    ...new Set(result.items.map((i: { status: string }) => i.status)),
-  ];
+  const uniqueStatuses: string[] = [...new Set(items.map((i) => i.status))];
 
   return (
     <div className="container mx-auto max-w-5xl space-y-8 py-8">
       <div>
         <h1 className="text-2xl font-bold">AleaBit Review Queue</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Multi-creator ingest results. All content enters review queue — no
-          auto-publish.
+          Review queue items. Trigger ingest via{}
+          <code className="bg-muted rounded px-1 text-xs">
+            POST /api/aleabit/ingest
+          </code>
+          .
         </p>
       </div>
 
       {/* Filter info */}
       <FilterInfo creators={uniqueCreators} statuses={uniqueStatuses} />
 
-      {/* Per-creator summaries */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold">Creator Summaries</h2>
-        <div className="grid grid-cols-2 gap-4">
-          {result.summaries.map(
-            (summary: {
-              creatorId: string;
-              handle: string;
-              fetched: number;
-              classified: number;
-              skipped: number;
-              needsReview: number;
-              readyForReview: number;
-              duplicates: number;
-              failed: number;
-            }) => (
-              <SummaryCard key={summary.creatorId} summary={summary} />
-            ),
-          )}
-        </div>
-      </div>
-
-      {/* Total summary */}
-      <div className="grid grid-cols-6 gap-4">
+      {/* Summary counts */}
+      <div className="grid grid-cols-5 gap-4">
         {[
           {
-            label: "Fetched",
-            value: result.totalSummary.fetched,
+            label: "Total",
+            value: items.length,
             color: "text-foreground",
           },
           {
-            label: "Classified",
-            value: result.totalSummary.classified,
-            color: "text-blue-500",
-          },
-          {
             label: "Ready",
-            value: result.totalSummary.readyForReview,
+            value: items.filter((i) => i.status === "ready_for_review").length,
             color: "text-emerald-500",
           },
           {
             label: "Needs Review",
-            value: result.totalSummary.needsReview,
+            value: items.filter((i) => i.status === "needs_review").length,
             color: "text-amber-500",
           },
           {
             label: "Skipped",
-            value: result.totalSummary.skipped,
+            value: items.filter((i) => i.status === "skipped").length,
             color: "text-gray-500",
           },
           {
-            label: "Duplicates",
-            value: result.totalSummary.duplicates,
-            color: "text-gray-400",
+            label: "Failed",
+            value: items.filter((i) => i.status === "failed").length,
+            color: "text-red-500",
           },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-lg border p-4 text-center">
@@ -384,10 +312,10 @@ export default async function AleaBitQueuePage() {
       {/* Queue items */}
       <div>
         <h2 className="mb-3 text-sm font-semibold">
-          Queue Items ({result.items.length})
+          Queue Items ({items.length})
         </h2>
         <div className="space-y-4">
-          {result.items.map((item: QueueItem) => (
+          {items.map((item: QueueItem) => (
             <QueueItemDetail key={item.id} item={item} />
           ))}
         </div>
@@ -395,9 +323,8 @@ export default async function AleaBitQueuePage() {
 
       {/* Footer */}
       <div className="text-muted-foreground border-t pt-4 text-xs">
-        Multi-creator ingest against replay fixtures only. No X
-        publish/reply/quote/upload capability. Creator configs:{" "}
-        {BUILTIN_CREATOR_CONFIGS.map((c: { id: string }) => c.id).join(", ")}
+        Read-only view. Trigger ingest via POST /api/aleabit/ingest. No X
+        publish/reply/quote/upload capability.
       </div>
     </div>
   );
