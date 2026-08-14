@@ -7,6 +7,7 @@
  */
 
 export interface IdempotencyKey {
+  creatorId?: string; // optional for backward compat with single-creator
   conversationId: string;
   editHistoryHash: string; // hash of sorted edit timestamps
 }
@@ -38,8 +39,10 @@ function hashEditHistory(editHistory: string[]): string {
 export function buildIdempotencyKey(
   conversationId: string,
   editHistory: string[],
+  creatorId?: string,
 ): IdempotencyKey {
   return {
+    creatorId,
     conversationId,
     editHistoryHash: hashEditHistory(editHistory),
   };
@@ -57,7 +60,9 @@ export function checkIdempotency(
   existingRecords: IdempotencyRecord[],
 ): DedupResult {
   const matchingConversation = existingRecords.filter(
-    (r) => r.key.conversationId === key.conversationId,
+    (r) =>
+      r.key.conversationId === key.conversationId &&
+      (r.key.creatorId ?? "") === (key.creatorId ?? ""),
   );
 
   if (matchingConversation.length === 0) {

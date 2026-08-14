@@ -18,6 +18,7 @@
     "./aleabit/shadow-run": "./src/modules/aleabit/shadow-run.ts",
     "./aleabit/queue": "./src/modules/aleabit/queue.ts",
     "./aleabit/queue-interface": "./src/modules/aleabit/queue-interface.ts",
+    "./aleabit/queue-pg": "./src/modules/aleabit/queue-pg.ts",
     "./aleabit/creator-config": "./src/modules/aleabit/creator-config.ts",
     "./aleabit/creator-adapter": "./src/modules/aleabit/creator-adapter.ts",
     "./aleabit/creator-ingest": "./src/modules/aleabit/creator-ingest.ts",

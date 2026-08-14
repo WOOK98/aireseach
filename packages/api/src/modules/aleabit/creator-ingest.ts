@@ -62,6 +62,7 @@ async function processCreatorThread(
   // 1. Add to queue
   const addedItem = await queue.add({
     id: itemId,
+    creatorId: config.id,
     conversationId: rootPost.conversationId,
     triggerPost: rootPost,
     editHistory: rootPost.editHistory,

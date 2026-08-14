@@ -38,6 +38,7 @@ export interface QueueItem {
  */
 export interface AddQueueItem {
   id: string;
+  creatorId?: string; // multi-creator idempotency
   conversationId: string;
   triggerPost: TriggerPost;
   status: string;

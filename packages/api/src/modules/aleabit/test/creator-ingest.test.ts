@@ -122,6 +122,45 @@ describe("idempotency", () => {
     expect(result2.totalSummary.duplicates).toBe(count1);
   });
 
+  it("cross-creator same conversationId does NOT collide", async () => {
+    // Two different creators with the same conversationId should produce
+    // separate items — creatorId is part of the idempotency key.
+    const config1: CreatorSourceConfig = {
+      ...ALEABIT_CREATOR_CONFIG,
+      id: "creator_a",
+    };
+    const config2: CreatorSourceConfig = {
+      ...ALEABIT_CREATOR_CONFIG,
+      id: "creator_b",
+    };
+
+    const sharedFixture = {
+      shared_thread: [
+        {
+          postId: "shared_001",
+          conversationId: "conv_shared",
+          author: "Author",
+          authorHandle: "author",
+          text: "$NVDA earnings thread with shared conversationId.",
+          postedAt: "2026-08-10T20:00:00Z",
+          url: "https://x.com/author/status/shared_001",
+          editHistory: ["2026-08-10T20:00:00Z"],
+          fetchedAt: "2026-08-11T10:00:00Z",
+        },
+      ],
+    };
+
+    const adapter1 = new CreatorReplayAdapter(config1, sharedFixture);
+    const adapter2 = new CreatorReplayAdapter(config2, sharedFixture);
+
+    const queue = new FakePersistentQueue();
+    const result = await runMultiCreatorIngest(queue, [adapter1, adapter2]);
+
+    // Should produce 2 items (one per creator), not 1
+    expect(result.items).toHaveLength(2);
+    expect(result.totalSummary.duplicates).toBe(0);
+  });
+
   it("duplicate count matches total items on replay", async () => {
     const adapters = buildCreatorReplayAdapters(BUILTIN_CREATOR_CONFIGS);
     const queue = new FakePersistentQueue();

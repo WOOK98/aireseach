@@ -28,8 +28,12 @@ export class FakePersistentQueue implements IReviewQueue {
       );
     }
 
-    const key = buildIdempotencyKey(params.conversationId, params.editHistory);
-    const idemKey = `${key.conversationId}:${key.editHistoryHash}`;
+    const key = buildIdempotencyKey(
+      params.conversationId,
+      params.editHistory,
+      params.creatorId,
+    );
+    const idemKey = `${key.creatorId ?? ""}:${key.conversationId}:${key.editHistoryHash}`;
 
     // Idempotency: return existing item if same conversationId + editHistoryHash
     const existingId = this.idempotencyIndex.get(idemKey);

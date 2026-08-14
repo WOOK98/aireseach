@@ -83,13 +83,18 @@ export class PersistentReviewQueue {
    */
   async add(params: {
     id: string;
+    creatorId?: string;
     conversationId: string;
     editHistory: string[];
     triggerPost: TriggerPost;
     status: BriefStatus;
     version?: number;
   }): Promise<QueueItem> {
-    const key = buildIdempotencyKey(params.conversationId, params.editHistory);
+    const key = buildIdempotencyKey(
+      params.conversationId,
+      params.editHistory,
+      params.creatorId,
+    );
 
     // Check for existing item
     const existing = await db

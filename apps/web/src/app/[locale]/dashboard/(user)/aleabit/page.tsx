@@ -12,7 +12,7 @@
 import { BUILTIN_CREATOR_CONFIGS } from "@workspace/api/aleabit/creator-fixtures/builtin-configs";
 import { buildCreatorReplayAdapters } from "@workspace/api/aleabit/creator-fixtures/multi-replay-adapter";
 import { runMultiCreatorIngest } from "@workspace/api/aleabit/creator-ingest";
-import { ReviewQueue } from "@workspace/api/aleabit/queue";
+import { PersistentReviewQueue } from "@workspace/api/aleabit/queue-pg";
 
 import type { CreatorIngestSummary } from "@workspace/api/aleabit/creator-ingest";
 import type { QueueItem } from "@workspace/api/aleabit/queue-interface";
@@ -72,7 +72,9 @@ function CreatorBadge({
         "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
       }`}
     >
-      @{handle}
+      <span className="notranslate" translate="no">
+        @{handle}
+      </span>
     </span>
   );
 }
@@ -118,7 +120,9 @@ function QueueItemDetail({ item }: { item: QueueItem }) {
           <span className="notranslate" translate="no">
             @{item.triggerPost.authorHandle}
           </span>
-          <span>{new Date(item.triggerPost.postedAt).toLocaleString()}</span>
+          <span className="notranslate" translate="no">
+            {new Date(item.triggerPost.postedAt).toLocaleString()}
+          </span>
         </div>
       </div>
 
@@ -287,7 +291,7 @@ function FilterInfo({
 export default async function AleaBitQueuePage() {
   // Build adapters for all enabled built-in creators
   const adapters = buildCreatorReplayAdapters(BUILTIN_CREATOR_CONFIGS);
-  const queue = new ReviewQueue();
+  const queue = new PersistentReviewQueue();
 
   const result = await runMultiCreatorIngest(queue, adapters, {
     maxResultsPerCreator: 10,
