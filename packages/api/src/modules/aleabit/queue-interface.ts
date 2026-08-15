@@ -16,6 +16,7 @@ import type { ClassificationResult } from "@workspace/shared/types/aleabit";
 
 export interface QueueItem {
   id: string;
+  creatorId: string;
   conversationId: string;
   triggerPost: TriggerPost;
   status: string;

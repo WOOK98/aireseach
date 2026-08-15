@@ -45,6 +45,7 @@ export class FakePersistentQueue implements IReviewQueue {
     const now = new Date().toISOString();
     const item: QueueItem = {
       id: params.id,
+      creatorId: params.creatorId ?? "aleabitoreddit",
       conversationId: params.conversationId,
       triggerPost: params.triggerPost,
       status: params.status,

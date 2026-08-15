@@ -9,9 +9,10 @@
  */
 /* oxlint-disable i18next/no-literal-string */
 
-import { PersistentReviewQueue } from "@workspace/api/aleabit/queue-pg";
-
 import type { QueueItem } from "@workspace/api/aleabit/queue-interface";
+
+// Skip static prerender — DB may not be reachable at build time (Vercel).
+export const dynamic = "force-dynamic";
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 
@@ -78,9 +79,7 @@ function CreatorBadge({
 // ── Queue item detail ────────────────────────────────────────────────────────
 
 function QueueItemDetail({ item }: { item: QueueItem }) {
-  // Extract creator id from item id (format: creator_<id>_<conversationId>)
-  const creatorMatch = item.id.match(/^creator_([^_]+)_/);
-  const creatorId = creatorMatch?.[1] ?? "unknown";
+  const creatorId = item.creatorId ?? "unknown";
 
   return (
     <div className="space-y-3 rounded-lg border p-4">
@@ -248,8 +247,15 @@ function FilterInfo({
 
 export default async function AleaBitQueuePage() {
   // Read-only: fetch existing queue items from DB. Ingest runs via POST /api/aleabit/ingest.
-  const queue = new PersistentReviewQueue();
-  const items = await queue.getAll();
+  let items: QueueItem[] = [];
+  try {
+    const { PersistentReviewQueue } =
+      await import("@workspace/api/aleabit/queue-pg");
+    const queue = new PersistentReviewQueue();
+    items = await queue.getAll();
+  } catch {
+    // DB unavailable at build time — render empty state.
+  }
 
   // Collect unique creators and statuses for filter display
   const uniqueCreators: string[] = [
