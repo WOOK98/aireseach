@@ -16,6 +16,7 @@ import type { ClassificationResult } from "@workspace/shared/types/aleabit";
 
 export interface QueueItem {
   id: string;
+  creatorId: string;
   conversationId: string;
   triggerPost: TriggerPost;
   status: string;
@@ -38,6 +39,7 @@ export interface QueueItem {
  */
 export interface AddQueueItem {
   id: string;
+  creatorId?: string; // multi-creator idempotency
   conversationId: string;
   triggerPost: TriggerPost;
   status: string;

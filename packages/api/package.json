@@ -17,7 +17,13 @@
     "./aleabit/renderer": "./src/modules/aleabit/renderer.ts",
     "./aleabit/shadow-run": "./src/modules/aleabit/shadow-run.ts",
     "./aleabit/queue": "./src/modules/aleabit/queue.ts",
-    "./aleabit/queue-interface": "./src/modules/aleabit/queue-interface.ts"
+    "./aleabit/queue-interface": "./src/modules/aleabit/queue-interface.ts",
+    "./aleabit/queue-pg": "./src/modules/aleabit/queue-pg.ts",
+    "./aleabit/creator-config": "./src/modules/aleabit/creator-config.ts",
+    "./aleabit/creator-adapter": "./src/modules/aleabit/creator-adapter.ts",
+    "./aleabit/creator-ingest": "./src/modules/aleabit/creator-ingest.ts",
+    "./aleabit/creator-fixtures/builtin-configs": "./src/modules/aleabit/creator-fixtures/builtin-configs.ts",
+    "./aleabit/creator-fixtures/multi-replay-adapter": "./src/modules/aleabit/creator-fixtures/multi-replay-adapter.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .cache .turbo dist node_modules",

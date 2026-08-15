@@ -1,7 +1,7 @@
 /**
- * AleaBit Review Queue — Dashboard Page (#121)
+ * AleaBit Review Queue — Dashboard Page (#130)
  *
- * Displays shadow-run results from replay fixtures.
+ * Displays multi-creator ingest results with creator/status filtering.
  * Shows queue status, trigger posts, classification, entity, evidence,
  * structured JSON, and rendered 16:9 brief artifact.
  *
@@ -9,9 +9,10 @@
  */
 /* oxlint-disable i18next/no-literal-string */
 
-import { runShadowRun } from "@workspace/api/aleabit/shadow-run";
-
 import type { QueueItem } from "@workspace/api/aleabit/queue-interface";
+
+// Skip static prerender — DB may not be reachable at build time (Vercel).
+export const dynamic = "force-dynamic";
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 
@@ -27,6 +28,11 @@ function StatusBadge({ status }: { status: string }) {
       "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
     researching:
       "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+    approved:
+      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+    rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    archived:
+      "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
   };
 
   return (
@@ -40,14 +46,50 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// ── Creator badge ────────────────────────────────────────────────────────────
+
+function CreatorBadge({
+  creatorId,
+  handle,
+}: {
+  creatorId: string;
+  handle: string;
+}) {
+  const colors: Record<string, string> = {
+    aleabitoreddit:
+      "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    serenity:
+      "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+        colors[creatorId] ??
+        "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
+      }`}
+    >
+      <span className="notranslate" translate="no">
+        @{handle}
+      </span>
+    </span>
+  );
+}
+
 // ── Queue item detail ────────────────────────────────────────────────────────
 
 function QueueItemDetail({ item }: { item: QueueItem }) {
+  const creatorId = item.creatorId ?? "unknown";
+
   return (
     <div className="space-y-3 rounded-lg border p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <StatusBadge status={item.status} />
+          <CreatorBadge
+            creatorId={creatorId}
+            handle={item.triggerPost.authorHandle}
+          />
           <span className="text-muted-foreground font-mono text-xs">
             {item.conversationId}
           </span>
@@ -70,7 +112,12 @@ function QueueItemDetail({ item }: { item: QueueItem }) {
           {item.triggerPost.text.length > 300 ? "..." : ""}
         </p>
         <div className="text-muted-foreground mt-2 flex gap-4 text-[11px]">
-          <span>@{item.triggerPost.authorHandle}</span>
+          <span className="notranslate" translate="no">
+            @{item.triggerPost.authorHandle}
+          </span>
+          <span className="notranslate" translate="no">
+            {new Date(item.triggerPost.postedAt).toLocaleString()}
+          </span>
         </div>
       </div>
 
@@ -171,46 +218,93 @@ function QueueItemDetail({ item }: { item: QueueItem }) {
   );
 }
 
+function FilterInfo({
+  creators,
+  statuses,
+}: {
+  creators: string[];
+  statuses: string[];
+}) {
+  return (
+    <div className="flex flex-wrap gap-2 text-xs">
+      <span className="text-muted-foreground">Creators:</span>
+      {creators.map((c) => (
+        <span key={c} className="rounded border px-2 py-0.5">
+          {c}
+        </span>
+      ))}
+      <span className="text-muted-foreground ml-4">Statuses:</span>
+      {statuses.map((s) => (
+        <span key={s} className="rounded border px-2 py-0.5">
+          {s.replace(/_/g, " ")}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default async function AleaBitQueuePage() {
-  const result = await runShadowRun();
+  // Read-only: fetch existing queue items from DB. Ingest runs via POST /api/aleabit/ingest.
+  let items: QueueItem[] = [];
+  try {
+    const { PersistentReviewQueue } =
+      await import("@workspace/api/aleabit/queue-pg");
+    const queue = new PersistentReviewQueue();
+    items = await queue.getAll();
+  } catch {
+    // DB unavailable at build time — render empty state.
+  }
+
+  // Collect unique creators and statuses for filter display
+  const uniqueCreators: string[] = [
+    ...new Set(items.map((i) => i.triggerPost.authorHandle)),
+  ];
+  const uniqueStatuses: string[] = [...new Set(items.map((i) => i.status))];
 
   return (
     <div className="container mx-auto max-w-5xl space-y-8 py-8">
       <div>
         <h1 className="text-2xl font-bold">AleaBit Review Queue</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Shadow-run results from replay fixtures.
+          Review queue items. Trigger ingest via{}
+          <code className="bg-muted rounded px-1 text-xs">
+            POST /api/aleabit/ingest
+          </code>
+          .
         </p>
       </div>
 
-      {/* Summary */}
+      {/* Filter info */}
+      <FilterInfo creators={uniqueCreators} statuses={uniqueStatuses} />
+
+      {/* Summary counts */}
       <div className="grid grid-cols-5 gap-4">
         {[
           {
             label: "Total",
-            value: result.summary.total,
+            value: items.length,
             color: "text-foreground",
           },
           {
             label: "Ready",
-            value: result.summary.readyForReview,
+            value: items.filter((i) => i.status === "ready_for_review").length,
             color: "text-emerald-500",
           },
           {
             label: "Needs Review",
-            value: result.summary.needsReview,
+            value: items.filter((i) => i.status === "needs_review").length,
             color: "text-amber-500",
           },
           {
             label: "Skipped",
-            value: result.summary.skipped,
+            value: items.filter((i) => i.status === "skipped").length,
             color: "text-gray-500",
           },
           {
             label: "Failed",
-            value: result.summary.failed,
+            value: items.filter((i) => i.status === "failed").length,
             color: "text-red-500",
           },
         ].map(({ label, value, color }) => (
@@ -222,15 +316,21 @@ export default async function AleaBitQueuePage() {
       </div>
 
       {/* Queue items */}
-      <div className="space-y-4">
-        {result.items.map((item: QueueItem) => (
-          <QueueItemDetail key={item.id} item={item} />
-        ))}
+      <div>
+        <h2 className="mb-3 text-sm font-semibold">
+          Queue Items ({items.length})
+        </h2>
+        <div className="space-y-4">
+          {items.map((item: QueueItem) => (
+            <QueueItemDetail key={item.id} item={item} />
+          ))}
+        </div>
       </div>
 
       {/* Footer */}
       <div className="text-muted-foreground border-t pt-4 text-xs">
-        Shadow-run against replay fixtures only. No X publish capability.
+        Read-only view. Trigger ingest via POST /api/aleabit/ingest. No X
+        publish/reply/quote/upload capability.
       </div>
     </div>
   );

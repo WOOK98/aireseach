@@ -68,7 +68,10 @@ export const aleabitQueue = pgTable(
   {
     id: text().primaryKey().$defaultFn(generateId),
 
-    // Idempotency: conversationId + editHistoryHash is unique
+    // Multi-creator idempotency
+    creatorId: text("creator_id").notNull().default("aleabitoreddit"),
+
+    // Idempotency: creatorId + conversationId + editHistoryHash is unique
     conversationId: text().notNull(),
     editHistoryHash: text().notNull(),
 
@@ -100,8 +103,9 @@ export const aleabitQueue = pgTable(
       .defaultNow(),
   },
   (table) => [
-    // Idempotency: same conversation + same edit history = one item
+    // Idempotency: same creator + same conversation + same edit history = one item
     uniqueIndex("aleabit_queue_idempotency_idx").on(
+      table.creatorId,
       table.conversationId,
       table.editHistoryHash,
     ),
