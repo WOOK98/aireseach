@@ -15,13 +15,17 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 
-import { buildCreatorAdapters } from "@workspace/api/aleabit/creator-adapter-factory";
+import {
+  buildCreatorAdapters,
+  parseLiveCreators,
+} from "@workspace/api/aleabit/creator-adapter-factory";
 import { BUILTIN_CREATOR_CONFIGS } from "@workspace/api/aleabit/creator-fixtures/builtin-configs";
 import { runMultiCreatorIngest } from "@workspace/api/aleabit/creator-ingest";
 import { PersistentReviewQueue } from "@workspace/api/aleabit/queue-pg";
 
 const INGEST_SECRET = process.env.ALEABIT_INGEST_SECRET ?? ""; // redline-allow: internal env lookup, not user-visible
 const X_BEARER_TOKEN = process.env.X_BEARER_TOKEN ?? ""; // redline-allow: internal env lookup, not user-visible
+const LIVE_CREATORS = parseLiveCreators(process.env.ALEABIT_LIVE_CREATORS); // redline-allow: internal env lookup, not user-visible
 
 export async function POST(request: NextRequest) {
   // ── Auth gate ─────────────────────────────────────────────────────────────
@@ -47,7 +51,7 @@ export async function POST(request: NextRequest) {
   try {
     const { adapters, skipped } = buildCreatorAdapters(
       BUILTIN_CREATOR_CONFIGS,
-      X_BEARER_TOKEN,
+      { liveToken: X_BEARER_TOKEN, liveCreators: LIVE_CREATORS },
     );
 
     const queue = new PersistentReviewQueue();

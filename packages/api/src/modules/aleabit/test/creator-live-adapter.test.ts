@@ -14,7 +14,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-import { buildCreatorAdapters } from "../creator-adapter-factory";
+import {
+  buildCreatorAdapters,
+  parseLiveCreators,
+} from "../creator-adapter-factory";
 import { runMultiCreatorIngest } from "../creator-ingest";
 import { CreatorLiveAdapter, XRateLimitError } from "../creator-live-adapter";
 import { FakePersistentQueue } from "./fake-persistent-queue";
@@ -279,18 +282,30 @@ describe("CreatorLiveAdapter", () => {
 });
 
 describe("buildCreatorAdapters", () => {
-  it("uses live adapter when mode=live and token present", () => {
-    const config: CreatorSourceConfig = { ...LIVE_CONFIG, ingestMode: "live" };
-    const { adapters, skipped } = buildCreatorAdapters([config], "test-token");
+  it("liveCreators override: live adapter when creator in set + token present", () => {
+    const config: CreatorSourceConfig = {
+      ...LIVE_CONFIG,
+      ingestMode: "replay",
+    };
+    const { adapters, skipped } = buildCreatorAdapters([config], {
+      liveToken: "test-token",
+      liveCreators: new Set(["aleabitoreddit"]),
+    });
 
     expect(adapters).toHaveLength(1);
     expect(adapters[0]!.constructor.name).toBe("CreatorLiveAdapter");
     expect(skipped).toHaveLength(0);
   });
 
-  it("skips live creator when no token", () => {
-    const config: CreatorSourceConfig = { ...LIVE_CONFIG, ingestMode: "live" };
-    const { adapters, skipped } = buildCreatorAdapters([config], "");
+  it("liveCreators override: skipped when creator in set + no token", () => {
+    const config: CreatorSourceConfig = {
+      ...LIVE_CONFIG,
+      ingestMode: "replay",
+    };
+    const { adapters, skipped } = buildCreatorAdapters([config], {
+      liveToken: "",
+      liveCreators: new Set(["aleabitoreddit"]),
+    });
 
     expect(adapters).toHaveLength(0);
     expect(skipped).toHaveLength(1);
@@ -298,31 +313,46 @@ describe("buildCreatorAdapters", () => {
     expect(skipped[0]!.reason).toContain("no X API token");
   });
 
-  it("uses replay adapter for replay mode", () => {
+  it("not in liveCreators: replay even with token", () => {
     const config: CreatorSourceConfig = {
       ...LIVE_CONFIG,
       ingestMode: "replay",
     };
-    const { adapters, skipped } = buildCreatorAdapters([config], "test-token");
+    const { adapters, skipped } = buildCreatorAdapters([config], {
+      liveToken: "test-token",
+      liveCreators: new Set(),
+    });
 
     expect(adapters).toHaveLength(1);
     expect(adapters[0]!.constructor.name).toBe("CreatorReplayAdapter");
     expect(skipped).toHaveLength(0);
   });
 
-  it("skips disabled creators", () => {
+  it("config ingestMode=live also works (backward compat)", () => {
+    const config: CreatorSourceConfig = { ...LIVE_CONFIG, ingestMode: "live" };
+    const { adapters, skipped } = buildCreatorAdapters([config], {
+      liveToken: "test-token",
+      liveCreators: new Set(),
+    });
+
+    expect(adapters).toHaveLength(1);
+    expect(adapters[0]!.constructor.name).toBe("CreatorLiveAdapter");
+    expect(skipped).toHaveLength(0);
+  });
+
+  it("skips disabled creators even in liveCreators set", () => {
     const config: CreatorSourceConfig = { ...LIVE_CONFIG, enabled: false };
-    const { adapters, skipped } = buildCreatorAdapters([config], "test-token");
+    const { adapters, skipped } = buildCreatorAdapters([config], {
+      liveToken: "test-token",
+      liveCreators: new Set(["aleabitoreddit"]),
+    });
 
     expect(adapters).toHaveLength(0);
     expect(skipped).toHaveLength(0);
   });
 
-  it("handles mixed live + replay configs", () => {
-    const liveConfig: CreatorSourceConfig = {
-      ...LIVE_CONFIG,
-      ingestMode: "live",
-    };
+  it("handles mixed: one live-selected, one replay", () => {
+    const liveConfig: CreatorSourceConfig = { ...LIVE_CONFIG };
     const replayConfig: CreatorSourceConfig = {
       ...LIVE_CONFIG,
       id: "serenity",
@@ -331,11 +361,46 @@ describe("buildCreatorAdapters", () => {
     };
     const { adapters, skipped } = buildCreatorAdapters(
       [liveConfig, replayConfig],
-      "test-token",
+      {
+        liveToken: "test-token",
+        liveCreators: new Set(["aleabitoreddit"]),
+      },
     );
 
     expect(adapters).toHaveLength(2);
+    expect(adapters[0]!.constructor.name).toBe("CreatorLiveAdapter");
+    expect(adapters[1]!.constructor.name).toBe("CreatorReplayAdapter");
     expect(skipped).toHaveLength(0);
+  });
+});
+
+describe("parseLiveCreators", () => {
+  it("returns empty set for undefined", () => {
+    expect(parseLiveCreators(undefined)).toEqual(new Set());
+  });
+
+  it("returns empty set for empty string", () => {
+    expect(parseLiveCreators("")).toEqual(new Set());
+  });
+
+  it("parses single creator", () => {
+    const result = parseLiveCreators("aleabitoreddit");
+    expect(result).toEqual(new Set(["aleabitoreddit"]));
+  });
+
+  it("parses comma-separated creators", () => {
+    const result = parseLiveCreators("aleabitoreddit,serenity");
+    expect(result).toEqual(new Set(["aleabitoreddit", "serenity"]));
+  });
+
+  it("trims whitespace", () => {
+    const result = parseLiveCreators(" aleabitoreddit , serenity ");
+    expect(result).toEqual(new Set(["aleabitoreddit", "serenity"]));
+  });
+
+  it("ignores empty segments", () => {
+    const result = parseLiveCreators("aleabitoreddit,,serenity,");
+    expect(result).toEqual(new Set(["aleabitoreddit", "serenity"]));
   });
 });
 
