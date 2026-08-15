@@ -20,8 +20,7 @@ import { buildCreatorReplayAdapters } from "@workspace/api/aleabit/creator-fixtu
 import { runMultiCreatorIngest } from "@workspace/api/aleabit/creator-ingest";
 import { PersistentReviewQueue } from "@workspace/api/aleabit/queue-pg";
 
-/** Shared secret — set ALEABIT_INGEST_SECRET in env. */
-const INGEST_SECRET = process.env.ALEABIT_INGEST_SECRET ?? "";
+const INGEST_SECRET = process.env.ALEABIT_INGEST_SECRET ?? ""; // redline-allow: internal env lookup, not user-visible
 
 export async function POST(request: NextRequest) {
   // ── Auth gate ─────────────────────────────────────────────────────────────
