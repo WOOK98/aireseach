@@ -2,7 +2,7 @@
  * AleaBit — Creator adapter factory (#133)
  *
  * Builds the right adapter per creator: live (X API v2) or replay (fixtures).
- * Selection is based on creator config's ingestMode and token availability.
+ * Live selection is controlled solely by `liveCreators` env allowlist.
  *
  * Fail-closed: if live mode is requested but no token, creator is skipped
  * with a clear reason in the summary — never silently succeeds.
@@ -29,7 +29,7 @@ export interface AdapterBuildResult {
  * For each enabled creator:
  * - in `liveCreators` set + token → CreatorLiveAdapter
  * - in `liveCreators` set + no token → skipped (fail-closed)
- * - not in `liveCreators` → replay/shadow (fixture-based)
+ * - not in `liveCreators` → replay/shadow (fixture-based, regardless of config.ingestMode)
  *
  * @param configs - Creator source configs
  * @param options.liveToken - X API Bearer token (read-only). Empty = no live.
@@ -46,7 +46,7 @@ export function buildCreatorAdapters(
   for (const config of configs) {
     if (!config.enabled) continue;
 
-    const isLive = liveCreators.has(config.id) || config.ingestMode === "live";
+    const isLive = liveCreators.has(config.id);
 
     if (isLive) {
       if (!liveToken) {

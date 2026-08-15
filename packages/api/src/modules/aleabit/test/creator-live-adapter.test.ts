@@ -328,15 +328,16 @@ describe("buildCreatorAdapters", () => {
     expect(skipped).toHaveLength(0);
   });
 
-  it("config ingestMode=live also works (backward compat)", () => {
+  it("config ingestMode=live is ignored without liveCreators entry", () => {
     const config: CreatorSourceConfig = { ...LIVE_CONFIG, ingestMode: "live" };
     const { adapters, skipped } = buildCreatorAdapters([config], {
       liveToken: "test-token",
       liveCreators: new Set(),
     });
 
+    // Only liveCreators env controls live — config.ingestMode alone is not enough.
     expect(adapters).toHaveLength(1);
-    expect(adapters[0]!.constructor.name).toBe("CreatorLiveAdapter");
+    expect(adapters[0]!.constructor.name).toBe("CreatorReplayAdapter");
     expect(skipped).toHaveLength(0);
   });
 
