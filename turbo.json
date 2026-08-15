@@ -46,7 +46,8 @@
     "OPENAI_API_KEY",
     "DEEPSEEK_API_KEY",
     "LLM_API_KEY",
-    "ALEABIT_INGEST_SECRET"
+    "ALEABIT_INGEST_SECRET",
+    "X_BEARER_TOKEN"
   ],
   "globalPassThroughEnv": [
     "AIRESEARCH_PLUGIN_DIR",

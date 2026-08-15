@@ -195,9 +195,16 @@ async function ingestCreator(
     failed: 0,
   };
 
-  const rootPosts = await adapter.fetchRecentRootPosts({
-    maxResults: options.maxResults,
-  });
+  let rootPosts: TriggerPost[];
+  try {
+    rootPosts = await adapter.fetchRecentRootPosts({
+      maxResults: options.maxResults,
+    });
+  } catch {
+    // Fetch failure (auth, rate limit, malformed) — record and return.
+    summary.failed = 1;
+    return summary;
+  }
   summary.fetched = rootPosts.length;
 
   for (const root of rootPosts) {
