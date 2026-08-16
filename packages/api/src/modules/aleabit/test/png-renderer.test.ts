@@ -7,15 +7,13 @@
  * - zh-CN and en produce different images (different text)
  * - Both share the same data (same number of metrics rendered)
  *
- * NOTE: These tests launch Playwright (headless Chromium).
- * They are slower than unit tests — run in CI, not watch mode.
+ * Uses @vercel/og (Satori) — no browser binary needed.
  */
 
 import { describe, expect, it } from "vitest";
 
-import { renderBilingualBriefCard } from "../bilingual-renderer";
 import { buildNVDABrief } from "../fixtures/fixture-evidence";
-import { renderPngFromHtml, renderPngBriefCard } from "../png-renderer";
+import { renderPngBriefCard, renderPngBriefCardLocale } from "../png-renderer";
 
 const FIXTURE_POST = {
   id: "p1",
@@ -61,28 +59,33 @@ function pngDimensions(
   return { width, height };
 }
 
-describe("png-renderer", () => {
-  // These tests are slow (launch Chromium). Set generous timeout.
-  describe("renderPngFromHtml", () => {
-    it("produces a valid PNG from HTML", async () => {
-      const html = renderBilingualBriefCard(brief, "en");
-      const png = await renderPngFromHtml(html);
+describe("png-renderer (@vercel/og)", () => {
+  describe("renderPngBriefCardLocale", () => {
+    it("produces a valid PNG for en", async () => {
+      const png = await renderPngBriefCardLocale(brief, "en");
 
       expect(png).toBeInstanceOf(Buffer);
-      expect(png.length).toBeGreaterThan(1000); // non-trivial size
+      expect(png.length).toBeGreaterThan(1000);
       expect(isPng(png)).toBe(true);
-    }, 30_000);
+    }, 15_000);
+
+    it("produces a valid PNG for zh-CN", async () => {
+      const png = await renderPngBriefCardLocale(brief, "zh-CN");
+
+      expect(png).toBeInstanceOf(Buffer);
+      expect(png.length).toBeGreaterThan(1000);
+      expect(isPng(png)).toBe(true);
+    });
 
     it("produces 1600×900 PNG", async () => {
-      const html = renderBilingualBriefCard(brief, "en");
-      const png = await renderPngFromHtml(html);
+      const png = await renderPngBriefCardLocale(brief, "en");
       const dims = pngDimensions(png);
 
       expect(dims).not.toBeNull();
       expect(dims!.width).toBe(1600);
       expect(dims!.height).toBe(900);
-    }, 30_000);
-  }, 60_000);
+    });
+  });
 
   describe("renderPngBriefCard", () => {
     it("produces two different PNGs for zh-CN and en", async () => {
@@ -96,21 +99,18 @@ describe("png-renderer", () => {
       expect(isPng(result.en)).toBe(true);
 
       // Both 1600×900
-      expect(pngDimensions(result.zhCn)).toEqual({
-        width: 1600,
-        height: 900,
-      });
+      expect(pngDimensions(result.zhCn)).toEqual({ width: 1600, height: 900 });
       expect(pngDimensions(result.en)).toEqual({ width: 1600, height: 900 });
 
       // Different content (different language text)
       expect(result.zhCn.equals(result.en)).toBe(false);
-    }, 60_000);
+    });
 
-    it("both PNGs are non-trivial size (>10KB)", async () => {
+    it("both PNGs are non-trivial size (>5KB)", async () => {
       const result = await renderPngBriefCard(brief);
 
-      expect(result.zhCn.length).toBeGreaterThan(10_000);
-      expect(result.en.length).toBeGreaterThan(10_000);
-    }, 60_000);
-  }, 120_000);
+      expect(result.zhCn.length).toBeGreaterThan(5_000);
+      expect(result.en.length).toBeGreaterThan(5_000);
+    });
+  });
 });

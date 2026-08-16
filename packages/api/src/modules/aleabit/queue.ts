@@ -33,7 +33,8 @@ export interface QueueItem {
   renderedHtml?: string;
   renderedPngZh?: Buffer;
   renderedPngEn?: Buffer;
-  renderedPngHash?: string;
+  renderedPngHashZh?: string;
+  renderedPngHashEn?: string;
   skipReason?: string;
   failureReason?: string;
   createdAt: string;

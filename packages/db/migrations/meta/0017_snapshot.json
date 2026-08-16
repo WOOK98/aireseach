@@ -1,6 +1,6 @@
 {
-  "id": "0017_aleabit_bilingual_png",
-  "prevId": "0016_aleabit_creator_id",
+  "id": "58cb5c7d-a380-4149-937d-90d0e74eb32a",
+  "prevId": "533ec296-b1b3-42ce-9dfd-da06517201d8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2064,8 +2064,16 @@
           "default": "'aleabitoreddit'",
           "autoincrement": false
         },
-        "rendered_png_hash": {
-          "name": "rendered_png_hash",
+        "rendered_png_hash_zh": {
+          "name": "rendered_png_hash_zh",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": null,
+          "autoincrement": false
+        },
+        "rendered_png_hash_en": {
+          "name": "rendered_png_hash_en",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

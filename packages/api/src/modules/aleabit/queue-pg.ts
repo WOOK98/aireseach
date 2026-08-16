@@ -57,7 +57,8 @@ export interface QueueItem {
   brief?: FinancialBriefCard;
   renderedHtml?: string;
   renderedArtifactHash?: string;
-  renderedPngHash?: string;
+  renderedPngHashZh?: string;
+  renderedPngHashEn?: string;
   skipReason?: string;
   failureReason?: string;
   createdAt: string;
@@ -212,9 +213,11 @@ export class PersistentReviewQueue {
     png: Buffer,
   ): Promise<QueueItem | null> {
     const hash = await this.hashContent(png.toString("base64"));
+    const field =
+      locale === "zh-CN" ? "renderedPngHashZh" : "renderedPngHashEn";
     const rows = await db
       .update(aleabitQueue)
-      .set({ renderedPngHash: hash, updatedAt: new Date() })
+      .set({ [field]: hash, updatedAt: new Date() })
       .where(eq(aleabitQueue.id, id))
       .returning();
 
@@ -399,7 +402,8 @@ export class PersistentReviewQueue {
       brief: (row.brief as FinancialBriefCard) ?? undefined,
       renderedHtml: row.renderedHtml ?? undefined,
       renderedArtifactHash: row.renderedArtifactHash ?? undefined,
-      renderedPngHash: row.renderedPngHash ?? undefined,
+      renderedPngHashZh: row.renderedPngHashZh ?? undefined,
+      renderedPngHashEn: row.renderedPngHashEn ?? undefined,
       skipReason: row.skipReason ?? undefined,
       failureReason: row.failureReason ?? undefined,
       createdAt: row.createdAt.toISOString(),
