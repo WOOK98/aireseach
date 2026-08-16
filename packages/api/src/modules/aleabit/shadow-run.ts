@@ -204,7 +204,9 @@ async function processThread(
     }
   }
 
-  // 7. Evaluate publish policy (#137)
+  await queue.updateStatus(itemId, "ready_for_review");
+
+  // 7. Evaluate publish policy (#137) — AFTER status is ready_for_review
   const policyMode = (process.env.ALEABIT_ROLLOUT_MODE ?? "off") as
     | "off"
     | "shadow"
@@ -216,14 +218,8 @@ async function processThread(
       item: freshItem,
       rolloutMode: policyMode,
     });
-    // Store policy decision on queue item (if queue supports it)
-    if ("policyDecision" in freshItem) {
-      (freshItem as any).policyDecision = decision;
-      freshItem.updatedAt = new Date().toISOString();
-    }
+    await queue.setPolicyDecision(itemId, decision);
   }
-
-  await queue.updateStatus(itemId, "ready_for_review");
 }
 
 // ── Run all fixtures ─────────────────────────────────────────────────────────

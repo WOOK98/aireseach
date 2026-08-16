@@ -160,6 +160,17 @@ export class ReviewQueue {
     return item;
   }
 
+  setPolicyDecision(
+    id: string,
+    decision: import("./publish-policy").PolicyDecision,
+  ): QueueItem | null {
+    const item = this.items.get(id);
+    if (!item) return null;
+    item.policyDecision = decision;
+    item.updatedAt = new Date().toISOString();
+    return item;
+  }
+
   get(id: string): QueueItem | undefined {
     return this.items.get(id);
   }

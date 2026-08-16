@@ -136,6 +136,17 @@ export class FakePersistentQueue implements IReviewQueue {
     return item;
   }
 
+  async setPolicyDecision(
+    id: string,
+    decision: any,
+  ): Promise<QueueItem | null> {
+    const item = this.items.get(id);
+    if (!item) return null;
+    item.policyDecision = decision;
+    item.updatedAt = new Date().toISOString();
+    return item;
+  }
+
   async get(id: string): Promise<QueueItem | undefined> {
     return this.items.get(id);
   }

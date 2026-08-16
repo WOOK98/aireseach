@@ -84,6 +84,10 @@ export interface IReviewQueue {
     id: string,
     gate: EvidenceGateResult,
   ): Promise<QueueItem | null> | QueueItem | null;
+  setPolicyDecision(
+    id: string,
+    decision: import("./publish-policy").PolicyDecision,
+  ): Promise<QueueItem | null> | QueueItem | null;
   get(id: string): Promise<QueueItem | undefined> | QueueItem | undefined;
   getAll(): Promise<QueueItem[]> | QueueItem[];
 }

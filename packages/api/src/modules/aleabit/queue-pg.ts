@@ -278,6 +278,22 @@ export class PersistentReviewQueue {
   }
 
   /**
+   * Set publish policy decision.
+   */
+  async setPolicyDecision(
+    id: string,
+    decision: import("./publish-policy").PolicyDecision,
+  ): Promise<QueueItem | null> {
+    const rows = await db
+      .update(aleabitQueue)
+      .set({ policyDecision: decision, updatedAt: new Date() })
+      .where(eq(aleabitQueue.id, id))
+      .returning();
+
+    return rows[0] ? this.rowToItem(rows[0]) : null;
+  }
+
+  /**
    * Get single item by id.
    */
   async get(id: string): Promise<QueueItem | undefined> {
