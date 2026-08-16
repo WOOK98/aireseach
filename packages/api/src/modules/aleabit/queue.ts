@@ -123,10 +123,17 @@ export class ReviewQueue {
   ): QueueItem | null {
     const item = this.items.get(id);
     if (!item) return null;
+    // Compute hash synchronously (SHA-256 of png bytes)
+    const hash = require("crypto")
+      .createHash("sha256")
+      .update(png)
+      .digest("hex");
     if (locale === "zh-CN") {
       item.renderedPngZh = png;
+      item.renderedPngHashZh = hash;
     } else {
       item.renderedPngEn = png;
+      item.renderedPngHashEn = hash;
     }
     item.updatedAt = new Date().toISOString();
     return item;

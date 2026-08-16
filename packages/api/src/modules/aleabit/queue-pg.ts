@@ -290,6 +290,20 @@ export class PersistentReviewQueue {
       .where(eq(aleabitQueue.id, id))
       .returning();
 
+    // Audit trail: record policy evaluation for traceability
+    await this.recordAudit(
+      id,
+      "policy_evaluated",
+      decision.verdict,
+      JSON.stringify({
+        blockingReasons: decision.blockingReasons,
+        rolloutMode: decision.rolloutMode,
+        policyVersion: decision.policyVersion,
+      }),
+      "system",
+      "system",
+    );
+
     return rows[0] ? this.rowToItem(rows[0]) : null;
   }
 

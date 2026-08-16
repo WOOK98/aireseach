@@ -382,3 +382,62 @@ describe("evaluatePublishPolicy", () => {
     });
   });
 });
+
+// ── Integration: NVDA fixture through shadow-run with canary mode ────────────
+
+import { ReviewQueue } from "../queue";
+import { runShadowRunWithQueue } from "../shadow-run";
+
+describe("NVDA integration — canary mode", () => {
+  it("NVDA fixture gets allowed verdict under canary", async () => {
+    // Override env for shadow-run to use canary mode
+    const origMode = process.env.ALEABIT_ROLLOUT_MODE;
+    process.env.ALEABIT_ROLLOUT_MODE = "canary";
+
+    try {
+      const queue = new ReviewQueue();
+      const result = await runShadowRunWithQueue(queue);
+
+      // NVDA should be ready_for_review
+      const nvda = result.items.find(
+        (i) => i.conversationId === "conv_nvda_earnings_q2",
+      );
+      expect(nvda).toBeTruthy();
+      expect(nvda!.status).toBe("ready_for_review");
+
+      // Policy decision should exist and be allowed
+      expect(nvda!.policyDecision).toBeTruthy();
+      expect(nvda!.policyDecision!.verdict).toBe("allowed");
+      expect(nvda!.policyDecision!.blockingReasons).toHaveLength(0);
+      expect(nvda!.policyDecision!.rolloutMode).toBe("canary");
+
+      // Bilingual PNG hashes should exist
+      expect(nvda!.renderedPngHashZh).toBeTruthy();
+      expect(nvda!.renderedPngHashEn).toBeTruthy();
+    } finally {
+      process.env.ALEABIT_ROLLOUT_MODE = origMode;
+    }
+  }, 60_000);
+
+  it("NVDA fixture blocked under off mode", async () => {
+    const origMode = process.env.ALEABIT_ROLLOUT_MODE;
+    process.env.ALEABIT_ROLLOUT_MODE = "off";
+
+    try {
+      const queue = new ReviewQueue();
+      const result = await runShadowRunWithQueue(queue);
+
+      const nvda = result.items.find(
+        (i) => i.conversationId === "conv_nvda_earnings_q2",
+      );
+      expect(nvda).toBeTruthy();
+      expect(nvda!.policyDecision).toBeTruthy();
+      expect(nvda!.policyDecision!.verdict).toBe("blocked");
+      expect(
+        nvda!.policyDecision!.blockingReasons.some((r) => r.includes("off")),
+      ).toBe(true);
+    } finally {
+      process.env.ALEABIT_ROLLOUT_MODE = origMode;
+    }
+  }, 60_000);
+});
