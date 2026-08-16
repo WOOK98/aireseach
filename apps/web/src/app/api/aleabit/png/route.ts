@@ -1,12 +1,13 @@
 /**
  * AleaBit — PNG serving endpoint (#135)
  *
- * GET /api/aleabit/png?id=<queueItemId>&locale=zh-CN|en
+ * GET /api/aleabit/png?id=<queueItemId>&locale=zh-CN|en&token=<secret>
  *
  * Returns a 1600×900 PNG for the given queue item and locale.
  * Generates on-demand via @vercel/og (Satori) — serverless-compatible.
  *
- * Auth: requires ALEABIT_PNG_SECRET bearer token (same pattern as ingest).
+ * Auth: ALEABIT_PNG_SECRET via Bearer header OR ?token= query param.
+ * Query param needed because <img> and <a> cannot send custom headers.
  * No X write. No media upload. Pure review asset serving.
  */
 
@@ -29,8 +30,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Accept token from Bearer header OR query param (for <img>/<a> usage).
+  const { searchParams } = new URL(request.url);
   const authHeader = request.headers.get("authorization") ?? "";
-  const token = authHeader.replace(/^Bearer\s+/i, "");
+  const bearerToken = authHeader.replace(/^Bearer\s+/i, "");
+  const queryToken = searchParams.get("token") ?? "";
+  const token = bearerToken || queryToken;
 
   if (token !== PNG_SECRET) {
     return NextResponse.json(
@@ -40,7 +45,6 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Params ─────────────────────────────────────────────────────────────
-  const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   const locale = (searchParams.get("locale") ?? "zh-CN") as Locale;
 
@@ -87,7 +91,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "image/png",
         "Content-Length": String(png.length),
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "private, no-store",
         "X-Aleabit-Locale": locale,
         "X-Aleabit-Queue-Id": id,
       },

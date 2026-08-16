@@ -471,9 +471,10 @@ function buildCard(card: FinancialBriefCard, locale: Locale) {
 
 // ── Font loading ─────────────────────────────────────────────────────────────
 
-let _cachedFont: ArrayBuffer | undefined;
+let _cachedFont: ArrayBuffer | null | undefined; // null = load attempted and failed
 
-async function getGeistFont(): Promise<ArrayBuffer> {
+async function getGeistFont(): Promise<ArrayBuffer | null> {
+  if (_cachedFont === null) return null; // previously failed, don't retry
   if (_cachedFont) return _cachedFont;
   try {
     const fs = await import("node:fs");
@@ -482,10 +483,16 @@ async function getGeistFont(): Promise<ArrayBuffer> {
       process.cwd(),
       "node_modules/@vercel/og/dist/Geist-Regular.ttf",
     );
-    _cachedFont = fs.readFileSync(fontPath).buffer;
+    const fontData = fs.readFileSync(fontPath);
+    if (fontData.length === 0) {
+      _cachedFont = null;
+      return null;
+    }
+    _cachedFont = fontData.buffer;
     return _cachedFont;
   } catch {
-    return new ArrayBuffer(0);
+    _cachedFont = null;
+    return null;
   }
 }
 
@@ -499,17 +506,18 @@ export async function renderPngBriefCardLocale(
   card: FinancialBriefCard,
   locale: Locale,
 ): Promise<Buffer> {
-  const response = new ImageResponse(buildCard(card, locale), {
-    width: W,
-    height: H,
-    fonts: [
+  const fontData = await getGeistFont();
+  const options: Record<string, unknown> = { width: W, height: H };
+  if (fontData) {
+    options.fonts = [
       {
         name: "Geist",
-        data: await getGeistFont(),
+        data: fontData,
         style: "normal",
       },
-    ],
-  });
+    ];
+  }
+  const response = new ImageResponse(buildCard(card, locale), options);
   return Buffer.from(await response.arrayBuffer());
 }
 
