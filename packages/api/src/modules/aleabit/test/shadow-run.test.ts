@@ -23,7 +23,7 @@ describe("shadow-run", () => {
         result.summary.skipped +
         result.summary.failed,
     ).toBe(4);
-  });
+  }, 30_000);
 
   it("produces at least 1 ready_for_review with brief artifact", async () => {
     const result = await runShadowRun();

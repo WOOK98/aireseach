@@ -96,6 +96,18 @@ export class FakePersistentQueue implements IReviewQueue {
     return item;
   }
 
+  async setRenderedPng(
+    id: string,
+    _locale: "zh-CN" | "en",
+    _png: Buffer,
+  ): Promise<QueueItem | null> {
+    const item = this.items.get(id);
+    if (!item) return null;
+    // Fake queue doesn't store PNG bytes, just record that it was called.
+    item.updatedAt = new Date().toISOString();
+    return item;
+  }
+
   async setClassification(
     id: string,
     classification: any,

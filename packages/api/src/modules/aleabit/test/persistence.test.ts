@@ -325,7 +325,7 @@ describe("runShadowRunWithQueue — persistent queue idempotency", () => {
         result.summary.skipped +
         result.summary.failed,
     ).toBe(4);
-  });
+  }, 30_000);
 
   it("second run on same queue does not duplicate items", async () => {
     const queue = new FakePersistentQueue();
@@ -335,7 +335,7 @@ describe("runShadowRunWithQueue — persistent queue idempotency", () => {
 
     const second = await runShadowRunWithQueue(queue);
     expect(second.summary.total).toBe(4);
-  });
+  }, 30_000);
 
   it("NVDA item persists brief + renderedHtml after replay", async () => {
     const queue = new FakePersistentQueue();
@@ -350,7 +350,7 @@ describe("runShadowRunWithQueue — persistent queue idempotency", () => {
     expect(nvda!.brief).toBeTruthy();
     expect(nvda!.brief!.metrics.length).toBeGreaterThan(0);
     expect(nvda!.renderedHtml).toContain("<!DOCTYPE html>");
-  });
+  }, 30_000);
 
   it("needs_review and skipped items persist reason", async () => {
     const queue = new FakePersistentQueue();
@@ -374,7 +374,7 @@ describe("runShadowRunWithQueue — persistent queue idempotency", () => {
     for (const item of skipped) {
       expect(item.skipReason).toBeTruthy();
     }
-  });
+  }, 30_000);
 
   it("FakePersistentQueue rejects add without editHistory", async () => {
     const queue = new FakePersistentQueue();

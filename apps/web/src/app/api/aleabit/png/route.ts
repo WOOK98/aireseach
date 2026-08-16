@@ -8,26 +8,26 @@
  *
  * Auth: session cookie via better-auth (same as dashboard).
  * No secret in URL. No Bearer token. Session cookie only.
- * No X write. No media upload. Pure review asset serving.
  */
 
 import { type NextRequest, NextResponse } from "next/server";
 
 import { renderPngBriefCardLocale } from "@workspace/api/aleabit/png-renderer";
 import { PersistentReviewQueue } from "@workspace/api/aleabit/queue-pg";
-import { auth } from "@workspace/auth/server";
+
+import { checkPngAuth } from "./auth";
 
 import type { Locale } from "@workspace/api/aleabit/bilingual-renderer";
 
 const VALID_LOCALES: Locale[] = ["zh-CN", "en"];
 
 export async function GET(request: NextRequest) {
-  // ── Session auth (cookie-based, same as dashboard) ─────────────────────
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user?.id) {
+  // ── Session auth (cookie-based) ────────────────────────────────────────
+  const authResult = await checkPngAuth(request);
+  if (!authResult.ok) {
     return NextResponse.json(
-      { ok: false, error: "Unauthorized." },
-      { status: 401 },
+      { ok: false, error: authResult.error },
+      { status: authResult.status },
     );
   }
 
