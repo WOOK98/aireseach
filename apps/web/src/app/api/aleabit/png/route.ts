@@ -1,13 +1,13 @@
 /**
  * AleaBit — PNG serving endpoint (#135)
  *
- * GET /api/aleabit/png?id=<queueItemId>&locale=zh-CN|en&token=<secret>
+ * GET /api/aleabit/png?id=<queueItemId>&locale=zh-CN|en
  *
  * Returns a 1600×900 PNG for the given queue item and locale.
  * Generates on-demand via @vercel/og (Satori) — serverless-compatible.
  *
- * Auth: ALEABIT_PNG_SECRET via Bearer header OR ?token= query param.
- * Query param needed because <img> and <a> cannot send custom headers.
+ * Auth: session cookie via better-auth (same as dashboard).
+ * No secret in URL. No Bearer token. Session cookie only.
  * No X write. No media upload. Pure review asset serving.
  */
 
@@ -15,29 +15,16 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { renderPngBriefCardLocale } from "@workspace/api/aleabit/png-renderer";
 import { PersistentReviewQueue } from "@workspace/api/aleabit/queue-pg";
+import { auth } from "@workspace/auth/server";
 
 import type { Locale } from "@workspace/api/aleabit/bilingual-renderer";
 
 const VALID_LOCALES: Locale[] = ["zh-CN", "en"];
-const PNG_SECRET = process.env.ALEABIT_PNG_SECRET ?? ""; // redline-allow: internal env lookup, not user-visible
 
 export async function GET(request: NextRequest) {
-  // ── Auth gate (fail-closed) ──────────────────────────────────────────────
-  if (!PNG_SECRET) {
-    return NextResponse.json(
-      { ok: false, error: "PNG endpoint not configured." },
-      { status: 503 },
-    );
-  }
-
-  // Accept token from Bearer header OR query param (for <img>/<a> usage).
-  const { searchParams } = new URL(request.url);
-  const authHeader = request.headers.get("authorization") ?? "";
-  const bearerToken = authHeader.replace(/^Bearer\s+/i, "");
-  const queryToken = searchParams.get("token") ?? "";
-  const token = bearerToken || queryToken;
-
-  if (token !== PNG_SECRET) {
+  // ── Session auth (cookie-based, same as dashboard) ─────────────────────
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user?.id) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized." },
       { status: 401 },
@@ -45,6 +32,7 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Params ─────────────────────────────────────────────────────────────
+  const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   const locale = (searchParams.get("locale") ?? "zh-CN") as Locale;
 

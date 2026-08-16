@@ -201,49 +201,38 @@ function QueueItemDetail({ item }: { item: QueueItem }) {
           </div>
 
           {/* Bilingual PNG preview + download (#135) */}
-          {item.brief &&
-            (() => {
-              const pngToken = process.env.ALEABIT_PNG_SECRET ?? ""; // redline-allow: internal env lookup
-              return (
-                <div className="space-y-2">
-                  <div className="text-muted-foreground text-xs font-semibold">
-                    Bilingual PNG (1600×900)
+          {item.brief && (
+            <div className="space-y-2">
+              <div className="text-muted-foreground text-xs font-semibold">
+                Bilingual PNG (1600×900)
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {(["zh-CN", "en"] as const).map((locale) => (
+                  <div key={locale} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium">
+                        {locale === "zh-CN" ? "中文" : "English"}
+                      </span>
+                      <a
+                        href={`/api/aleabit/png?id=${item.id}&locale=${locale}`}
+                        download={`aleabit_${item.brief?.ticker ?? "brief"}_${locale}.png`}
+                        className="text-[10px] text-blue-500 hover:text-blue-400"
+                      >
+                        ↓ Download
+                      </a>
+                    </div>
+                    {/* oxlint-disable-next-line eslint-plugin-next/no-img-element */}
+                    <img
+                      src={`/api/aleabit/png?id=${item.id}&locale=${locale}`}
+                      alt={`Brief ${locale}`}
+                      className="w-full rounded border"
+                      loading="lazy"
+                    />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {(["zh-CN", "en"] as const).map((locale) => (
-                      <div key={locale} className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-medium">
-                            {locale === "zh-CN" ? "中文" : "English"}
-                          </span>
-                          {pngToken && (
-                            <a
-                              href={`/api/aleabit/png?id=${item.id}&locale=${locale}&token=${pngToken}`}
-                              download={`aleabit_${item.brief?.ticker ?? "brief"}_${locale}.png`}
-                              className="text-[10px] text-blue-500 hover:text-blue-400"
-                            >
-                              ↓ Download
-                            </a>
-                          )}
-                        </div>
-                        {pngToken ? (
-                          <img
-                            src={`/api/aleabit/png?id=${item.id}&locale=${locale}&token=${pngToken}`}
-                            alt={`Brief ${locale}`}
-                            className="w-full rounded border"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="text-muted-foreground text-[10px]">
-                            PNG endpoint not configured (set ALEABIT_PNG_SECRET)
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
