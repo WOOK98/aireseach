@@ -1,28 +1,34 @@
 /**
- * AleaBit — Canary approval API route (#141)
+ * AleaBit — Canary approval API route (#141, auth fix)
  *
  * POST /api/aleabit/approve — approve a queue item for publishing (canary mode)
- * POST /api/aleabit/reject — reject a queue item
  *
- * Requires: item in ready_for_review status, canary mode active.
- * Records audit log entry via executeReviewAction.
+ * Requires: authenticated session + canary/auto mode.
+ * Actor ID derived from session, not client-supplied.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+
+import { auth } from "@workspace/auth/server";
 
 // ── Request schema ────────────────────────────────────────────────────────────
 
 const ApproveRequestSchema = z.object({
   itemId: z.string().min(1),
   reason: z.string().min(1).max(500),
-  actorId: z.string().min(1).default("dashboard-user"),
 });
 
 // ── POST /api/aleabit/approve ─────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  // Only allow in canary mode
+  // ── Auth gate ─────────────────────────────────────────────────────────────
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  // ── Mode gate ────────────────────────────────────────────────────────────
   const publishMode = process.env.ALEABIT_PUBLISH_MODE ?? "off";
   if (publishMode !== "canary" && publishMode !== "auto") {
     return NextResponse.json(
@@ -31,6 +37,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // ── Parse body ───────────────────────────────────────────────────────────
   let body: z.infer<typeof ApproveRequestSchema>;
   try {
     const raw = await request.json();
@@ -42,6 +49,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // ── Execute ──────────────────────────────────────────────────────────────
   try {
     const { PersistentReviewQueue } =
       await import("@workspace/api/aleabit/queue-pg");
@@ -53,22 +61,15 @@ export async function POST(request: NextRequest) {
       itemId: body.itemId,
       action: "approved",
       reason: body.reason,
-      actorId: body.actorId,
+      actorId: session.user.id,
     });
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    return NextResponse.json({
-      success: true,
-      item: result.item,
-      auditId: result.auditId,
-    });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: true, item: result.item });
+  } catch {
+    return NextResponse.json({ error: "Internal error." }, { status: 500 });
   }
 }

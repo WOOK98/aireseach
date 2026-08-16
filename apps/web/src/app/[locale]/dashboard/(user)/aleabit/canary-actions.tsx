@@ -48,7 +48,6 @@ export function CanaryActions({
           body: JSON.stringify({
             itemId,
             reason: reason.trim(),
-            actorId: "dashboard-user",
           }),
         });
 

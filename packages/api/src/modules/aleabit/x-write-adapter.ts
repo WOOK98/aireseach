@@ -1,12 +1,15 @@
 /**
- * AleaBit — X write adapter interface (#139)
+ * AleaBit — X write adapter interface (#139, #141 fix)
  *
  * Defines the contract for publishing to X.
  * Provides DryRunXWriteAdapter (default) that only records would-send payload.
- * XApiWriteAdapter skeleton exists but is NOT callable without explicit env.
+ * XApiWriteAdapter implements real X API v2 calls.
  *
  * SAFETY: Default is dry-run. No external writes without kill-switch override.
  * No browser automation. No media upload bypass.
+ *
+ * REDLINE: Raw external API responses are logged server-side only.
+ * Error messages returned to callers are neutral descriptors.
  */
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -89,8 +92,6 @@ export class DryRunXWriteAdapter implements IXWriteAdapter {
   }
 }
 
-// ── X API write adapter (skeleton) ────────────────────────────────────────────
-
 // ── X API v2 helpers ──────────────────────────────────────────────────────────
 
 const X_API_BASE = "https://api.x.com/2";
@@ -109,8 +110,16 @@ interface TweetCreateResponse {
 }
 
 /**
+ * Neutral error: log raw details server-side, throw generic message.
+ */
+function neutralError(stage: string, status: number, raw: string): never {
+  console.error(`[aleabit:x-write] ${stage} failed (${status}):`, raw);
+  throw new Error(`${stage} failed (${status}).`);
+}
+
+/**
  * Upload a PNG image to X and return the media_id.
- * Uses chunked upload for images > 5MB.
+ * Uses INIT → APPEND → FINALIZE flow.
  */
 async function uploadMedia(
   bearerToken: string,
@@ -135,8 +144,8 @@ async function uploadMedia(
   });
 
   if (!initRes.ok) {
-    const text = await initRes.text();
-    throw new Error(`X media INIT failed (${initRes.status}): ${text}`);
+    const raw = await initRes.text();
+    neutralError("Media INIT", initRes.status, raw);
   }
 
   const initData = (await initRes.json()) as MediaUploadResponse;
@@ -158,8 +167,8 @@ async function uploadMedia(
   });
 
   if (!appendRes.ok) {
-    const text = await appendRes.text();
-    throw new Error(`X media APPEND failed (${appendRes.status}): ${text}`);
+    const raw = await appendRes.text();
+    neutralError("Media APPEND", appendRes.status, raw);
   }
 
   // Step 3: FINALIZE
@@ -176,27 +185,26 @@ async function uploadMedia(
   });
 
   if (!finalizeRes.ok) {
-    const text = await finalizeRes.text();
-    throw new Error(`X media FINALIZE failed (${finalizeRes.status}): ${text}`);
+    const raw = await finalizeRes.text();
+    neutralError("Media FINALIZE", finalizeRes.status, raw);
   }
 
-  // Step 4: Set alt text (optional)
+  // Step 4: Set alt text (best-effort, don't fail upload)
   if (altText) {
-    const metaRes = await fetch(`${X_UPLOAD_BASE}/media/metadata/create.json`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${bearerToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        media_id: mediaId,
-        alt_text: { text: altText },
-      }),
-    });
-
-    // Alt text is best-effort — don't fail the whole upload
-    if (!metaRes.ok) {
-      // Log but continue
+    try {
+      await fetch(`${X_UPLOAD_BASE}/media/metadata/create.json`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${bearerToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          media_id: mediaId,
+          alt_text: { text: altText },
+        }),
+      });
+    } catch {
+      // Alt text is best-effort
     }
   }
 
@@ -231,8 +239,8 @@ async function createReply(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`X tweet create failed (${res.status}): ${text}`);
+    const raw = await res.text();
+    neutralError("Tweet create", res.status, raw);
   }
 
   const data = (await res.json()) as TweetCreateResponse;
@@ -254,6 +262,9 @@ async function createReply(
  * 2. Upload en PNG → media_id_en
  * 3. Create reply tweet with both media_ids
  * 4. Return external post ID
+ *
+ * REDLINE: Raw API responses logged server-side only.
+ * Returned errors are neutral descriptors.
  */
 export class XApiWriteAdapter implements IXWriteAdapter {
   readonly name = "x-api";
@@ -311,12 +322,14 @@ export class XApiWriteAdapter implements IXWriteAdapter {
         attemptedAt: new Date().toISOString(),
       };
     } catch (err) {
+      // Log raw error server-side, return neutral message
+      console.error("[aleabit:x-write] publish failed:", err);
       return {
         success: false,
         dryRun: false,
         adapter: this.name,
         payloadHash,
-        error: err instanceof Error ? err.message : String(err),
+        error: "Publish failed. See server logs.",
         attemptedAt: new Date().toISOString(),
       };
     }
