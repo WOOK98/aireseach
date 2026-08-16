@@ -8,6 +8,7 @@ import { classifyContent } from "./gates/classify";
 import { resolveEntity } from "./gates/entity";
 import { evidenceGate } from "./gates/evidence";
 import { renderPngBriefCard } from "./png-renderer";
+import { evaluatePublishPolicy } from "./publish-policy";
 import { ReviewQueue } from "./queue";
 import { renderBriefCard, renderDegradedCard } from "./renderer";
 
@@ -200,6 +201,25 @@ async function processThread(
       await queue.setRenderedPng(itemId, "en", pngs.en);
     } catch {
       // PNG generation failure is non-critical.
+    }
+  }
+
+  // 7. Evaluate publish policy (#137)
+  const policyMode = (process.env.ALEABIT_ROLLOUT_MODE ?? "off") as
+    | "off"
+    | "shadow"
+    | "canary"
+    | "auto";
+  const freshItem = await queue.get(itemId);
+  if (freshItem) {
+    const decision = evaluatePublishPolicy({
+      item: freshItem,
+      rolloutMode: policyMode,
+    });
+    // Store policy decision on queue item (if queue supports it)
+    if ("policyDecision" in freshItem) {
+      (freshItem as any).policyDecision = decision;
+      freshItem.updatedAt = new Date().toISOString();
     }
   }
 

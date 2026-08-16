@@ -30,6 +30,7 @@ export interface QueueItem {
   renderedPngEn?: Buffer;
   renderedPngHashZh?: string;
   renderedPngHashEn?: string;
+  policyDecision?: import("./publish-policy").PolicyDecision;
   skipReason?: string;
   failureReason?: string;
   createdAt: string;

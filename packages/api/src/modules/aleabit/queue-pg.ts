@@ -59,6 +59,7 @@ export interface QueueItem {
   renderedArtifactHash?: string;
   renderedPngHashZh?: string;
   renderedPngHashEn?: string;
+  policyDecision?: import("./publish-policy").PolicyDecision;
   skipReason?: string;
   failureReason?: string;
   createdAt: string;
@@ -404,6 +405,9 @@ export class PersistentReviewQueue {
       renderedArtifactHash: row.renderedArtifactHash ?? undefined,
       renderedPngHashZh: row.renderedPngHashZh ?? undefined,
       renderedPngHashEn: row.renderedPngHashEn ?? undefined,
+      policyDecision:
+        (row.policyDecision as import("./publish-policy").PolicyDecision) ??
+        undefined,
       skipReason: row.skipReason ?? undefined,
       failureReason: row.failureReason ?? undefined,
       createdAt: row.createdAt.toISOString(),
