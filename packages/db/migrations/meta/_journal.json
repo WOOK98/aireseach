@@ -127,6 +127,13 @@
       "when": 1786798200000,
       "tag": "0017_aleabit_bilingual_png",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786804800000,
+      "tag": "0018_aleabit_publish_policy",
+      "breakpoints": true
     }
   ]
 }

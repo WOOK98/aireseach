@@ -30,6 +30,7 @@ export interface QueueItem {
   renderedPngEn?: Buffer;
   renderedPngHashZh?: string;
   renderedPngHashEn?: string;
+  policyDecision?: import("./publish-policy").PolicyDecision;
   skipReason?: string;
   failureReason?: string;
   createdAt: string;
@@ -82,6 +83,10 @@ export interface IReviewQueue {
   setEvidenceGate(
     id: string,
     gate: EvidenceGateResult,
+  ): Promise<QueueItem | null> | QueueItem | null;
+  setPolicyDecision(
+    id: string,
+    decision: import("./publish-policy").PolicyDecision,
   ): Promise<QueueItem | null> | QueueItem | null;
   get(id: string): Promise<QueueItem | undefined> | QueueItem | undefined;
   getAll(): Promise<QueueItem[]> | QueueItem[];

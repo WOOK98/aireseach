@@ -8,6 +8,7 @@ import { classifyContent } from "./gates/classify";
 import { resolveEntity } from "./gates/entity";
 import { evidenceGate } from "./gates/evidence";
 import { renderPngBriefCard } from "./png-renderer";
+import { evaluatePublishPolicy } from "./publish-policy";
 import { ReviewQueue } from "./queue";
 import { renderBriefCard, renderDegradedCard } from "./renderer";
 
@@ -204,6 +205,21 @@ async function processThread(
   }
 
   await queue.updateStatus(itemId, "ready_for_review");
+
+  // 7. Evaluate publish policy (#137) — AFTER status is ready_for_review
+  const policyMode = (process.env.ALEABIT_ROLLOUT_MODE ?? "off") as
+    | "off"
+    | "shadow"
+    | "canary"
+    | "auto";
+  const freshItem = await queue.get(itemId);
+  if (freshItem) {
+    const decision = evaluatePublishPolicy({
+      item: freshItem,
+      rolloutMode: policyMode,
+    });
+    await queue.setPolicyDecision(itemId, decision);
+  }
 }
 
 // ── Run all fixtures ─────────────────────────────────────────────────────────

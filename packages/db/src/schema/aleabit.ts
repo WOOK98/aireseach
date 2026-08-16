@@ -88,6 +88,7 @@ export const aleabitQueue = pgTable(
     renderedArtifactHash: text(), // sha256 of renderedHtml for dedup
     renderedPngHashZh: text(), // sha256 of zh-CN PNG for dedup
     renderedPngHashEn: text(), // sha256 of en PNG for dedup
+    policyDecision: jsonb(), // PolicyDecision JSON
 
     // Status
     status: text().notNull().default("detected"),

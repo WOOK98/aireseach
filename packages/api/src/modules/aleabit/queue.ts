@@ -35,6 +35,7 @@ export interface QueueItem {
   renderedPngEn?: Buffer;
   renderedPngHashZh?: string;
   renderedPngHashEn?: string;
+  policyDecision?: import("./publish-policy").PolicyDecision;
   skipReason?: string;
   failureReason?: string;
   createdAt: string;
@@ -122,10 +123,17 @@ export class ReviewQueue {
   ): QueueItem | null {
     const item = this.items.get(id);
     if (!item) return null;
+    // Compute hash synchronously (SHA-256 of png bytes)
+    const hash = require("crypto")
+      .createHash("sha256")
+      .update(png)
+      .digest("hex");
     if (locale === "zh-CN") {
       item.renderedPngZh = png;
+      item.renderedPngHashZh = hash;
     } else {
       item.renderedPngEn = png;
+      item.renderedPngHashEn = hash;
     }
     item.updatedAt = new Date().toISOString();
     return item;
@@ -155,6 +163,17 @@ export class ReviewQueue {
     const item = this.items.get(id);
     if (!item) return null;
     item.evidenceGate = gate;
+    item.updatedAt = new Date().toISOString();
+    return item;
+  }
+
+  setPolicyDecision(
+    id: string,
+    decision: import("./publish-policy").PolicyDecision,
+  ): QueueItem | null {
+    const item = this.items.get(id);
+    if (!item) return null;
+    item.policyDecision = decision;
     item.updatedAt = new Date().toISOString();
     return item;
   }

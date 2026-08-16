@@ -177,6 +177,37 @@ function QueueItemDetail({ item }: { item: QueueItem }) {
         </div>
       )}
 
+      {/* Publish policy decision (#137) */}
+      {item.policyDecision && (
+        <div className="text-xs">
+          <span className="text-muted-foreground">Publish policy: </span>
+          <span
+            className={
+              item.policyDecision.verdict === "allowed"
+                ? "text-emerald-500"
+                : item.policyDecision.verdict === "shadow_only"
+                  ? "text-blue-500"
+                  : "text-red-500"
+            }
+          >
+            {item.policyDecision.verdict.toUpperCase()}
+          </span>
+          <span className="text-muted-foreground ml-2">
+            (mode: {item.policyDecision.rolloutMode}, v
+            {item.policyDecision.policyVersion})
+          </span>
+          {item.policyDecision.blockingReasons.length > 0 && (
+            <div className="mt-1 space-y-0.5">
+              {item.policyDecision.blockingReasons.map((r, i) => (
+                <div key={i} className="text-[11px] text-red-400">
+                  • {r}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Skip/failure reason */}
       {(item.skipReason || item.failureReason) && (
         <div className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/20 dark:text-amber-200">

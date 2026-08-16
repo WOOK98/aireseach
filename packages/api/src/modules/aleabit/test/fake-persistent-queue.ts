@@ -98,12 +98,20 @@ export class FakePersistentQueue implements IReviewQueue {
 
   async setRenderedPng(
     id: string,
-    _locale: "zh-CN" | "en",
-    _png: Buffer,
+    locale: "zh-CN" | "en",
+    png: Buffer,
   ): Promise<QueueItem | null> {
     const item = this.items.get(id);
     if (!item) return null;
-    // Fake queue doesn't store PNG bytes, just record that it was called.
+    const hash = require("crypto")
+      .createHash("sha256")
+      .update(png)
+      .digest("hex");
+    if (locale === "zh-CN") {
+      item.renderedPngHashZh = hash;
+    } else {
+      item.renderedPngHashEn = hash;
+    }
     item.updatedAt = new Date().toISOString();
     return item;
   }
@@ -132,6 +140,17 @@ export class FakePersistentQueue implements IReviewQueue {
     const item = this.items.get(id);
     if (!item) return null;
     item.evidenceGate = gate;
+    item.updatedAt = new Date().toISOString();
+    return item;
+  }
+
+  async setPolicyDecision(
+    id: string,
+    decision: any,
+  ): Promise<QueueItem | null> {
+    const item = this.items.get(id);
+    if (!item) return null;
+    item.policyDecision = decision;
     item.updatedAt = new Date().toISOString();
     return item;
   }

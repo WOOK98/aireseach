@@ -59,6 +59,7 @@ export interface QueueItem {
   renderedArtifactHash?: string;
   renderedPngHashZh?: string;
   renderedPngHashEn?: string;
+  policyDecision?: import("./publish-policy").PolicyDecision;
   skipReason?: string;
   failureReason?: string;
   createdAt: string;
@@ -277,6 +278,36 @@ export class PersistentReviewQueue {
   }
 
   /**
+   * Set publish policy decision.
+   */
+  async setPolicyDecision(
+    id: string,
+    decision: import("./publish-policy").PolicyDecision,
+  ): Promise<QueueItem | null> {
+    const rows = await db
+      .update(aleabitQueue)
+      .set({ policyDecision: decision, updatedAt: new Date() })
+      .where(eq(aleabitQueue.id, id))
+      .returning();
+
+    // Audit trail: record policy evaluation for traceability
+    await this.recordAudit(
+      id,
+      "policy_evaluated",
+      decision.verdict,
+      JSON.stringify({
+        blockingReasons: decision.blockingReasons,
+        rolloutMode: decision.rolloutMode,
+        policyVersion: decision.policyVersion,
+      }),
+      "system",
+      "system",
+    );
+
+    return rows[0] ? this.rowToItem(rows[0]) : null;
+  }
+
+  /**
    * Get single item by id.
    */
   async get(id: string): Promise<QueueItem | undefined> {
@@ -404,6 +435,9 @@ export class PersistentReviewQueue {
       renderedArtifactHash: row.renderedArtifactHash ?? undefined,
       renderedPngHashZh: row.renderedPngHashZh ?? undefined,
       renderedPngHashEn: row.renderedPngHashEn ?? undefined,
+      policyDecision:
+        (row.policyDecision as import("./publish-policy").PolicyDecision) ??
+        undefined,
       skipReason: row.skipReason ?? undefined,
       failureReason: row.failureReason ?? undefined,
       createdAt: row.createdAt.toISOString(),
