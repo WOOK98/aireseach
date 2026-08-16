@@ -120,6 +120,13 @@
       "when": 1785826800000,
       "tag": "0016_aleabit_creator_id",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786798200000,
+      "tag": "0017_aleabit_bilingual_png",
+      "breakpoints": true
     }
   ]
 }

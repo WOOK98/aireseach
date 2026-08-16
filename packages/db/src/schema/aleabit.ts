@@ -86,6 +86,7 @@ export const aleabitQueue = pgTable(
     brief: jsonb(), // FinancialBriefCard JSON
     renderedHtml: text(),
     renderedArtifactHash: text(), // sha256 of renderedHtml for dedup
+    renderedPngHash: text(), // sha256 of bilingual PNG for dedup
 
     // Status
     status: text().notNull().default("detected"),

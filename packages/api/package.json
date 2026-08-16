@@ -15,6 +15,8 @@
     "./report/industry": "./src/modules/report/industry.ts",
     "./report/data-sources": "./src/modules/report/data-sources.ts",
     "./aleabit/renderer": "./src/modules/aleabit/renderer.ts",
+    "./aleabit/bilingual-renderer": "./src/modules/aleabit/bilingual-renderer.ts",
+    "./aleabit/png-renderer": "./src/modules/aleabit/png-renderer.ts",
     "./aleabit/shadow-run": "./src/modules/aleabit/shadow-run.ts",
     "./aleabit/queue": "./src/modules/aleabit/queue.ts",
     "./aleabit/queue-interface": "./src/modules/aleabit/queue-interface.ts",

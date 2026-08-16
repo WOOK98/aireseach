@@ -26,6 +26,9 @@ export interface QueueItem {
   evidenceGate?: EvidenceGateResult;
   brief?: FinancialBriefCard;
   renderedHtml?: string;
+  renderedPngZh?: Buffer;
+  renderedPngEn?: Buffer;
+  renderedPngHash?: string;
   skipReason?: string;
   failureReason?: string;
   createdAt: string;
@@ -61,6 +64,11 @@ export interface IReviewQueue {
   setRenderedHtml(
     id: string,
     html: string,
+  ): Promise<QueueItem | null> | QueueItem | null;
+  setRenderedPng(
+    id: string,
+    locale: "zh-CN" | "en",
+    png: Buffer,
   ): Promise<QueueItem | null> | QueueItem | null;
   setClassification(
     id: string,

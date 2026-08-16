@@ -7,6 +7,7 @@ import { ReplayAdapter } from "./fixtures/replay-adapter";
 import { classifyContent } from "./gates/classify";
 import { resolveEntity } from "./gates/entity";
 import { evidenceGate } from "./gates/evidence";
+import { renderPngBriefCard } from "./png-renderer";
 import { ReviewQueue } from "./queue";
 import { renderBriefCard, renderDegradedCard } from "./renderer";
 
@@ -186,11 +187,20 @@ async function processThread(
     return;
   }
 
-  // 5. Generate brief card
+  // 5. Generate brief card + bilingual PNG
   if (fixtureData?.buildBrief) {
     const brief = fixtureData.buildBrief(rootPost);
     await queue.setBrief(itemId, brief);
     await queue.setRenderedHtml(itemId, renderBriefCard(brief));
+
+    // 6. Generate bilingual PNGs (non-critical; brief usable as HTML if PNG fails)
+    try {
+      const pngs = await renderPngBriefCard(brief);
+      await queue.setRenderedPng(itemId, "zh-CN", pngs.zhCn);
+      await queue.setRenderedPng(itemId, "en", pngs.en);
+    } catch {
+      // PNG generation failure is non-critical.
+    }
   }
 
   await queue.updateStatus(itemId, "ready_for_review");
