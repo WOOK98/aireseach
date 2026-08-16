@@ -31,6 +31,10 @@ export interface QueueItem {
   evidenceGate?: EvidenceGateResult;
   brief?: FinancialBriefCard;
   renderedHtml?: string;
+  renderedPngZh?: Buffer;
+  renderedPngEn?: Buffer;
+  renderedPngHashZh?: string;
+  renderedPngHashEn?: string;
   skipReason?: string;
   failureReason?: string;
   createdAt: string;
@@ -107,6 +111,22 @@ export class ReviewQueue {
     const item = this.items.get(id);
     if (!item) return null;
     item.renderedHtml = html;
+    item.updatedAt = new Date().toISOString();
+    return item;
+  }
+
+  setRenderedPng(
+    id: string,
+    locale: "zh-CN" | "en",
+    png: Buffer,
+  ): QueueItem | null {
+    const item = this.items.get(id);
+    if (!item) return null;
+    if (locale === "zh-CN") {
+      item.renderedPngZh = png;
+    } else {
+      item.renderedPngEn = png;
+    }
     item.updatedAt = new Date().toISOString();
     return item;
   }
