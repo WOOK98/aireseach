@@ -117,7 +117,7 @@ describe("createAdapter", () => {
       publishMode: "auto",
       dryRun: false,
       killSwitch: true,
-      xBearerToken: "***",
+      xWriteBearerToken: "***",
     });
     expect(adapter).toBeNull();
   });
@@ -127,7 +127,7 @@ describe("createAdapter", () => {
       publishMode: "off",
       dryRun: false,
       killSwitch: false,
-      xBearerToken: "***",
+      xWriteBearerToken: "***",
     });
     expect(adapter).toBeNull();
   });

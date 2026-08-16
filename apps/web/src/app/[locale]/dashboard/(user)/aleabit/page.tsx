@@ -9,7 +9,13 @@
  */
 /* oxlint-disable i18next/no-literal-string eslint-plugin-next/no-img-element */
 
+import { CanaryActions } from "./canary-actions";
+
 import type { QueueItem } from "@workspace/api/aleabit/queue-interface";
+
+const CANARY_MODE =
+  (process.env.ALEABIT_PUBLISH_MODE ?? "off") === "canary" ||
+  (process.env.ALEABIT_PUBLISH_MODE ?? "off") === "auto";
 
 // Skip static prerender — DB may not be reachable at build time (Vercel).
 export const dynamic = "force-dynamic";
@@ -279,6 +285,13 @@ function QueueItemDetail({ item }: { item: QueueItem }) {
           </pre>
         </details>
       )}
+
+      {/* Canary approval actions (#141) */}
+      <CanaryActions
+        itemId={item.id}
+        currentStatus={item.status}
+        canaryMode={CANARY_MODE}
+      />
     </div>
   );
 }
@@ -394,8 +407,8 @@ export default async function AleaBitQueuePage() {
 
       {/* Footer */}
       <div className="text-muted-foreground border-t pt-4 text-xs">
-        Read-only view. Trigger ingest via POST /api/aleabit/ingest. No X
-        publish/reply/quote/upload capability.
+        Read-only view. Trigger ingest via POST /api/aleabit/ingest. Approve
+        items for canary publish via POST /api/aleabit/approve.
       </div>
     </div>
   );

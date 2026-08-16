@@ -7,7 +7,9 @@
  */
 
 import {
+  boolean,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -159,3 +161,53 @@ export type InsertAleabitQueue = z.infer<typeof insertAleabitQueueSchema>;
 export type SelectAleabitQueue = z.infer<typeof selectAleabitQueueSchema>;
 export type InsertAleabitAuditLog = z.infer<typeof insertAleabitAuditLogSchema>;
 export type SelectAleabitAuditLog = z.infer<typeof selectAleabitAuditLogSchema>;
+
+// ─── Publish attempts audit (#141) ─────────────────────────────────────────────
+
+/**
+ * Every publish attempt (dry-run or real) is recorded.
+ * Immutable append-only log for audit trail.
+ */
+export const aleabitPublishAttempts = pgTable(
+  "aleabit_publish_attempts",
+  {
+    id: text().primaryKey(),
+    queueItemId: text("queue_item_id").notNull(),
+    creatorId: text("creator_id").notNull(),
+    conversationId: text("conversation_id").notNull(),
+    sourcePostId: text("source_post_id").notNull(),
+    policyVersion: integer("policy_version").notNull(),
+    rolloutMode: text("rollout_mode").notNull(),
+    dryRun: boolean("dry_run").notNull().default(true),
+    adapter: text().notNull(),
+    payloadHash: text("payload_hash").notNull(),
+    imageHashZh: text("image_hash_zh").notNull(),
+    imageHashEn: text("image_hash_en").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    decision: text().notNull(),
+    failureStage: text("failure_stage"),
+    externalPostId: text("external_post_id"),
+    attemptedAt: timestamp("attempted_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("idx_publish_attempts_queue_item").on(table.queueItemId),
+    index("idx_publish_attempts_idempotency").on(table.idempotencyKey),
+    index("idx_publish_attempts_creator").on(table.creatorId),
+  ],
+);
+
+export const insertAleabitPublishAttemptSchema = createInsertSchema(
+  aleabitPublishAttempts,
+);
+export const selectAleabitPublishAttemptSchema = createSelectSchema(
+  aleabitPublishAttempts,
+);
+export type InsertAleabitPublishAttempt = z.infer<
+  typeof insertAleabitPublishAttemptSchema
+>;
+export type SelectAleabitPublishAttempt = z.infer<
+  typeof selectAleabitPublishAttemptSchema
+>;

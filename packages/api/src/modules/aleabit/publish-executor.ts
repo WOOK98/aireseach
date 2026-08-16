@@ -52,7 +52,7 @@ export interface PublishExecutorConfig {
   publishMode: RolloutMode;
   dryRun: boolean;
   killSwitch: boolean;
-  xBearerToken?: string;
+  xWriteBearerToken?: string;
 }
 
 // ── Blocking reason builder ───────────────────────────────────────────────────
@@ -289,7 +289,7 @@ export async function executePublishAttempt(
     publishMode: config.publishMode,
     dryRun: config.dryRun,
     killSwitch: config.killSwitch,
-    xBearerToken: config.xBearerToken,
+    xWriteBearerToken: config.xWriteBearerToken,
   };
 
   const adapter = createAdapter(adapterConfig);
