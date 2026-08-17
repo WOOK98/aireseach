@@ -12,7 +12,7 @@
 import { auth } from "@workspace/auth/server";
 
 const ADMIN_USER_IDS = new Set(
-  (process.env.ALEABIT_ADMIN_USER_IDS ?? "")
+  (process.env.ALEABIT_ADMIN_USER_IDS ?? "") // redline-allow: internal env lookup for admin allowlist
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),

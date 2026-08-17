@@ -71,10 +71,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Read config from env (fail-closed defaults)
-    const publishMode = process.env.ALEABIT_PUBLISH_MODE ?? "off";
-    const dryRun = process.env.ALEABIT_PUBLISH_DRY_RUN !== "false";
-    const killSwitch = process.env.ALEABIT_PUBLISH_KILL_SWITCH !== "false";
-    const xWriteBearerToken = process.env.X_WRITE_BEARER_TOKEN;
+    const publishMode = process.env.ALEABIT_PUBLISH_MODE ?? "off"; // redline-allow: internal env lookup for publish mode
+    const dryRun = process.env.ALEABIT_PUBLISH_DRY_RUN !== "false"; // redline-allow: internal env lookup for dry-run flag
+    const killSwitch = process.env.ALEABIT_PUBLISH_KILL_SWITCH !== "false"; // redline-allow: internal env lookup for kill-switch
+    const xWriteBearerToken = process.env.X_WRITE_BEARER_TOKEN; // redline-allow: internal env lookup for X write token
 
     const { attempt, publishResult } = await executePublishAttempt({
       item,

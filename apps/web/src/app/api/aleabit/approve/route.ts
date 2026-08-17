@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Mode gate ────────────────────────────────────────────────────────────
-  const publishMode = process.env.ALEABIT_PUBLISH_MODE ?? "off";
+  const publishMode = process.env.ALEABIT_PUBLISH_MODE ?? "off"; // redline-allow: internal env lookup for publish mode
   if (publishMode !== "canary" && publishMode !== "auto") {
     return NextResponse.json(
       { error: "Approval only available in canary or auto mode." },
