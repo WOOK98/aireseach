@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import { cn } from "@workspace/ui";
 
 import { fmt, fmtB, fmtMoney } from "./metric-format";
@@ -38,7 +40,7 @@ function MetricCard({ label, value, sub, trend }: MetricCardProps) {
   );
 }
 
-export function MetricsGrid({ m }: { m: FinancialMetrics }) {
+function MetricsGridInner({ m }: { m: FinancialMetrics }) {
   const metrics: MetricCardProps[] = [
     {
       label: "Revenue Growth YoY",
@@ -104,3 +106,6 @@ export function MetricsGrid({ m }: { m: FinancialMetrics }) {
     </div>
   );
 }
+
+// Memoized: metrics grid re-renders on every stream chunk otherwise.
+export const MetricsGrid = memo(MetricsGridInner);

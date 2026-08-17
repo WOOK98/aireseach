@@ -2,6 +2,7 @@
 
 /* oxlint-disable i18next/no-literal-string */
 
+import { memo } from "react";
 import {
   AreaChart,
   Area,
@@ -46,7 +47,7 @@ function CustomTooltip({ active, payload, label, unit = "" }: any) {
 }
 
 // ─── Revenue Bar Chart ────────────────────────────────────────────────────────
-export function RevenueChart({ data, className }: ChartProps) {
+function RevenueChartInner({ data, className }: ChartProps) {
   return (
     <div className={cn("w-full", className)}>
       <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
@@ -93,7 +94,7 @@ interface MarginChartProps {
   className?: string;
 }
 
-export function MarginChart({
+function MarginChartInner({
   grossMargin,
   operatingMargin,
   className,
@@ -164,7 +165,7 @@ export function MarginChart({
 }
 
 // ─── FCF Area Chart ───────────────────────────────────────────────────────────
-export function FCFChart({ data, className }: ChartProps) {
+function FCFChartInner({ data, className }: ChartProps) {
   return (
     <div className={cn("w-full", className)}>
       <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
@@ -217,3 +218,8 @@ export function FCFChart({ data, className }: ChartProps) {
     </div>
   );
 }
+
+// Memoized: chart re-renders are expensive during AI streaming.
+export const RevenueChart = memo(RevenueChartInner);
+export const MarginChart = memo(MarginChartInner);
+export const FCFChart = memo(FCFChartInner);
