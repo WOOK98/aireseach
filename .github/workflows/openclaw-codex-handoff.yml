@@ -26,6 +26,11 @@ on:
       pr_number:
         description: "PR number to check (optional, defaults to all open PRs)"
         required: false
+      dry_run:
+        description: "Dry-run mode: log decisions without applying labels/comments"
+        required: false
+        default: "false"
+        type: boolean
 
 permissions:
   contents: read
@@ -83,8 +88,14 @@ jobs:
       - name: Process PRs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
           set -euo pipefail
+
+          IS_DRY_RUN="$DRY_RUN"
+          if [ "$IS_DRY_RUN" = "true" ]; then
+            echo "🔍 DRY-RUN MODE — no labels or comments will be applied"
+          fi
 
           IFS=',' read -ra PR_LIST <<< "${{ steps.prs.outputs.prs }}"
 
@@ -134,27 +145,40 @@ jobs:
             IS_BLOCKED=$(echo "$PR_JSON" | jq -r '[.labels[].name] | index("codex-blocked") // false')
 
             # Check CI status for this head SHA
-            echo "Checking CI status for SHA $HEAD_SHA..."
-            CHECKS_JSON=$(gh api "repos/${{ github.repository }}/commits/$HEAD_SHA/status" 2>/dev/null || echo '{"state":"failure","statuses":[]}')
-            COMBINED_STATE=$(echo "$CHECKS_JSON" | jq -r '.state')
-
-            # Also check check-runs (GitHub Actions)
+            # PRIMARY GATE: always inspect check-runs (GitHub Actions) for the head SHA.
+            # Commit status (Vercel etc.) is secondary — a green commit status alone
+            # does NOT mean check-runs are passing. Loop Gate and other GH Actions
+            # check-runs must ALL be completed with success or skipped.
+            echo "Checking check-runs for SHA $HEAD_SHA..."
+            CHECK_RUNS=$(gh api "repos/${{ github.repository }}/commits/$HEAD_SHA/check-runs" 2>/dev/null || echo '{"check_runs":[]}')
+            TOTAL=$(echo "$CHECK_RUNS" | jq '.check_runs | length')
             CHECK_RUNS_STATE="success"
-            if [ "$COMBINED_STATE" != "success" ]; then
-              # Check check-runs as fallback
-              CHECK_RUNS=$(gh api "repos/${{ github.repository }}/commits/$HEAD_SHA/check-runs" 2>/dev/null || echo '{"check_runs":[]}')
-              TOTAL=$(echo "$CHECK_RUNS" | jq '.check_runs | length')
-              if [ "$TOTAL" -gt 0 ]; then
-                FAILED=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion != "success" and .conclusion != "skipped" and .conclusion != null)] | length')
-                PENDING=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion == null and .status != "completed")] | length')
-                if [ "$FAILED" -gt 0 ] || [ "$PENDING" -gt 0 ]; then
-                  CHECK_RUNS_STATE="pending_or_failing"
-                fi
+            CHECK_RUNS_DETAIL=""
+
+            if [ "$TOTAL" -gt 0 ]; then
+              NOT_SUCCESS=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion != "success" and .conclusion != "skipped" and .conclusion != null)] | length')
+              PENDING=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion == null and .status != "completed")] | length')
+
+              # Collect failing/pending check names for diagnostics
+              if [ "$NOT_SUCCESS" -gt 0 ] || [ "$PENDING" -gt 0 ]; then
+                CHECK_RUNS_STATE="pending_or_failing"
+                CHECK_RUNS_DETAIL=$(echo "$CHECK_RUNS" | jq -r '[.check_runs[] | select((.conclusion != "success" and .conclusion != "skipped" and .conclusion != null) or (.conclusion == null and .status != "completed")) | "\(.name): \(.conclusion // .status)"] | join(", ")')
               fi
             fi
 
-            if [ "$COMBINED_STATE" != "success" ] && [ "$CHECK_RUNS_STATE" = "pending_or_failing" ]; then
-              echo "PR #$PR_NUM CI not green (status=$COMBINED_STATE, checks=$CHECK_RUNS_STATE), skipping."
+            # Also check commit status for additional signal
+            CHECKS_JSON=$(gh api "repos/${{ github.repository }}/commits/$HEAD_SHA/status" 2>/dev/null || echo '{"state":"failure","statuses":[]}')
+            COMBINED_STATE=$(echo "$CHECKS_JSON" | jq -r '.state')
+
+            # Block handoff if check-runs are not all green
+            if [ "$CHECK_RUNS_STATE" != "success" ]; then
+              echo "PR #$PR_NUM CI not green (check-runs=$CHECK_RUNS_STATE, detail=$CHECK_RUNS_DETAIL). Skipping handoff."
+              continue
+            fi
+
+            # Additional guard: if commit status is pending (not success/failure), also wait
+            if [ "$COMBINED_STATE" = "pending" ]; then
+              echo "PR #$PR_NUM commit status still pending. Skipping handoff."
               continue
             fi
 
@@ -162,15 +186,23 @@ jobs:
 
             # Remove codex-blocked if present
             if [ "$IS_BLOCKED" != "false" ]; then
-              echo "Removing codex-blocked label..."
-              gh pr edit "$PR_NUM" --remove-label "codex-blocked" 2>/dev/null || true
+              if [ "$IS_DRY_RUN" = "true" ]; then
+                echo "[DRY-RUN] Would remove codex-blocked label"
+              else
+                echo "Removing codex-blocked label..."
+                gh pr edit "$PR_NUM" --remove-label "codex-blocked" 2>/dev/null || true
+              fi
             fi
 
             # Add needs-codex-review if not already present
             HAS_REVIEW=$(echo "$PR_JSON" | jq -r '[.labels[].name] | index("needs-codex-review") // false')
             if [ "$HAS_REVIEW" = "false" ]; then
-              echo "Adding needs-codex-review label..."
-              gh pr edit "$PR_NUM" --add-label "needs-codex-review" 2>/dev/null || true
+              if [ "$IS_DRY_RUN" = "true" ]; then
+                echo "[DRY-RUN] Would add needs-codex-review label"
+              else
+                echo "Adding needs-codex-review label..."
+                gh pr edit "$PR_NUM" --add-label "needs-codex-review" 2>/dev/null || true
+              fi
             fi
 
             # Post SHA-deduped handoff comment
@@ -179,17 +211,21 @@ jobs:
             ALREADY_COMMENTED=$(echo "$EXISTING_COMMENTS" | jq -r --arg marker "$HANDOFF_MARKER" '[.[] | select(.body | contains($marker))] | length')
 
             if [ "$ALREADY_COMMENTED" = "0" ]; then
-              echo "Posting handoff comment..."
-              gh pr comment "$PR_NUM" --body "$HANDOFF_MARKER
-          🤖 **OpenClaw → Codex Handoff**
+              if [ "$IS_DRY_RUN" = "true" ]; then
+                echo "[DRY-RUN] Would post handoff comment for SHA $HEAD_SHA"
+              else
+                echo "Posting handoff comment..."
+                gh pr comment "$PR_NUM" --body "$HANDOFF_MARKER
+            🤖 **OpenClaw → Codex Handoff**
 
-          PR \`$HEAD_SHA\` is ready for Codex review.
+            PR \`$HEAD_SHA\` is ready for Codex review.
 
-          - All required checks: ✅ green
-          - \`codex-blocked\` removed
-          - \`needs-codex-review\` added
+            - All required checks: ✅ green
+            - \`codex-blocked\` removed
+            - \`needs-codex-review\` added
 
-          Codex: please re-review this PR."
+            Codex: please re-review this PR."
+              fi
             else
               echo "Handoff comment for SHA $HEAD_SHA already exists, skipping."
             fi
