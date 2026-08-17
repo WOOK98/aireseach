@@ -117,6 +117,19 @@ export interface PublishExecutorInput {
   item: QueueItem;
   config: PublishExecutorConfig;
   checkDuplicate?: (key: string) => Promise<PublishAttempt | null>;
+  reserveKey?: (params: {
+    idempotencyKey: string;
+    queueItemId: string;
+    creatorId: string;
+    conversationId: string;
+    sourcePostId: string;
+    policyVersion: number;
+    rolloutMode: string;
+    adapter: string;
+    payloadHash: string;
+    imageHashZh: string;
+    imageHashEn: string;
+  }) => Promise<boolean>;
   recordAttempt?: (attempt: PublishAttempt) => Promise<void>;
 }
 
@@ -255,6 +268,51 @@ export async function executePublishAttempt(
         idempotencyKey,
         decision: "duplicate",
         externalPostId: existing.externalPostId,
+        attemptedAt: now,
+      };
+      if (recordAttempt) {
+        await recordAttempt(attempt);
+      }
+      return { attempt };
+    }
+  }
+
+  // ── Gate 7b: Reserve idempotency key (non-dry-run only) ──────────────
+  // FIX(#145): pre-write reservation prevents concurrent requests from
+  // both entering the real adapter. If reservation fails (unique violation),
+  // another request already claimed this key.
+  if (!config.dryRun && input.reserveKey) {
+    const adapterName = "pending";
+    const reserved = await input.reserveKey({
+      idempotencyKey,
+      queueItemId: item.id,
+      creatorId: item.creatorId,
+      conversationId: item.conversationId,
+      sourcePostId,
+      policyVersion: policy.policyVersion,
+      rolloutMode: config.publishMode,
+      adapter: adapterName,
+      payloadHash,
+      imageHashZh: item.renderedPngHashZh,
+      imageHashEn: item.renderedPngHashEn,
+    });
+    if (!reserved) {
+      // Another request already reserved this key — treat as duplicate
+      const attempt: PublishAttempt = {
+        id: newId(),
+        queueItemId: item.id,
+        creatorId: item.creatorId,
+        conversationId: item.conversationId,
+        sourcePostId,
+        policyVersion: policy.policyVersion,
+        rolloutMode: config.publishMode,
+        dryRun: config.dryRun,
+        adapter: "reserved",
+        payloadHash,
+        imageHashZh: item.renderedPngHashZh,
+        imageHashEn: item.renderedPngHashEn,
+        idempotencyKey,
+        decision: "duplicate",
         attemptedAt: now,
       };
       if (recordAttempt) {

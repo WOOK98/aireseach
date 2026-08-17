@@ -204,6 +204,11 @@ export const aleabitPublishAttempts = pgTable(
       .where(
         sql`dry_run = false AND decision = 'attempted' AND external_post_id IS NOT NULL`,
       ),
+    // Reservation guard: at most one non-dry-run 'in_progress' row per key.
+    // Prevents concurrent requests from both entering the real adapter.
+    uniqueIndex("idx_publish_attempts_reservation")
+      .on(table.idempotencyKey)
+      .where(sql`dry_run = false AND decision = 'in_progress'`),
   ],
 );
 

@@ -78,6 +78,58 @@ export async function getAttemptsForCreator(
 }
 
 /**
+ * Reserve an idempotency key before calling the real adapter.
+ * Inserts a non-dry-run 'in_progress' row. If another request already
+ * reserved this key, the unique index violation returns null → caller
+ * must treat as duplicate.
+ *
+ * FIX(#145): prevents the race where two concurrent requests both pass
+ * checkIdempotency() and both call the real X adapter.
+ */
+export async function reserveIdempotencyKey(params: {
+  idempotencyKey: string;
+  queueItemId: string;
+  creatorId: string;
+  conversationId: string;
+  sourcePostId: string;
+  policyVersion: number;
+  rolloutMode: string;
+  adapter: string;
+  payloadHash: string;
+  imageHashZh: string;
+  imageHashEn: string;
+}): Promise<boolean> {
+  try {
+    await db.insert(aleabitPublishAttempts).values({
+      id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      queueItemId: params.queueItemId,
+      creatorId: params.creatorId,
+      conversationId: params.conversationId,
+      sourcePostId: params.sourcePostId,
+      policyVersion: params.policyVersion,
+      rolloutMode: params.rolloutMode,
+      dryRun: false,
+      adapter: params.adapter,
+      payloadHash: params.payloadHash,
+      imageHashZh: params.imageHashZh,
+      imageHashEn: params.imageHashEn,
+      idempotencyKey: params.idempotencyKey,
+      decision: "in_progress",
+      failureStage: null,
+      externalPostId: null,
+      attemptedAt: new Date(),
+    });
+    return true; // reservation acquired
+  } catch (err: any) {
+    // Unique violation → another request already reserved this key
+    if (err?.code === "23505") {
+      return false;
+    }
+    throw err; // re-throw unexpected errors
+  }
+}
+
+/**
  * Check if an idempotency key has already been published (non-dry-run success).
  * Returns the existing attempt if found, null otherwise.
  */

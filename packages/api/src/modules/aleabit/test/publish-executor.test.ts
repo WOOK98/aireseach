@@ -651,4 +651,56 @@ describe("executePublishAttempt", () => {
       expect(result.attempt.failureStage).not.toMatch(/stack/i);
     });
   });
+
+  describe("concurrency reservation (#145)", () => {
+    it("second concurrent attempt returns duplicate when reservation fails", async () => {
+      const recordAttempt = vi.fn<(attempt: PublishAttempt) => Promise<void>>();
+
+      // Simulate: checkDuplicate returns null (no existing),
+      // but reserveKey returns false (another request already reserved)
+      const result = await executePublishAttempt({
+        item: makeItem(),
+        config: { ...DEFAULT_CONFIG, publishMode: "auto", dryRun: false },
+        checkDuplicate: async () => null, // no existing successful attempt
+        reserveKey: async () => false, // reservation failed (unique violation)
+        recordAttempt,
+      });
+
+      expect(result.attempt.decision).toBe("duplicate");
+      expect(recordAttempt).toHaveBeenCalledOnce();
+      expect(recordAttempt).toHaveBeenCalledWith(
+        expect.objectContaining({ decision: "duplicate" }),
+      );
+    });
+
+    it("successful reservation proceeds to adapter", async () => {
+      const recordAttempt = vi.fn<(attempt: PublishAttempt) => Promise<void>>();
+
+      const result = await executePublishAttempt({
+        item: makeItem(),
+        config: { ...DEFAULT_CONFIG, publishMode: "auto", dryRun: false },
+        checkDuplicate: async () => null,
+        reserveKey: async () => true, // reservation acquired
+        recordAttempt,
+      });
+
+      // With no real token, adapter creation fails → blocked
+      // But the point is it did NOT return duplicate
+      expect(result.attempt.decision).not.toBe("duplicate");
+      expect(recordAttempt).toHaveBeenCalledOnce();
+    });
+
+    it("reservation is skipped for dry-run", async () => {
+      const reserveKey = vi.fn<() => Promise<boolean>>();
+
+      await executePublishAttempt({
+        item: makeItem(),
+        config: { ...DEFAULT_CONFIG, dryRun: true },
+        reserveKey,
+      });
+
+      // reserveKey should NOT be called for dry-run
+      expect(reserveKey).not.toHaveBeenCalled();
+    });
+  });
 });
