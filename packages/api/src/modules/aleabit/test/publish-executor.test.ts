@@ -122,6 +122,54 @@ describe("DryRunXWriteAdapter", () => {
 
 // ── createAdapter tests ──────────────────────────────────────────────────────
 
+describe("XApiWriteAdapter dual-image enforcement", () => {
+  // XApiWriteAdapter requires a token but we test the guard without making real calls.
+  // We import the class directly and test publishReplyWithMedia with missing media.
+  it("rejects when zh PNG is missing", async () => {
+    const { XApiWriteAdapter } = await import("../x-write-adapter");
+    const adapter = new XApiWriteAdapter("fake-token");
+    const result = await adapter.publishReplyWithMedia({
+      replyToPostId: "p1",
+      text: "test",
+      creatorId: "c1",
+      conversationId: "conv1",
+      mediaPngEn: Buffer.from([0x89, 0x50]),
+      // mediaPngZh missing
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Both zh and en PNG");
+  });
+
+  it("rejects when en PNG is missing", async () => {
+    const { XApiWriteAdapter } = await import("../x-write-adapter");
+    const adapter = new XApiWriteAdapter("fake-token");
+    const result = await adapter.publishReplyWithMedia({
+      replyToPostId: "p1",
+      text: "test",
+      creatorId: "c1",
+      conversationId: "conv1",
+      mediaPngZh: Buffer.from([0x89, 0x50]),
+      // mediaPngEn missing
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Both zh and en PNG");
+  });
+
+  it("rejects when both PNGs are missing", async () => {
+    const { XApiWriteAdapter } = await import("../x-write-adapter");
+    const adapter = new XApiWriteAdapter("fake-token");
+    const result = await adapter.publishReplyWithMedia({
+      replyToPostId: "p1",
+      text: "test",
+      creatorId: "c1",
+      conversationId: "conv1",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Both zh and en PNG");
+    expect(result.error).toContain("text-only");
+  });
+});
+
 describe("createAdapter", () => {
   it("returns null when kill-switch is on", () => {
     const adapter = createAdapter({

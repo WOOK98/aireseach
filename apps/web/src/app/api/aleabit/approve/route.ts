@@ -1,15 +1,16 @@
 /**
- * AleaBit — Canary approval API route (#141, auth fix)
+ * AleaBit — Canary approval API route (#141, auth fix v2)
  *
  * POST /api/aleabit/approve — approve a queue item for publishing (canary mode)
  *
- * Requires: authenticated session + canary/auto mode.
+ * Requires: authenticated session + owner/admin role (via allowlist or org).
  * Actor ID derived from session, not client-supplied.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { isAleaBitAdmin } from "@workspace/api/aleabit/publish-auth";
 import { auth } from "@workspace/auth/server";
 
 // ── Request schema ────────────────────────────────────────────────────────────
@@ -22,10 +23,18 @@ const ApproveRequestSchema = z.object({
 // ── POST /api/aleabit/approve ─────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  // ── Auth gate ─────────────────────────────────────────────────────────────
+  // ── Auth gate: session + owner/admin ─────────────────────────────────────
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  const authorized = await isAleaBitAdmin(request.headers, session.user.id);
+  if (!authorized) {
+    return NextResponse.json(
+      { error: "Forbidden. Owner or admin role required." },
+      { status: 403 },
+    );
   }
 
   // ── Mode gate ────────────────────────────────────────────────────────────

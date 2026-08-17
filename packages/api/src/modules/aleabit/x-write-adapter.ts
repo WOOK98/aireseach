@@ -282,6 +282,20 @@ export class XApiWriteAdapter implements IXWriteAdapter {
   async publishReplyWithMedia(input: PublishPayload): Promise<PublishResult> {
     const payloadHash = await hashPayload(input);
 
+    // REDLINE: Dual image enforcement — refuse to publish without both PNGs.
+    // This prevents accidental text-only replies even if executor is bypassed.
+    if (!input.mediaPngZh || !input.mediaPngEn) {
+      return {
+        success: false,
+        dryRun: false,
+        adapter: this.name,
+        payloadHash,
+        error:
+          "Both zh and en PNG media are required. Refusing text-only reply.",
+        attemptedAt: new Date().toISOString(),
+      };
+    }
+
     try {
       const mediaIds: string[] = [];
 
