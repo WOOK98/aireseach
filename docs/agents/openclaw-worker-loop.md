@@ -20,6 +20,7 @@ OpenClaw 的定时执行循环协议。定义如何领活、修 blocked PR、交
 ```
 
 处理流程：
+
 1. 读 PR review comments，理解 Codex 指出的阻塞点
 2. 在自己的分支上修复（不得 push Codex 分支）
 3. `git push` 后不手动加 label — #143 自动：
@@ -35,6 +36,7 @@ OpenClaw 的定时执行循环协议。定义如何领活、修 blocked PR、交
 ```
 
 领取规则：
+
 - issue 必须由 WOOK98 或 collaborator 创建
 - 加 `in-progress` label
 - 留 comment: `Claimed by openclaw · branch: feat/<issue-number>-<slug>`
@@ -54,12 +56,13 @@ OpenClaw 的定时执行循环协议。定义如何领活、修 blocked PR、交
 
 ```markdown
 **PR #XX（标题）：** ✅/🔴 状态
+
 - 改动摘要
 - CI 状态 + 根因（红的话）
 - 需要对方做的事
 
-| Commit | 改动 | 效果 |
-|--------|------|------|
+| Commit    | 改动             | 效果     |
+| --------- | ---------------- | -------- |
 | `abc1234` | 文件名: 改了什么 | 达成什么 |
 ```
 
