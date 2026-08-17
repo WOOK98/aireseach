@@ -57,8 +57,12 @@ export async function POST(request: NextRequest) {
       await import("@workspace/api/aleabit/queue-pg");
     const { executePublishAttempt } =
       await import("@workspace/api/aleabit/publish-executor");
-    const { recordPublishAttempt, checkIdempotency, reserveIdempotencyKey } =
-      await import("@workspace/api/aleabit/publish-audit");
+    const {
+      recordPublishAttempt,
+      checkIdempotency,
+      reserveIdempotencyKey,
+      finalizeIdempotencyReservation,
+    } = await import("@workspace/api/aleabit/publish-audit");
 
     const queue = new PersistentReviewQueue();
     const item = await queue.get(body.itemId);
@@ -87,6 +91,7 @@ export async function POST(request: NextRequest) {
       recordAttempt: recordPublishAttempt,
       checkDuplicate: checkIdempotency,
       reserveKey: reserveIdempotencyKey,
+      finalizeReservation: finalizeIdempotencyReservation,
     });
 
     return NextResponse.json({

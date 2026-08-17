@@ -79,12 +79,16 @@ export async function getAttemptsForCreator(
 
 /**
  * Reserve an idempotency key before calling the real adapter.
- * Inserts a non-dry-run 'in_progress' row. If another request already
- * reserved this key, the unique index violation returns null → caller
- * must treat as duplicate.
+ * Inserts a non-dry-run 'in_progress' row and returns its row id.
+ * If another request already reserved this key, the unique index
+ * violation returns null → caller must treat as duplicate.
  *
  * FIX(#145): prevents the race where two concurrent requests both pass
  * checkIdempotency() and both call the real X adapter.
+ *
+ * The returned id MUST be passed to finalizeIdempotencyReservation()
+ * after the adapter call completes (success or failure) — otherwise the
+ * reservation row would permanently block retries (#142).
  */
 export async function reserveIdempotencyKey(params: {
   idempotencyKey: string;
@@ -98,10 +102,11 @@ export async function reserveIdempotencyKey(params: {
   payloadHash: string;
   imageHashZh: string;
   imageHashEn: string;
-}): Promise<boolean> {
+}): Promise<string | null> {
+  const reservationId = `res_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   try {
     await db.insert(aleabitPublishAttempts).values({
-      id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      id: reservationId,
       queueItemId: params.queueItemId,
       creatorId: params.creatorId,
       conversationId: params.conversationId,
@@ -119,14 +124,43 @@ export async function reserveIdempotencyKey(params: {
       externalPostId: null,
       attemptedAt: new Date(),
     });
-    return true; // reservation acquired
+    return reservationId; // reservation acquired
   } catch (err: any) {
     // Unique violation → another request already reserved this key
     if (err?.code === "23505") {
-      return false;
+      return null;
     }
     throw err; // re-throw unexpected errors
   }
+}
+
+/**
+ * Finalize a reservation row after the adapter call completes.
+ * Transitions the 'in_progress' row to its terminal state:
+ * - success → decision='attempted' + externalPostId
+ * - failure → decision='error' + neutral failureStage
+ *
+ * FIX(#142): without this, reservation rows permanently block retries
+ * after a transient publish failure (unique index on in_progress rows).
+ */
+export async function finalizeIdempotencyReservation(params: {
+  reservationId: string;
+  decision: "attempted" | "error";
+  adapter: string;
+  failureStage?: string;
+  externalPostId?: string;
+  attemptedAt: string;
+}): Promise<void> {
+  await db
+    .update(aleabitPublishAttempts)
+    .set({
+      decision: params.decision,
+      adapter: params.adapter,
+      failureStage: params.failureStage ?? null,
+      externalPostId: params.externalPostId ?? null,
+      attemptedAt: new Date(params.attemptedAt),
+    })
+    .where(eq(aleabitPublishAttempts.id, params.reservationId));
 }
 
 /**

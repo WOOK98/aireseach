@@ -129,7 +129,15 @@ export interface PublishExecutorInput {
     payloadHash: string;
     imageHashZh: string;
     imageHashEn: string;
-  }) => Promise<boolean>;
+  }) => Promise<string | null>;
+  finalizeReservation?: (params: {
+    reservationId: string;
+    decision: "attempted" | "error";
+    adapter: string;
+    failureStage?: string;
+    externalPostId?: string;
+    attemptedAt: string;
+  }) => Promise<void>;
   recordAttempt?: (attempt: PublishAttempt) => Promise<void>;
 }
 
@@ -277,13 +285,41 @@ export async function executePublishAttempt(
     }
   }
 
+  // ── Create adapter ─────────────────────────────────────────────────────
+  // FIX(#142): adapter creation moved BEFORE reservation — deterministic
+  // config failures (kill-switch, missing creds) must not leave a
+  // reservation row that would block retries.
+  const adapterConfig: AdapterConfig = {
+    publishMode: config.publishMode,
+    dryRun: config.dryRun,
+    killSwitch: config.killSwitch,
+    xWriteBearerToken: config.xWriteBearerToken,
+  };
+
+  const adapter = createAdapter(adapterConfig);
+  if (!adapter) {
+    return blockAndRecord(
+      "Adapter creation failed (missing creds or config).",
+      {
+        policyVersion: policy.policyVersion,
+        sourcePostId,
+        payloadHash,
+        imageHashZh: item.renderedPngHashZh,
+        imageHashEn: item.renderedPngHashEn,
+        idempotencyKey,
+      },
+    );
+  }
+
   // ── Gate 7b: Reserve idempotency key (non-dry-run only) ──────────────
   // FIX(#145): pre-write reservation prevents concurrent requests from
   // both entering the real adapter. If reservation fails (unique violation),
   // another request already claimed this key.
+  // FIX(#142): reservation is finalized after the adapter call (success
+  // or failure) so transient failures can be retried.
+  let reservationId: string | null = null;
   if (!config.dryRun && input.reserveKey) {
-    const adapterName = "pending";
-    const reserved = await input.reserveKey({
+    reservationId = await input.reserveKey({
       idempotencyKey,
       queueItemId: item.id,
       creatorId: item.creatorId,
@@ -291,12 +327,12 @@ export async function executePublishAttempt(
       sourcePostId,
       policyVersion: policy.policyVersion,
       rolloutMode: config.publishMode,
-      adapter: adapterName,
+      adapter: adapter.name,
       payloadHash,
       imageHashZh: item.renderedPngHashZh,
       imageHashEn: item.renderedPngHashEn,
     });
-    if (!reserved) {
+    if (!reservationId) {
       // Another request already reserved this key — treat as duplicate
       const attempt: PublishAttempt = {
         id: newId(),
@@ -322,29 +358,6 @@ export async function executePublishAttempt(
     }
   }
 
-  // ── Create adapter ─────────────────────────────────────────────────────
-  const adapterConfig: AdapterConfig = {
-    publishMode: config.publishMode,
-    dryRun: config.dryRun,
-    killSwitch: config.killSwitch,
-    xWriteBearerToken: config.xWriteBearerToken,
-  };
-
-  const adapter = createAdapter(adapterConfig);
-  if (!adapter) {
-    return blockAndRecord(
-      "Adapter creation failed (missing creds or config).",
-      {
-        policyVersion: policy.policyVersion,
-        sourcePostId,
-        payloadHash,
-        imageHashZh: item.renderedPngHashZh,
-        imageHashEn: item.renderedPngHashEn,
-        idempotencyKey,
-      },
-    );
-  }
-
   // ── Execute publish ────────────────────────────────────────────────────
   let publishResult: PublishResult;
   try {
@@ -363,7 +376,7 @@ export async function executePublishAttempt(
   }
 
   const attempt: PublishAttempt = {
-    id: newId(),
+    id: reservationId ?? newId(),
     queueItemId: item.id,
     creatorId: item.creatorId,
     conversationId: item.conversationId,
@@ -386,7 +399,19 @@ export async function executePublishAttempt(
   };
 
   // ── Record attempt ─────────────────────────────────────────────────────
-  if (recordAttempt) {
+  // FIX(#142): if we hold a reservation, finalize that row in place
+  // (transitions in_progress → attempted/error, freeing the key for
+  // future retries on failure). Otherwise insert a fresh audit row.
+  if (reservationId && input.finalizeReservation) {
+    await input.finalizeReservation({
+      reservationId,
+      decision: attempt.decision as "attempted" | "error",
+      adapter: attempt.adapter,
+      failureStage: attempt.failureStage,
+      externalPostId: attempt.externalPostId,
+      attemptedAt: attempt.attemptedAt,
+    });
+  } else if (recordAttempt) {
     await recordAttempt(attempt);
   }
 

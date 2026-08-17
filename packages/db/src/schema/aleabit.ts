@@ -116,8 +116,8 @@ export const aleabitQueue = pgTable(
       table.editHistoryHash,
     ),
     index("aleabit_queue_status_idx").on(table.status),
-    index("aleabit_queue_conversationId_idx").on(table.conversationId),
-    index("aleabit_queue_createdAt_idx").on(table.createdAt),
+    index("aleabit_queue_conversation_id_idx").on(table.conversationId),
+    index("aleabit_queue_created_at_idx").on(table.createdAt),
   ],
 );
 
@@ -145,9 +145,9 @@ export const aleabitAuditLog = pgTable(
     createdAt: timestamp().notNull().defaultNow(),
   },
   (table) => [
-    index("aleabit_audit_log_itemId_idx").on(table.itemId),
-    index("aleabit_audit_log_createdAt_idx").on(table.createdAt),
-    index("aleabit_audit_log_toStatus_idx").on(table.toStatus),
+    index("aleabit_audit_log_item_id_idx").on(table.itemId),
+    index("aleabit_audit_log_created_at_idx").on(table.createdAt),
+    index("aleabit_audit_log_to_status_idx").on(table.toStatus),
   ],
 );
 
