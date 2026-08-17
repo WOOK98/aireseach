@@ -426,6 +426,89 @@ describe("executePublishAttempt", () => {
       });
       expect(checkDuplicate).not.toHaveBeenCalled();
     });
+
+    it("second identical live attempt returns duplicate without calling the adapter again", async () => {
+      // Mirror production wiring (#141): recordPublishAttempt + checkIdempotency
+      // backed by one shared store — proves the production callback pair
+      // prevents a second real adapter call for an identical item.
+      const store: PublishAttempt[] = [];
+      const recordAttempt = async (a: PublishAttempt) => {
+        store.push(a);
+      };
+      const checkDuplicate = async (key: string) =>
+        store.find(
+          (a) =>
+            a.idempotencyKey === key &&
+            !a.dryRun &&
+            a.decision === "attempted" &&
+            a.externalPostId,
+        ) ?? null;
+
+      // Mock the real X adapter network flow:
+      // INIT → APPEND → FINALIZE (×2 images) → metadata → POST /2/tweets
+      let mediaCounter = 0;
+      const fetchMock = vi.fn<
+        (input: unknown, init?: { body?: unknown }) => Promise<Response>
+      >(async (input, init) => {
+        const url = String(input);
+        if (url.includes("media/upload.json")) {
+          const params = init?.body as URLSearchParams;
+          if (params.get("command") === "INIT") {
+            mediaCounter += 1;
+            return new Response(
+              JSON.stringify({ media_id_string: `media_${mediaCounter}` }),
+              { status: 200 },
+            );
+          }
+          return new Response("{}", { status: 200 }); // APPEND / FINALIZE
+        }
+        if (url.includes("media/metadata/create.json")) {
+          return new Response("{}", { status: 200 });
+        }
+        if (url.endsWith("/tweets")) {
+          return new Response(JSON.stringify({ data: { id: "ext_post_1" } }), {
+            status: 200,
+          });
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      try {
+        const liveConfig = {
+          ...DEFAULT_CONFIG,
+          dryRun: false,
+          xWriteBearerToken: "fake-token",
+        };
+
+        // Attempt #1: live publish succeeds via real adapter
+        const first = await executePublishAttempt({
+          item: makeItem(),
+          config: liveConfig,
+          recordAttempt,
+          checkDuplicate,
+        });
+        expect(first.attempt.decision).toBe("attempted");
+        expect(first.attempt.externalPostId).toBe("ext_post_1");
+        const callsAfterFirst = fetchMock.mock.calls.length;
+        expect(callsAfterFirst).toBeGreaterThan(0);
+
+        // Attempt #2: identical item → duplicate; adapter untouched
+        const second = await executePublishAttempt({
+          item: makeItem(),
+          config: liveConfig,
+          recordAttempt,
+          checkDuplicate,
+        });
+        expect(second.attempt.decision).toBe("duplicate");
+        expect(second.attempt.externalPostId).toBe("ext_post_1");
+        expect(second.publishResult).toBeUndefined();
+        // No new adapter calls — the duplicate gate fired first
+        expect(fetchMock.mock.calls.length).toBe(callsAfterFirst);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
   });
 
   describe("no external writes", () => {

@@ -30,3 +30,12 @@ CREATE INDEX IF NOT EXISTS "idx_publish_attempts_idempotency"
 
 CREATE INDEX IF NOT EXISTS "idx_publish_attempts_creator"
   ON "aleabit_publish_attempts" ("creator_id");
+
+-- DB-level idempotency guard: at most one successful live (non-dry-run)
+-- publish per idempotency key. Dry-run / blocked / duplicate / error rows
+-- are excluded from this partial unique index.
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_publish_attempts_idempotency_live"
+  ON "aleabit_publish_attempts" ("idempotency_key")
+  WHERE "dry_run" = false
+    AND "decision" = 'attempted'
+    AND "external_post_id" IS NOT NULL;

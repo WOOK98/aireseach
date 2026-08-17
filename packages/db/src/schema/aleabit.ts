@@ -6,6 +6,7 @@
  * transition with actor/timestamp/reason.
  */
 
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -196,6 +197,13 @@ export const aleabitPublishAttempts = pgTable(
     index("idx_publish_attempts_queue_item").on(table.queueItemId),
     index("idx_publish_attempts_idempotency").on(table.idempotencyKey),
     index("idx_publish_attempts_creator").on(table.creatorId),
+    // DB-level guard: one successful live publish per idempotency key.
+    // Partial unique index — dry-run/blocked/duplicate rows are excluded.
+    uniqueIndex("idx_publish_attempts_idempotency_live")
+      .on(table.idempotencyKey)
+      .where(
+        sql`dry_run = false AND decision = 'attempted' AND external_post_id IS NOT NULL`,
+      ),
   ],
 );
 
