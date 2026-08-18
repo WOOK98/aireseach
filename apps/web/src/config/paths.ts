@@ -50,6 +50,8 @@ const pathsConfig = {
       index: DASHBOARD_PREFIX,
       watchlist: `${DASHBOARD_PREFIX}/watchlist`,
       research: `${DASHBOARD_PREFIX}/research`,
+      notes: `${DASHBOARD_PREFIX}/notes`,
+      note: (id: string) => `${DASHBOARD_PREFIX}/notes/${id}`,
       visuals: "/visuals",
       settings: {
         index: `${DASHBOARD_PREFIX}/settings`,
