@@ -1,0 +1,204 @@
+# OpenClaw → Codex PR handoff bus (#143)
+#
+# When an OpenClaw PR is codex-blocked, CI goes green after a fix push,
+# this workflow automatically:
+#   1. Removes `codex-blocked`
+#   2. Adds `needs-codex-review`
+#   3. Posts a SHA-deduped handoff comment
+#
+# Codex heartbeat polls `needs-codex-review` — no manual forwarding needed.
+#
+# REDLINES:
+# - No auto-merge
+# - No push to any agent branch
+# - No secret/log leakage in comments
+# - No label change when checks are pending/failing
+# - One handoff comment per head SHA max
+# - Minimal permissions: pull-requests write, issues write, contents read
+
+name: "OpenClaw → Codex Handoff"
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to check (optional, defaults to all open PRs)"
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+# Only one handoff per PR at a time
+concurrency:
+  group: openclaw-codex-handoff-${{ github.event.pull_request.number || github.event.inputs.pr_number || 'all' }}
+  cancel-in-progress: true
+
+jobs:
+  handoff:
+    name: "Check & handoff"
+    runs-on: ubuntu-latest
+    # Skip for Codex-authored PRs (they have their own flow)
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.pull_request.state == 'open' &&
+        github.event.pull_request.draft == false &&
+        (
+          contains(github.event.pull_request.labels.*.name, 'agent:openclaw') ||
+          startsWith(github.event.pull_request.title, '[openclaw]')
+        )
+      )
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Determine PRs to process
+        id: prs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PR_NUM="${{ github.event.inputs.pr_number }}"
+            if [ -n "$PR_NUM" ]; then
+              echo "prs=$PR_NUM" >> "$GITHUB_OUTPUT"
+            else
+              # All open PRs with agent:openclaw label or [openclaw] title
+              PRS=$(gh pr list --state open --json number,title,labels \
+                --jq '[.[] | select(
+                  ([.labels[].name] | index("agent:openclaw")) or
+                  (.title | startswith("[openclaw]"))
+                )] | .[].number' | tr '\n' ',' | sed 's/,$//')
+              echo "prs=$PRS" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "prs=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Process PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          IFS=',' read -ra PR_LIST <<< "${{ steps.prs.outputs.prs }}"
+
+          for PR_NUM in "${PR_LIST[@]}"; do
+            [ -z "$PR_NUM" ] && continue
+            echo "=== Processing PR #$PR_NUM ==="
+
+            # Get PR state
+            PR_JSON=$(gh pr view "$PR_NUM" --json state,draft,headRefOid,labels,title 2>/dev/null || echo "")
+            [ -z "$PR_JSON" ] && { echo "PR #$PR_NUM not found, skipping."; continue; }
+
+            STATE=$(echo "$PR_JSON" | jq -r '.state')
+            DRAFT=$(echo "$PR_JSON" | jq -r '.draft')
+            HEAD_SHA=$(echo "$PR_JSON" | jq -r '.headRefOid')
+
+            if [ "$STATE" != "OPEN" ] || [ "$DRAFT" = "true" ]; then
+              echo "PR #$PR_NUM is not open or is draft, skipping."
+              continue
+            fi
+
+            # Check if it's an OpenClaw PR
+            IS_OPENCLAW=$(echo "$PR_JSON" | jq -r '
+              [.labels[].name] | if index("agent:openclaw") then "true"
+              elif (. as $root | $root.title | startswith("[openclaw]")) then "true"
+              else "false" end
+            ' 2>/dev/null || echo "false")
+
+            # Re-check from the PR JSON directly since jq above may not work with title
+            TITLE=$(echo "$PR_JSON" | jq -r '.title')
+            HAS_LABEL=$(echo "$PR_JSON" | jq -r '[.labels[].name] | index("agent:openclaw") // false')
+
+            if [ "$HAS_LABEL" = "false" ] && [[ "$TITLE" != "[openclaw]"* ]]; then
+              echo "PR #$PR_NUM is not an OpenClaw PR, skipping."
+              continue
+            fi
+
+            # Skip if already codex-approved or codex-reviewing
+            ALREADY_APPROVED=$(echo "$PR_JSON" | jq -r '[.labels[].name] | index("codex-approved") // false')
+            ALREADY_REVIEWING=$(echo "$PR_JSON" | jq -r '[.labels[].name] | index("codex-reviewing") // false')
+
+            if [ "$ALREADY_APPROVED" != "false" ] || [ "$ALREADY_REVIEWING" != "false" ]; then
+              echo "PR #$PR_NUM already approved/reviewing, skipping."
+              continue
+            fi
+
+            # Check if codex-blocked is present
+            IS_BLOCKED=$(echo "$PR_JSON" | jq -r '[.labels[].name] | index("codex-blocked") // false')
+
+            # Check CI status for this head SHA
+            # FIX(#145): Always inspect check-runs, not just as fallback.
+            # Vercel/status contexts can be green while Loop Gate check-runs
+            # are still pending or failing.
+            echo "Checking CI status for SHA $HEAD_SHA..."
+            CHECKS_JSON=$(gh api "repos/${{ github.repository }}/commits/$HEAD_SHA/status" 2>/dev/null || echo '{"state":"failure","statuses":[]}')
+            COMBINED_STATE=$(echo "$CHECKS_JSON" | jq -r '.state')
+
+            # Always check check-runs (GitHub Actions) — never skip this
+            # FIX(#145): use --paginate; default to "no_checks" when API returns
+            # zero results so we never treat an unverifiable commit as green.
+            CHECK_RUNS=$(gh api "repos/${{ github.repository }}/commits/$HEAD_SHA/check-runs" --paginate 2>/dev/null || echo '{"check_runs":[]}')
+            TOTAL=$(echo "$CHECK_RUNS" | jq '.check_runs | length')
+            CHECK_RUNS_STATE="no_checks"
+            if [ "$TOTAL" -gt 0 ]; then
+              FAILED=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion != "success" and .conclusion != "skipped" and .conclusion != null)] | length')
+              PENDING=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion == null and .status != "completed")] | length')
+              if [ "$FAILED" -gt 0 ] || [ "$PENDING" -gt 0 ]; then
+                CHECK_RUNS_STATE="pending_or_failing"
+              else
+                CHECK_RUNS_STATE="success"
+              fi
+            fi
+
+            # Block handoff if combined status is not success OR any check-run is not green
+            # "no_checks" is treated as not green — can't confirm CI passed.
+            if [ "$COMBINED_STATE" != "success" ] || [ "$CHECK_RUNS_STATE" != "success" ]; then
+              echo "PR #$PR_NUM CI not green (status=$COMBINED_STATE, checks=$CHECK_RUNS_STATE), skipping."
+              continue
+            fi
+
+            echo "PR #$PR_NUM CI is green. Processing handoff..."
+
+            # Remove codex-blocked if present
+            if [ "$IS_BLOCKED" != "false" ]; then
+              echo "Removing codex-blocked label..."
+              gh pr edit "$PR_NUM" --remove-label "codex-blocked" 2>/dev/null || true
+            fi
+
+            # Add needs-codex-review if not already present
+            HAS_REVIEW=$(echo "$PR_JSON" | jq -r '[.labels[].name] | index("needs-codex-review") // false')
+            if [ "$HAS_REVIEW" = "false" ]; then
+              echo "Adding needs-codex-review label..."
+              gh pr edit "$PR_NUM" --add-label "needs-codex-review" 2>/dev/null || true
+            fi
+
+            # Post SHA-deduped handoff comment
+            HANDOFF_MARKER="<!-- openclaw-codex-handoff:$HEAD_SHA -->"
+            EXISTING_COMMENTS=$(gh api "repos/${{ github.repository }}/issues/$PR_NUM/comments" --paginate 2>/dev/null || echo "[]")
+            ALREADY_COMMENTED=$(echo "$EXISTING_COMMENTS" | jq -r --arg marker "$HANDOFF_MARKER" '[.[] | select(.body | contains($marker))] | length')
+
+            if [ "$ALREADY_COMMENTED" = "0" ]; then
+              echo "Posting handoff comment..."
+              gh pr comment "$PR_NUM" --body "$HANDOFF_MARKER
+          🤖 **OpenClaw → Codex Handoff**
+
+          PR \`$HEAD_SHA\` is ready for Codex review.
+
+          - All required checks: ✅ green
+          - \`codex-blocked\` removed
+          - \`needs-codex-review\` added
+
+          Codex: please re-review this PR."
+            else
+              echo "Handoff comment for SHA $HEAD_SHA already exists, skipping."
+            fi
+
+            echo "=== PR #$PR_NUM handoff complete ==="
+          done
