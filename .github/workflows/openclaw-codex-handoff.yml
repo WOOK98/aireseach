@@ -142,19 +142,24 @@ jobs:
             COMBINED_STATE=$(echo "$CHECKS_JSON" | jq -r '.state')
 
             # Always check check-runs (GitHub Actions) — never skip this
-            CHECK_RUNS=$(gh api "repos/${{ github.repository }}/commits/$HEAD_SHA/check-runs" 2>/dev/null || echo '{"check_runs":[]}')
+            # FIX(#145): use --paginate; default to "no_checks" when API returns
+            # zero results so we never treat an unverifiable commit as green.
+            CHECK_RUNS=$(gh api "repos/${{ github.repository }}/commits/$HEAD_SHA/check-runs" --paginate 2>/dev/null || echo '{"check_runs":[]}')
             TOTAL=$(echo "$CHECK_RUNS" | jq '.check_runs | length')
-            CHECK_RUNS_STATE="success"
+            CHECK_RUNS_STATE="no_checks"
             if [ "$TOTAL" -gt 0 ]; then
               FAILED=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion != "success" and .conclusion != "skipped" and .conclusion != null)] | length')
               PENDING=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion == null and .status != "completed")] | length')
               if [ "$FAILED" -gt 0 ] || [ "$PENDING" -gt 0 ]; then
                 CHECK_RUNS_STATE="pending_or_failing"
+              else
+                CHECK_RUNS_STATE="success"
               fi
             fi
 
             # Block handoff if combined status is not success OR any check-run is not green
-            if [ "$COMBINED_STATE" != "success" ] || [ "$CHECK_RUNS_STATE" = "pending_or_failing" ]; then
+            # "no_checks" is treated as not green — can't confirm CI passed.
+            if [ "$COMBINED_STATE" != "success" ] || [ "$CHECK_RUNS_STATE" != "success" ]; then
               echo "PR #$PR_NUM CI not green (status=$COMBINED_STATE, checks=$CHECK_RUNS_STATE), skipping."
               continue
             fi

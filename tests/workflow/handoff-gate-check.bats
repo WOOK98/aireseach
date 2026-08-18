@@ -13,7 +13,7 @@ check_ci_gate() {
   local combined_state="$1"
   local check_runs_json="$2"
 
-  local check_runs_state="success"
+  local check_runs_state="no_checks"
   local total failed pending
   total=$(echo "$check_runs_json" | jq '.check_runs | length')
   if [ "$total" -gt 0 ]; then
@@ -21,10 +21,13 @@ check_ci_gate() {
     pending=$(echo "$check_runs_json" | jq '[.check_runs[] | select(.conclusion == null and .status != "completed")] | length')
     if [ "$failed" -gt 0 ] || [ "$pending" -gt 0 ]; then
       check_runs_state="pending_or_failing"
+    else
+      check_runs_state="success"
     fi
   fi
 
-  if [ "$combined_state" != "success" ] || [ "$check_runs_state" = "pending_or_failing" ]; then
+  # FIX(#145): "no_checks" is treated as not green — can't confirm CI passed.
+  if [ "$combined_state" != "success" ] || [ "$check_runs_state" != "success" ]; then
     echo "BLOCKED"
     return 1
   fi
@@ -71,10 +74,11 @@ check_ci_gate() {
   [ "$output" = "PASS" ]
 }
 
-@test "PASSES: commit status green + no check-runs" {
+@test "BLOCKS: commit status green + no check-runs" {
+  # FIX(#145): zero check-runs = can't verify CI → block handoff
   run check_ci_gate "success" '{"check_runs":[]}'
-  [ "$status" -eq 0 ]
-  [ "$output" = "PASS" ]
+  [ "$status" -eq 1 ]
+  [ "$output" = "BLOCKED" ]
 }
 
 @test "BLOCKS: commit status pending even if check-runs green" {
