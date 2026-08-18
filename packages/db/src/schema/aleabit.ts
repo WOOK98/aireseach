@@ -6,8 +6,11 @@
  * transition with actor/timestamp/reason.
  */
 
+import { sql } from "drizzle-orm";
 import {
+  boolean,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -113,8 +116,8 @@ export const aleabitQueue = pgTable(
       table.editHistoryHash,
     ),
     index("aleabit_queue_status_idx").on(table.status),
-    index("aleabit_queue_conversationId_idx").on(table.conversationId),
-    index("aleabit_queue_createdAt_idx").on(table.createdAt),
+    index("aleabit_queue_conversation_id_idx").on(table.conversationId),
+    index("aleabit_queue_created_at_idx").on(table.createdAt),
   ],
 );
 
@@ -142,9 +145,9 @@ export const aleabitAuditLog = pgTable(
     createdAt: timestamp().notNull().defaultNow(),
   },
   (table) => [
-    index("aleabit_audit_log_itemId_idx").on(table.itemId),
-    index("aleabit_audit_log_createdAt_idx").on(table.createdAt),
-    index("aleabit_audit_log_toStatus_idx").on(table.toStatus),
+    index("aleabit_audit_log_item_id_idx").on(table.itemId),
+    index("aleabit_audit_log_created_at_idx").on(table.createdAt),
+    index("aleabit_audit_log_to_status_idx").on(table.toStatus),
   ],
 );
 
@@ -159,3 +162,65 @@ export type InsertAleabitQueue = z.infer<typeof insertAleabitQueueSchema>;
 export type SelectAleabitQueue = z.infer<typeof selectAleabitQueueSchema>;
 export type InsertAleabitAuditLog = z.infer<typeof insertAleabitAuditLogSchema>;
 export type SelectAleabitAuditLog = z.infer<typeof selectAleabitAuditLogSchema>;
+
+// ─── Publish attempts audit (#141) ─────────────────────────────────────────────
+
+/**
+ * Every publish attempt (dry-run or real) is recorded.
+ * Immutable append-only log for audit trail.
+ */
+export const aleabitPublishAttempts = pgTable(
+  "aleabit_publish_attempts",
+  {
+    id: text().primaryKey(),
+    queueItemId: text("queue_item_id").notNull(),
+    creatorId: text("creator_id").notNull(),
+    conversationId: text("conversation_id").notNull(),
+    sourcePostId: text("source_post_id").notNull(),
+    policyVersion: integer("policy_version").notNull(),
+    rolloutMode: text("rollout_mode").notNull(),
+    dryRun: boolean("dry_run").notNull().default(true),
+    adapter: text().notNull(),
+    payloadHash: text("payload_hash").notNull(),
+    imageHashZh: text("image_hash_zh").notNull(),
+    imageHashEn: text("image_hash_en").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    decision: text().notNull(),
+    failureStage: text("failure_stage"),
+    externalPostId: text("external_post_id"),
+    attemptedAt: timestamp("attempted_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("idx_publish_attempts_queue_item").on(table.queueItemId),
+    index("idx_publish_attempts_idempotency").on(table.idempotencyKey),
+    index("idx_publish_attempts_creator").on(table.creatorId),
+    // DB-level guard: one successful live publish per idempotency key.
+    // Partial unique index — dry-run/blocked/duplicate rows are excluded.
+    uniqueIndex("idx_publish_attempts_idempotency_live")
+      .on(table.idempotencyKey)
+      .where(
+        sql`dry_run = false AND decision = 'attempted' AND external_post_id IS NOT NULL`,
+      ),
+    // Reservation guard: at most one non-dry-run 'in_progress' row per key.
+    // Prevents concurrent requests from both entering the real adapter.
+    uniqueIndex("idx_publish_attempts_reservation")
+      .on(table.idempotencyKey)
+      .where(sql`dry_run = false AND decision = 'in_progress'`),
+  ],
+);
+
+export const insertAleabitPublishAttemptSchema = createInsertSchema(
+  aleabitPublishAttempts,
+);
+export const selectAleabitPublishAttemptSchema = createSelectSchema(
+  aleabitPublishAttempts,
+);
+export type InsertAleabitPublishAttempt = z.infer<
+  typeof insertAleabitPublishAttemptSchema
+>;
+export type SelectAleabitPublishAttempt = z.infer<
+  typeof selectAleabitPublishAttemptSchema
+>;

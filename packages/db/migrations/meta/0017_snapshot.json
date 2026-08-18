@@ -1,6 +1,6 @@
 {
   "id": "58cb5c7d-a380-4149-937d-90d0e74eb32a",
-  "prevId": "533ec296-b1b3-42ce-9dfd-da06517201d8",
+  "prevId": "8000826d-7a50-475b-aa97-313100ff2be4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1987,59 +1987,93 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'aleabitoreddit'",
-          "autoincrement": false
+          "default": "'aleabitoreddit'"
         },
         "rendered_png_hash_zh": {
           "name": "rendered_png_hash_zh",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "default": null,
-          "autoincrement": false
+          "notNull": false
         },
         "rendered_png_hash_en": {
           "name": "rendered_png_hash_en",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "default": null,
-          "autoincrement": false
+          "notNull": false
         }
       },
       "indexes": {
         "aleabit_queue_idempotency_idx": {
           "name": "aleabit_queue_idempotency_idx",
-          "columns": {
-            "creator_id": {
-              "name": "creator_id",
-              "isExpression": false
+          "columns": [
+            {
+              "expression": "creator_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
             },
-            "conversation_id": {
-              "name": "conversation_id",
-              "isExpression": false
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
             },
-            "edit_history_hash": {
-              "name": "edit_history_hash",
-              "isExpression": false
+            {
+              "expression": "edit_history_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
             }
-          },
-          "isUnique": true
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "aleabit_queue_status_idx": {
           "name": "aleabit_queue_status_idx",
-          "columns": ["status"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "aleabit_queue_conversation_id_idx": {
           "name": "aleabit_queue_conversation_id_idx",
-          "columns": ["conversation_id"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "aleabit_queue_created_at_idx": {
           "name": "aleabit_queue_created_at_idx",
-          "columns": ["created_at"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -2104,18 +2138,48 @@
       "indexes": {
         "aleabit_audit_log_item_id_idx": {
           "name": "aleabit_audit_log_item_id_idx",
-          "columns": ["item_id"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "aleabit_audit_log_created_at_idx": {
           "name": "aleabit_audit_log_created_at_idx",
-          "columns": ["created_at"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "aleabit_audit_log_to_status_idx": {
           "name": "aleabit_audit_log_to_status_idx",
-          "columns": ["to_status"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "to_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {},

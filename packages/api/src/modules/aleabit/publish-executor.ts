@@ -1,17 +1,23 @@
 /**
- * AleaBit — Publish executor (#139)
+ * AleaBit — Publish executor (#139, #141 fix)
  *
  * Orchestrates the publish attempt pipeline:
- * 1. Check policy decision verdict === "allowed"
- * 2. Check bilingual PNG artifact hashes exist
- * 3. Check canary requires human approve
- * 4. Generate idempotency key
- * 5. Check for duplicate (non-dry-run only)
- * 6. Call adapter (dry-run or real)
- * 7. Record publish attempt
+ * 1. Check kill switch
+ * 2. Check publish mode
+ * 3. Check policy decision verdict === "allowed"
+ * 4. Check bilingual PNG artifact BYTES exist (not just hash)
+ * 5. Check canary requires human approve
+ * 6. Generate idempotency key
+ * 7. Check for duplicate (non-dry-run only)
+ * 8. Call adapter (dry-run or real)
+ * 9. Record publish attempt — ALL paths, no exceptions
  *
  * SAFETY: Default is off + dry-run + kill-switch.
  * No external writes without all gates passing.
+ *
+ * REDLINE: Every code path records to audit table via recordAttempt().
+ * Raw external error details never surface in attempt.failureStage —
+ * only neutral stage descriptors go there.
  */
 
 import { RolloutMode } from "./publish-policy";
@@ -52,14 +58,18 @@ export interface PublishExecutorConfig {
   publishMode: RolloutMode;
   dryRun: boolean;
   killSwitch: boolean;
-  xBearerToken?: string;
+  xWriteBearerToken?: string;
 }
 
-// ── Blocking reason builder ───────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-function block(reason: string): PublishAttempt {
+function newId(): string {
+  return `pa_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function emptyAttempt(): PublishAttempt {
   return {
-    id: `pa_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    id: newId(),
     queueItemId: "",
     creatorId: "",
     conversationId: "",
@@ -73,7 +83,7 @@ function block(reason: string): PublishAttempt {
     imageHashEn: "",
     idempotencyKey: "",
     decision: "blocked",
-    failureStage: reason,
+    failureStage: "",
     attemptedAt: new Date().toISOString(),
   };
 }
@@ -97,7 +107,6 @@ function buildPublishIdempotencyKey(params: {
     params.enHash,
   ].join("|");
 
-  // Sync hash using crypto
   const crypto = require("crypto");
   return crypto.createHash("sha256").update(raw).digest("hex");
 }
@@ -107,14 +116,28 @@ function buildPublishIdempotencyKey(params: {
 export interface PublishExecutorInput {
   item: QueueItem;
   config: PublishExecutorConfig;
-  /**
-   * Check if this idempotency key has already been published (non-dry-run).
-   * Returns existing attempt if found, null if not.
-   */
   checkDuplicate?: (key: string) => Promise<PublishAttempt | null>;
-  /**
-   * Record the publish attempt.
-   */
+  reserveKey?: (params: {
+    idempotencyKey: string;
+    queueItemId: string;
+    creatorId: string;
+    conversationId: string;
+    sourcePostId: string;
+    policyVersion: number;
+    rolloutMode: string;
+    adapter: string;
+    payloadHash: string;
+    imageHashZh: string;
+    imageHashEn: string;
+  }) => Promise<string | null>;
+  finalizeReservation?: (params: {
+    reservationId: string;
+    decision: "attempted" | "error";
+    adapter: string;
+    failureStage?: string;
+    externalPostId?: string;
+    attemptedAt: string;
+  }) => Promise<void>;
   recordAttempt?: (attempt: PublishAttempt) => Promise<void>;
 }
 
@@ -126,112 +149,87 @@ export interface PublishExecutorResult {
 /**
  * Execute a publish attempt for a queue item.
  *
- * Checks all gates in order, short-circuits on first failure.
- * Returns a PublishAttempt record for audit.
+ * ALL code paths record to audit via recordAttempt().
+ * Raw external error details are logged server-side only;
+ * attempt.failureStage gets a neutral descriptor.
  */
 export async function executePublishAttempt(
   input: PublishExecutorInput,
 ): Promise<PublishExecutorResult> {
-  const { item, config } = input;
+  const { item, config, recordAttempt } = input;
+  const now = new Date().toISOString();
 
-  // ── Gate 1: Kill switch ────────────────────────────────────────────────
-  if (config.killSwitch) {
-    const attempt = {
-      ...block("Kill switch is active."),
+  // Helper: build a blocked attempt with item context, record it, return it.
+  const blockAndRecord = async (
+    reason: string,
+    partial: Partial<PublishAttempt> = {},
+  ): Promise<PublishExecutorResult> => {
+    const attempt: PublishAttempt = {
+      ...emptyAttempt(),
       queueItemId: item.id,
       creatorId: item.creatorId,
       conversationId: item.conversationId,
       rolloutMode: config.publishMode,
+      decision: "blocked",
+      failureStage: reason,
+      attemptedAt: now,
+      ...partial,
     };
+    if (recordAttempt) {
+      await recordAttempt(attempt);
+    }
     return { attempt };
+  };
+
+  // ── Gate 1: Kill switch ────────────────────────────────────────────────
+  if (config.killSwitch) {
+    return blockAndRecord("Kill switch is active.");
   }
 
   // ── Gate 2: Mode off ───────────────────────────────────────────────────
   if (config.publishMode === "off") {
-    const attempt = {
-      ...block("Publish mode is 'off'."),
-      queueItemId: item.id,
-      creatorId: item.creatorId,
-      conversationId: item.conversationId,
-      rolloutMode: config.publishMode,
-    };
-    return { attempt };
+    return blockAndRecord("Publish mode is 'off'.");
   }
 
   // ── Gate 3: Policy decision ────────────────────────────────────────────
   const policy = item.policyDecision;
   if (!policy) {
-    const attempt = {
-      ...block("No policy decision on item."),
-      queueItemId: item.id,
-      creatorId: item.creatorId,
-      conversationId: item.conversationId,
-      rolloutMode: config.publishMode,
-    };
-    return { attempt };
+    return blockAndRecord("No policy decision on item.");
   }
 
   if (policy.verdict !== "allowed") {
-    const attempt = {
-      ...block(`Policy verdict is '${policy.verdict}', not 'allowed'.`),
-      queueItemId: item.id,
-      creatorId: item.creatorId,
-      conversationId: item.conversationId,
-      policyVersion: policy.policyVersion,
-      rolloutMode: config.publishMode,
-    };
-    return { attempt };
+    return blockAndRecord(
+      `Policy verdict is '${policy.verdict}', not 'allowed'.`,
+      { policyVersion: policy.policyVersion },
+    );
   }
 
-  // ── Gate 4: Bilingual PNG artifacts ────────────────────────────────────
-  if (!item.renderedPngHashZh) {
-    const attempt = {
-      ...block("zh-CN PNG artifact hash missing."),
-      queueItemId: item.id,
-      creatorId: item.creatorId,
-      conversationId: item.conversationId,
+  // ── Gate 4: Bilingual PNG artifacts (bytes, not just hash) ─────────────
+  if (!item.renderedPngHashZh || !item.renderedPngZh) {
+    return blockAndRecord("zh-CN PNG artifact missing (hash or bytes).", {
       policyVersion: policy.policyVersion,
-      rolloutMode: config.publishMode,
-    };
-    return { attempt };
+    });
   }
 
-  if (!item.renderedPngHashEn) {
-    const attempt = {
-      ...block("en PNG artifact hash missing."),
-      queueItemId: item.id,
-      creatorId: item.creatorId,
-      conversationId: item.conversationId,
+  if (!item.renderedPngHashEn || !item.renderedPngEn) {
+    return blockAndRecord("en PNG artifact missing (hash or bytes).", {
       policyVersion: policy.policyVersion,
-      rolloutMode: config.publishMode,
-    };
-    return { attempt };
+    });
   }
 
   // ── Gate 5: Brief must exist ───────────────────────────────────────────
   if (!item.brief) {
-    const attempt = {
-      ...block("Brief card missing."),
-      queueItemId: item.id,
-      creatorId: item.creatorId,
-      conversationId: item.conversationId,
+    return blockAndRecord("Brief card missing.", {
       policyVersion: policy.policyVersion,
-      rolloutMode: config.publishMode,
-    };
-    return { attempt };
+    });
   }
 
   // ── Gate 6: Canary requires human approve ──────────────────────────────
   if (config.publishMode === "canary" && item.status !== "approved") {
-    const attempt = {
-      ...block("Canary mode requires human approval (status !== 'approved')."),
-      queueItemId: item.id,
-      creatorId: item.creatorId,
-      conversationId: item.conversationId,
-      policyVersion: policy.policyVersion,
-      rolloutMode: config.publishMode,
-    };
-    return { attempt };
+    return blockAndRecord(
+      "Canary mode requires human approval (status !== 'approved').",
+      { policyVersion: policy.policyVersion },
+    );
   }
 
   // ── Build payload ──────────────────────────────────────────────────────
@@ -263,7 +261,7 @@ export async function executePublishAttempt(
     const existing = await input.checkDuplicate(idempotencyKey);
     if (existing) {
       const attempt: PublishAttempt = {
-        id: `pa_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        id: newId(),
         queueItemId: item.id,
         creatorId: item.creatorId,
         conversationId: item.conversationId,
@@ -278,61 +276,107 @@ export async function executePublishAttempt(
         idempotencyKey,
         decision: "duplicate",
         externalPostId: existing.externalPostId,
-        attemptedAt: new Date().toISOString(),
+        attemptedAt: now,
       };
+      if (recordAttempt) {
+        await recordAttempt(attempt);
+      }
       return { attempt };
     }
   }
 
   // ── Create adapter ─────────────────────────────────────────────────────
+  // FIX(#142): adapter creation moved BEFORE reservation — deterministic
+  // config failures (kill-switch, missing creds) must not leave a
+  // reservation row that would block retries.
   const adapterConfig: AdapterConfig = {
     publishMode: config.publishMode,
     dryRun: config.dryRun,
     killSwitch: config.killSwitch,
-    xBearerToken: config.xBearerToken,
+    xWriteBearerToken: config.xWriteBearerToken,
   };
 
   const adapter = createAdapter(adapterConfig);
   if (!adapter) {
-    const attempt: PublishAttempt = {
-      id: `pa_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    return blockAndRecord(
+      "Adapter creation failed (missing creds or config).",
+      {
+        policyVersion: policy.policyVersion,
+        sourcePostId,
+        payloadHash,
+        imageHashZh: item.renderedPngHashZh,
+        imageHashEn: item.renderedPngHashEn,
+        idempotencyKey,
+      },
+    );
+  }
+
+  // ── Gate 7b: Reserve idempotency key (non-dry-run only) ──────────────
+  // FIX(#145): pre-write reservation prevents concurrent requests from
+  // both entering the real adapter. If reservation fails (unique violation),
+  // another request already claimed this key.
+  // FIX(#142): reservation is finalized after the adapter call (success
+  // or failure) so transient failures can be retried.
+  let reservationId: string | null = null;
+  if (!config.dryRun && input.reserveKey) {
+    reservationId = await input.reserveKey({
+      idempotencyKey,
       queueItemId: item.id,
       creatorId: item.creatorId,
       conversationId: item.conversationId,
       sourcePostId,
       policyVersion: policy.policyVersion,
       rolloutMode: config.publishMode,
-      dryRun: config.dryRun,
-      adapter: "none",
+      adapter: adapter.name,
       payloadHash,
       imageHashZh: item.renderedPngHashZh,
       imageHashEn: item.renderedPngHashEn,
-      idempotencyKey,
-      decision: "blocked",
-      failureStage:
-        "Adapter creation failed (kill-switch / off / missing creds).",
-      attemptedAt: new Date().toISOString(),
-    };
-    return { attempt };
+    });
+    if (!reservationId) {
+      // Another request already reserved this key — treat as duplicate
+      const attempt: PublishAttempt = {
+        id: newId(),
+        queueItemId: item.id,
+        creatorId: item.creatorId,
+        conversationId: item.conversationId,
+        sourcePostId,
+        policyVersion: policy.policyVersion,
+        rolloutMode: config.publishMode,
+        dryRun: config.dryRun,
+        adapter: "reserved",
+        payloadHash,
+        imageHashZh: item.renderedPngHashZh,
+        imageHashEn: item.renderedPngHashEn,
+        idempotencyKey,
+        decision: "duplicate",
+        attemptedAt: now,
+      };
+      if (recordAttempt) {
+        await recordAttempt(attempt);
+      }
+      return { attempt };
+    }
   }
 
   // ── Execute publish ────────────────────────────────────────────────────
   let publishResult: PublishResult;
   try {
     publishResult = await adapter.publishReplyWithMedia(payload);
-  } catch {
+  } catch (err) {
+    // Log raw error server-side only, neutral message in attempt
+    console.error("[aleabit:publish] adapter error:", err);
     publishResult = {
       success: false,
       dryRun: adapter.isDryRun,
       adapter: adapter.name,
       payloadHash,
-      error: "Adapter call threw an exception.",
-      attemptedAt: new Date().toISOString(),
+      error: "Adapter call failed. See server logs.",
+      attemptedAt: now,
     };
   }
 
   const attempt: PublishAttempt = {
-    id: `pa_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    id: reservationId ?? newId(),
     queueItemId: item.id,
     creatorId: item.creatorId,
     conversationId: item.conversationId,
@@ -346,14 +390,29 @@ export async function executePublishAttempt(
     imageHashEn: item.renderedPngHashEn,
     idempotencyKey,
     decision: publishResult.success ? "attempted" : "error",
-    failureStage: publishResult.error,
+    // Neutral error: never expose raw X API response
+    failureStage: publishResult.success
+      ? undefined
+      : "Publish failed. See server logs.",
     externalPostId: publishResult.externalPostId,
-    attemptedAt: new Date().toISOString(),
+    attemptedAt: now,
   };
 
   // ── Record attempt ─────────────────────────────────────────────────────
-  if (input.recordAttempt) {
-    await input.recordAttempt(attempt);
+  // FIX(#142): if we hold a reservation, finalize that row in place
+  // (transitions in_progress → attempted/error, freeing the key for
+  // future retries on failure). Otherwise insert a fresh audit row.
+  if (reservationId && input.finalizeReservation) {
+    await input.finalizeReservation({
+      reservationId,
+      decision: attempt.decision as "attempted" | "error",
+      adapter: attempt.adapter,
+      failureStage: attempt.failureStage,
+      externalPostId: attempt.externalPostId,
+      attemptedAt: attempt.attemptedAt,
+    });
+  } else if (recordAttempt) {
+    await recordAttempt(attempt);
   }
 
   return { attempt, publishResult };

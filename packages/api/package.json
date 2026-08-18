@@ -27,7 +27,11 @@
     "./aleabit/creator-fixtures/builtin-configs": "./src/modules/aleabit/creator-fixtures/builtin-configs.ts",
     "./aleabit/creator-fixtures/multi-replay-adapter": "./src/modules/aleabit/creator-fixtures/multi-replay-adapter.ts",
     "./aleabit/creator-live-adapter": "./src/modules/aleabit/creator-live-adapter.ts",
-    "./aleabit/creator-adapter-factory": "./src/modules/aleabit/creator-adapter-factory.ts"
+    "./aleabit/creator-adapter-factory": "./src/modules/aleabit/creator-adapter-factory.ts",
+    "./aleabit/audit": "./src/modules/aleabit/audit.ts",
+    "./aleabit/publish-audit": "./src/modules/aleabit/publish-audit.ts",
+    "./aleabit/publish-auth": "./src/modules/aleabit/publish-auth.ts",
+    "./aleabit/publish-executor": "./src/modules/aleabit/publish-executor.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .cache .turbo dist node_modules",

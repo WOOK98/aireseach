@@ -1,9 +1,10 @@
 /**
- * AleaBit — Publish executor + adapter tests (#139)
+ * AleaBit — Publish executor + adapter tests (#139, #141 fix)
  *
  * Validates all gates, safety switches, idempotency, and dry-run behavior.
  *
  * SAFETY: Tests prove that default config never produces external writes.
+ * REDLINE: All paths call recordAttempt — verified by tests.
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -15,7 +16,7 @@ import {
   hashPayload,
 } from "../x-write-adapter";
 
-import type { PublishAttempt } from "../publish-executor";
+import type { PublishAttempt, PublishExecutorInput } from "../publish-executor";
 import type { QueueItem } from "../queue-interface";
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -30,6 +31,14 @@ const ALLOWED_POLICY = {
   creatorId: "aleabitoreddit",
   conversationId: "conv_nvda",
 };
+
+// Dummy PNG buffers for tests (1x1 pixel PNG)
+const DUMMY_PNG_ZH = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+]);
+const DUMMY_PNG_EN = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+]);
 
 function makeItem(overrides: Partial<QueueItem> = {}): QueueItem {
   return {
@@ -77,6 +86,8 @@ function makeItem(overrides: Partial<QueueItem> = {}): QueueItem {
     policyDecision: ALLOWED_POLICY as any,
     renderedPngHashZh: "abc123",
     renderedPngHashEn: "def456",
+    renderedPngZh: DUMMY_PNG_ZH,
+    renderedPngEn: DUMMY_PNG_EN,
     createdAt: "2026-08-10T00:00:00Z",
     updatedAt: "2026-08-10T00:00:00Z",
     version: 1,
@@ -111,13 +122,61 @@ describe("DryRunXWriteAdapter", () => {
 
 // ── createAdapter tests ──────────────────────────────────────────────────────
 
+describe("XApiWriteAdapter dual-image enforcement", () => {
+  // XApiWriteAdapter requires a token but we test the guard without making real calls.
+  // We import the class directly and test publishReplyWithMedia with missing media.
+  it("rejects when zh PNG is missing", async () => {
+    const { XApiWriteAdapter } = await import("../x-write-adapter");
+    const adapter = new XApiWriteAdapter("fake-token");
+    const result = await adapter.publishReplyWithMedia({
+      replyToPostId: "p1",
+      text: "test",
+      creatorId: "c1",
+      conversationId: "conv1",
+      mediaPngEn: Buffer.from([0x89, 0x50]),
+      // mediaPngZh missing
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Both zh and en PNG");
+  });
+
+  it("rejects when en PNG is missing", async () => {
+    const { XApiWriteAdapter } = await import("../x-write-adapter");
+    const adapter = new XApiWriteAdapter("fake-token");
+    const result = await adapter.publishReplyWithMedia({
+      replyToPostId: "p1",
+      text: "test",
+      creatorId: "c1",
+      conversationId: "conv1",
+      mediaPngZh: Buffer.from([0x89, 0x50]),
+      // mediaPngEn missing
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Both zh and en PNG");
+  });
+
+  it("rejects when both PNGs are missing", async () => {
+    const { XApiWriteAdapter } = await import("../x-write-adapter");
+    const adapter = new XApiWriteAdapter("fake-token");
+    const result = await adapter.publishReplyWithMedia({
+      replyToPostId: "p1",
+      text: "test",
+      creatorId: "c1",
+      conversationId: "conv1",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Both zh and en PNG");
+    expect(result.error).toContain("text-only");
+  });
+});
+
 describe("createAdapter", () => {
   it("returns null when kill-switch is on", () => {
     const adapter = createAdapter({
       publishMode: "auto",
       dryRun: false,
       killSwitch: true,
-      xBearerToken: "***",
+      xWriteBearerToken: "***",
     });
     expect(adapter).toBeNull();
   });
@@ -127,7 +186,7 @@ describe("createAdapter", () => {
       publishMode: "off",
       dryRun: false,
       killSwitch: false,
-      xBearerToken: "***",
+      xWriteBearerToken: "***",
     });
     expect(adapter).toBeNull();
   });
@@ -249,6 +308,24 @@ describe("executePublishAttempt", () => {
       expect(result.attempt.failureStage).toContain("en PNG");
     });
 
+    it("blocked when zh-CN PNG bytes missing (hash present)", async () => {
+      const result = await executePublishAttempt({
+        item: makeItem({ renderedPngZh: undefined }),
+        config: DEFAULT_CONFIG,
+      });
+      expect(result.attempt.decision).toBe("blocked");
+      expect(result.attempt.failureStage).toContain("zh-CN");
+    });
+
+    it("blocked when en PNG bytes missing (hash present)", async () => {
+      const result = await executePublishAttempt({
+        item: makeItem({ renderedPngEn: undefined }),
+        config: DEFAULT_CONFIG,
+      });
+      expect(result.attempt.decision).toBe("blocked");
+      expect(result.attempt.failureStage).toContain("en PNG");
+    });
+
     it("blocked when brief missing", async () => {
       const result = await executePublishAttempt({
         item: makeItem({ brief: undefined }),
@@ -349,6 +426,89 @@ describe("executePublishAttempt", () => {
       });
       expect(checkDuplicate).not.toHaveBeenCalled();
     });
+
+    it("second identical live attempt returns duplicate without calling the adapter again", async () => {
+      // Mirror production wiring (#141): recordPublishAttempt + checkIdempotency
+      // backed by one shared store — proves the production callback pair
+      // prevents a second real adapter call for an identical item.
+      const store: PublishAttempt[] = [];
+      const recordAttempt = async (a: PublishAttempt) => {
+        store.push(a);
+      };
+      const checkDuplicate = async (key: string) =>
+        store.find(
+          (a) =>
+            a.idempotencyKey === key &&
+            !a.dryRun &&
+            a.decision === "attempted" &&
+            a.externalPostId,
+        ) ?? null;
+
+      // Mock the real X adapter network flow:
+      // INIT → APPEND → FINALIZE (×2 images) → metadata → POST /2/tweets
+      let mediaCounter = 0;
+      const fetchMock = vi.fn<
+        (input: unknown, init?: { body?: unknown }) => Promise<Response>
+      >(async (input, init) => {
+        const url = String(input);
+        if (url.includes("media/upload.json")) {
+          const params = init?.body as URLSearchParams;
+          if (params.get("command") === "INIT") {
+            mediaCounter += 1;
+            return new Response(
+              JSON.stringify({ media_id_string: `media_${mediaCounter}` }),
+              { status: 200 },
+            );
+          }
+          return new Response("{}", { status: 200 }); // APPEND / FINALIZE
+        }
+        if (url.includes("media/metadata/create.json")) {
+          return new Response("{}", { status: 200 });
+        }
+        if (url.endsWith("/tweets")) {
+          return new Response(JSON.stringify({ data: { id: "ext_post_1" } }), {
+            status: 200,
+          });
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      try {
+        const liveConfig = {
+          ...DEFAULT_CONFIG,
+          dryRun: false,
+          xWriteBearerToken: "fake-token",
+        };
+
+        // Attempt #1: live publish succeeds via real adapter
+        const first = await executePublishAttempt({
+          item: makeItem(),
+          config: liveConfig,
+          recordAttempt,
+          checkDuplicate,
+        });
+        expect(first.attempt.decision).toBe("attempted");
+        expect(first.attempt.externalPostId).toBe("ext_post_1");
+        const callsAfterFirst = fetchMock.mock.calls.length;
+        expect(callsAfterFirst).toBeGreaterThan(0);
+
+        // Attempt #2: identical item → duplicate; adapter untouched
+        const second = await executePublishAttempt({
+          item: makeItem(),
+          config: liveConfig,
+          recordAttempt,
+          checkDuplicate,
+        });
+        expect(second.attempt.decision).toBe("duplicate");
+        expect(second.attempt.externalPostId).toBe("ext_post_1");
+        expect(second.publishResult).toBeUndefined();
+        // No new adapter calls — the duplicate gate fired first
+        expect(fetchMock.mock.calls.length).toBe(callsAfterFirst);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
   });
 
   describe("no external writes", () => {
@@ -365,29 +525,17 @@ describe("executePublishAttempt", () => {
       expect(result.publishResult).toBeUndefined();
     });
 
-    it("shadow mode → blocked (no adapter call)", async () => {
+    it("shadow mode → attempted (dry-run adapter)", async () => {
       const result = await executePublishAttempt({
         item: makeItem(),
         config: { ...DEFAULT_CONFIG, publishMode: "shadow" },
       });
-      // shadow mode still blocked because createAdapter returns null for shadow
-      // Wait — actually shadow mode should allow dry-run... Let me check.
-      // createAdapter: mode "shadow" is not "off", so it proceeds.
-      // dryRun=true → DryRunXWriteAdapter
-      // But policy verdict needs to be "allowed" for shadow...
-      // Actually shadow_only verdict from policy → blocked in executor.
-      // If verdict is "allowed" + shadow mode → should still go through.
-      // Let me check the logic.
-      // The executor checks policy.verdict !== "allowed" → blocked.
-      // If verdict IS "allowed" and mode is "shadow", it proceeds.
-      // This is correct: shadow mode means policy evaluated but doesn't change status.
-      // The executor still processes it.
       expect(result.attempt.decision).toBe("attempted");
       expect(result.attempt.dryRun).toBe(true);
     });
   });
 
-  describe("recordAttempt callback", () => {
+  describe("recordAttempt callback — ALL paths", () => {
     it("calls recordAttempt when publish succeeds", async () => {
       const recordAttempt = vi.fn<(attempt: PublishAttempt) => Promise<void>>();
       await executePublishAttempt({
@@ -401,14 +549,332 @@ describe("executePublishAttempt", () => {
       );
     });
 
-    it("does not call recordAttempt when blocked", async () => {
+    it("calls recordAttempt when blocked by kill-switch", async () => {
       const recordAttempt = vi.fn<(attempt: PublishAttempt) => Promise<void>>();
       await executePublishAttempt({
         item: makeItem(),
         config: { ...DEFAULT_CONFIG, killSwitch: true },
         recordAttempt,
       });
-      expect(recordAttempt).not.toHaveBeenCalled();
+      expect(recordAttempt).toHaveBeenCalledOnce();
+      expect(recordAttempt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          decision: "blocked",
+          failureStage: expect.stringContaining("Kill switch"),
+        }),
+      );
+    });
+
+    it("calls recordAttempt when blocked by mode off", async () => {
+      const recordAttempt = vi.fn<(attempt: PublishAttempt) => Promise<void>>();
+      await executePublishAttempt({
+        item: makeItem(),
+        config: { ...DEFAULT_CONFIG, publishMode: "off" },
+        recordAttempt,
+      });
+      expect(recordAttempt).toHaveBeenCalledOnce();
+      expect(recordAttempt).toHaveBeenCalledWith(
+        expect.objectContaining({ decision: "blocked" }),
+      );
+    });
+
+    it("calls recordAttempt when blocked by missing PNG bytes", async () => {
+      const recordAttempt = vi.fn<(attempt: PublishAttempt) => Promise<void>>();
+      await executePublishAttempt({
+        item: makeItem({ renderedPngZh: undefined }),
+        config: DEFAULT_CONFIG,
+        recordAttempt,
+      });
+      expect(recordAttempt).toHaveBeenCalledOnce();
+      expect(recordAttempt).toHaveBeenCalledWith(
+        expect.objectContaining({ decision: "blocked" }),
+      );
+    });
+
+    it("calls recordAttempt when blocked by canary not approved", async () => {
+      const recordAttempt = vi.fn<(attempt: PublishAttempt) => Promise<void>>();
+      await executePublishAttempt({
+        item: makeItem({ status: "ready_for_review" }),
+        config: { ...DEFAULT_CONFIG, publishMode: "canary" },
+        recordAttempt,
+      });
+      expect(recordAttempt).toHaveBeenCalledOnce();
+      expect(recordAttempt).toHaveBeenCalledWith(
+        expect.objectContaining({ decision: "blocked" }),
+      );
+    });
+
+    it("calls recordAttempt on duplicate", async () => {
+      const recordAttempt = vi.fn<(attempt: PublishAttempt) => Promise<void>>();
+      const existingAttempt: PublishAttempt = {
+        id: "pa_existing",
+        queueItemId: "q1",
+        creatorId: "aleabitoreddit",
+        conversationId: "conv_nvda",
+        sourcePostId: "p1",
+        policyVersion: 1,
+        rolloutMode: "auto",
+        dryRun: false,
+        adapter: "x-api",
+        payloadHash: "hash123",
+        imageHashZh: "abc123",
+        imageHashEn: "def456",
+        idempotencyKey: "key123",
+        decision: "attempted",
+        externalPostId: "ext_123",
+        attemptedAt: "2026-08-17T00:00:00Z",
+      };
+
+      await executePublishAttempt({
+        item: makeItem(),
+        config: { ...DEFAULT_CONFIG, publishMode: "auto", dryRun: false },
+        checkDuplicate: async () => existingAttempt,
+        recordAttempt,
+      });
+      expect(recordAttempt).toHaveBeenCalledOnce();
+      expect(recordAttempt).toHaveBeenCalledWith(
+        expect.objectContaining({ decision: "duplicate" }),
+      );
+    });
+  });
+
+  describe("error neutralization", () => {
+    it("failureStage does not contain raw adapter error", async () => {
+      // With dry-run adapter, no error is expected.
+      // But verify that blocked attempts have neutral failureStage.
+      const result = await executePublishAttempt({
+        item: makeItem(),
+        config: { ...DEFAULT_CONFIG, killSwitch: true },
+      });
+      // failureStage should be a neutral descriptor, not raw external data
+      expect(result.attempt.failureStage).not.toMatch(/\{.*\}/);
+      expect(result.attempt.failureStage).not.toMatch(/stack/i);
+    });
+  });
+
+  describe("concurrency reservation (#145)", () => {
+    // X API fetch mock factory: INIT → APPEND → FINALIZE (×2) → metadata → tweets
+    function makeXApiFetchMock(opts: { failOnInit?: boolean } = {}) {
+      let mediaCounter = 0;
+      return vi.fn<
+        (input: unknown, init?: { body?: unknown }) => Promise<Response>
+      >(async (input, init) => {
+        const url = String(input);
+        if (url.includes("media/upload.json")) {
+          const params = init?.body as URLSearchParams;
+          if (params.get("command") === "INIT") {
+            if (opts.failOnInit) {
+              return new Response("upload denied", { status: 500 });
+            }
+            mediaCounter += 1;
+            return new Response(
+              JSON.stringify({ media_id_string: `media_${mediaCounter}` }),
+              { status: 200 },
+            );
+          }
+          return new Response("{}", { status: 200 }); // APPEND / FINALIZE
+        }
+        if (url.includes("media/metadata/create.json")) {
+          return new Response("{}", { status: 200 });
+        }
+        if (url.endsWith("/tweets")) {
+          return new Response(JSON.stringify({ data: { id: "ext_post_1" } }), {
+            status: 200,
+          });
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+    }
+
+    it("second concurrent attempt returns duplicate when reservation fails", async () => {
+      const recordAttempt = vi.fn<(attempt: PublishAttempt) => Promise<void>>();
+
+      // Simulate: checkDuplicate returns null (no existing),
+      // but reserveKey returns null (another request already reserved)
+      const result = await executePublishAttempt({
+        item: makeItem(),
+        config: {
+          ...DEFAULT_CONFIG,
+          publishMode: "auto",
+          dryRun: false,
+          xWriteBearerToken: "fake-token",
+        },
+        checkDuplicate: async () => null, // no existing successful attempt
+        reserveKey: async () => null, // reservation conflict (unique violation)
+        recordAttempt,
+      });
+
+      expect(result.attempt.decision).toBe("duplicate");
+      expect(recordAttempt).toHaveBeenCalledOnce();
+      expect(recordAttempt).toHaveBeenCalledWith(
+        expect.objectContaining({ decision: "duplicate" }),
+      );
+    });
+
+    it("successful reservation proceeds to adapter and finalizes on success", async () => {
+      const finalizeReservation = vi.fn<
+        NonNullable<PublishExecutorInput["finalizeReservation"]>
+      >(async () => {});
+      const fetchMock = makeXApiFetchMock();
+      vi.stubGlobal("fetch", fetchMock);
+
+      try {
+        const result = await executePublishAttempt({
+          item: makeItem(),
+          config: {
+            ...DEFAULT_CONFIG,
+            publishMode: "auto",
+            dryRun: false,
+            xWriteBearerToken: "fake-token",
+          },
+          checkDuplicate: async () => null,
+          reserveKey: async () => "res_1", // reservation acquired
+          finalizeReservation,
+        });
+
+        expect(result.attempt.decision).toBe("attempted");
+        expect(result.attempt.externalPostId).toBe("ext_post_1");
+        expect(fetchMock).toHaveBeenCalled(); // adapter was actually reached
+        // reservation row finalized in place — no double insert
+        expect(finalizeReservation).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reservationId: "res_1",
+            decision: "attempted",
+            externalPostId: "ext_post_1",
+          }),
+        );
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("failed live attempt finalizes reservation and allows retry (#142)", async () => {
+      // Stateful store mimicking DB rows + partial unique indexes:
+      // - conflict iff same key has a non-dry-run in_progress row
+      // - duplicate iff same key has a non-dry-run attempted row with externalPostId
+      type Row = {
+        id: string;
+        idempotencyKey: string;
+        dryRun: boolean;
+        decision: string;
+        externalPostId?: string;
+        adapter: string;
+      };
+      const rows: Row[] = [];
+      let seq = 0;
+
+      const reserveKey = vi.fn<NonNullable<PublishExecutorInput["reserveKey"]>>(
+        async (p) => {
+          const conflict = rows.some(
+            (r) =>
+              r.idempotencyKey === p.idempotencyKey &&
+              !r.dryRun &&
+              r.decision === "in_progress",
+          );
+          if (conflict) return null;
+          const id = `res_${++seq}`;
+          rows.push({
+            id,
+            idempotencyKey: p.idempotencyKey,
+            dryRun: false,
+            decision: "in_progress",
+            adapter: p.adapter,
+          });
+          return id;
+        },
+      );
+      const finalizeReservation = vi.fn<
+        NonNullable<PublishExecutorInput["finalizeReservation"]>
+      >(async (p) => {
+        const row = rows.find((r) => r.id === p.reservationId);
+        if (row) {
+          row.decision = p.decision;
+          row.externalPostId = p.externalPostId;
+        }
+      });
+      const checkDuplicate = async (key: string) => {
+        const row = rows.find(
+          (r) =>
+            r.idempotencyKey === key &&
+            !r.dryRun &&
+            r.decision === "attempted" &&
+            r.externalPostId,
+        );
+        if (!row) return null;
+        return {
+          id: row.id,
+          queueItemId: "q1",
+          creatorId: "aleabitoreddit",
+          conversationId: "conv_nvda",
+          sourcePostId: "p1",
+          policyVersion: 1,
+          rolloutMode: "auto",
+          dryRun: false,
+          adapter: row.adapter,
+          payloadHash: "h",
+          imageHashZh: "abc123",
+          imageHashEn: "def456",
+          idempotencyKey: row.idempotencyKey,
+          decision: "attempted",
+          externalPostId: row.externalPostId,
+          attemptedAt: "2026-08-17T00:00:00Z",
+        } as PublishAttempt;
+      };
+
+      const liveConfig = {
+        ...DEFAULT_CONFIG,
+        publishMode: "auto" as const,
+        dryRun: false,
+        xWriteBearerToken: "fake-token",
+      };
+
+      // Attempt 1: adapter call fails (INIT 500) → error, key must be freed
+      vi.stubGlobal("fetch", makeXApiFetchMock({ failOnInit: true }));
+      try {
+        const first = await executePublishAttempt({
+          item: makeItem(),
+          config: liveConfig,
+          checkDuplicate,
+          reserveKey,
+          finalizeReservation,
+        });
+        expect(first.attempt.decision).toBe("error");
+        expect(first.attempt.externalPostId).toBeUndefined();
+        expect(finalizeReservation).toHaveBeenCalledOnce();
+        // key no longer held in_progress → retry is possible
+        expect(rows.some((r) => r.decision === "in_progress")).toBe(false);
+
+        // Attempt 2: retry reaches the adapter and succeeds (not duplicate)
+        const okFetch = makeXApiFetchMock();
+        vi.stubGlobal("fetch", okFetch);
+        const second = await executePublishAttempt({
+          item: makeItem(),
+          config: liveConfig,
+          checkDuplicate,
+          reserveKey,
+          finalizeReservation,
+        });
+        expect(second.attempt.decision).toBe("attempted");
+        expect(second.attempt.externalPostId).toBe("ext_post_1");
+        expect(okFetch).toHaveBeenCalled(); // adapter actually invoked
+        expect(reserveKey).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("reservation is skipped for dry-run", async () => {
+      const reserveKey =
+        vi.fn<NonNullable<PublishExecutorInput["reserveKey"]>>();
+
+      await executePublishAttempt({
+        item: makeItem(),
+        config: { ...DEFAULT_CONFIG, dryRun: true },
+        reserveKey,
+      });
+
+      // reserveKey should NOT be called for dry-run
+      expect(reserveKey).not.toHaveBeenCalled();
     });
   });
 });

@@ -1986,23 +1986,69 @@
       "indexes": {
         "aleabit_queue_idempotency_idx": {
           "name": "aleabit_queue_idempotency_idx",
-          "columns": ["conversation_id", "edit_history_hash"],
-          "isUnique": true
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "edit_history_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "aleabit_queue_status_idx": {
           "name": "aleabit_queue_status_idx",
-          "columns": ["status"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "aleabit_queue_conversation_id_idx": {
           "name": "aleabit_queue_conversation_id_idx",
-          "columns": ["conversation_id"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "aleabit_queue_created_at_idx": {
           "name": "aleabit_queue_created_at_idx",
-          "columns": ["created_at"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -2067,18 +2113,48 @@
       "indexes": {
         "aleabit_audit_log_item_id_idx": {
           "name": "aleabit_audit_log_item_id_idx",
-          "columns": ["item_id"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "aleabit_audit_log_created_at_idx": {
           "name": "aleabit_audit_log_created_at_idx",
-          "columns": ["created_at"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "aleabit_audit_log_to_status_idx": {
           "name": "aleabit_audit_log_to_status_idx",
-          "columns": ["to_status"],
-          "isUnique": false
+          "columns": [
+            {
+              "expression": "to_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {},

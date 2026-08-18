@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "idx_publish_attempts_reservation" ON "aleabit_publish_attempts" USING btree ("idempotency_key") WHERE dry_run = false AND decision = 'in_progress';
