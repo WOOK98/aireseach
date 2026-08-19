@@ -7,13 +7,13 @@
 
 #126（AleaBit live watcher + bilingual guarded auto-publish）的功能子刀**已全部 merged**：
 
-| 子刀 | 状态 | 交付 |
-|---|---|---|
-| #133 / PR #134 | ✅ | live X read-only ingest → persistent review queue |
-| #135 / PR #136 | ✅ | 双语 16:9 PNG renderer（zh-CN + en 独立两张） |
-| #137 / PR #138 | ✅ | publish policy gate + rollout 状态机（无 X 写） |
-| #139 | ✅ | X write adapter shell + dry-run 记录 |
-| #141 / PR #142 | ✅ | canary approval UI + publish audit 持久化 + real X write adapter |
+| 子刀           | 状态 | 交付                                                             |
+| -------------- | ---- | ---------------------------------------------------------------- |
+| #133 / PR #134 | ✅   | live X read-only ingest → persistent review queue                |
+| #135 / PR #136 | ✅   | 双语 16:9 PNG renderer（zh-CN + en 独立两张）                    |
+| #137 / PR #138 | ✅   | publish policy gate + rollout 状态机（无 X 写）                  |
+| #139           | ✅   | X write adapter shell + dry-run 记录                             |
+| #141 / PR #142 | ✅   | canary approval UI + publish audit 持久化 + real X write adapter |
 
 **结论：机器都造好了，剩下的是「打开开关并走完三阶段验证」。** #126 不应再以功能开发 issue 的形式挂着，建议拆成四个执行切片，#126 转为 tracker 或关闭。
 
