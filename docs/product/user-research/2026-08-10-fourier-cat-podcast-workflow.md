@@ -29,18 +29,23 @@
 ## 对 airesearch 的含义
 
 ### 验证 #152（evidence-to-output workbench）方向
+
 真实用户已经在用 Notion + Worker 胶水自拼 evidence inbox。市场存在，现有工具没满足。他的「监控库 = 可调清单」「单集库 = evidence 池」「人工判断选题 = judgment 层」与 #152 的 Research Notes / Evidence Inbox 分层完全同构。
 
 ### 验证产品哲学一致性
+
 「自动化停在收集和整理，判断留给人」与 TQS / 失效条件 / L3 账本核验的红线一致：工具强化判断，不替代判断。这类用户天然认同「reports end with invalidation conditions」的卖点。
 
 ### 揭示 podcast/RSS 是下一个 ingest 数据源
+
 #131/#134 Creator Research Pipeline 目前只接 X read-only ingest。播客 RSS 与之架构同构（creator 内容 → 结构化入队 → 人工审核 → 发展成选题），且：
+
 - RSS 无 X API 的合规风险和调用成本
 - 长访谈含「判断如何形成」的过程信息，evidence 密度高于短帖子
 - 作者已趟过工程坑（排重、流式解析、安全护栏），方案开源可参考
 
 ### 设计合伙人候选人
+
 作者符合理想深度用户画像：目标角色、有工程能力、愿意公开工作流、日更频率高（反馈快）。可通过 GitHub 联系邀请填问卷 + 20 分钟访谈（激励：1 个月会员）。
 
 ## 待办追踪
