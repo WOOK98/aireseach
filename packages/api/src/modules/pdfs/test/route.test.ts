@@ -169,9 +169,11 @@ describe("POST /pdfs — success path", () => {
     expect(inserted.userId).toBe("user_1");
     expect(inserted.blobKey).toMatch(/^pdfs\/user_1\/.+\.pdf$/);
 
-    // Upload URL requested for the same server-derived key.
+    // Upload URL requested for the same server-derived key, with the MIME
+    // whitelist pinned into the signature (application/pdf only).
     expect(mockGetUploadUrl).toHaveBeenCalledWith({
       path: inserted.blobKey,
+      contentType: "application/pdf",
     });
 
     const body = (await res.json()) as {
@@ -180,6 +182,36 @@ describe("POST /pdfs — success path", () => {
     };
     expect(body.uploadUrl).toBe("https://s3/presigned-put");
     expect(body.pdf).not.toHaveProperty("blobKey");
+  });
+
+  it("pins the presigned upload URL to application/pdf", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockReturning.mockImplementation(async () => [
+      {
+        id: "generated-id",
+        fileName: "a.pdf",
+        blobKey: "pdfs/user_1/generated-id.pdf",
+        fileSizeBytes: 1,
+        pageCount: null,
+        ticker: null,
+        reportPeriod: null,
+        sourceLabel: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+    mockGetUploadUrl.mockResolvedValue({ url: "https://s3/presigned-put" });
+
+    const res = await post({ fileName: "a.pdf", fileSizeBytes: 1 });
+    expect(res.status).toBe(201);
+
+    // MIME whitelist must be enforced at the signed upload boundary, not
+    // just by file-name validation: storage is asked to sign a PUT that
+    // only accepts Content-Type: application/pdf.
+    expect(mockGetUploadUrl).toHaveBeenCalledTimes(1);
+    const arg = mockGetUploadUrl.mock.calls[0]![0] as Record<string, unknown>;
+    expect(arg.contentType).toBe("application/pdf");
+    expect(arg.path).toMatch(/^pdfs\/user_1\/.+\.pdf$/);
   });
 
   it("rolls back the row and returns 502 when storage is unavailable", async () => {

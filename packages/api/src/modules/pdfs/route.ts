@@ -18,6 +18,10 @@
  * - upload flow: client POSTs metadata → server returns a 60s presigned PUT
  *   URL → client uploads bytes directly to storage. Bytes never pass through
  *   this API.
+ * - MIME whitelist is enforced at the signed upload boundary: the presigned
+ *   PUT is content-type-pinned to `application/pdf`, so storage rejects PUTs
+ *   with any other Content-Type even if a client bypasses the UI. The web
+ *   client sends exactly that header on upload.
  * - neutral errors: no stack / schema detail leakage in responses.
  */
 import { zValidator } from "@hono/zod-validator";
@@ -101,7 +105,10 @@ export const pdfsRoute = new Hono()
 
     let uploadUrl: string;
     try {
-      ({ url: uploadUrl } = await getUploadUrl({ path: blobKey }));
+      ({ url: uploadUrl } = await getUploadUrl({
+        path: blobKey,
+        contentType: "application/pdf",
+      }));
     } catch {
       // Roll back the row so we never strand metadata without a blob.
       await db.delete(researchPdfs).where(eq(researchPdfs.id, row.id));
