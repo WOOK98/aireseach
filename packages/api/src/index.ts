@@ -20,6 +20,7 @@ import { billingRouter } from "./modules/billing/router";
 import { compareRouter } from "./modules/compare/router";
 import { ledgerRoute } from "./modules/ledger/router";
 import { mcpRouter } from "./modules/mcp/router";
+import { notesRoute } from "./modules/notes/route";
 import { organizationRouter } from "./modules/organization/router";
 import { reportRoute } from "./modules/report/route";
 import { storageRouter } from "./modules/storage/router";
@@ -79,6 +80,7 @@ const appRouter = new Hono()
   .route("/compare", compareRouter)
   .route("/report", reportRoute)
   .route("/article", articleRoute)
+  .route("/notes", notesRoute)
   .route("/ledger", ledgerRoute)
   .route("/visuals", visualsRouter)
   .route("/webhooks", webhooksRouter)

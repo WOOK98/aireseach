@@ -31,6 +31,7 @@ import { Skeleton } from "@workspace/ui-web/skeleton";
 
 import { ArticleReport } from "~/components/article/ArticleReport";
 import { JPMReport } from "~/components/report/JPMReport";
+import { SaveNoteButton } from "~/modules/notes/save-note-button";
 import {
   FCFChart,
   MarginChart,
@@ -620,6 +621,13 @@ export default function ResearchPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
                 >
+                  <div className="mb-4 flex justify-end">
+                    <SaveNoteButton
+                      article={article.article}
+                      query={inputVal.trim()}
+                      language={language}
+                    />
+                  </div>
                   <ArticleReport article={article.article} />
                 </motion.div>
               )}

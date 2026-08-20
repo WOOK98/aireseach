@@ -58,3 +58,6 @@ playwright-report/
 
 # Morning brief skip markers (CI artifacts, not committed)
 briefs/*.skip
+
+# Workspace memory (openclaw internal)
+memory/

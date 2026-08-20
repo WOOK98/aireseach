@@ -14,6 +14,8 @@
     "./report/yahoo-finance": "./src/modules/report/yahoo-finance.ts",
     "./report/industry": "./src/modules/report/industry.ts",
     "./report/data-sources": "./src/modules/report/data-sources.ts",
+    "./notes/route": "./src/modules/notes/route.ts",
+    "./notes/note-mapper": "./src/modules/notes/note-mapper.ts",
     "./aleabit/renderer": "./src/modules/aleabit/renderer.ts",
     "./aleabit/bilingual-renderer": "./src/modules/aleabit/bilingual-renderer.ts",
     "./aleabit/png-renderer": "./src/modules/aleabit/png-renderer.ts",
