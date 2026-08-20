@@ -22,6 +22,7 @@ import { ledgerRoute } from "./modules/ledger/router";
 import { mcpRouter } from "./modules/mcp/router";
 import { notesRoute } from "./modules/notes/route";
 import { organizationRouter } from "./modules/organization/router";
+import { pdfAnnotationsRoute, pdfsRoute } from "./modules/pdfs/route";
 import { reportRoute } from "./modules/report/route";
 import { storageRouter } from "./modules/storage/router";
 import { visualsRouter } from "./modules/visuals/router";
@@ -81,6 +82,8 @@ const appRouter = new Hono()
   .route("/report", reportRoute)
   .route("/article", articleRoute)
   .route("/notes", notesRoute)
+  .route("/pdfs", pdfsRoute)
+  .route("/pdfs/annotations", pdfAnnotationsRoute)
   .route("/ledger", ledgerRoute)
   .route("/visuals", visualsRouter)
   .route("/webhooks", webhooksRouter)

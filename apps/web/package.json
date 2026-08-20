@@ -40,6 +40,7 @@
     "react-dom": "catalog:react19",
     "react-hook-form": "catalog:",
     "react-markdown": "catalog:",
+    "react-pdf": "10.4.1",
     "react-qr-code": "2.0.18",
     "recharts": "catalog:",
     "remark-gfm": "4.0.1",

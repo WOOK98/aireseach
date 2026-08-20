@@ -16,6 +16,7 @@ import { Button } from "@workspace/ui-web/button";
 import { Input } from "@workspace/ui-web/input";
 import { Skeleton } from "@workspace/ui-web/skeleton";
 
+import { pathsConfig } from "~/config/paths";
 import { useNotes } from "~/modules/notes/use-notes";
 
 function NotesSkeleton() {
@@ -59,7 +60,16 @@ export default function NotesPage() {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 px-4 py-6">
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold">研究笔记</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-semibold">研究笔记</h1>
+          <Link
+            href={pathsConfig.dashboard.user.pdfs}
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm transition-colors"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            PDF 文档
+          </Link>
+        </div>
         <p className="text-muted-foreground text-sm">
           保存的研报快照 — 内容按保存时的 as-of 数据渲染，不混入新数据。
         </p>
