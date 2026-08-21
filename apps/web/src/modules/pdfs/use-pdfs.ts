@@ -20,6 +20,8 @@ export interface PdfItem {
   ticker: string | null;
   reportPeriod: string | null;
   sourceLabel: string | null;
+  /** Full-text extraction state (#162) — fail-open, reading never blocks. */
+  extractionStatus: "pending" | "done" | "failed" | "truncated";
   createdAt: string;
   updatedAt: string;
 }
@@ -44,7 +46,13 @@ export interface NormalizedPoint {
 }
 
 export type AnnotationPayload =
-  | { kind: "highlight"; rects: NormalizedRect[]; color?: string }
+  | {
+      kind: "highlight";
+      rects: NormalizedRect[];
+      color?: string;
+      /** Text-layer excerpt captured at creation time (#162). */
+      excerpt?: string;
+    }
   | {
       kind: "pen";
       paths: NormalizedPoint[][];
@@ -52,6 +60,16 @@ export type AnnotationPayload =
       strokeWidth?: number;
     }
   | { kind: "text"; anchor: NormalizedPoint; text: string; color?: string };
+
+/** #117-compatible evidence snapshot produced by to-evidence (#162). */
+export interface EvidenceRef {
+  id: string;
+  claim: string;
+  source: string;
+  date: string;
+  url?: string;
+  confidence: "verified" | "partial" | "unverified";
+}
 
 export interface AnnotationItem {
   id: string;
@@ -189,6 +207,38 @@ async function deleteAnnotation(id: string): Promise<void> {
     method: "DELETE",
   });
   if (!res.ok) throw new Error(await readError(res));
+}
+
+/** #162: convert an annotation into an as_of EvidenceRef snapshot. */
+export async function toEvidence(
+  pdfId: string,
+  annotationId: string,
+  claim?: string,
+): Promise<EvidenceRef> {
+  const res = await fetch(
+    `/api/pdfs/${encodeURIComponent(pdfId)}/annotations/${encodeURIComponent(annotationId)}/to-evidence`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(claim ? { claim } : {}),
+    },
+  );
+  if (!res.ok) throw new Error(await readError(res));
+  const data = (await res.json()) as { evidence: EvidenceRef };
+  return data.evidence;
+}
+
+/** #162: trigger server-side full-text extraction (fail-open). */
+export async function extractPdf(id: string): Promise<{
+  extractionStatus: PdfItem["extractionStatus"];
+}> {
+  const res = await fetch(`/api/pdfs/${encodeURIComponent(id)}/extract`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  return (await res.json()) as {
+    extractionStatus: PdfItem["extractionStatus"];
+  };
 }
 
 // ── Hooks ────────────────────────────────────────────────────────────────

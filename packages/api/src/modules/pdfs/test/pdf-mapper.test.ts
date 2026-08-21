@@ -13,13 +13,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   annotationKindFromPayload,
+  buildEvidenceRef,
   createAnnotationInputSchema,
   createPdfInputSchema,
   MAX_PDF_SIZE_BYTES,
   patchAnnotationInputSchema,
   patchPdfInputSchema,
   pdfBlobKey,
+  pdfEvidenceId,
   toAnnotationItem,
+  toEvidenceInputSchema,
   toPdfItem,
 } from "../pdf-mapper";
 
@@ -214,10 +217,12 @@ describe("response mappers", () => {
       ticker: null,
       reportPeriod: null,
       sourceLabel: null,
+      extractionStatus: "pending" as const,
       createdAt: new Date("2026-08-20T00:00:00Z"),
       updatedAt: new Date("2026-08-20T00:00:00Z"),
     });
     expect(item).not.toHaveProperty("blobKey");
+    expect(item.extractionStatus).toBe("pending");
     expect(item.createdAt).toBe("2026-08-20T00:00:00.000Z");
   });
 
@@ -242,5 +247,149 @@ describe("response mappers", () => {
     });
     expect(item.payload).toEqual(payload);
     expect(item.page).toBe(2);
+  });
+});
+
+// ── Slice 2 (#162): excerpt + annotation → evidence ─────────────────────────
+
+describe("highlight excerpt (slice 2)", () => {
+  it("accepts highlight payloads with an excerpt", () => {
+    const payload = {
+      kind: "highlight" as const,
+      rects: [{ x: 0.1, y: 0.1, width: 0.5, height: 0.05 }],
+      excerpt: "营收同比增长 122%",
+    };
+    expect(
+      createAnnotationInputSchema.safeParse({ page: 3, payload }).success,
+    ).toBe(true);
+  });
+
+  it("still accepts slice-1 highlight payloads without excerpt", () => {
+    const payload = {
+      kind: "highlight" as const,
+      rects: [{ x: 0.1, y: 0.1, width: 0.5, height: 0.05 }],
+    };
+    expect(
+      createAnnotationInputSchema.safeParse({ page: 3, payload }).success,
+    ).toBe(true);
+  });
+});
+
+describe("toEvidenceInputSchema", () => {
+  it("accepts empty object and optional claim", () => {
+    expect(toEvidenceInputSchema.safeParse({}).success).toBe(true);
+    expect(
+      toEvidenceInputSchema.safeParse({ claim: "毛利率承压" }).success,
+    ).toBe(true);
+  });
+
+  it("rejects unknown keys and empty claim", () => {
+    expect(toEvidenceInputSchema.safeParse({ foo: 1 }).success).toBe(false);
+    expect(toEvidenceInputSchema.safeParse({ claim: "" }).success).toBe(false);
+  });
+});
+
+describe("pdfEvidenceId", () => {
+  it("is deterministic and re-traceable", () => {
+    expect(pdfEvidenceId("p1", "a1")).toBe("pdf_p1_ann_a1");
+  });
+});
+
+describe("buildEvidenceRef", () => {
+  const pdf = {
+    id: "p1",
+    fileName: "NVDA-Q2-2026.pdf",
+    reportPeriod: "2026Q2",
+    createdAt: new Date("2026-08-20T00:00:00Z"),
+  };
+
+  const highlight = {
+    id: "a1",
+    page: 7,
+    payload: {
+      kind: "highlight" as const,
+      rects: [{ x: 0.1, y: 0.1, width: 0.5, height: 0.05 }],
+      excerpt: "数据中心营收 263 亿美元",
+    },
+  };
+
+  it("highlight with excerpt → claim defaults to excerpt", () => {
+    const ref = buildEvidenceRef(pdf, highlight);
+    expect(ref).not.toBeNull();
+    expect(ref).toEqual({
+      id: "pdf_p1_ann_a1",
+      claim: "数据中心营收 263 亿美元",
+      source: "NVDA-Q2-2026.pdf p.7",
+      date: "2026Q2",
+      confidence: "partial",
+    });
+  });
+
+  it("explicit claim wins over excerpt", () => {
+    const ref = buildEvidenceRef(pdf, highlight, "毛利率指引低于预期");
+    expect(ref?.claim).toBe("毛利率指引低于预期");
+  });
+
+  it("falls back to createdAt date when reportPeriod is null", () => {
+    const ref = buildEvidenceRef({ ...pdf, reportPeriod: null }, highlight);
+    expect(ref?.date).toBe("2026-08-20");
+  });
+
+  it("text annotation uses its text as excerpt", () => {
+    const ref = buildEvidenceRef(pdf, {
+      id: "a2",
+      page: 2,
+      payload: {
+        kind: "text" as const,
+        anchor: { x: 0.5, y: 0.5 },
+        text: "注意汇率风险",
+      },
+    });
+    expect(ref?.claim).toBe("注意汇率风险");
+  });
+
+  it("pen annotation without claim → null (caller maps to 400)", () => {
+    const ref = buildEvidenceRef(pdf, {
+      id: "a3",
+      page: 1,
+      payload: {
+        kind: "pen" as const,
+        paths: [
+          [
+            { x: 0, y: 0 },
+            { x: 1, y: 1 },
+          ],
+        ],
+      },
+    });
+    expect(ref).toBeNull();
+  });
+
+  it("pen annotation with claim → ref", () => {
+    const ref = buildEvidenceRef(
+      pdf,
+      {
+        id: "a3",
+        page: 1,
+        payload: {
+          kind: "pen" as const,
+          paths: [
+            [
+              { x: 0, y: 0 },
+              { x: 1, y: 1 },
+            ],
+          ],
+        },
+      },
+      "圈出了管理层指引",
+    );
+    expect(ref?.claim).toBe("圈出了管理层指引");
+  });
+
+  it("as_of snapshot: later metadata edits never mutate the ref", () => {
+    const ref = buildEvidenceRef(pdf, highlight);
+    // Simulate a later fileName edit — the snapshot must not change.
+    pdf.fileName = "renamed.pdf";
+    expect(ref?.source).toBe("NVDA-Q2-2026.pdf p.7");
   });
 });

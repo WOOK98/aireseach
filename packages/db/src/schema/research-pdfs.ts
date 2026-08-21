@@ -11,7 +11,10 @@
  * - annotation payload is data (normalized 0-1 coordinates), edits
  *   create a new payload version + updatedAt; history is never
  *   silently rewritten.
- * - annotation -> evidence conversion is knife-2 slice 2, NOT here.
+ * - knife-2 slice 2 (#162): highlight payloads may carry an `excerpt`
+ *   captured from the text layer at creation time; PDFs carry optional
+ *   extracted full text for search (fail-open: extraction failure never
+ *   blocks reading/annotating).
  */
 
 import {
@@ -51,6 +54,11 @@ export const highlightPayloadSchema = z.object({
   kind: z.literal("highlight"),
   rects: z.array(normalizedRectSchema).min(1),
   color: z.string().max(32).optional(),
+  /**
+   * Text captured from the PDF text layer at creation time (#162).
+   * Optional for backwards compatibility with slice-1 payloads.
+   */
+  excerpt: z.string().max(2000).optional(),
 });
 
 export const penPayloadSchema = z.object({
@@ -74,6 +82,16 @@ export const pdfAnnotationPayloadSchema = z.discriminatedUnion("kind", [
   penPayloadSchema,
   textPayloadSchema,
 ]);
+
+// ─── Text extraction status (#162) ──────────────────────────────────────────
+
+export const pdfExtractionStatusSchema = z.enum([
+  "pending",
+  "done",
+  "failed",
+  "truncated",
+]);
+export type PdfExtractionStatus = z.infer<typeof pdfExtractionStatusSchema>;
 
 export type HighlightPayload = z.infer<typeof highlightPayloadSchema>;
 export type PenPayload = z.infer<typeof penPayloadSchema>;
@@ -102,6 +120,14 @@ export const researchPdfs = pgTable(
     ticker: text(),
     reportPeriod: text("report_period"),
     sourceLabel: text("source_label"),
+
+    // Full-text extraction (#162) — fail-open, never blocks reading.
+    extractedText: text("extracted_text"),
+    extractedAt: timestamp("extracted_at"),
+    extractionStatus: text("extraction_status")
+      .notNull()
+      .default("pending")
+      .$type<PdfExtractionStatus>(),
 
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")

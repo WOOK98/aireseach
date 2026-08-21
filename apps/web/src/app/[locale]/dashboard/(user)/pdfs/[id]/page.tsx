@@ -43,6 +43,7 @@ import {
   usePatchPdf,
   usePdf,
 } from "~/modules/pdfs/use-pdfs";
+import { extractPdf, toEvidence } from "~/modules/pdfs/use-pdfs";
 
 import type { AnnotationTool } from "~/modules/pdfs/annotation-layer";
 import type { AnnotationPayload } from "~/modules/pdfs/use-pdfs";
@@ -103,6 +104,59 @@ export default function PdfDetailPage() {
     },
     [createAnnotation, page],
   );
+
+  // #162: annotation → EvidenceRef as_of snapshot. Pen annotations carry
+  // no text, so the user must phrase the claim themselves.
+  const handleToEvidence = useCallback(
+    async (annotationId: string) => {
+      if (!pdf) return;
+      const target = (annotationsQuery.data ?? []).find(
+        (a) => a.id === annotationId,
+      );
+      if (!target) return;
+
+      let claim: string | undefined;
+      if (target.payload.kind === "pen") {
+        const input = window.prompt(
+          "这条画笔标注要表达什么？（作为引用 claim）",
+        );
+        if (!input || input.trim().length === 0) return;
+        claim = input.trim();
+      }
+
+      try {
+        const evidence = await toEvidence(pdf.id, annotationId, claim);
+        // v1 export path: clipboard JSON — attach to notes/articles at
+        // THEIR creation time (research_notes.evidenceIds is immutable).
+        await navigator.clipboard.writeText(JSON.stringify(evidence, null, 2));
+        toast.success("已生成引用并复制到剪贴板", {
+          description: `${evidence.source} · ${evidence.date}`,
+        });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "生成引用失败");
+      }
+    },
+    [pdf, annotationsQuery.data],
+  );
+
+  // #162: full-text extraction is fail-open — failures only affect search.
+  const handleExtract = useCallback(async () => {
+    if (!pdf) return;
+    try {
+      const result = await extractPdf(pdf.id);
+      if (result.extractionStatus === "failed") {
+        toast.error("文本提取失败 — 阅读和标注不受影响，仅全文检索不可用");
+      } else {
+        toast.success(
+          result.extractionStatus === "truncated"
+            ? "已提取（超长文档已截断）"
+            : "全文提取完成，可用于检索",
+        );
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "提取失败");
+    }
+  }, [pdf]);
 
   const handleDeletePdf = async () => {
     if (!pdf) return;
@@ -179,6 +233,25 @@ export default function PdfDetailPage() {
           <Badge variant="outline" className="notranslate">
             {pdf.reportPeriod}
           </Badge>
+        )}
+        {/* #162: extraction state — fail-open, reading never blocks */}
+        {pdf.extractionStatus === "done" && (
+          <Badge variant="secondary">可检索</Badge>
+        )}
+        {pdf.extractionStatus === "truncated" && (
+          <Badge variant="secondary">可检索（已截断）</Badge>
+        )}
+        {pdf.extractionStatus === "failed" && (
+          <Badge variant="destructive">提取失败</Badge>
+        )}
+        {pdf.extractionStatus !== "done" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleExtract()}
+          >
+            {pdf.extractionStatus === "pending" ? "提取全文" : "重新提取"}
+          </Button>
         )}
         <Button
           variant={confirmDelete ? "destructive" : "ghost"}
@@ -284,6 +357,7 @@ export default function PdfDetailPage() {
         annotations={annotationsQuery.data ?? []}
         onDocumentLoad={handleDocumentLoad}
         onCreateAnnotation={handleCreate}
+        onToEvidence={(annotationId) => void handleToEvidence(annotationId)}
         onDeleteAnnotation={(annotationId) => {
           const target = (annotationsQuery.data ?? []).find(
             (a) => a.id === annotationId,

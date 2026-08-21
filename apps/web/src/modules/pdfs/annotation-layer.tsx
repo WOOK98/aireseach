@@ -34,6 +34,8 @@ interface AnnotationLayerProps {
   /** Create handler — payload already normalized + validated by caller path. */
   onCreate: (payload: AnnotationPayload) => void;
   onDelete: (id: string) => void;
+  /** #162: convert selected annotation into an EvidenceRef snapshot. */
+  onToEvidence: (id: string) => void;
   disabled?: boolean;
 }
 
@@ -58,11 +60,56 @@ function pointsToAttr(points: NormalizedPoint[]): string {
   return points.map((p) => `${p.x},${p.y}`).join(" ");
 }
 
+/**
+ * #162: capture the text-layer excerpt covered by highlight rects.
+ *
+ * Text-layer spans are absolutely positioned inside the same relatively
+ * positioned wrapper as this SVG overlay, so a plain DOMRect overlap test
+ * in pixel space maps normalized rects back onto the visible text.
+ * Returns undefined when nothing overlaps (scanned PDFs, empty drag).
+ */
+function captureExcerpt(
+  svgEl: SVGSVGElement | null,
+  rects: { x: number; y: number; width: number; height: number }[],
+): string | undefined {
+  if (!svgEl) return undefined;
+  const wrapper = svgEl.parentElement?.parentElement;
+  const textLayer = wrapper?.querySelector(".react-pdf__Page__textContent");
+  if (!textLayer) return undefined;
+
+  const box = svgEl.getBoundingClientRect();
+  const px = rects.map((r) => ({
+    left: box.left + r.x * box.width,
+    top: box.top + r.y * box.height,
+    right: box.left + (r.x + r.width) * box.width,
+    bottom: box.top + (r.y + r.height) * box.height,
+  }));
+
+  const pieces: string[] = [];
+  for (const span of Array.from(textLayer.querySelectorAll("span"))) {
+    const r = span.getBoundingClientRect();
+    const hit = px.some(
+      (rr) =>
+        !(
+          r.right < rr.left ||
+          r.left > rr.right ||
+          r.bottom < rr.top ||
+          r.top > rr.bottom
+        ),
+    );
+    if (hit) pieces.push(span.textContent ?? "");
+  }
+
+  const excerpt = pieces.join("").replace(/\s+/g, " ").trim();
+  return excerpt.length > 0 ? excerpt.slice(0, 2000) : undefined;
+}
+
 export function AnnotationLayer({
   annotations,
   tool,
   onCreate,
   onDelete,
+  onToEvidence,
   disabled,
 }: AnnotationLayerProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -128,7 +175,14 @@ export function AnnotationLayer({
       };
       // Ignore accidental taps (tiny rects).
       if (rect.width > 0.005 && rect.height > 0.005) {
-        onCreate({ kind: "highlight", rects: [rect], color: HIGHLIGHT_COLOR });
+        // #162: capture the covered text as excerpt for to-evidence.
+        const excerpt = captureExcerpt(svgRef.current, [rect]);
+        onCreate({
+          kind: "highlight",
+          rects: [rect],
+          color: HIGHLIGHT_COLOR,
+          ...(excerpt ? { excerpt } : {}),
+        });
       }
     }
     setDraftRect(null);
@@ -308,6 +362,16 @@ export function AnnotationLayer({
       {/* Selected annotation actions */}
       {selectedId && (
         <div className="absolute top-2 right-2 z-10 flex gap-1">
+          <button
+            type="button"
+            className="bg-primary text-primary-foreground rounded px-2 py-1 text-xs shadow"
+            onClick={() => {
+              onToEvidence(selectedId);
+              setSelectedId(null);
+            }}
+          >
+            转为引用
+          </button>
           <button
             type="button"
             className="bg-destructive text-destructive-foreground rounded px-2 py-1 text-xs shadow"

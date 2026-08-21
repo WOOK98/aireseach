@@ -251,9 +251,22 @@ export function ArticleReport({ article, className }: ArticleReportProps) {
               {evidence.map((ev) => (
                 <tr key={ev.id} className="border-b last:border-b-0">
                   <td className="px-3 py-2 font-mono text-xs font-semibold">
-                    {ev.id}
+                    <span className="inline-flex items-center gap-1">
+                      {/* #162: PDF-annotation evidence carries a pdf_ id prefix */}
+                      {ev.id.startsWith("pdf_") && (
+                        <span className="rounded bg-sky-50 px-1 py-0.5 font-sans text-[9px] font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">
+                          PDF
+                        </span>
+                      )}
+                      <span className="notranslate" translate="no">
+                        {ev.id}
+                      </span>
+                    </span>
                   </td>
-                  <td className="px-3 py-2 text-sm">{ev.claim}</td>
+                  {/* claim may hold a verbatim PDF excerpt — never translate */}
+                  <td className="notranslate px-3 py-2 text-sm" translate="no">
+                    {ev.claim}
+                  </td>
                   <td className="px-3 py-2">
                     {ev.url ? (
                       <a
