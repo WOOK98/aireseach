@@ -57,6 +57,7 @@
     "envin": "catalog:",
     "hono": "4.12.15",
     "hono-status-monitor": "1.0.7",
+    "pdfjs-dist": "5.4.296",
     "zod": "catalog:"
   },
   "devDependencies": {

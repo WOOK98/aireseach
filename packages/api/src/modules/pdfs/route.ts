@@ -8,6 +8,9 @@
  *   DELETE /api/pdfs/:id                  delete row + best-effort blob delete
  *   GET    /api/pdfs/:id/annotations      list annotations for a PDF
  *   POST   /api/pdfs/:id/annotations      create annotation
+ *   POST   /api/pdfs/:pdfId/annotations/:annotationId/to-evidence
+ *                                         annotation → EvidenceRef snapshot
+ *   POST   /api/pdfs/:id/extract          server-side full-text extraction
  *   PATCH  /api/pdfs/annotations/:id      replace annotation payload
  *   DELETE /api/pdfs/annotations/:id      delete annotation
  *
@@ -23,6 +26,8 @@
  *   with any other Content-Type even if a client bypasses the UI. The web
  *   client sends exactly that header on upload.
  * - neutral errors: no stack / schema detail leakage in responses.
+ * - extraction is fail-open (#162): failures are recorded as
+ *   `extractionStatus: "failed"` and never affect other endpoints.
  */
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
@@ -39,8 +44,10 @@ import {
   getUploadUrl,
 } from "@workspace/storage/server";
 
+import { extractPdfText } from "./pdf-extract";
 import {
   annotationKindFromPayload,
+  buildEvidenceRef,
   createAnnotationInputSchema,
   createPdfInputSchema,
   listPdfsQuerySchema,
@@ -48,6 +55,7 @@ import {
   patchPdfInputSchema,
   pdfBlobKey,
   toAnnotationItem,
+  toEvidenceInputSchema,
   toPdfItem,
 } from "./pdf-mapper";
 
@@ -132,6 +140,9 @@ export const pdfsRoute = new Hono()
       const search = or(
         ilike(researchPdfs.fileName, pattern),
         ilike(researchPdfs.sourceLabel, pattern),
+        // Full-text search over extracted PDF text (#162). Rows whose
+        // extraction is pending/failed simply never match here.
+        ilike(researchPdfs.extractedText, pattern),
       );
       if (search) conditions.push(search);
     }
@@ -269,7 +280,93 @@ export const pdfsRoute = new Hono()
 
       return c.json({ annotation: toAnnotationItem(row) }, 201);
     },
-  );
+  )
+
+  // ── Slice 2 (#162): annotation → EvidenceRef snapshot ────────────────────
+  .post(
+    "/:pdfId/annotations/:annotationId/to-evidence",
+    zValidator("json", toEvidenceInputSchema),
+    async (c) => {
+      const user = await getUser(c.req.raw.headers);
+      if (!user) throw unauthorized();
+
+      const pdf = await requireOwnedPdf(c.req.param("pdfId"), user.id);
+
+      const [annotation] = await db
+        .select()
+        .from(pdfAnnotations)
+        .where(
+          and(
+            eq(pdfAnnotations.id, c.req.param("annotationId")),
+            eq(pdfAnnotations.pdfId, pdf.id),
+            // Defense in depth: owner check on the denormalized column too.
+            eq(pdfAnnotations.userId, user.id),
+          ),
+        )
+        .limit(1);
+      if (!annotation) throw annotationNotFound();
+
+      const { claim } = c.req.valid("json");
+      const evidence = buildEvidenceRef(pdf, annotation, claim);
+      if (!evidence) {
+        // Pen annotations carry no text — the user must supply the claim.
+        throw new HTTPException(400, {
+          message: "A claim is required for this annotation kind.",
+        });
+      }
+
+      // The ref is an as_of snapshot (fileName/page/reportPeriod at
+      // conversion time). Attach it to notes/articles at THEIR creation
+      // time — research_notes.evidenceIds stays immutable (#154 redline).
+      return c.json({ evidence });
+    },
+  )
+
+  // ── Slice 2 (#162): full-text extraction (fail-open) ────────────────────
+  .post("/:id/extract", async (c) => {
+    const user = await getUser(c.req.raw.headers);
+    if (!user) throw unauthorized();
+
+    const pdf = await requireOwnedPdf(c.req.param("id"), user.id);
+
+    const recordStatus = async (
+      status: "done" | "failed" | "truncated",
+      text: string | null,
+    ) => {
+      await db
+        .update(researchPdfs)
+        .set({
+          extractionStatus: status,
+          extractedText: text,
+          extractedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(eq(researchPdfs.id, pdf.id), eq(researchPdfs.userId, user.id)),
+        );
+    };
+
+    try {
+      const { url } = await getSignedUrl({ path: pdf.blobKey });
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("blob fetch failed");
+      const bytes = new Uint8Array(await res.arrayBuffer());
+
+      const result = await extractPdfText(bytes);
+      const status = result.truncated ? "truncated" : "done";
+      await recordStatus(status, result.text);
+      return c.json({
+        extractionStatus: status,
+        pageCount: result.pageCount,
+        chars: result.text.length,
+      });
+    } catch {
+      // Fail-open: status recorded, neutral 200 — reading/annotating is
+      // unaffected and the client can simply render the failed badge.
+      await recordStatus("failed", null);
+      return c.json({ extractionStatus: "failed" as const });
+    }
+  });
 
 /** Nested routes for individual annotations (pdf id not needed — user-scoped). */
 export const pdfAnnotationsRoute = new Hono()

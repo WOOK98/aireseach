@@ -78,7 +78,7 @@ export default function PdfsPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索文件名 / 来源..."
+            placeholder="搜索文件名 / 来源 / 全文..."
             className="pl-9"
           />
         </div>

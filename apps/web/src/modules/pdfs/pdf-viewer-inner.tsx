@@ -39,6 +39,8 @@ export interface PdfViewerInnerProps {
   onDocumentLoad: (numPages: number) => void;
   onCreateAnnotation: (payload: AnnotationPayload) => void;
   onDeleteAnnotation: (id: string) => void;
+  /** #162: convert an annotation into an EvidenceRef snapshot. */
+  onToEvidence: (id: string) => void;
 }
 
 export function PdfViewerInner({
@@ -50,6 +52,7 @@ export function PdfViewerInner({
   onDocumentLoad,
   onCreateAnnotation,
   onDeleteAnnotation,
+  onToEvidence,
 }: PdfViewerInnerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -108,6 +111,7 @@ export function PdfViewerInner({
               tool={tool}
               onCreate={onCreateAnnotation}
               onDelete={onDeleteAnnotation}
+              onToEvidence={onToEvidence}
             />
           </div>
         )}

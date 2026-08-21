@@ -63,7 +63,7 @@ const articleVisualSchema = z.discriminatedUnion("kind", [
 
 // ── Evidence schema ──────────────────────────────────────────────────────────
 
-const evidenceRefSchema = z.object({
+export const evidenceRefSchema = z.object({
   id: z.string().min(1),
   claim: z.string().min(1),
   source: z.string().min(1),

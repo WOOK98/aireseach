@@ -9,6 +9,8 @@
  *   4. Storage failure on create → 502 + row rollback
  *   5. PATCH with immutable keys → 400 (strict schema)
  *   6. Annotation create: kind derived from payload; invalid payload → 400
+ *   7. Slice 2 (#162): to-evidence (highlight excerpt / pen claim rules,
+ *      user isolation) and extract (done/truncated/failed, fail-open)
  *
  * DB, auth and storage are mocked; mapper logic is in pdf-mapper.test.ts.
  */
@@ -41,10 +43,35 @@ const mockDelete = vi.fn<(table: unknown) => { where: typeof mockDeleteWhere }>(
   () => ({ where: mockDeleteWhere }),
 );
 
+// select().from(t).where(...).limit(n) → rows
+const mockSelectLimit = vi.fn<(...args: unknown[]) => Promise<unknown[]>>();
+const mockSelectWhere = vi.fn<
+  (...args: unknown[]) => { limit: typeof mockSelectLimit }
+>(() => ({ limit: mockSelectLimit }));
+const mockSelectFrom = vi.fn<
+  (table: unknown) => { where: typeof mockSelectWhere }
+>(() => ({ where: mockSelectWhere }));
+const mockSelect = vi.fn<() => { from: typeof mockSelectFrom }>(() => ({
+  from: mockSelectFrom,
+}));
+
+// update(t).set(v).where(...) → void
+const mockUpdateWhere = vi
+  .fn<(...args: unknown[]) => Promise<unknown[]>>()
+  .mockResolvedValue([]);
+const mockUpdateSet = vi.fn<
+  (values: unknown) => { where: typeof mockUpdateWhere }
+>(() => ({ where: mockUpdateWhere }));
+const mockUpdate = vi.fn<(table: unknown) => { set: typeof mockUpdateSet }>(
+  () => ({ set: mockUpdateSet }),
+);
+
 vi.mock("@workspace/db/server", () => ({
   db: {
     insert: (table: unknown) => mockInsert(table),
     delete: (table: unknown) => mockDelete(table),
+    select: () => mockSelect(),
+    update: (table: unknown) => mockUpdate(table),
   },
 }));
 
@@ -75,6 +102,13 @@ vi.mock("@workspace/storage/server", () => ({
   getUploadUrl: (...args: unknown[]) => mockGetUploadUrl(...args),
   getSignedUrl: (...args: unknown[]) => mockGetSignedUrl(...args),
   getDeleteUrl: (...args: unknown[]) => mockGetDeleteUrl(...args),
+}));
+
+// pdfjs-dist extraction is mocked at the module boundary — the real parser
+// is covered by pdf-extract.test.ts against a real PDF fixture.
+const mockExtractPdfText = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+vi.mock("../pdf-extract", () => ({
+  extractPdfText: (...args: unknown[]) => mockExtractPdfText(...args),
 }));
 
 const { pdfsRoute, pdfAnnotationsRoute } = await import("../route");
@@ -260,5 +294,208 @@ describe("POST /pdfs/:id/annotations", () => {
       body: JSON.stringify({ page: 1, payload: { kind: "arrow" } }),
     });
     expect(res.status).toBe(400);
+  });
+});
+
+// ── Slice 2 (#162): to-evidence + extract ────────────────────────────────────
+
+const PDF_ROW = {
+  id: "p1",
+  userId: "user_1",
+  fileName: "NVDA-Q2-2026.pdf",
+  blobKey: "pdfs/user_1/p1.pdf",
+  fileSizeBytes: 2048,
+  pageCount: 12,
+  ticker: "NVDA",
+  reportPeriod: "2026Q2",
+  sourceLabel: null,
+  extractionStatus: "pending" as const,
+  createdAt: new Date("2026-08-20T00:00:00Z"),
+  updatedAt: new Date("2026-08-20T00:00:00Z"),
+};
+
+const HIGHLIGHT_ROW = {
+  id: "a1",
+  pdfId: "p1",
+  userId: "user_1",
+  page: 7,
+  kind: "highlight" as const,
+  payload: {
+    kind: "highlight" as const,
+    rects: [{ x: 0.1, y: 0.1, width: 0.5, height: 0.05 }],
+    excerpt: "数据中心营收 263 亿美元",
+  },
+  createdAt: new Date("2026-08-20T00:00:00Z"),
+  updatedAt: new Date("2026-08-20T00:00:00Z"),
+};
+
+const postToEvidence = (body: unknown) =>
+  app.request("/pdfs/p1/annotations/a1/to-evidence", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+describe("POST /pdfs/:pdfId/annotations/:annotationId/to-evidence", () => {
+  it("rejects unauthenticated requests with 401", async () => {
+    mockGetSession.mockResolvedValue(null);
+    expect((await postToEvidence({})).status).toBe(401);
+  });
+
+  it("highlight with excerpt → EvidenceRef snapshot", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockSelectLimit
+      .mockResolvedValueOnce([PDF_ROW]) // requireOwnedPdf
+      .mockResolvedValueOnce([HIGHLIGHT_ROW]); // annotation fetch
+
+    const res = await postToEvidence({});
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { evidence: Record<string, unknown> };
+    expect(body.evidence).toEqual({
+      id: "pdf_p1_ann_a1",
+      claim: "数据中心营收 263 亿美元",
+      source: "NVDA-Q2-2026.pdf p.7",
+      date: "2026Q2",
+      confidence: "partial",
+    });
+    // No public URL — redline: signed URLs only, never persisted links.
+    expect(body.evidence).not.toHaveProperty("url");
+  });
+
+  it("explicit claim overrides the excerpt", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockSelectLimit
+      .mockResolvedValueOnce([PDF_ROW])
+      .mockResolvedValueOnce([HIGHLIGHT_ROW]);
+
+    const res = await postToEvidence({ claim: "管理层指引偏保守" });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { evidence: { claim: string } };
+    expect(body.evidence.claim).toBe("管理层指引偏保守");
+  });
+
+  it("pen annotation without claim → 400", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockSelectLimit.mockResolvedValueOnce([PDF_ROW]).mockResolvedValueOnce([
+      {
+        ...HIGHLIGHT_ROW,
+        payload: {
+          kind: "pen",
+          paths: [
+            [
+              { x: 0, y: 0 },
+              { x: 1, y: 1 },
+            ],
+          ],
+        },
+      },
+    ]);
+
+    const res = await postToEvidence({});
+    expect(res.status).toBe(400);
+  });
+
+  it("404 when the annotation belongs to another user/pdf", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockSelectLimit.mockResolvedValueOnce([PDF_ROW]).mockResolvedValueOnce([]); // ownership filter → no row
+
+    const res = await postToEvidence({});
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("POST /pdfs/:id/extract", () => {
+  const postExtract = () => app.request("/pdfs/p1/extract", { method: "POST" });
+
+  it("rejects unauthenticated requests with 401", async () => {
+    mockGetSession.mockResolvedValue(null);
+    expect((await postExtract()).status).toBe(401);
+  });
+
+  it("success → extractionStatus done, text + timestamp persisted", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockSelectLimit.mockResolvedValueOnce([PDF_ROW]);
+    mockGetSignedUrl.mockResolvedValue({ url: "https://s3/signed-get" });
+    const mockFetch = vi
+      .fn<(...args: unknown[]) => Promise<unknown>>()
+      .mockResolvedValue({
+        ok: true,
+        arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+      });
+    vi.stubGlobal("fetch", mockFetch);
+    mockExtractPdfText.mockResolvedValue({
+      text: "营收 263 亿美元",
+      pageCount: 12,
+      truncated: false,
+    });
+
+    const res = await postExtract();
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body).toEqual({
+      extractionStatus: "done",
+      pageCount: 12,
+      chars: 10,
+    });
+
+    const setArg = mockUpdateSet.mock.calls[0]![0] as Record<string, unknown>;
+    expect(setArg.extractionStatus).toBe("done");
+    expect(setArg.extractedText).toBe("营收 263 亿美元");
+    expect(setArg.extractedAt).toBeInstanceOf(Date);
+
+    vi.unstubAllGlobals();
+  });
+
+  it("truncated result → extractionStatus truncated", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockSelectLimit.mockResolvedValueOnce([PDF_ROW]);
+    mockGetSignedUrl.mockResolvedValue({ url: "https://s3/signed-get" });
+    const mockFetch = vi
+      .fn<(...args: unknown[]) => Promise<unknown>>()
+      .mockResolvedValue({
+        ok: true,
+        arrayBuffer: async () => new Uint8Array([1]).buffer,
+      });
+    vi.stubGlobal("fetch", mockFetch);
+    mockExtractPdfText.mockResolvedValue({
+      text: "partial text",
+      pageCount: 500,
+      truncated: true,
+    });
+
+    const res = await postExtract();
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body.extractionStatus).toBe("truncated");
+
+    const setArg = mockUpdateSet.mock.calls[0]![0] as Record<string, unknown>;
+    expect(setArg.extractionStatus).toBe("truncated");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("fail-open: parse failure → 200 + status failed, no text stored", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockSelectLimit.mockResolvedValueOnce([PDF_ROW]);
+    mockGetSignedUrl.mockResolvedValue({ url: "https://s3/signed-get" });
+    const mockFetch = vi
+      .fn<(...args: unknown[]) => Promise<unknown>>()
+      .mockResolvedValue({
+        ok: true,
+        arrayBuffer: async () => new Uint8Array([1]).buffer,
+      });
+    vi.stubGlobal("fetch", mockFetch);
+    mockExtractPdfText.mockRejectedValue(new Error("Invalid PDF structure"));
+
+    const res = await postExtract();
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body).toEqual({ extractionStatus: "failed" });
+
+    const setArg = mockUpdateSet.mock.calls[0]![0] as Record<string, unknown>;
+    expect(setArg.extractionStatus).toBe("failed");
+    expect(setArg.extractedText).toBeNull();
+
+    vi.unstubAllGlobals();
   });
 });
