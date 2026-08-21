@@ -3,6 +3,7 @@ export * from "./auth";
 export * from "./billing";
 export * from "./knowledge";
 export * from "./research-notes";
+export * from "./research-pdfs";
 export * from "./watchlist";
 export * from "./ledger";
 export * from "./aleabit";

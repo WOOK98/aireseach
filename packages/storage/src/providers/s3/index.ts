@@ -11,12 +11,16 @@ import type { GetObjectUrlInput } from "../../lib/schema";
 import type { StorageProviderStrategy } from "../types";
 
 export const strategy = {
-  getUploadUrl: async ({ path, bucket }: GetObjectUrlInput) => {
+  getUploadUrl: async ({ path, bucket, contentType }: GetObjectUrlInput) => {
     const url = await getSignedUrlCommand(
       s3(),
       new PutObjectCommand({
         Bucket: bucket,
         Key: path,
+        // Pinning ContentType makes the signature content-type-aware: S3
+        // rejects any PUT whose Content-Type header differs. Clients that
+        // use a pinned upload URL MUST send the same header.
+        ...(contentType ? { ContentType: contentType } : {}),
       }),
       {
         expiresIn: 60,

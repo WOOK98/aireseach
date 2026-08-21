@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { Activity, BarChart3, Map, NotebookPen } from "lucide-react";
+import { Activity, BarChart3, FileText, Map, NotebookPen } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { getBillingSummaryResponseSchema } from "@workspace/api/schema";
@@ -35,6 +35,11 @@ const menu = [
         title: "Notes",
         href: pathsConfig.dashboard.user.notes,
         icon: <NotebookPen />,
+      },
+      {
+        title: "PDFs",
+        href: pathsConfig.dashboard.user.pdfs,
+        icon: <FileText />,
       },
       {
         title: "Data Atlas",
