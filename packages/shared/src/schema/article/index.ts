@@ -293,3 +293,44 @@ export function validateArticleOutput(text: string): {
 
   return { ok: true, data: result.data };
 }
+
+// ── Draft note artifact (Evidence Inbox convert, #165) ───────────────────────
+
+/**
+ * Draft notes are created when an Evidence Inbox item is converted into a
+ * research note. Unlike articles (LLM-generated, 8-section), a draft is just
+ * provenance + evidence refs — the user writes the narrative themselves.
+ *
+ * REDLINES (same as article kind):
+ * - immutable after insert (as_of snapshot semantics)
+ * - evidence refs reuse evidenceRefSchema — no second evidence model
+ */
+export const DRAFT_NOTE_SCHEMA_VERSION = 1;
+
+export const draftNoteSourceSchema = z.object({
+  inboxItemId: z.string().min(1),
+  sourceType: z.enum(["url", "paste", "x_post"]),
+  title: z.string().min(1),
+  url: z.string().url().optional(),
+  author: z.string().optional(),
+  publishedAt: z.string().optional(),
+  rawText: z.string().optional(),
+});
+
+export const draftNoteArtifactSchema = z.object({
+  kind: z.literal("draft"),
+  schema_version: z.literal(DRAFT_NOTE_SCHEMA_VERSION),
+  evidence: z.array(evidenceRefSchema).min(1),
+  source: draftNoteSourceSchema,
+  capturedAt: z.string().min(1),
+});
+
+/** Any artifact that may live in research_notes.artifact. */
+export const noteArtifactSchema = z.union([
+  researchArticleSchema,
+  draftNoteArtifactSchema,
+]);
+
+export type DraftNoteSource = z.infer<typeof draftNoteSourceSchema>;
+export type DraftNoteArtifact = z.infer<typeof draftNoteArtifactSchema>;
+export type NoteArtifact = z.infer<typeof noteArtifactSchema>;

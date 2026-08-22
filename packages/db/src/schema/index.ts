@@ -7,3 +7,4 @@ export * from "./research-pdfs";
 export * from "./watchlist";
 export * from "./ledger";
 export * from "./aleabit";
+export * from "./evidence-inbox";

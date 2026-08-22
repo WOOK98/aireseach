@@ -91,6 +91,8 @@ interface NoteRow {
   summary: string | null;
   note: string | null;
   tags: string[];
+  /** "article" = LLM-generated (#154); "draft" = converted inbox item (#165). */
+  kind: string;
   entityTicker: string | null;
   entityName: string | null;
   artifact: unknown;
@@ -113,6 +115,7 @@ export function toNoteListItem(row: NoteRow) {
     summary: row.summary,
     note: row.note,
     tags: row.tags,
+    kind: row.kind,
     entityTicker: row.entityTicker,
     entityName: row.entityName,
     schemaVersion: row.schemaVersion,

@@ -8,6 +8,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import type { DraftNoteArtifact } from "@workspace/shared/schema/article";
 import type { ResearchArticle } from "@workspace/shared/types/article";
 
 // ── Types (mirror API responses) ─────────────────────────────────────────
@@ -18,6 +19,8 @@ export interface NoteListItem {
   summary: string | null;
   note: string | null;
   tags: string[];
+  /** "article" = LLM-generated; "draft" = converted inbox item (#165). */
+  kind: string;
   entityTicker: string | null;
   entityName: string | null;
   schemaVersion: number;
@@ -28,7 +31,8 @@ export interface NoteListItem {
 }
 
 export interface NoteDetail extends NoteListItem {
-  artifact: ResearchArticle;
+  /** article kind → ResearchArticle; draft kind → DraftNoteArtifact (#165). */
+  artifact: ResearchArticle | DraftNoteArtifact;
   evidenceIds: string[];
   sourceMeta: { query?: string; language?: "zh" | "en" } | null;
 }

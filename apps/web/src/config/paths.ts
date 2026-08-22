@@ -52,6 +52,7 @@ const pathsConfig = {
       research: `${DASHBOARD_PREFIX}/research`,
       notes: `${DASHBOARD_PREFIX}/notes`,
       note: (id: string) => `${DASHBOARD_PREFIX}/notes/${id}`,
+      inbox: `${DASHBOARD_PREFIX}/inbox`,
       pdfs: `${DASHBOARD_PREFIX}/pdfs`,
       pdf: (id: string) => `${DASHBOARD_PREFIX}/pdfs/${id}`,
       visuals: "/visuals",

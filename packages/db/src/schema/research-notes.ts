@@ -49,7 +49,10 @@ export const researchNotes = pgTable(
     entityName: text("entity_name"),
 
     // ── Immutable artifact (as_of snapshot) ──
-    artifact: jsonb().notNull(), // ResearchArticle JSON — never updated
+    // "article" = LLM-generated ResearchArticle (#116); "draft" = converted
+    // from an Evidence Inbox item (#165). Both are immutable after insert.
+    kind: text().notNull().default("article"),
+    artifact: jsonb().notNull(), // noteArtifactSchema JSON — never updated
     schemaVersion: integer("schema_version").notNull(),
     evidenceIds: jsonb().$type<string[]>().notNull().default([]),
     asOf: text("as_of").notNull(), // entity.dataTimestamp, verbatim
