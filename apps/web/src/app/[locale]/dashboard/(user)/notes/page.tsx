@@ -8,7 +8,7 @@
  * Recent notes + ticker filter + search. List items never include the
  * artifact payload (kept light); click through to the detail page.
  */
-import { FileText, Search } from "lucide-react";
+import { FileText, Inbox, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -62,6 +62,13 @@ export default function NotesPage() {
       <div className="space-y-1">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-semibold">研究笔记</h1>
+          <Link
+            href={pathsConfig.dashboard.user.inbox}
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm transition-colors"
+          >
+            <Inbox className="h-3.5 w-3.5" />
+            Inbox
+          </Link>
           <Link
             href={pathsConfig.dashboard.user.pdfs}
             className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm transition-colors"
@@ -146,6 +153,11 @@ export default function NotesPage() {
                   >
                     {n.title}
                   </p>
+                  {n.kind === "draft" && (
+                    <span className="mt-0.5 inline-block rounded-full border border-amber-300 px-1.5 py-px text-[10px] text-amber-700 dark:border-amber-800 dark:text-amber-400">
+                      草稿
+                    </span>
+                  )}
                   {n.summary && (
                     <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">
                       {n.summary}

@@ -18,6 +18,7 @@ import { articleRoute } from "./modules/article/route";
 import { authRouter } from "./modules/auth/router";
 import { billingRouter } from "./modules/billing/router";
 import { compareRouter } from "./modules/compare/router";
+import { inboxRoute } from "./modules/inbox/route";
 import { ledgerRoute } from "./modules/ledger/router";
 import { mcpRouter } from "./modules/mcp/router";
 import { notesRoute } from "./modules/notes/route";
@@ -82,6 +83,7 @@ const appRouter = new Hono()
   .route("/report", reportRoute)
   .route("/article", articleRoute)
   .route("/notes", notesRoute)
+  .route("/inbox", inboxRoute)
   .route("/pdfs", pdfsRoute)
   .route("/pdfs/annotations", pdfAnnotationsRoute)
   .route("/ledger", ledgerRoute)

@@ -102,6 +102,7 @@ describe("POST /notes", () => {
       summary: null,
       note: null,
       tags: [],
+      kind: "article",
       entityTicker: "NVDA",
       entityName: "NVIDIA Corporation",
       artifact: VALID_ARTICLE,

@@ -32,6 +32,105 @@ import { ArticleReport } from "~/components/article/ArticleReport";
 import { pathsConfig } from "~/config/paths";
 import { deleteNote, patchNote, useNote } from "~/modules/notes/use-notes";
 
+import type { ResearchArticle } from "@workspace/shared/types/article";
+import type { NoteDetail } from "~/modules/notes/use-notes";
+
+/** Draft artifact viewer (#165) — provenance + evidence, no LLM sections. */
+function DraftArtifact({ artifact }: { artifact: NoteDetail["artifact"] }) {
+  if (!("kind" in artifact) || artifact.kind !== "draft") return null;
+  const draft = artifact;
+  return (
+    <div className="space-y-4 rounded-lg border p-4">
+      <div className="flex items-center gap-2">
+        <Badge variant="secondary">草稿 · 来自 Evidence Inbox</Badge>
+        <span className="text-muted-foreground text-xs">
+          叙事部分由你撰写 — 上方「我的批注」可直接编辑
+        </span>
+      </div>
+
+      <div className="space-y-1.5 text-sm">
+        <p className="font-medium">来源</p>
+        <div className="text-muted-foreground space-y-1 text-xs">
+          <p>
+            类型：{" "}
+            <span className="notranslate font-mono" translate="no">
+              {draft.source.sourceType}
+            </span>
+          </p>
+          {draft.source.url && (
+            <p>
+              链接：{" "}
+              <a
+                href={draft.source.url}
+                target="_blank"
+                rel="noreferrer"
+                className="notranslate font-mono break-all text-blue-600 hover:underline dark:text-blue-400"
+                translate="no"
+              >
+                {draft.source.url}
+              </a>
+            </p>
+          )}
+          {draft.source.author && (
+            <p>
+              作者：{" "}
+              <span className="notranslate" translate="no">
+                {draft.source.author}
+              </span>
+            </p>
+          )}
+          {draft.source.publishedAt && (
+            <p>
+              发布于：{" "}
+              <span className="notranslate font-mono" translate="no">
+                {draft.source.publishedAt}
+              </span>
+            </p>
+          )}
+        </div>
+      </div>
+
+      {draft.source.rawText && (
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium">原文摘录</p>
+          <pre
+            className="notranslate bg-muted max-h-96 overflow-auto rounded-md p-3 text-xs leading-relaxed whitespace-pre-wrap"
+            translate="no"
+          >
+            {draft.source.rawText}
+          </pre>
+        </div>
+      )}
+
+      <div className="space-y-1.5">
+        <p className="text-sm font-medium">
+          证据引用（{draft.evidence.length} 条）
+        </p>
+        {draft.evidence.map((ev) => (
+          <div key={ev.id} className="rounded-md border p-3 text-xs">
+            <p className="notranslate font-medium" translate="no">
+              {ev.claim}
+            </p>
+            <p className="text-muted-foreground mt-1">
+              <span className="notranslate" translate="no">
+                {ev.source}
+              </span>{" "}
+              ·{" "}
+              <span className="notranslate font-mono" translate="no">
+                {ev.date}
+              </span>{" "}
+              ·{" "}
+              <Badge variant="outline" className="text-[10px]">
+                {ev.confidence}
+              </Badge>
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function NoteDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -219,7 +318,11 @@ export default function NoteDetailPage() {
       </div>
 
       {/* ── Immutable artifact ── */}
-      <ArticleReport article={note.artifact} />
+      {note.kind === "draft" ? (
+        <DraftArtifact artifact={note.artifact} />
+      ) : (
+        <ArticleReport article={note.artifact as ResearchArticle} />
+      )}
     </div>
   );
 }

@@ -125,6 +125,7 @@ describe("response mappers", () => {
     summary: null,
     note: null,
     tags: ["NVDA"],
+    kind: "article",
     entityTicker: "NVDA",
     entityName: "NVIDIA Corporation",
     artifact: VALID_ARTICLE,
@@ -143,6 +144,11 @@ describe("response mappers", () => {
     expect(item.evidenceCount).toBe(3);
     expect(item.asOf).toBe("2026-08-10");
     expect(item.createdAt).toBe("2026-08-18T10:00:00.000Z");
+  });
+
+  it("toNoteListItem exposes kind for draft badge rendering", () => {
+    expect(toNoteListItem(row).kind).toBe("article");
+    expect(toNoteListItem({ ...row, kind: "draft" }).kind).toBe("draft");
   });
 
   it("toNoteDetail includes artifact and evidenceIds", () => {
