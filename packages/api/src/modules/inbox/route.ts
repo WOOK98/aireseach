@@ -13,9 +13,12 @@
  *   (no existence leak).
  * - convert reuses #117 evidence schema (see inbox-mapper) and writes an
  *   IMMUTABLE draft artifact — PATCH can never touch artifact fields.
- * - convert is idempotent: an already-converted item returns the existing
- *   note instead of creating a duplicate.
- * - url idempotency: userId+url unique index; a duplicate url maps to 409.
+ * - convert is idempotent AND concurrency-safe: an atomic
+ *   `UPDATE … WHERE status='inbox'` claim inside a transaction guarantees
+ *   that racing converts produce exactly one note; the loser re-reads the
+ *   row and returns the existing noteId.
+ * - url idempotency: userId+url unique index; ONLY the actual unique
+ *   violation maps to 409 — other DB failures surface as a neutral 500.
  * - neutral errors: no stack / schema detail leakage in responses.
  */
 import { zValidator } from "@hono/zod-validator";
@@ -43,6 +46,12 @@ const getUser = async (headers: Headers) => {
 
 const unauthorized = () => new HTTPException(401, { message: "Unauthorized" });
 const notFound = () => new HTTPException(404, { message: "Item not found." });
+
+/** Postgres unique-violation code (see publish-audit.ts for the same pattern). */
+const isUniqueViolation = (err: unknown): boolean =>
+  typeof err === "object" &&
+  err !== null &&
+  (err as { code?: string }).code === "23505";
 
 /** Fetch a user-scoped inbox row or throw 404. */
 async function getOwnItem(itemId: string, userId: string) {
@@ -78,11 +87,15 @@ export const inboxRoute = new Hono()
           rawText: input.rawText ?? null,
         })
         .returning();
-    } catch {
-      // userId+url unique violation → idempotent conflict, not a 500
-      throw new HTTPException(409, {
-        message: "This URL is already in your inbox.",
-      });
+    } catch (err) {
+      // ONLY the userId+url unique violation maps to 409. Any other DB
+      // failure is infrastructure, not a duplicate — neutral 500.
+      if (isUniqueViolation(err)) {
+        throw new HTTPException(409, {
+          message: "This URL is already in your inbox.",
+        });
+      }
+      throw new HTTPException(500, { message: "Failed to save item." });
     }
 
     if (!row) {
@@ -147,51 +160,97 @@ export const inboxRoute = new Hono()
     return c.json({ item: toInboxItem(row) });
   })
 
-  // ── Convert → draft research note (idempotent) ──────────────────────────
+  // ── Convert → draft research note (idempotent + concurrency-safe) ──────
   .post("/:id/convert", async (c) => {
     const user = await getUser(c.req.raw.headers);
     if (!user) throw unauthorized();
 
-    const item = await getOwnItem(c.req.param("id"), user.id);
+    const itemId = c.req.param("id");
 
-    // Idempotent: already converted → return the existing note reference.
-    if (item.status === "converted" && item.noteId) {
-      return c.json({ noteId: item.noteId, alreadyConverted: true }, 200);
-    }
-    if (item.status === "archived") {
-      throw new HTTPException(409, {
-        message: "Archived items cannot be converted.",
-      });
-    }
+    const result = await db.transaction(async (tx) => {
+      // Atomic claim: exactly one concurrent request can flip
+      // inbox → converted. The loser gets no row here.
+      const [claimed] = await tx
+        .update(evidenceInbox)
+        .set({ status: "converted", updatedAt: new Date() })
+        .where(
+          and(
+            eq(evidenceInbox.id, itemId),
+            eq(evidenceInbox.userId, user.id),
+            eq(evidenceInbox.status, "inbox"),
+          ),
+        )
+        .returning();
 
-    const artifact = buildDraftArtifact(item);
+      if (!claimed) {
+        // Lost the race or wrong state — read current state and respond
+        // without writing anything.
+        const [row] = await tx
+          .select()
+          .from(evidenceInbox)
+          .where(
+            and(
+              eq(evidenceInbox.id, itemId),
+              eq(evidenceInbox.userId, user.id),
+            ),
+          )
+          .limit(1);
+        if (!row) throw notFound();
+        if (row.status === "converted" && row.noteId) {
+          // Idempotent: return the note the racing request created.
+          return { noteId: row.noteId, alreadyConverted: true, status: 200 };
+        }
+        if (row.status === "archived") {
+          throw new HTTPException(409, {
+            message: "Archived items cannot be converted.",
+          });
+        }
+        // converted but noteId is null (linked note was deleted):
+        // refuse rather than silently create a second note.
+        throw new HTTPException(409, {
+          message:
+            "Item was already converted; the linked note no longer exists.",
+        });
+      }
 
-    const [note] = await db
-      .insert(researchNotes)
-      .values({
-        userId: user.id,
-        title: item.title,
-        kind: "draft",
-        artifact,
-        schemaVersion: artifact.schema_version,
-        evidenceIds: [evidenceIdForItem(item.id)],
-        asOf: artifact.capturedAt,
-        sourceMeta: { sourceType: item.sourceType, inboxItemId: item.id },
-      })
-      .returning({ id: researchNotes.id });
+      const artifact = buildDraftArtifact(claimed);
 
-    if (!note) {
-      throw new HTTPException(500, { message: "Failed to create note." });
-    }
+      const [note] = await tx
+        .insert(researchNotes)
+        .values({
+          userId: user.id,
+          title: claimed.title,
+          kind: "draft",
+          artifact,
+          schemaVersion: artifact.schema_version,
+          evidenceIds: [evidenceIdForItem(claimed.id)],
+          asOf: artifact.capturedAt,
+          sourceMeta: {
+            sourceType: claimed.sourceType,
+            inboxItemId: claimed.id,
+          },
+        })
+        .returning({ id: researchNotes.id });
 
-    await db
-      .update(evidenceInbox)
-      .set({ status: "converted", noteId: note.id, updatedAt: new Date() })
-      .where(
-        and(eq(evidenceInbox.id, item.id), eq(evidenceInbox.userId, user.id)),
-      );
+      if (!note) {
+        // Rolls the claim back — item stays convertible.
+        throw new HTTPException(500, { message: "Failed to create note." });
+      }
 
-    return c.json({ noteId: note.id, alreadyConverted: false }, 201);
+      await tx
+        .update(evidenceInbox)
+        .set({ noteId: note.id, updatedAt: new Date() })
+        .where(
+          and(eq(evidenceInbox.id, itemId), eq(evidenceInbox.userId, user.id)),
+        );
+
+      return { noteId: note.id, alreadyConverted: false, status: 201 };
+    });
+
+    return c.json(
+      { noteId: result.noteId, alreadyConverted: result.alreadyConverted },
+      result.status as 200 | 201,
+    );
   })
 
   // ── Delete (pre-conversion only) ──────────────────────────────────────────

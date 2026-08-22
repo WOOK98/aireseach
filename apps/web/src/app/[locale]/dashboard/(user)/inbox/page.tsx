@@ -232,7 +232,10 @@ function InboxRow({ item }: { item: InboxItem }) {
             </a>
           )}
           {item.rawText && (
-            <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">
+            <p
+              className="notranslate text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed"
+              translate="no"
+            >
               {item.rawText}
             </p>
           )}

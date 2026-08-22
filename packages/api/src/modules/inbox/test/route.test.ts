@@ -70,12 +70,24 @@ const mockDelete = vi.fn<(t: unknown) => unknown>(() => ({
   where: mockDeleteWhere,
 }));
 
+const mockTransaction = vi.fn<
+  (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>
+>(async (fn) =>
+  fn({
+    insert: (t: unknown) => mockInsert(t),
+    select: () => mockSelect(),
+    update: (t: unknown) => mockUpdate(t),
+    delete: (t: unknown) => mockDelete(t),
+  }),
+);
+
 vi.mock("@workspace/db/server", () => ({
   db: {
     insert: (t: unknown) => mockInsert(t),
     select: () => mockSelect(),
     update: (t: unknown) => mockUpdate(t),
     delete: (t: unknown) => mockDelete(t),
+    transaction: (fn: (tx: unknown) => Promise<unknown>) => mockTransaction(fn),
   },
 }));
 
@@ -199,7 +211,13 @@ describe("POST /inbox", () => {
   });
 
   it("409 when insert hits the user+url unique index", async () => {
-    mockInsertReturning.mockRejectedValue(new Error("unique violation"));
+    const uniqueErr = Object.assign(
+      new Error("duplicate key value violates unique constraint"),
+      {
+        code: "23505",
+      },
+    );
+    mockInsertReturning.mockRejectedValue(uniqueErr);
     const res = await postJson("/inbox", {
       sourceType: "url",
       title: "dup",
@@ -208,24 +226,35 @@ describe("POST /inbox", () => {
     expect(res.status).toBe(409);
     expect(await res.text()).toContain("already in your inbox");
   });
+
+  it("500 on non-unique DB failure", async () => {
+    mockInsertReturning.mockRejectedValue(new Error("connection refused"));
+    const res = await postJson("/inbox", {
+      sourceType: "url",
+      title: "infra fail",
+      url: "https://example.com/boom",
+    });
+    expect(res.status).toBe(500);
+  });
 });
 
 // ── POST /inbox/:id/convert ───────────────────────────────────────────────
 
 describe("POST /inbox/:id/convert", () => {
-  it("201: creates draft note + flips inbox status", async () => {
-    // getOwnItem → select returns the inbox row
-    mockSelectResult.mockResolvedValue([INBOX_ROW]);
-    // insert into research_notes returns the new note id
+  it("201: creates draft note + flips inbox status (transaction)", async () => {
+    // Transaction flow:
+    // 1) tx.update() claim → returns [INBOX_ROW]
+    // 2) tx.insert() note → returns [{id: "note_1"}]
+    // 3) tx.update() set noteId → fire-and-forget
+    mockUpdateReturning
+      .mockResolvedValueOnce([INBOX_ROW]) // claim
+      .mockResolvedValueOnce([]); // set noteId (unused)
     mockInsertReturning.mockResolvedValue([{ id: "note_1" }]);
-    // update evidenceInbox succeeds
-    mockUpdateReturning.mockResolvedValue([
-      { ...INBOX_ROW, status: "converted", noteId: "note_1" },
-    ]);
 
     const res = await app.request("/inbox/item_1/convert", { method: "POST" });
     expect(res.status).toBe(201);
 
+    // Verify note insert payload
     const noteInsert = mockInsertValues.mock.calls[0]![0] as Record<
       string,
       unknown
@@ -240,6 +269,8 @@ describe("POST /inbox/:id/convert", () => {
   });
 
   it("200 idempotent when already converted", async () => {
+    // Claim fails (lost race), re-read returns converted row
+    mockUpdateReturning.mockResolvedValueOnce([]);
     mockSelectResult.mockResolvedValue([
       { ...INBOX_ROW, status: "converted", noteId: "note_1" },
     ]);
@@ -251,20 +282,31 @@ describe("POST /inbox/:id/convert", () => {
     };
     expect(body.noteId).toBe("note_1");
     expect(body.alreadyConverted).toBe(true);
-    // no insert happened
+    // No insert happened
     expect(mockInsert).not.toHaveBeenCalled();
   });
 
   it("409 when item is archived", async () => {
+    mockUpdateReturning.mockResolvedValueOnce([]);
     mockSelectResult.mockResolvedValue([{ ...INBOX_ROW, status: "archived" }]);
     const res = await app.request("/inbox/item_1/convert", { method: "POST" });
     expect(res.status).toBe(409);
   });
 
   it("404 for unknown item id", async () => {
+    mockUpdateReturning.mockResolvedValueOnce([]);
     mockSelectResult.mockResolvedValue([]);
     const res = await app.request("/inbox/nope/convert", { method: "POST" });
     expect(res.status).toBe(404);
+  });
+
+  it("409 when converted but noteId is missing (orphan)", async () => {
+    mockUpdateReturning.mockResolvedValueOnce([]);
+    mockSelectResult.mockResolvedValue([
+      { ...INBOX_ROW, status: "converted", noteId: null },
+    ]);
+    const res = await app.request("/inbox/item_1/convert", { method: "POST" });
+    expect(res.status).toBe(409);
   });
 });
 
