@@ -9,6 +9,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { DraftNoteArtifact } from "@workspace/shared/schema/article";
+import type { LiveBlock } from "@workspace/shared/schema/live-block";
 import type { ResearchArticle } from "@workspace/shared/types/article";
 
 // ── Types (mirror API responses) ─────────────────────────────────────────
@@ -34,6 +35,8 @@ export interface NoteDetail extends NoteListItem {
   /** article kind → ResearchArticle; draft kind → DraftNoteArtifact (#165). */
   artifact: ResearchArticle | DraftNoteArtifact;
   evidenceIds: string[];
+  /** Live Blocks (#167) — refreshable evidence blocks, outside the artifact. */
+  liveBlocks: LiveBlock[];
   sourceMeta: { query?: string; language?: "zh" | "en" } | null;
 }
 
@@ -117,6 +120,59 @@ export async function deleteNote(id: string): Promise<void> {
   if (!res.ok) throw new Error(await readError(res));
 }
 
+// ── Live Blocks (#167) ─────────────────────────────────────────────────────
+
+export type InsertLiveBlockInput =
+  | {
+      mode: "evidence_ref";
+      evidenceRef: {
+        id: string;
+        claim: string;
+        source: string;
+        date: string;
+        url?: string;
+        confidence: "verified" | "partial" | "unverified";
+      };
+      title?: string;
+      sourceType?: string;
+    }
+  | {
+      mode: "source_excerpt";
+      title: string;
+      source: string;
+      sourceUrl?: string;
+      sourceType?: string;
+      excerpt: string;
+      evidenceIds?: string[];
+    };
+
+export async function insertLiveBlock(
+  noteId: string,
+  input: InsertLiveBlockInput,
+): Promise<LiveBlock> {
+  const res = await fetch(`/api/notes/${encodeURIComponent(noteId)}/blocks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  const data = (await res.json()) as { block: LiveBlock };
+  return data.block;
+}
+
+export async function refreshLiveBlock(
+  noteId: string,
+  blockId: string,
+): Promise<LiveBlock> {
+  const res = await fetch(
+    `/api/notes/${encodeURIComponent(noteId)}/blocks/${encodeURIComponent(blockId)}/refresh`,
+    { method: "POST" },
+  );
+  if (!res.ok) throw new Error(await readError(res));
+  const data = (await res.json()) as { block: LiveBlock };
+  return data.block;
+}
+
 // ── Hooks ────────────────────────────────────────────────────────────────
 
 export function useNotes(query: { q?: string; ticker?: string } = {}) {
@@ -152,6 +208,30 @@ export function useUpdateNote(id: string) {
     onSuccess: (note) => {
       queryClient.setQueryData(["research-note", id], note);
       void queryClient.invalidateQueries({ queryKey: ["research-notes"] });
+    },
+  });
+}
+
+export function useInsertLiveBlock(noteId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: InsertLiveBlockInput) => insertLiveBlock(noteId, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["research-note", noteId],
+      });
+    },
+  });
+}
+
+export function useRefreshLiveBlock(noteId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (blockId: string) => refreshLiveBlock(noteId, blockId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["research-note", noteId],
+      });
     },
   });
 }

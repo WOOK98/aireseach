@@ -14,6 +14,8 @@ import {
   Camera,
   FileText,
   Loader2,
+  Plus,
+  RefreshCw,
   Save,
   Trash2,
 } from "lucide-react";
@@ -30,7 +32,21 @@ import { Textarea } from "@workspace/ui-web/textarea";
 
 import { ArticleReport } from "~/components/article/ArticleReport";
 import { pathsConfig } from "~/config/paths";
-import { deleteNote, patchNote, useNote } from "~/modules/notes/use-notes";
+import {
+  blockMetaLabel,
+  blockRefreshErrorLabel,
+  evidenceAlreadyBlocked,
+  extractNoteEvidence,
+  staleStateBadgeVariant,
+  staleStateLabel,
+} from "~/modules/notes/live-block-view";
+import {
+  deleteNote,
+  insertLiveBlock,
+  patchNote,
+  refreshLiveBlock,
+  useNote,
+} from "~/modules/notes/use-notes";
 
 import type { ResearchArticle } from "@workspace/shared/types/article";
 import type { NoteDetail } from "~/modules/notes/use-notes";
@@ -127,6 +143,194 @@ function DraftArtifact({ artifact }: { artifact: NoteDetail["artifact"] }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Live Blocks section (#167) — refreshable evidence blocks.
+ *
+ * - refresh only updates the block (server enforces; artifact untouched)
+ * - failed blocks show a neutral reason, never internal detail
+ * - empty state is honest: “No live blocks yet”
+ * - all dynamic source/date/period values are notranslate
+ */
+function LiveBlocksSection({
+  note,
+  onChanged,
+}: {
+  note: NoteDetail;
+  onChanged: () => Promise<unknown>;
+}) {
+  const [busyBlockId, setBusyBlockId] = useState<string | null>(null);
+  const [busyEvidenceId, setBusyEvidenceId] = useState<string | null>(null);
+
+  const blocks = note.liveBlocks ?? [];
+  const evidence = extractNoteEvidence(note.artifact);
+  const insertable = evidence.filter(
+    (ev) => !evidenceAlreadyBlocked(blocks, ev.id),
+  );
+
+  async function handleRefresh(blockId: string) {
+    setBusyBlockId(blockId);
+    try {
+      const updated = await refreshLiveBlock(note.id, blockId);
+      if (updated.staleState === "failed") {
+        toast.error(blockRefreshErrorLabel(updated) ?? "刷新失败");
+      } else if (updated.staleState === "manual_only") {
+        // unverified ≠ no change — 无在线来源时明确告知，不伪装“已刷新”
+        toast.info("该来源不支持自动刷新（仅手动）");
+      } else {
+        toast.success("已刷新");
+      }
+      await onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "刷新失败");
+    } finally {
+      setBusyBlockId(null);
+    }
+  }
+
+  async function handleInsert(evidenceId: string) {
+    const entry = insertable.find((ev) => ev.id === evidenceId);
+    if (!entry) return;
+    setBusyEvidenceId(evidenceId);
+    try {
+      await insertLiveBlock(note.id, {
+        mode: "evidence_ref",
+        evidenceRef: entry,
+        sourceType: note.kind === "draft" ? "inbox" : "evidence",
+      });
+      toast.success("已添加 Live Block");
+      await onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "添加失败");
+    } finally {
+      setBusyEvidenceId(null);
+    }
+  }
+
+  return (
+    <div className="space-y-3 rounded-lg border p-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium">Live Blocks（{blocks.length}）</p>
+        <span className="text-muted-foreground text-xs">
+          可刷新证据块 — 刷新只更新块本身，不改正文快照
+        </span>
+      </div>
+
+      {blocks.length === 0 ? (
+        <p className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
+          No live blocks yet
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {blocks.map((block) => {
+            const errorLabel = blockRefreshErrorLabel(block);
+            return (
+              <div key={block.id} className="rounded-md border p-3 text-xs">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="notranslate font-medium" translate="no">
+                    {block.title}
+                  </p>
+                  <Badge
+                    variant={staleStateBadgeVariant(block.staleState)}
+                    className="shrink-0 text-[10px]"
+                  >
+                    {staleStateLabel(block.staleState)}
+                  </Badge>
+                </div>
+                <p className="text-muted-foreground mt-1">
+                  <span className="notranslate" translate="no">
+                    {blockMetaLabel(block)}
+                  </span>
+                  {block.lastRefreshedAt && (
+                    <>
+                      {" · 上次刷新 "}
+                      <span className="notranslate font-mono" translate="no">
+                        {block.lastRefreshedAt.slice(0, 19).replace("T", " ")}
+                      </span>
+                    </>
+                  )}
+                </p>
+                {block.type === "source_excerpt" && (
+                  <pre
+                    className="notranslate bg-muted mt-2 max-h-40 overflow-auto rounded-md p-2 leading-relaxed whitespace-pre-wrap"
+                    translate="no"
+                  >
+                    {block.content.excerpt}
+                  </pre>
+                )}
+                {errorLabel && (
+                  <p className="mt-2 text-red-600 dark:text-red-400">
+                    {errorLabel}
+                  </p>
+                )}
+                <div className="mt-2 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRefresh(block.id)}
+                    disabled={busyBlockId === block.id}
+                  >
+                    {busyBlockId === block.id ? (
+                      <Loader2 className="size-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="size-3" />
+                    )}
+                    刷新
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {insertable.length > 0 && (
+        <div className="space-y-1.5 border-t pt-3">
+          <p className="text-muted-foreground text-xs">
+            从笔记证据添加（{insertable.length} 条可添加）
+          </p>
+          {insertable.map((ev) => (
+            <div
+              key={ev.id}
+              className="flex items-center justify-between gap-2 rounded-md border border-dashed p-2 text-xs"
+            >
+              <p className="min-w-0 flex-1">
+                <span
+                  className="notranslate block truncate font-medium"
+                  translate="no"
+                >
+                  {ev.claim}
+                </span>
+                <span className="text-muted-foreground">
+                  <span className="notranslate" translate="no">
+                    {ev.source}
+                  </span>{" "}
+                  ·{" "}
+                  <span className="notranslate font-mono" translate="no">
+                    {ev.date}
+                  </span>
+                </span>
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleInsert(ev.id)}
+                disabled={busyEvidenceId === ev.id}
+              >
+                {busyEvidenceId === ev.id ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <Plus className="size-3" />
+                )}
+                添加
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -323,6 +527,9 @@ export default function NoteDetailPage() {
       ) : (
         <ArticleReport article={note.artifact as ResearchArticle} />
       )}
+
+      {/* ── Live Blocks (#167) — refreshable, outside the artifact ── */}
+      <LiveBlocksSection note={note} onChanged={refetch} />
     </div>
   );
 }

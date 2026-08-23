@@ -6,10 +6,15 @@
  *   GET    /api/notes/:id    full note incl. immutable artifact
  *   PATCH  /api/notes/:id    edit title / summary / note / tags ONLY
  *   DELETE /api/notes/:id    delete own note
+ *   POST   /api/notes/:id/blocks                 insert a Live Block (#167)
+ *   POST   /api/notes/:id/blocks/:blockId/refresh  refresh one block (#167)
  *
  * REDLINES:
  * - artifact immutability: PATCH schema is .strict() and contains no
  *   artifact/schemaVersion/evidenceIds/asOf/entity keys — unknown keys 400.
+ * - live blocks live OUTSIDE the artifact: block insert/refresh only ever
+ *   rewrites the live_blocks column, never the as-of snapshot narrative.
+ * - refresh failure is block-level (failed + neutral reason), never a 500.
  * - user-scoped: every query filters on session user.id; cross-user ids 404
  *   (no existence leak).
  * - neutral errors: no stack / schema detail leakage in responses.
@@ -22,7 +27,16 @@ import { auth } from "@workspace/auth/server";
 import { and, desc, eq, ilike, or } from "@workspace/db";
 import { researchNotes } from "@workspace/db/schema";
 import { db } from "@workspace/db/server";
+import { sanitizeLiveBlocks } from "@workspace/shared/schema/live-block";
+import { generateId } from "@workspace/shared/utils";
 
+import {
+  applyRefreshOutcome,
+  buildLiveBlock,
+  insertLiveBlockInputSchema,
+  MAX_LIVE_BLOCKS_PER_NOTE,
+} from "./live-block-mapper";
+import { refreshLiveBlock } from "./live-block-refresh";
 import {
   createNoteInputSchema,
   extractArticleFields,
@@ -174,6 +188,102 @@ export const notesRoute = new Hono()
 
     if (!row) throw notFound();
     return c.json({ ok: true });
+  })
+
+  // ── Live Blocks: insert (#167) ─────────────────────────────────────────
+  .post(
+    "/:id/blocks",
+    zValidator("json", insertLiveBlockInputSchema),
+    async (c) => {
+      const user = await getUser(c.req.raw.headers);
+      if (!user) throw unauthorized();
+
+      const [row] = await db
+        .select()
+        .from(researchNotes)
+        .where(
+          and(
+            eq(researchNotes.id, c.req.param("id")),
+            eq(researchNotes.userId, user.id),
+          ),
+        )
+        .limit(1);
+
+      if (!row) throw notFound();
+
+      const existing = sanitizeLiveBlocks(row.liveBlocks);
+      if (existing.length >= MAX_LIVE_BLOCKS_PER_NOTE) {
+        throw new HTTPException(400, {
+          message: `Live block limit reached (${MAX_LIVE_BLOCKS_PER_NOTE}).`,
+        });
+      }
+
+      const block = buildLiveBlock(c.req.valid("json"), {
+        generateId,
+        now: () => new Date(),
+      });
+      if (!block) {
+        throw new HTTPException(422, { message: "Invalid live block." });
+      }
+
+      const [updated] = await db
+        .update(researchNotes)
+        // live_blocks ONLY — the immutable artifact is never rewritten.
+        .set({ liveBlocks: [...existing, block], updatedAt: new Date() })
+        .where(
+          and(eq(researchNotes.id, row.id), eq(researchNotes.userId, user.id)),
+        )
+        .returning();
+
+      if (!updated) throw notFound();
+      return c.json({ block }, 201);
+    },
+  )
+
+  // ── Live Blocks: manual refresh (#167) ─────────────────────────────────
+  // Updates ONLY the block's staleState / lastRefreshedAt / refreshError.
+  // The note narrative and the block's captured content stay untouched.
+  .post("/:id/blocks/:blockId/refresh", async (c) => {
+    const user = await getUser(c.req.raw.headers);
+    if (!user) throw unauthorized();
+
+    const [row] = await db
+      .select()
+      .from(researchNotes)
+      .where(
+        and(
+          eq(researchNotes.id, c.req.param("id")),
+          eq(researchNotes.userId, user.id),
+        ),
+      )
+      .limit(1);
+
+    if (!row) throw notFound();
+
+    const blocks = sanitizeLiveBlocks(row.liveBlocks);
+    const blockId = c.req.param("blockId");
+    const index = blocks.findIndex((b) => b.id === blockId);
+    const target = index >= 0 ? blocks[index] : undefined;
+    if (!target) {
+      throw new HTTPException(404, { message: "Live block not found." });
+    }
+
+    // Refresher never throws — failure degrades to block-level `failed`.
+    const outcome = await refreshLiveBlock(target);
+    const refreshed = applyRefreshOutcome(target, outcome);
+    const next = blocks.slice();
+    next[index] = refreshed;
+
+    const [updated] = await db
+      .update(researchNotes)
+      .set({ liveBlocks: next, updatedAt: new Date() })
+      .where(
+        and(eq(researchNotes.id, row.id), eq(researchNotes.userId, user.id)),
+      )
+      .returning();
+
+    if (!updated) throw notFound();
+    return c.json({ block: refreshed });
   });
 
 export type NotesRoute = typeof notesRoute;

@@ -11,6 +11,7 @@ import { z } from "zod";
  * - Only title / summary / note / tags are editable.
  */
 import { researchArticleSchema } from "@workspace/shared/schema/article";
+import { sanitizeLiveBlocks } from "@workspace/shared/schema/live-block";
 
 import type { ResearchArticle } from "@workspace/shared/types/article";
 
@@ -98,6 +99,9 @@ interface NoteRow {
   artifact: unknown;
   schemaVersion: number;
   evidenceIds: string[];
+  /** Live Blocks column (#167) — optional at the mapper boundary: old rows
+   *  and fixtures may lack it; sanitizeLiveBlocks degrades to []. */
+  liveBlocks?: unknown;
   asOf: string;
   sourceMeta: unknown;
   createdAt: Date;
@@ -132,6 +136,8 @@ export function toNoteDetail(row: NoteRow) {
     ...toNoteListItem(row),
     artifact: row.artifact,
     evidenceIds: row.evidenceIds,
+    // Tolerant read: malformed blocks are dropped, never 500 the page.
+    liveBlocks: sanitizeLiveBlocks(row.liveBlocks),
     sourceMeta: row.sourceMeta,
   };
 }
