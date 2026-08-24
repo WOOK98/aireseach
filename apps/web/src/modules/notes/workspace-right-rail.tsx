@@ -32,9 +32,7 @@ import {
   evidenceAlreadyBlocked,
   extractNoteEvidence,
 } from "~/modules/notes/live-block-view";
-import {
-  insertLiveBlock,
-} from "~/modules/notes/use-notes";
+import { insertLiveBlock } from "~/modules/notes/use-notes";
 import {
   annotationIsInsertable,
   annotationToInsertInput,
