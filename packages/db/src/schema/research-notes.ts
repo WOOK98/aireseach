@@ -26,6 +26,7 @@ import { generateId } from "@workspace/shared/utils";
 import { createInsertSchema, createSelectSchema } from "../lib/zod";
 import { user } from "./auth";
 
+import type { LiveBlock } from "@workspace/shared/schema/live-block";
 import type * as z from "zod";
 
 export const researchNotes = pgTable(
@@ -57,6 +58,11 @@ export const researchNotes = pgTable(
     evidenceIds: jsonb().$type<string[]>().notNull().default([]),
     asOf: text("as_of").notNull(), // entity.dataTimestamp, verbatim
     sourceMeta: jsonb(), // { query, language } — provenance
+
+    // ── Live Blocks (#167) — refreshable evidence blocks ──
+    // Separate column on purpose: the artifact stays an immutable as-of
+    // snapshot (#154 redline); refresh only ever rewrites this array.
+    liveBlocks: jsonb("live_blocks").$type<LiveBlock[]>().notNull().default([]),
 
     // ── Timestamps ──
     createdAt: timestamp("created_at").notNull().defaultNow(),
