@@ -100,4 +100,53 @@ describe("refreshLiveBlock", () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it("never calls fetchFn for unsafe URLs (SSRF guard)", async () => {
+    const unsafeUrls = [
+      "http://127.0.0.1:3000",
+      "http://localhost:3000",
+      "http://10.0.0.1",
+      "http://172.16.0.1",
+      "http://192.168.0.1",
+      "http://169.254.169.254/latest/meta-data",
+      "http://[::1]",
+      "http://printer.local",
+      "http://user:pass@example.com",
+    ];
+    for (const url of unsafeUrls) {
+      const fetchFn = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+      const out = await refreshLiveBlock(
+        { ...URL_BLOCK, sourceUrl: url },
+        { fetchFn: fetchFn as unknown as typeof fetch, now: () => NOW },
+      );
+      expect(fetchFn).not.toHaveBeenCalled();
+      expect(out.staleState).toBe("failed");
+      expect(out.lastRefreshedAt).toBe("2026-08-24T02:00:00.000Z");
+      // Neutral: never leaks WHICH rule fired or the target address.
+      expect(out.refreshError).toBe(REFRESH_MESSAGES.unsafeSource);
+      expect(out.refreshError).not.toContain(url);
+    }
+  });
+
+  it("does not follow redirects — 3xx degrades to failed, never fresh", async () => {
+    const fetchFn = vi
+      .fn<(...args: unknown[]) => Promise<unknown>>()
+      .mockResolvedValue({
+        ok: false,
+        status: 302,
+        headers: new Headers({ location: "http://127.0.0.1" }),
+        body: { cancel: () => Promise.resolve() },
+      });
+    const out = await refreshLiveBlock(URL_BLOCK, {
+      fetchFn: fetchFn as unknown as typeof fetch,
+      now: () => NOW,
+    });
+    expect(out.staleState).toBe("failed");
+    expect(out.staleState).not.toBe("fresh");
+    expect(out.refreshError).toBe(REFRESH_MESSAGES.redirect);
+    // Only ONE call — no redirect target is ever fetched.
+    expect(fetchFn).toHaveBeenCalledOnce();
+    const call = fetchFn.mock.calls[0] as unknown as [string, RequestInit];
+    expect(call[1]?.redirect).toBe("manual");
+  });
 });

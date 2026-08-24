@@ -35,6 +35,7 @@ import { pathsConfig } from "~/config/paths";
 import {
   blockMetaLabel,
   blockRefreshErrorLabel,
+  canRefreshBlock,
   evidenceAlreadyBlocked,
   extractNoteEvidence,
   staleStateBadgeVariant,
@@ -271,7 +272,14 @@ function LiveBlocksSection({
                     variant="outline"
                     size="sm"
                     onClick={() => handleRefresh(block.id)}
-                    disabled={busyBlockId === block.id}
+                    disabled={
+                      busyBlockId === block.id || !canRefreshBlock(block)
+                    }
+                    title={
+                      canRefreshBlock(block)
+                        ? undefined
+                        : "该来源不支持自动刷新（仅手动）"
+                    }
                   >
                     {busyBlockId === block.id ? (
                       <Loader2 className="size-3 animate-spin" />

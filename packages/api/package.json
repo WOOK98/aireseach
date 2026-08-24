@@ -18,6 +18,7 @@
     "./notes/note-mapper": "./src/modules/notes/note-mapper.ts",
     "./notes/live-block-mapper": "./src/modules/notes/live-block-mapper.ts",
     "./notes/live-block-refresh": "./src/modules/notes/live-block-refresh.ts",
+    "./notes/live-block-url-guard": "./src/modules/notes/live-block-url-guard.ts",
     "./aleabit/renderer": "./src/modules/aleabit/renderer.ts",
     "./aleabit/bilingual-renderer": "./src/modules/aleabit/bilingual-renderer.ts",
     "./aleabit/png-renderer": "./src/modules/aleabit/png-renderer.ts",

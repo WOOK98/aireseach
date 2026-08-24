@@ -111,10 +111,10 @@ export function blockRefreshErrorLabel(block: LiveBlock): string | null {
   );
 }
 
-/** Refresh is meaningful only when a live source exists; manual blocks still
- * allow the click (server confirms manual_only) so the state stays explicit. */
+/** Refresh is meaningful only when a live source URL exists; URL-less
+ * manual blocks get no active button (server would confirm manual_only). */
 export function canRefreshBlock(block: LiveBlock): boolean {
-  return block.staleState !== "manual_only" || Boolean(block.sourceUrl);
+  return Boolean(block.sourceUrl?.trim());
 }
 
 /** True when this evidence entry is already captured as a block. */
