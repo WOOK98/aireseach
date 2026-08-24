@@ -19,7 +19,7 @@ const URL_BLOCK: LiveBlock = {
   type: "evidence_ref",
   title: "t",
   source: "s",
-  sourceUrl: "https://example.com/filing",
+  sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/10-k.htm",
   sourceType: "evidence",
   evidenceIds: ["E1"],
   content: { claim: "c", date: "2026-01-31", confidence: "verified" },
@@ -111,7 +111,9 @@ describe("refreshLiveBlock", () => {
       "http://169.254.169.254/latest/meta-data",
       "http://[::1]",
       "http://printer.local",
-      "http://user:pass@example.com",
+      "http://user:pass@sec.gov",
+      "https://anything.example",
+      "https://sec.gov.evil.com",
     ];
     for (const url of unsafeUrls) {
       const fetchFn = vi.fn<(...args: unknown[]) => Promise<unknown>>();

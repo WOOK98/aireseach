@@ -6,7 +6,10 @@
  * - local hostnames (localhost, .local, .internal, .lan) are unsafe
  * - credentials in URL and non-http(s) schemes are unsafe
  * - IPv6 loopback / link-local / unique-local / IPv4-mapped are unsafe
- * - public http(s) URLs remain refreshable
+ * - non-allowlisted hostnames are unsafe (no DNS path is ever taken —
+ *   DNS-to-fetch cannot be pinned, so v1 auto-refresh is restricted to the
+ *   curated SEC EDGAR allowlist)
+ * - allowlisted SEC evidence domains and public IP literals stay refreshable
  * - the guard fails CLOSED on anything unparsable
  */
 import { describe, expect, it } from "vitest";
@@ -14,10 +17,32 @@ import { describe, expect, it } from "vitest";
 import { isSafeRefreshUrl } from "../live-block-url-guard";
 
 describe("isSafeRefreshUrl", () => {
-  it("allows ordinary public http(s) URLs", () => {
-    expect(isSafeRefreshUrl("https://example.com")).toBe(true);
-    expect(isSafeRefreshUrl("https://example.com:8443/a?b=c#d")).toBe(true);
-    expect(isSafeRefreshUrl("http://sec.gov/Archives/edgar/data")).toBe(true);
+  it("allows allowlisted SEC EDGAR evidence domains", () => {
+    expect(isSafeRefreshUrl("https://sec.gov")).toBe(true);
+    expect(isSafeRefreshUrl("https://www.sec.gov/Archives/edgar/data")).toBe(
+      true,
+    );
+    expect(isSafeRefreshUrl("https://efts.sec.gov/LATEST/search-index")).toBe(
+      true,
+    );
+    expect(isSafeRefreshUrl("https://data.sec.gov/submissions/CIK0001")).toBe(
+      true,
+    );
+    expect(isSafeRefreshUrl("http://sec.gov:8080/a?b=c#d")).toBe(true);
+  });
+
+  it("blocks non-allowlisted hostnames — no arbitrary hostname is ever fetched", () => {
+    expect(isSafeRefreshUrl("https://example.com")).toBe(false);
+    expect(isSafeRefreshUrl("https://example.com:8443/a?b=c#d")).toBe(false);
+    expect(isSafeRefreshUrl("https://anything.example")).toBe(false);
+    expect(isSafeRefreshUrl("https://ir.nvidia.com")).toBe(false);
+    // Suffix-attack lookalikes must NOT inherit the allowlist.
+    expect(isSafeRefreshUrl("https://sec.gov.evil.com")).toBe(false);
+    expect(isSafeRefreshUrl("https://notsec.gov")).toBe(false);
+    expect(isSafeRefreshUrl("https://sec-gov.com")).toBe(false);
+  });
+
+  it("allows public IP literals (no DNS path)", () => {
     expect(isSafeRefreshUrl("https://8.8.8.8/dns")).toBe(true);
   });
 
@@ -89,12 +114,14 @@ describe("isSafeRefreshUrl", () => {
   });
 
   it("blocks credentials embedded in the URL", () => {
+    expect(isSafeRefreshUrl("http://user:pass@sec.gov")).toBe(false);
+    expect(isSafeRefreshUrl("https://token@data.sec.gov")).toBe(false);
     expect(isSafeRefreshUrl("http://user:pass@example.com")).toBe(false);
-    expect(isSafeRefreshUrl("https://token@example.com")).toBe(false);
   });
 
   it("blocks non-http(s) schemes", () => {
     expect(isSafeRefreshUrl("file:///etc/passwd")).toBe(false);
+    expect(isSafeRefreshUrl("ftp://sec.gov/x")).toBe(false);
     expect(isSafeRefreshUrl("ftp://example.com/x")).toBe(false);
     expect(isSafeRefreshUrl("gopher://example.com")).toBe(false);
     expect(isSafeRefreshUrl("data:text/plain,hi")).toBe(false);

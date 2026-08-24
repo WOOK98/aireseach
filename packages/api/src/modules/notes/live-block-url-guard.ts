@@ -17,6 +17,15 @@
  *   site-local (fec0::/10), unique-local (fc00::/7), multicast (ff00::/8),
  *   IPv4-mapped (::ffff:a.b.c.d) re-checked against the IPv4 rules
  *
+ * Hostname allowlist (Codex re-review, P0 SSRF): arbitrary hostnames are
+ * NOT confidently public — a user-controlled hostname can resolve (or be
+ * rebound, DNS TOCTOU) to loopback / private / metadata addresses, and the
+ * resolved IP cannot be pinned through to fetch. v1 therefore fails closed:
+ * only curated public evidence domains (SEC EDGAR: sec.gov + subdomains,
+ * matching the MCP fetch_filing allowlist in modules/mcp/router) may be
+ * auto-refreshed. Any other hostname is unsafe and is never fetched.
+ * Public IP *literals* stay allowed — they carry no DNS path.
+ *
  * NOTE: WHATWG URL parsing already normalizes trick IPv4 forms
  * (octal/hex/single-integer) to dotted decimal before we see the hostname,
  * so a strict dotted-quad parse here is sufficient — anything else fails.
@@ -28,6 +37,21 @@ const BLOCKED_HOSTNAME_SUFFIXES = [
   ".internal",
   ".lan",
 ] as const;
+
+/**
+ * v1 auto-refresh allowlist: curated public evidence domains only.
+ * Exact `sec.gov` plus any `*.sec.gov` subdomain (www./efts./data.sec.gov).
+ */
+const REFRESH_ALLOWLIST_HOSTS = ["sec.gov"] as const;
+const REFRESH_ALLOWLIST_SUFFIXES = [".sec.gov"] as const;
+
+function isAllowlistedHostname(host: string): boolean {
+  return (
+    REFRESH_ALLOWLIST_HOSTS.includes(
+      host as (typeof REFRESH_ALLOWLIST_HOSTS)[number],
+    ) || REFRESH_ALLOWLIST_SUFFIXES.some((s) => host.endsWith(s))
+  );
+}
 
 export function isSafeRefreshUrl(rawUrl: string): boolean {
   let url: URL;
@@ -57,7 +81,9 @@ export function isSafeRefreshUrl(rawUrl: string): boolean {
     return isSafeIpv4(host);
   }
 
-  return true;
+  // Arbitrary hostnames carry a DNS path we cannot pin to fetch (rebinding
+  // TOCTOU) — v1 auto-refresh is restricted to the curated allowlist.
+  return isAllowlistedHostname(host);
 }
 
 // ── IPv4 ─────────────────────────────────────────────────────────────────────

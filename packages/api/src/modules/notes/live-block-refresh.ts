@@ -15,8 +15,10 @@ import { isSafeRefreshUrl } from "./live-block-url-guard";
  * - user-visible reasons are neutral: no env / provider / internal paths.
  * - http(s) URLs only (enforced upstream by the shared schema); on top of
  *   that, the URL guard (live-block-url-guard) refuses loopback / private /
- *   link-local / metadata targets and redirects are never followed blindly
- *   (`redirect: "manual"` — a redirect degrades to block-level `failed`).
+ *   link-local / metadata targets AND any hostname outside the curated v1
+ *   evidence allowlist (arbitrary hostnames carry an unpinnable DNS path).
+ *   Redirects are never followed blindly (`redirect: "manual"` — a redirect
+ *   degrades to block-level `failed`).
  */
 import type {
   LiveBlock,

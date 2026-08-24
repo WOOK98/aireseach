@@ -67,7 +67,7 @@ const EXISTING_BLOCK = {
   type: "evidence_ref",
   title: "FY2026 收入",
   source: "NVIDIA 10-K",
-  sourceUrl: "https://example.com/10k",
+  sourceUrl: "https://www.sec.gov/Archives/edgar/data/1045810/10-k.htm",
   sourceType: "evidence",
   evidenceIds: ["E3"],
   content: { claim: "收入 $115B", date: "2026-01-31", confidence: "verified" },
