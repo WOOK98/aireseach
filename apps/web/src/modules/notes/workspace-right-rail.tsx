@@ -89,18 +89,24 @@ function InboxInsertSection({
   const inbox = items ?? [];
   if (inbox.length === 0) {
     return (
-      <p className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
-        收件箱为空 — 在 Inbox 页面添加网页剪藏或文本
-      </p>
+      <div className="rounded-lg border border-dashed p-4 text-center">
+        <Inbox className="text-muted-foreground mx-auto h-5 w-5" />
+        <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+          收件箱为空
+        </p>
+        <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+          在 Inbox 页面添加网页剪藏或文本后，即可插入当前笔记
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {inbox.map((item) => (
         <div
           key={item.id}
-          className="flex items-start justify-between gap-2 rounded-md border p-2 text-xs"
+          className="hover:border-primary/40 flex items-center justify-between gap-2 rounded-lg border p-2 text-xs transition-colors"
         >
           <div className="min-w-0 flex-1">
             <p className="notranslate line-clamp-2 font-medium" translate="no">
@@ -187,9 +193,15 @@ function PdfAnnotationsSection({
   if (!selectedPdfId) {
     if (pdfList.length === 0) {
       return (
-        <p className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
-          暂无 PDF 文档 — 在 PDF 页面上传研报
-        </p>
+        <div className="rounded-lg border border-dashed p-4 text-center">
+          <FileText className="text-muted-foreground mx-auto h-5 w-5" />
+          <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+            暂无 PDF 文档
+          </p>
+          <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+            在 PDF 页面上传研报并添加文字批注后，即可插入当前笔记
+          </p>
+        </div>
       );
     }
     return (
@@ -255,14 +267,20 @@ function PdfAnnotationsSection({
       {annsLoading ? (
         <Skeleton className="h-16 w-full" />
       ) : insertable.length === 0 ? (
-        <p className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
-          该 PDF 暂无可插入的文字批注 — 高亮需包含摘录文字
-        </p>
+        <div className="rounded-lg border border-dashed p-4 text-center">
+          <FileText className="text-muted-foreground mx-auto h-5 w-5" />
+          <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+            该 PDF 暂无可插入的文字批注
+          </p>
+          <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+            高亮需包含摘录文字 — 在 PDF 页面补一条文字批注即可
+          </p>
+        </div>
       ) : (
         insertable.map((ann) => (
           <div
             key={ann.id}
-            className="flex items-start justify-between gap-2 rounded-md border p-2 text-xs"
+            className="hover:border-primary/40 flex items-start justify-between gap-2 rounded-lg border p-2 text-xs transition-colors"
           >
             <div className="min-w-0 flex-1">
               <p className="text-muted-foreground">
@@ -342,18 +360,24 @@ function LiveEvidenceSection({
 
   if (insertable.length === 0) {
     return (
-      <p className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
-        笔记证据已全部添加为 Live Block，或该笔记无证据
-      </p>
+      <div className="rounded-lg border border-dashed p-4 text-center">
+        <Zap className="text-muted-foreground mx-auto h-5 w-5" />
+        <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+          没有可插入的证据
+        </p>
+        <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+          笔记证据已全部添加为 Live Block，或该笔记无证据
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {insertable.map((ev) => (
         <div
           key={ev.id}
-          className="flex items-start justify-between gap-2 rounded-md border p-2 text-xs"
+          className="hover:border-primary/40 flex items-start justify-between gap-2 rounded-lg border p-2 text-xs transition-colors"
         >
           <div className="min-w-0 flex-1">
             <p className="notranslate line-clamp-2 font-medium" translate="no">
@@ -410,35 +434,51 @@ export function WorkspaceRightRail({
   const [tab, setTab] = useState<RailTab>("inbox");
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border">
-      {/* ── Tab bar ── */}
-      <div className="flex border-b">
-        {TAB_ITEMS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setTab(item.key)}
-              className={`flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
-                tab === item.key
-                  ? "text-foreground border-b-2 border-current"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Icon className="size-3.5" />
-              {item.label}
-            </button>
-          );
-        })}
+    <div className="bg-card flex h-full flex-col overflow-hidden rounded-xl border">
+      {/* ── Panel header ── */}
+      <div className="border-b px-3 py-2.5">
+        <p className="text-sm font-medium">插入源</p>
+        <p className="text-muted-foreground mt-0.5 text-[11px] leading-relaxed">
+          把收件箱 / PDF 批注 / 证据插入当前笔记
+        </p>
+      </div>
+
+      {/* ── Segmented tab control ── */}
+      <div className="border-b p-2">
+        <div className="bg-muted flex rounded-lg p-0.5">
+          {TAB_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setTab(item.key)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                  tab === item.key
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="size-3.5" />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Tab content ── */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto p-2.5">
         {!noteId ? (
-          <p className="text-muted-foreground py-8 text-center text-xs">
-            请先在左侧选择一篇笔记
-          </p>
+          <div className="flex h-full flex-col items-center justify-center p-4 text-center">
+            <Plus className="text-muted-foreground h-5 w-5" />
+            <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+              请先在左侧选择一篇笔记
+            </p>
+            <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+              选中后这里会显示可插入的收件箱、PDF 批注与证据
+            </p>
+          </div>
         ) : tab === "inbox" ? (
           <InboxInsertSection noteId={noteId} onInserted={onInserted} />
         ) : tab === "pdf" ? (

@@ -135,7 +135,7 @@ function RecentItemRow({
     );
   const href = recentItemHref(item, pathsConfig.dashboard.user);
   const className =
-    "hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors";
+    "hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-left transition-colors";
 
   const inner = (
     <>
@@ -203,17 +203,19 @@ function ActionCard({
 }) {
   const inner = (
     <Card
-      className={`transition-colors ${
+      className={`h-full transition-colors ${
         disabled ? "opacity-50" : "hover:border-primary/60 cursor-pointer"
       }`}
     >
-      <CardContent className="flex items-start gap-3 p-4">
-        <div className="bg-primary/10 text-primary rounded-lg p-2">
-          <Icon className="h-5 w-5" />
+      <CardContent className="flex items-start gap-2.5 p-3">
+        <div className="bg-primary/10 text-primary rounded-md p-1.5">
+          <Icon className="h-4 w-4" />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-medium">{label}</p>
-          <p className="text-muted-foreground mt-0.5 text-xs">{description}</p>
+          <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
+            {description}
+          </p>
         </div>
       </CardContent>
     </Card>
@@ -303,51 +305,56 @@ export function WorkspaceHome({
   });
 
   return (
-    <div className="flex h-full flex-col gap-6 lg:flex-row">
+    <div className="flex h-full flex-col gap-5 lg:flex-row">
       {/* ── Left nav rail (desktop only) ── */}
-      <nav className="hidden w-48 shrink-0 space-y-1 lg:block">
-        {NAV_ITEMS.map((item) => {
-          const className = `flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-            activeNav === item.key
-              ? "bg-primary/10 text-primary font-medium"
-              : item.enabled
-                ? "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                : "text-muted-foreground/50 cursor-not-allowed"
-          }`;
-          const inner = (
-            <>
-              <item.icon className="h-4 w-4" />
-              {item.label}
-              {!item.enabled && (
-                <Badge variant="outline" className="ml-auto text-[9px]">
-                  后续
-                </Badge>
-              )}
-            </>
-          );
-          if (item.enabled && item.href) {
-            return (
-              <Link key={item.key} href={item.href} className={className}>
-                {inner}
-              </Link>
+      <nav className="hidden w-48 shrink-0 lg:block">
+        <p className="text-muted-foreground mb-2 px-3 text-xs font-medium tracking-wide">
+          研究空间
+        </p>
+        <div className="space-y-0.5">
+          {NAV_ITEMS.map((item) => {
+            const className = `flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+              activeNav === item.key
+                ? "bg-primary/10 text-primary font-medium"
+                : item.enabled
+                  ? "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  : "text-muted-foreground/50 cursor-not-allowed"
+            }`;
+            const inner = (
+              <>
+                <item.icon className="h-4 w-4" />
+                {item.label}
+                {!item.enabled && (
+                  <Badge variant="outline" className="ml-auto text-[9px]">
+                    后续
+                  </Badge>
+                )}
+              </>
             );
-          }
-          return (
-            <button
-              key={item.key}
-              type="button"
-              disabled={!item.enabled}
-              onClick={() => handleNavClick(item.key)}
-              className={className}
-            >
-              {inner}
-            </button>
-          );
-        })}
+            if (item.enabled && item.href) {
+              return (
+                <Link key={item.key} href={item.href} className={className}>
+                  {inner}
+                </Link>
+              );
+            }
+            return (
+              <button
+                key={item.key}
+                type="button"
+                disabled={!item.enabled}
+                onClick={() => handleNavClick(item.key)}
+                className={className}
+              >
+                {inner}
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
       {/* ── Mobile nav chips ── */}
-      <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
+      <div className="flex w-full min-w-0 gap-2 overflow-x-auto pb-2 lg:hidden">
         {NAV_ITEMS.filter((n) => n.enabled).map((item) => {
           const className = `flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
             activeNav === item.key
@@ -381,7 +388,7 @@ export function WorkspaceHome({
       </div>
 
       {/* ── Main content ── */}
-      <div className="min-w-0 flex-1 space-y-6">
+      <div className="min-w-0 flex-1 space-y-4">
         {/* ── Greeting ── */}
         <div>
           <h2 className="text-lg font-semibold">
@@ -420,55 +427,51 @@ export function WorkspaceHome({
           </div>
         )}
 
-        {/* ── Research Loop ── */}
+        {/* ── Research Loop: slim stepper strip ── */}
         {isLoading ? (
           <HomeCardSkeleton />
         ) : (
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <BarChart3 className="h-4 w-4" />
+            <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-2 p-3">
+              <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
+                <BarChart3 className="h-3.5 w-3.5" />
                 研究闭环
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <LoopStepIcon status={loop.capture.status} />
-                  <span className="text-sm">
-                    捕获{" "}
-                    <span className="notranslate" translate="no">
-                      {loop.capture.count ?? "—"}
-                    </span>
+              </span>
+              <div className="flex items-center gap-1.5">
+                <LoopStepIcon status={loop.capture.status} />
+                <span className="text-sm">
+                  捕获{" "}
+                  <span className="notranslate" translate="no">
+                    {loop.capture.count ?? "—"}
                   </span>
-                </div>
-                <div className="text-muted-foreground">→</div>
-                <div className="flex items-center gap-2">
-                  <LoopStepIcon status={loop.create.status} />
-                  <span className="text-sm">
-                    创作{" "}
-                    <span className="notranslate" translate="no">
-                      {loop.create.count ?? "—"}
-                    </span>
+                </span>
+              </div>
+              <div className="text-muted-foreground text-xs">→</div>
+              <div className="flex items-center gap-1.5">
+                <LoopStepIcon status={loop.create.status} />
+                <span className="text-sm">
+                  创作{" "}
+                  <span className="notranslate" translate="no">
+                    {loop.create.count ?? "—"}
                   </span>
-                </div>
-                <div className="text-muted-foreground">→</div>
-                <div className="flex items-center gap-2">
-                  <LoopStepIcon status={loop.publish.status} />
-                  <span className="text-muted-foreground text-sm">
-                    发布{" "}
-                    <Badge variant="outline" className="ml-1 text-[9px]">
-                      占位 — 后续版本
-                    </Badge>
-                  </span>
-                </div>
+                </span>
+              </div>
+              <div className="text-muted-foreground text-xs">→</div>
+              <div className="flex items-center gap-1.5">
+                <LoopStepIcon status={loop.publish.status} />
+                <span className="text-muted-foreground text-sm">
+                  发布{" "}
+                  <Badge variant="outline" className="ml-1 text-[9px]">
+                    占位 — 后续版本
+                  </Badge>
+                </span>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* ── Action cards ── */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* ── Quick actions ── */}
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           <ActionCard
             icon={Inbox}
             label="粘贴链接"
@@ -497,13 +500,13 @@ export function WorkspaceHome({
 
         {/* ── Recents ── */}
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4" />
               最近工作
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {isLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -517,7 +520,7 @@ export function WorkspaceHome({
                   : "还没有任何研究内容 — 从上方的动作卡片开始吧"}
               </p>
             ) : (
-              <div className="space-y-1">
+              <div className="divide-border divide-y">
                 {filteredRecents.map((item) => (
                   <RecentItemRow
                     key={`${item.kind}-${item.id}`}
