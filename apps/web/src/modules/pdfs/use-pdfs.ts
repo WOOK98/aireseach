@@ -290,11 +290,18 @@ export function useDeletePdf() {
   });
 }
 
-export function useAnnotations(pdfId: string) {
-  return useQuery({
-    queryKey: ["pdf-annotations", pdfId],
+export function annotationsQueryOptions(pdfId: string) {
+  return {
+    queryKey: ["pdf-annotations", pdfId] as const,
     queryFn: () => fetchAnnotations(pdfId),
-  });
+    // Never fire /api/pdfs//annotations when no PDF is selected —
+    // an empty id is a normal workspace state (no PDFs yet).
+    enabled: pdfId.length > 0,
+  };
+}
+
+export function useAnnotations(pdfId: string) {
+  return useQuery(annotationsQueryOptions(pdfId));
 }
 
 export function useCreateAnnotation(pdfId: string) {
