@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
  * - old notes without liveBlocks degrade safely (no 500)
  * - no export / public sharing / X write path
  */
-import { FileText, Home, Inbox } from "lucide-react";
+import { FileText, Home, Inbox, NotebookPen } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -241,40 +241,55 @@ export default function NotesWorkspacePage() {
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
           {/* ── Left rail: notes list ── */}
           <div
-            className={`overflow-y-auto ${hasSelection ? "hidden lg:block" : ""}`}
+            className={`flex min-h-0 flex-col overflow-hidden rounded-xl border ${
+              hasSelection ? "hidden lg:flex" : ""
+            }`}
           >
-            {notesQuery.isLoading ? (
-              <NotesListSkeleton />
-            ) : notesQuery.isError ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-center dark:border-amber-900/60 dark:bg-amber-950/30">
-                <p className="text-sm font-medium">笔记加载失败</p>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  {notesQuery.error instanceof Error
-                    ? notesQuery.error.message
-                    : "请稍后重试"}
-                </p>
-              </div>
-            ) : notes.length === 0 ? (
-              <div className="rounded-xl border border-dashed px-4 py-12 text-center">
-                <FileText className="text-muted-foreground mx-auto h-8 w-8" />
-                <p className="mt-3 text-sm font-medium">还没有研究笔记</p>
-                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                  在 Research
-                  页生成研报文章后，点击「保存为笔记」即可在这里重开。
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {notes.map((n) => (
-                  <NoteListItem
-                    key={n.id}
-                    note={n}
-                    selected={selectedId === n.id}
-                    onSelect={() => setSelectedId(n.id)}
-                  />
-                ))}
-              </div>
-            )}
+            <div className="flex items-center justify-between border-b px-3 py-2">
+              <p className="text-muted-foreground text-xs font-medium">笔记</p>
+              {!notesQuery.isLoading && !notesQuery.isError && (
+                <span
+                  className="notranslate text-muted-foreground text-xs"
+                  translate="no"
+                >
+                  {notes.length} 篇
+                </span>
+              )}
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-2">
+              {notesQuery.isLoading ? (
+                <NotesListSkeleton />
+              ) : notesQuery.isError ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-center dark:border-amber-900/60 dark:bg-amber-950/30">
+                  <p className="text-sm font-medium">笔记加载失败</p>
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    {notesQuery.error instanceof Error
+                      ? notesQuery.error.message
+                      : "请稍后重试"}
+                  </p>
+                </div>
+              ) : notes.length === 0 ? (
+                <div className="rounded-lg border border-dashed px-4 py-12 text-center">
+                  <FileText className="text-muted-foreground mx-auto h-8 w-8" />
+                  <p className="mt-3 text-sm font-medium">还没有研究笔记</p>
+                  <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                    在 Research
+                    页生成研报文章后，点击「保存为笔记」即可在这里重开。
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {notes.map((n) => (
+                    <NoteListItem
+                      key={n.id}
+                      note={n}
+                      selected={selectedId === n.id}
+                      onSelect={() => setSelectedId(n.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* ── Center: selected note detail ── */}
@@ -284,9 +299,13 @@ export default function NotesWorkspacePage() {
             }`}
           >
             {!selectedId ? (
-              <div className="flex h-full items-center justify-center rounded-xl border border-dashed p-8">
-                <p className="text-muted-foreground text-sm">
+              <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center">
+                <NotebookPen className="text-muted-foreground h-8 w-8" />
+                <p className="text-muted-foreground mt-3 text-sm">
                   在左侧选择一篇笔记开始工作
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  选中后可从右侧插入收件箱 / PDF 批注 / 证据
                 </p>
               </div>
             ) : noteQuery.isLoading ? (
