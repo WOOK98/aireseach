@@ -354,7 +354,7 @@ export function WorkspaceHome({
       </nav>
 
       {/* ── Mobile nav chips ── */}
-      <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
+      <div className="flex w-full min-w-0 gap-2 overflow-x-auto pb-2 lg:hidden">
         {NAV_ITEMS.filter((n) => n.enabled).map((item) => {
           const className = `flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
             activeNav === item.key

@@ -149,7 +149,7 @@ export default function NotesWorkspacePage() {
   const showHome = view === "home" && !hasSelection;
 
   return (
-    <div className="flex h-full flex-col px-4 py-6">
+    <div className="flex h-full w-full min-w-0 flex-col px-4 py-6">
       {/* ── Header ── */}
       <div className="mb-4 space-y-1">
         <div className="flex items-center gap-4">
