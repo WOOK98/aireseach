@@ -14,7 +14,9 @@ import {
   buildRecents,
   filterRecents,
   greetingForHour,
+  homeNavHref,
   homeSummary,
+  recentItemHref,
   researchLoopState,
 } from "./workspace-home-view";
 
@@ -70,6 +72,13 @@ function inbox(partial: Partial<InboxItem> & { id: string }): InboxItem {
     ...partial,
   };
 }
+
+const routes = {
+  research: "/dashboard/research",
+  pdfs: "/dashboard/pdfs",
+  inbox: "/dashboard/inbox",
+  pdf: (id: string) => `/dashboard/pdfs/${id}`,
+};
 
 describe("buildRecents", () => {
   it("merges all three sources sorted by recency (newest first)", () => {
@@ -232,5 +241,37 @@ describe("greetingForHour", () => {
     expect(greetingForHour(-1)).toBe("你好");
     expect(greetingForHour(24)).toBe("你好");
     expect(greetingForHour(Number.NaN)).toBe("你好");
+  });
+});
+
+describe("homeNavHref", () => {
+  it("maps route-owning nav entries to real dashboard routes", () => {
+    expect(homeNavHref("write", routes)).toBe("/dashboard/research");
+    expect(homeNavHref("reader", routes)).toBe("/dashboard/pdfs");
+    expect(homeNavHref("inbox", routes)).toBe("/dashboard/inbox");
+  });
+
+  it("keeps in-shell modes and disabled publish non-navigational", () => {
+    expect(homeNavHref("home", routes)).toBeNull();
+    expect(homeNavHref("workspace", routes)).toBeNull();
+    expect(homeNavHref("search", routes)).toBeNull();
+    expect(homeNavHref("publish", routes)).toBeNull();
+  });
+});
+
+describe("recentItemHref", () => {
+  it("deep-links PDF recents to the reader", () => {
+    const [item] = buildRecents({ pdfs: [pdf({ id: "p1" })] });
+    expect(item && recentItemHref(item, routes)).toBe("/dashboard/pdfs/p1");
+  });
+
+  it("sends inbox recents to the inbox page where actions live", () => {
+    const [item] = buildRecents({ inbox: [inbox({ id: "i1" })] });
+    expect(item && recentItemHref(item, routes)).toBe("/dashboard/inbox");
+  });
+
+  it("keeps note recents inside the workspace shell", () => {
+    const [item] = buildRecents({ notes: [note({ id: "n1" })] });
+    expect(item && recentItemHref(item, routes)).toBeNull();
   });
 });

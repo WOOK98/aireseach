@@ -54,23 +54,19 @@ import {
   buildRecents,
   filterRecents,
   greetingForHour,
+  homeNavHref,
   homeSummary,
+  recentItemHref,
   researchLoopState,
 } from "~/modules/notes/workspace-home-view";
 import { usePdfs } from "~/modules/pdfs/use-pdfs";
 
-import type { RecentItem } from "~/modules/notes/workspace-home-view";
+import type {
+  HomeNavKey,
+  RecentItem,
+} from "~/modules/notes/workspace-home-view";
 
 // ── Nav items (left rail on desktop, horizontal chips on mobile) ────────────
-
-type HomeNavKey =
-  | "home"
-  | "workspace"
-  | "write"
-  | "reader"
-  | "inbox"
-  | "publish"
-  | "search";
 
 interface HomeNavItem {
   key: HomeNavKey;
@@ -88,21 +84,21 @@ const NAV_ITEMS: HomeNavItem[] = [
     label: "写作",
     icon: Pencil,
     enabled: true,
-    href: pathsConfig.dashboard.user.research,
+    href: homeNavHref("write", pathsConfig.dashboard.user) ?? undefined,
   },
   {
     key: "reader",
     label: "研报",
     icon: FileText,
     enabled: true,
-    href: pathsConfig.dashboard.user.pdfs,
+    href: homeNavHref("reader", pathsConfig.dashboard.user) ?? undefined,
   },
   {
     key: "inbox",
     label: "收件箱",
     icon: Inbox,
     enabled: true,
-    href: pathsConfig.dashboard.user.inbox,
+    href: homeNavHref("inbox", pathsConfig.dashboard.user) ?? undefined,
   },
   { key: "publish", label: "发布", icon: Send, enabled: false },
   { key: "search", label: "搜索", icon: Search, enabled: true },
@@ -124,10 +120,10 @@ function LoopStepIcon({ status }: { status: string }) {
 
 function RecentItemRow({
   item,
-  onSelect,
+  onOpenNote,
 }: {
   item: RecentItem;
-  onSelect: (kind: RecentKind, id: string) => void;
+  onOpenNote: (id: string) => void;
 }) {
   const icon =
     item.kind === "note" ? (
@@ -137,13 +133,12 @@ function RecentItemRow({
     ) : (
       <Inbox className="h-4 w-4 shrink-0" />
     );
+  const href = recentItemHref(item, pathsConfig.dashboard.user);
+  const className =
+    "hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors";
 
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(item.kind, item.id)}
-      className="hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors"
-    >
+  const inner = (
+    <>
       {icon}
       <div className="min-w-0 flex-1">
         <p
@@ -169,11 +164,27 @@ function RecentItemRow({
           ? new Date(item.timestamp).toLocaleDateString("zh-CN")
           : "—"}
       </span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenNote(item.id)}
+      className={className}
+    >
+      {inner}
     </button>
   );
 }
-
-type RecentKind = "note" | "pdf" | "inbox";
 
 // ── Action card ─────────────────────────────────────────────────────────────
 
@@ -269,17 +280,11 @@ export function WorkspaceHome({
     [recents, searchQuery, activeNav],
   );
 
-  function handleRecentSelect(kind: RecentKind, id: string) {
-    if (kind === "note") {
-      onOpenNote(id);
-    }
-    // PDF/inbox items link to their own pages — no note-level action needed.
-  }
-
   function handleNavClick(key: HomeNavKey) {
     const item = NAV_ITEMS.find((n) => n.key === key);
-    if (!item?.enabled) return;
+    if (!item?.enabled || item.href) return;
     if (key === "workspace") {
+      setActiveNav("workspace");
       onEnterWorkspace();
       return;
     }
@@ -301,48 +306,78 @@ export function WorkspaceHome({
     <div className="flex h-full flex-col gap-6 lg:flex-row">
       {/* ── Left nav rail (desktop only) ── */}
       <nav className="hidden w-48 shrink-0 space-y-1 lg:block">
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            disabled={!item.enabled}
-            onClick={() => handleNavClick(item.key)}
-            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-              activeNav === item.key
-                ? "bg-primary/10 text-primary font-medium"
-                : item.enabled
-                  ? "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                  : "text-muted-foreground/50 cursor-not-allowed"
-            }`}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.label}
-            {!item.enabled && (
-              <Badge variant="outline" className="ml-auto text-[9px]">
-                后续
-              </Badge>
-            )}
-          </button>
-        ))}
+        {NAV_ITEMS.map((item) => {
+          const className = `flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+            activeNav === item.key
+              ? "bg-primary/10 text-primary font-medium"
+              : item.enabled
+                ? "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                : "text-muted-foreground/50 cursor-not-allowed"
+          }`;
+          const inner = (
+            <>
+              <item.icon className="h-4 w-4" />
+              {item.label}
+              {!item.enabled && (
+                <Badge variant="outline" className="ml-auto text-[9px]">
+                  后续
+                </Badge>
+              )}
+            </>
+          );
+          if (item.enabled && item.href) {
+            return (
+              <Link key={item.key} href={item.href} className={className}>
+                {inner}
+              </Link>
+            );
+          }
+          return (
+            <button
+              key={item.key}
+              type="button"
+              disabled={!item.enabled}
+              onClick={() => handleNavClick(item.key)}
+              className={className}
+            >
+              {inner}
+            </button>
+          );
+        })}
       </nav>
 
       {/* ── Mobile nav chips ── */}
       <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
-        {NAV_ITEMS.filter((n) => n.enabled).map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => handleNavClick(item.key)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
-              activeNav === item.key
-                ? "border-primary bg-primary/10 text-primary"
-                : "text-muted-foreground hover:border-primary/40"
-            }`}
-          >
-            <item.icon className="h-3 w-3" />
-            {item.label}
-          </button>
-        ))}
+        {NAV_ITEMS.filter((n) => n.enabled).map((item) => {
+          const className = `flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+            activeNav === item.key
+              ? "border-primary bg-primary/10 text-primary"
+              : "text-muted-foreground hover:border-primary/40"
+          }`;
+          const inner = (
+            <>
+              <item.icon className="h-3 w-3" />
+              {item.label}
+            </>
+          );
+          if (item.href) {
+            return (
+              <Link key={item.key} href={item.href} className={className}>
+                {inner}
+              </Link>
+            );
+          }
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => handleNavClick(item.key)}
+              className={className}
+            >
+              {inner}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Main content ── */}
@@ -487,7 +522,7 @@ export function WorkspaceHome({
                   <RecentItemRow
                     key={`${item.kind}-${item.id}`}
                     item={item}
-                    onSelect={handleRecentSelect}
+                    onOpenNote={onOpenNote}
                   />
                 ))}
               </div>

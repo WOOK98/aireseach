@@ -29,6 +29,55 @@ export interface RecentItem {
   meta: string | null;
 }
 
+// ── Navigation / continuation targets ───────────────────────────────────────
+
+export type HomeNavKey =
+  | "home"
+  | "workspace"
+  | "write"
+  | "reader"
+  | "inbox"
+  | "publish"
+  | "search";
+
+/** Routes the React layer injects from pathsConfig (keeps this file pure). */
+export interface HomeRoutes {
+  research: string;
+  pdfs: string;
+  inbox: string;
+  pdf: (id: string) => string;
+}
+
+/**
+ * Real route for nav entries that leave the workspace shell.
+ * In-shell modes (home/workspace/search) and the disabled publish placeholder
+ * return null so the React layer renders them as buttons, never fake links.
+ */
+export function homeNavHref(
+  key: HomeNavKey,
+  routes: Pick<HomeRoutes, "research" | "pdfs" | "inbox">,
+): string | null {
+  if (key === "write") return routes.research;
+  if (key === "reader") return routes.pdfs;
+  if (key === "inbox") return routes.inbox;
+  return null;
+}
+
+/**
+ * Continuation target for a recent item.
+ * Notes open inside the workspace shell (no route change), so they return
+ * null; PDFs deep-link to the reader; inbox items continue on the inbox page
+ * where convert/archive actions live.
+ */
+export function recentItemHref(
+  item: RecentItem,
+  routes: Pick<HomeRoutes, "pdf" | "inbox">,
+): string | null {
+  if (item.kind === "pdf") return routes.pdf(item.id);
+  if (item.kind === "inbox") return routes.inbox;
+  return null;
+}
+
 const DEFAULT_RECENTS_LIMIT = 10;
 
 function timestampMs(value: string | null | undefined): number {
