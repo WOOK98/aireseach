@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
  * - old notes without liveBlocks degrade safely (no 500)
  * - no export / public sharing / X write path
  */
-import { FileText, Inbox } from "lucide-react";
+import { FileText, Home, Inbox } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -31,6 +31,7 @@ import { Skeleton } from "@workspace/ui-web/skeleton";
 import { pathsConfig } from "~/config/paths";
 import { NoteDetailView } from "~/modules/notes/note-detail-view";
 import { useNote, useNotes } from "~/modules/notes/use-notes";
+import { WorkspaceHome } from "~/modules/notes/workspace-home";
 import { WorkspaceRightRail } from "~/modules/notes/workspace-right-rail";
 
 import type { NoteListItem } from "~/modules/notes/use-notes";
@@ -108,6 +109,7 @@ function NoteListItem({
 export default function NotesWorkspacePage() {
   const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, setView] = useState<"home" | "workspace">("home");
   const [search, setSearch] = useState("");
   const [ticker, setTicker] = useState<string | null>(null);
 
@@ -144,6 +146,7 @@ export default function NotesWorkspacePage() {
   }
 
   const hasSelection = Boolean(selectedId && noteQuery.data);
+  const showHome = view === "home" && !hasSelection;
 
   return (
     <div className="flex h-full flex-col px-4 py-6">
@@ -151,6 +154,19 @@ export default function NotesWorkspacePage() {
       <div className="mb-4 space-y-1">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-semibold">研究工作台</h1>
+          {!showHome && (
+            <button
+              type="button"
+              onClick={() => {
+                setView("home");
+                setSelectedId(null);
+              }}
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm transition-colors"
+            >
+              <Home className="h-3.5 w-3.5" />
+              首页
+            </button>
+          )}
           <Link
             href={pathsConfig.dashboard.user.inbox}
             className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm transition-colors"
@@ -171,142 +187,161 @@ export default function NotesWorkspacePage() {
         </p>
       </div>
 
-      {/* ── Search + ticker filters ── */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索标题 / 摘要 / 公司名..."
-          />
-        </div>
-        {tickers.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            <Button
-              variant={ticker === null ? "default" : "outline"}
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => setTicker(null)}
-            >
-              全部
-            </Button>
-            {tickers.map((t) => (
-              <Button
-                key={t}
-                variant={ticker === t ? "default" : "outline"}
-                size="sm"
-                className="notranslate h-7 font-mono text-xs"
-                translate="no"
-                onClick={() => setTicker(ticker === t ? null : t)}
-              >
-                {t}
-              </Button>
-            ))}
+      {/* ── Search + ticker filters (hidden on home view) ── */}
+      {view === "workspace" && (
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="搜索标题 / 摘要 / 公司名..."
+            />
           </div>
-        )}
-      </div>
-
-      {/* ── Three-column workspace ── */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
-        {/* ── Left rail: notes list ── */}
-        <div
-          className={`overflow-y-auto ${hasSelection ? "hidden lg:block" : ""}`}
-        >
-          {notesQuery.isLoading ? (
-            <NotesListSkeleton />
-          ) : notesQuery.isError ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-center dark:border-amber-900/60 dark:bg-amber-950/30">
-              <p className="text-sm font-medium">笔记加载失败</p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {notesQuery.error instanceof Error
-                  ? notesQuery.error.message
-                  : "请稍后重试"}
-              </p>
-            </div>
-          ) : notes.length === 0 ? (
-            <div className="rounded-xl border border-dashed px-4 py-12 text-center">
-              <FileText className="text-muted-foreground mx-auto h-8 w-8" />
-              <p className="mt-3 text-sm font-medium">还没有研究笔记</p>
-              <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                在 Research 页生成研报文章后，点击「保存为笔记」即可在这里重开。
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {notes.map((n) => (
-                <NoteListItem
-                  key={n.id}
-                  note={n}
-                  selected={selectedId === n.id}
-                  onSelect={() => setSelectedId(n.id)}
-                />
+          {tickers.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              <Button
+                variant={ticker === null ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setTicker(null)}
+              >
+                全部
+              </Button>
+              {tickers.map((t) => (
+                <Button
+                  key={t}
+                  variant={ticker === t ? "default" : "outline"}
+                  size="sm"
+                  className="notranslate h-7 font-mono text-xs"
+                  translate="no"
+                  onClick={() => setTicker(ticker === t ? null : t)}
+                >
+                  {t}
+                </Button>
               ))}
             </div>
           )}
         </div>
+      )}
 
-        {/* ── Center: selected note detail ── */}
-        <div
-          className={`min-h-0 overflow-y-auto ${
-            hasSelection ? "" : "hidden lg:block"
-          }`}
-        >
-          {!selectedId ? (
-            <div className="flex h-full items-center justify-center rounded-xl border border-dashed p-8">
-              <p className="text-muted-foreground text-sm">
-                在左侧选择一篇笔记开始工作
-              </p>
-            </div>
-          ) : noteQuery.isLoading ? (
-            <div className="space-y-4 p-4">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-24 rounded-lg" />
-              <Skeleton className="h-64 rounded-lg" />
-            </div>
-          ) : noteQuery.isError || !noteQuery.data ? (
-            <div className="p-4">
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">
-                {noteQuery.error instanceof Error
-                  ? noteQuery.error.message
-                  : "笔记加载失败"}
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedId(null)}
-                className="mt-3 text-sm text-blue-600 hover:underline dark:text-blue-400"
-              >
-                ← 返回列表
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Mobile: back button */}
-              <button
-                type="button"
-                onClick={() => setSelectedId(null)}
-                className="text-muted-foreground hover:text-foreground mb-3 inline-flex items-center gap-1 text-sm lg:hidden"
-              >
-                ← 返回列表
-              </button>
-              <NoteDetailView
-                note={noteQuery.data}
-                refetch={handleRefetch}
-                onDeleted={handleDeleted}
-                showBackButton={false}
-              />
-            </>
-          )}
-        </div>
-
-        {/* ── Right rail: insert sources ── */}
-        <div className={hasSelection ? "" : "hidden lg:block"}>
-          <WorkspaceRightRail
-            noteId={selectedId}
-            note={noteQuery.data ?? null}
-            onInserted={handleRefetch}
+      {/* ── Main content area ── */}
+      {showHome ? (
+        /* ── Home: full-width command center with its own left nav ── */
+        <div className="min-h-0 flex-1">
+          <WorkspaceHome
+            onOpenNote={(id) => {
+              setSelectedId(id);
+              setView("workspace");
+            }}
+            onEnterWorkspace={() => setView("workspace")}
           />
         </div>
-      </div>
+      ) : (
+        /* ── Three-column workspace ── */
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
+          {/* ── Left rail: notes list ── */}
+          <div
+            className={`overflow-y-auto ${hasSelection ? "hidden lg:block" : ""}`}
+          >
+            {notesQuery.isLoading ? (
+              <NotesListSkeleton />
+            ) : notesQuery.isError ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-center dark:border-amber-900/60 dark:bg-amber-950/30">
+                <p className="text-sm font-medium">笔记加载失败</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {notesQuery.error instanceof Error
+                    ? notesQuery.error.message
+                    : "请稍后重试"}
+                </p>
+              </div>
+            ) : notes.length === 0 ? (
+              <div className="rounded-xl border border-dashed px-4 py-12 text-center">
+                <FileText className="text-muted-foreground mx-auto h-8 w-8" />
+                <p className="mt-3 text-sm font-medium">还没有研究笔记</p>
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                  在 Research
+                  页生成研报文章后，点击「保存为笔记」即可在这里重开。
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {notes.map((n) => (
+                  <NoteListItem
+                    key={n.id}
+                    note={n}
+                    selected={selectedId === n.id}
+                    onSelect={() => setSelectedId(n.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Center: selected note detail ── */}
+          <div
+            className={`min-h-0 overflow-y-auto ${
+              hasSelection ? "" : "hidden lg:block"
+            }`}
+          >
+            {!selectedId ? (
+              <div className="flex h-full items-center justify-center rounded-xl border border-dashed p-8">
+                <p className="text-muted-foreground text-sm">
+                  在左侧选择一篇笔记开始工作
+                </p>
+              </div>
+            ) : noteQuery.isLoading ? (
+              <div className="space-y-4 p-4">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-24 rounded-lg" />
+                <Skeleton className="h-64 rounded-lg" />
+              </div>
+            ) : noteQuery.isError || !noteQuery.data ? (
+              <div className="p-4">
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">
+                  {noteQuery.error instanceof Error
+                    ? noteQuery.error.message
+                    : "笔记加载失败"}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(null)}
+                  className="mt-3 text-sm text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  ← 返回列表
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Mobile: back button */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(null)}
+                  className="text-muted-foreground hover:text-foreground mb-3 inline-flex items-center gap-1 text-sm lg:hidden"
+                >
+                  ← 返回列表
+                </button>
+                <NoteDetailView
+                  note={noteQuery.data}
+                  refetch={handleRefetch}
+                  onDeleted={handleDeleted}
+                  showBackButton={false}
+                />
+              </>
+            )}
+          </div>
+
+          {/* ── Right rail: insert sources (hidden on mobile until a note is selected, hidden on home) ── */}
+          <div className={hasSelection ? "" : "hidden lg:block"}>
+            {!showHome && (
+              <WorkspaceRightRail
+                noteId={selectedId}
+                note={noteQuery.data ?? null}
+                onInserted={handleRefetch}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
