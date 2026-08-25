@@ -339,12 +339,15 @@ export default function NotesWorkspacePage() {
                 >
                   ← 返回列表
                 </button>
-                <NoteDetailView
-                  note={noteQuery.data}
-                  refetch={handleRefetch}
-                  onDeleted={handleDeleted}
-                  showBackButton={false}
-                />
+                {/* Document canvas card — the center pane reads as a page */}
+                <div className="bg-card min-w-0 rounded-xl border p-4 sm:p-6">
+                  <NoteDetailView
+                    note={noteQuery.data}
+                    refetch={handleRefetch}
+                    onDeleted={handleDeleted}
+                    showBackButton={false}
+                  />
+                </div>
               </>
             )}
           </div>

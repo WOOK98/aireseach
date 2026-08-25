@@ -19,10 +19,12 @@ import {
   Camera,
   FileText,
   Loader2,
+  NotebookPen,
   Plus,
   RefreshCw,
   Save,
   Trash2,
+  Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -34,9 +36,12 @@ import { Textarea } from "@workspace/ui-web/textarea";
 
 import { ArticleReport } from "~/components/article/ArticleReport";
 import {
+  blockKindLabel,
   blockMetaLabel,
   blockRefreshErrorLabel,
+  blockSourceTypeLabel,
   canRefreshBlock,
+  confidenceLabel,
   evidenceAlreadyBlocked,
   extractNoteEvidence,
   staleStateBadgeVariant,
@@ -215,28 +220,71 @@ export function LiveBlocksSection({
   }
 
   return (
-    <div className="space-y-3 rounded-lg border p-4">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Live Blocks（{blocks.length}）</p>
+    <section className="space-y-4">
+      {/* ── Document-style section heading — not an admin panel ── */}
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-2">
+        <h2 className="flex items-center gap-2 text-base font-semibold">
+          <Zap className="size-4 shrink-0" />
+          Live 证据块
+          <span
+            className="notranslate text-muted-foreground text-xs font-normal"
+            translate="no"
+          >
+            {blocks.length}
+          </span>
+        </h2>
         <span className="text-muted-foreground text-xs">
-          可刷新证据块 — 刷新只更新块本身，不改正文快照
+          刷新只更新块本身，不改正文快照
         </span>
       </div>
 
       {blocks.length === 0 ? (
-        <p className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
-          No live blocks yet
-        </p>
+        <div className="rounded-lg border border-dashed px-4 py-8 text-center">
+          <Zap className="text-muted-foreground mx-auto h-5 w-5" />
+          <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+            还没有 Live 证据块
+          </p>
+          <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+            从右栏插入收件箱 / PDF 批注 / 证据，块会成为本文档的一部分
+          </p>
+        </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {blocks.map((block) => {
             const errorLabel = blockRefreshErrorLabel(block);
+            const isEvidenceRef = block.type === "evidence_ref";
             return (
-              <div key={block.id} className="rounded-md border p-3 text-xs">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="notranslate font-medium" translate="no">
-                    {block.title}
-                  </p>
+              <article
+                key={block.id}
+                className={`min-w-0 rounded-lg border border-l-4 p-3.5 ${
+                  isEvidenceRef
+                    ? "border-l-blue-400/70 dark:border-l-blue-500/60"
+                    : "border-l-violet-400/70 dark:border-l-violet-500/60"
+                }`}
+              >
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p
+                      className="notranslate truncate text-sm font-medium"
+                      translate="no"
+                    >
+                      {block.title}
+                    </p>
+                    {/* kind + origin-lane + confidence chips: quiet block chrome */}
+                    <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                      <span className="text-muted-foreground rounded-full border px-1.5 py-px">
+                        {blockKindLabel(block)}
+                      </span>
+                      <span className="text-muted-foreground rounded-full border px-1.5 py-px">
+                        {blockSourceTypeLabel(block.sourceType)}
+                      </span>
+                      {isEvidenceRef && (
+                        <span className="text-muted-foreground rounded-full border px-1.5 py-px">
+                          {confidenceLabel(block.content.confidence)}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                   <Badge
                     variant={staleStateBadgeVariant(block.staleState)}
                     className="shrink-0 text-[10px]"
@@ -244,7 +292,24 @@ export function LiveBlocksSection({
                     {staleStateLabel(block.staleState)}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground mt-1">
+
+                {isEvidenceRef ? (
+                  <p
+                    className="notranslate mt-2 text-sm leading-relaxed break-words"
+                    translate="no"
+                  >
+                    {block.content.claim}
+                  </p>
+                ) : (
+                  <blockquote
+                    className="notranslate bg-muted/60 mt-2 max-h-48 overflow-auto rounded-md p-3 text-xs leading-relaxed break-words whitespace-pre-wrap"
+                    translate="no"
+                  >
+                    {block.content.excerpt}
+                  </blockquote>
+                )}
+
+                <p className="text-muted-foreground mt-2 text-xs">
                   <span className="notranslate" translate="no">
                     {blockMetaLabel(block)}
                   </span>
@@ -257,19 +322,13 @@ export function LiveBlocksSection({
                     </>
                   )}
                 </p>
-                {block.type === "source_excerpt" && (
-                  <pre
-                    className="notranslate bg-muted mt-2 max-h-40 overflow-auto rounded-md p-2 leading-relaxed whitespace-pre-wrap"
-                    translate="no"
-                  >
-                    {block.content.excerpt}
-                  </pre>
-                )}
+
                 {errorLabel && (
-                  <p className="mt-2 text-red-600 dark:text-red-400">
+                  <p className="mt-2 text-xs text-red-600 dark:text-red-400">
                     {errorLabel}
                   </p>
                 )}
+
                 <div className="mt-2 flex justify-end">
                   <Button
                     variant="outline"
@@ -292,14 +351,14 @@ export function LiveBlocksSection({
                     刷新
                   </Button>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
       )}
 
       {insertable.length > 0 && (
-        <div className="space-y-1.5 border-t pt-3">
+        <div className="space-y-1.5 border-t border-dashed pt-3">
           <p className="text-muted-foreground text-xs">
             从笔记证据添加（{insertable.length} 条可添加）
           </p>
@@ -342,7 +401,7 @@ export function LiveBlocksSection({
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -422,16 +481,18 @@ export function NoteDetailView({
   const _backLabel = backLabel ?? "返回";
 
   return (
-    <div className="space-y-6">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3">
-        {_showBack && (
+    <div className="mx-auto w-full max-w-3xl min-w-0">
+      {/* ── Toolbar — slim, actions only; document content owns the stage ── */}
+      <div className="mb-6 flex items-center justify-between gap-3">
+        {_showBack ? (
           <a
             href={_backHref}
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
           >
             {_backLabel}
           </a>
+        ) : (
+          <span />
         )}
         <div className="flex items-center gap-2">
           <Button
@@ -458,33 +519,22 @@ export function NoteDetailView({
         </div>
       </div>
 
-      {/* ── Editable meta ── */}
-      <div className="space-y-3 rounded-lg border p-4">
+      {/* ── Document header — title, properties, lead, annotation callout ── */}
+      <header className="space-y-4">
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="notranslate text-lg font-semibold"
+          className="notranslate h-auto min-w-0 border-none bg-transparent px-0 text-2xl font-bold tracking-tight shadow-none focus-visible:ring-0 sm:text-3xl"
           translate="no"
           maxLength={200}
+          placeholder="无标题笔记"
         />
-        <Textarea
-          value={summary}
-          onChange={(e) => setSummary(e.target.value)}
-          placeholder="摘要（可选）"
-          rows={2}
-          maxLength={2000}
-        />
-        <Textarea
-          value={userNote}
-          onChange={(e) => setUserNote(e.target.value)}
-          placeholder="我的批注（可选）——你自己的判断、跟踪点、提醒"
-          rows={3}
-          maxLength={10000}
-        />
-        <div className="text-muted-foreground flex flex-wrap items-center gap-3 text-xs">
+
+        {/* Notion-style property row — quiet metadata under the title */}
+        <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
           {note.entityTicker && (
             <span
-              className="notranslate rounded-full border px-2 py-0.5 font-mono"
+              className="notranslate text-foreground rounded-full border px-2 py-0.5 font-mono"
               translate="no"
             >
               {note.entityTicker}
@@ -499,6 +549,12 @@ export function NoteDetailView({
             <FileText className="size-3" />
             证据 {note.evidenceCount} 条
           </span>
+          <span>
+            快照{" "}
+            <span className="notranslate font-mono" translate="no">
+              {note.asOf}
+            </span>
+          </span>
           {note.tags.map((tag) => (
             <Badge
               key={tag}
@@ -510,10 +566,36 @@ export function NoteDetailView({
             </Badge>
           ))}
         </div>
-      </div>
+
+        {/* Lead paragraph — the document's one-line abstract */}
+        <Textarea
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          className="text-muted-foreground min-w-0 resize-none border-none bg-transparent px-0 text-base leading-relaxed shadow-none focus-visible:ring-0"
+          placeholder="摘要（可选）— 一段话说明这篇笔记的核心结论"
+          rows={2}
+          maxLength={2000}
+        />
+
+        {/* 我的批注 — callout block, visually part of the document */}
+        <div className="rounded-lg border border-amber-200/60 bg-amber-50/50 p-3.5 dark:border-amber-900/40 dark:bg-amber-950/10">
+          <p className="text-muted-foreground mb-1.5 flex items-center gap-1.5 text-xs font-medium">
+            <NotebookPen className="size-3.5" />
+            我的批注
+          </p>
+          <Textarea
+            value={userNote}
+            onChange={(e) => setUserNote(e.target.value)}
+            className="min-w-0 resize-none border-none bg-transparent px-0 text-sm leading-relaxed shadow-none focus-visible:ring-0"
+            placeholder="你自己的判断、跟踪点、提醒"
+            rows={3}
+            maxLength={10000}
+          />
+        </div>
+      </header>
 
       {/* ── Snapshot notice (evidence drift guard) ── */}
-      <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
+      <div className="mt-6 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
         <Camera className="mt-0.5 size-4 shrink-0" />
         <p>
           数据快照 ·{" "}
@@ -525,15 +607,19 @@ export function NoteDetailView({
         </p>
       </div>
 
-      {/* ── Immutable artifact ── */}
-      {note.kind === "draft" ? (
-        <DraftArtifact artifact={note.artifact} />
-      ) : (
-        <ArticleReport article={note.artifact as ResearchArticle} />
-      )}
+      {/* ── Immutable artifact — the document body ── */}
+      <div className="mt-6 min-w-0">
+        {note.kind === "draft" ? (
+          <DraftArtifact artifact={note.artifact} />
+        ) : (
+          <ArticleReport article={note.artifact as ResearchArticle} />
+        )}
+      </div>
 
       {/* ── Live Blocks (#167) — refreshable, outside the artifact ── */}
-      <LiveBlocksSection note={note} onChanged={refetch} />
+      <div className="mt-8">
+        <LiveBlocksSection note={note} onChanged={refetch} />
+      </div>
     </div>
   );
 }

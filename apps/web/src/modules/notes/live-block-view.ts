@@ -111,6 +111,48 @@ export function blockRefreshErrorLabel(block: LiveBlock): string | null {
   );
 }
 
+/**
+ * Document-style block kind label — shown as a quiet chip so the reader
+ * can tell a claim reference from a verbatim excerpt at a glance.
+ */
+export function blockKindLabel(block: LiveBlock): string {
+  return block.type === "evidence_ref" ? "证据引用" : "原文摘录";
+}
+
+/**
+ * Human label for the block's origin lane (evidence / inbox / pdf / manual).
+ * Keeps right-rail insertions visually traceable to where they came from.
+ * Unknown lanes degrade to a neutral "其他来源" — never a raw internal key.
+ */
+export function blockSourceTypeLabel(sourceType: string): string {
+  switch (sourceType) {
+    case "evidence":
+      return "研报证据";
+    case "inbox":
+      return "收件箱";
+    case "pdf":
+      return "PDF 批注";
+    case "manual":
+      return "手动添加";
+    default:
+      return "其他来源";
+  }
+}
+
+/** Confidence chip label — unverified is explicit, never silent. */
+export function confidenceLabel(
+  confidence: "verified" | "partial" | "unverified",
+): string {
+  switch (confidence) {
+    case "verified":
+      return "已核实";
+    case "partial":
+      return "部分核实";
+    case "unverified":
+      return "未核实";
+  }
+}
+
 /** Refresh is meaningful only when a live source URL exists; URL-less
  * manual blocks get no active button (server would confirm manual_only). */
 export function canRefreshBlock(block: LiveBlock): boolean {

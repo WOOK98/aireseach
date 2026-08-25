@@ -10,9 +10,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   blockDateLabel,
+  blockKindLabel,
   blockMetaLabel,
   blockRefreshErrorLabel,
+  blockSourceTypeLabel,
   canRefreshBlock,
+  confidenceLabel,
   evidenceAlreadyBlocked,
   extractNoteEvidence,
   staleStateLabel,
@@ -155,6 +158,31 @@ describe("extractNoteEvidence", () => {
     expect(extractNoteEvidence(null)).toEqual([]);
     expect(extractNoteEvidence({})).toEqual([]);
     expect(extractNoteEvidence("x")).toEqual([]);
+  });
+});
+
+describe("blockKindLabel / blockSourceTypeLabel / confidenceLabel (#177)", () => {
+  it("labels each block kind in document language", () => {
+    expect(blockKindLabel(EVIDENCE_BLOCK)).toBe("证据引用");
+    expect(blockKindLabel(EXCERPT_BLOCK)).toBe("原文摘录");
+  });
+
+  it("maps known origin lanes to human labels", () => {
+    expect(blockSourceTypeLabel("evidence")).toBe("研报证据");
+    expect(blockSourceTypeLabel("inbox")).toBe("收件箱");
+    expect(blockSourceTypeLabel("pdf")).toBe("PDF 批注");
+    expect(blockSourceTypeLabel("manual")).toBe("手动添加");
+  });
+
+  it("unknown lanes degrade to a neutral label, never a raw key", () => {
+    expect(blockSourceTypeLabel("some_internal_lane")).toBe("其他来源");
+    expect(blockSourceTypeLabel("")).toBe("其他来源");
+  });
+
+  it("labels every confidence state explicitly (unverified ≠ silent)", () => {
+    expect(confidenceLabel("verified")).toBe("已核实");
+    expect(confidenceLabel("partial")).toBe("部分核实");
+    expect(confidenceLabel("unverified")).toBe("未核实");
   });
 });
 
