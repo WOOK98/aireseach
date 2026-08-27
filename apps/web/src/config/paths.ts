@@ -2,6 +2,7 @@ const ADMIN_PREFIX = "/admin";
 const AUTH_PREFIX = "/auth";
 const BLOG_PREFIX = "/blog";
 const DASHBOARD_PREFIX = "/dashboard";
+const WORKSPACE_PREFIX = "/workspace";
 const LEGAL_PREFIX = "/legal";
 
 const API_PREFIX = "/api";
@@ -56,6 +57,7 @@ const pathsConfig = {
       pdfs: `${DASHBOARD_PREFIX}/pdfs`,
       pdf: (id: string) => `${DASHBOARD_PREFIX}/pdfs/${id}`,
       visuals: "/visuals",
+      workspace: WORKSPACE_PREFIX,
       settings: {
         index: `${DASHBOARD_PREFIX}/settings`,
         security: `${DASHBOARD_PREFIX}/settings/security`,
@@ -76,6 +78,7 @@ const pathsConfig = {
 export {
   pathsConfig,
   DASHBOARD_PREFIX,
+  WORKSPACE_PREFIX,
   ADMIN_PREFIX,
   BLOG_PREFIX,
   AUTH_PREFIX,
