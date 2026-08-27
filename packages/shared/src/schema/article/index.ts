@@ -253,7 +253,8 @@ export type ValidatedArticle = z.infer<typeof researchArticleSchema>;
 
 // ── Compliance check ─────────────────────────────────────────────────────────
 
-const PROHIBITED_ARTICLE_PATTERN =
+/** Also used by the note Markdown exporter (#180) — single source of truth. */
+export const PROHIBITED_ARTICLE_PATTERN =
   /\b(target price|price target|buy rating|sell rating|strong buy|strong sell|buy-hold-sell|position sizing|portfolio weights?|entry levels?|stop levels?)\b/i;
 
 export function validateArticleOutput(text: string): {
