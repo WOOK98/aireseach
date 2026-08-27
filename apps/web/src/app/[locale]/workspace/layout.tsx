@@ -10,6 +10,7 @@ import { api } from "~/lib/api/server";
 import { getSession } from "~/lib/auth/server";
 import { getQueryClient } from "~/lib/query/server";
 import { billing } from "~/modules/billing/lib/api";
+import { WorkspaceInspector } from "~/modules/workspace/workspace-inspector";
 import { WorkspaceSidebar } from "~/modules/workspace/workspace-sidebar";
 
 export default async function WorkspaceLayout({
@@ -44,7 +45,8 @@ export default async function WorkspaceLayout({
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="flex h-[calc(100svh-var(--banner-height,0px))]">
         <WorkspaceSidebar />
-        <main className="flex-1 overflow-hidden">{children}</main>
+        <main className="min-w-0 flex-1 overflow-hidden">{children}</main>
+        <WorkspaceInspector />
       </div>
     </HydrationBoundary>
   );
