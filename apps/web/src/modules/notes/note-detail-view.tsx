@@ -47,6 +47,7 @@ import {
   staleStateBadgeVariant,
   staleStateLabel,
 } from "~/modules/notes/live-block-view";
+import { NoteExportMenu } from "~/modules/notes/note-export-menu";
 import {
   deleteNote,
   insertLiveBlock,
@@ -495,6 +496,7 @@ export function NoteDetailView({
           <span />
         )}
         <div className="flex items-center gap-2">
+          <NoteExportMenu note={note} />
           <Button
             variant="outline"
             size="sm"
