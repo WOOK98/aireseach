@@ -7,6 +7,9 @@
  *
  * Research objects (Notes / Inbox / PDFs), market objects
  * (Watchlist / Atlas), and disabled placeholders for future capabilities.
+ *
+ * Responsive: desktop renders a fixed aside; mobile renders a Sheet drawer
+ * triggered by a hamburger button (positioned fixed, z-40).
  */
 import {
   Activity,
@@ -16,13 +19,16 @@ import {
   Home,
   Inbox,
   Map,
+  Menu,
   NotebookPen,
   Send,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import { cn } from "@workspace/ui";
+import { Sheet, SheetContent, SheetTrigger } from "@workspace/ui-web/sheet";
 
 import { pathsConfig } from "~/config/paths";
 
@@ -134,16 +140,17 @@ function WorkspaceSidebarItem({
   );
 }
 
-export function WorkspaceSidebar() {
-  const pathname = usePathname();
-
+/**
+ * Inner sidebar content — shared between desktop aside and mobile Sheet.
+ */
+function SidebarNav({ pathname }: { pathname: string }) {
   const isActive = (item: SidebarItem) => {
     if (item.exact) return pathname === item.href;
     return pathname.startsWith(item.href);
   };
 
   return (
-    <aside className="bg-card flex h-full w-56 flex-col border-r">
+    <>
       <div className="flex items-center gap-2 border-b px-4 py-3">
         <BookOpen className="text-primary h-5 w-5" />
         <span className="text-sm font-semibold tracking-tight">
@@ -178,6 +185,43 @@ export function WorkspaceSidebar() {
           ← Dashboard
         </Link>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function WorkspaceSidebar() {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Desktop sidebar — visible at lg+ */}
+      <aside className="bg-card hidden h-full w-56 flex-col border-r lg:flex">
+        <SidebarNav pathname={pathname} />
+      </aside>
+
+      {/* Mobile hamburger — visible below lg */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetTrigger
+          render={(props, state) => (
+            <button
+              {...props}
+              className={cn(
+                "hover:bg-accent fixed top-3 left-3 z-40 flex h-8 w-8 items-center justify-center rounded-md transition-colors lg:hidden",
+                state.open && "bg-accent",
+              )}
+              aria-label="Open workspace navigation"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
+        />
+        <SheetContent side="left" className="w-72 p-0" showCloseButton>
+          <div className="flex h-full flex-col">
+            <SidebarNav pathname={pathname} />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
