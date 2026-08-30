@@ -400,8 +400,6 @@ function ObjectHome({
           </p>
         </div>
 
-        <WorkspaceCommandSurface />
-
         <section>
           <p className="text-muted-foreground/60 mb-2 text-[11px] font-medium tracking-wider uppercase">
             Recent objects
