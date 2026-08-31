@@ -339,6 +339,69 @@ describe("composeNotePublication — article note", () => {
     expect(result.markdown).toContain("Source could not be reached");
   });
 
+  it("sanitizes unsafe refreshError text out of Markdown and HTML output", () => {
+    const dirtyErrors = [
+      "fetch failed: process.env.MORNING_BRIEF_LLM_KEY missing",
+      "EACCES /Users/wook/.config/aireseach/secrets.json",
+      "OpenAI DeepSeek API rate limit exceeded",
+      "invalid api token / secret key for provider",
+      "Error at refreshBlock (apps/web/src/server/refresh.ts:142:11)",
+    ];
+    for (const refreshError of dirtyErrors) {
+      const dirtyBlock: LiveBlock = { ...FAILED_BLOCK, refreshError };
+      const result = composeNotePublication(
+        articleNote({ liveBlocks: [dirtyBlock] }),
+        EXPORTED_AT,
+      );
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      // Unsafe internals must not leak into either output format
+      expect(result.markdown).not.toContain(refreshError);
+      expect(result.html).not.toContain(refreshError);
+      expect(result.markdown).not.toMatch(/process\.env/);
+      expect(result.html).not.toMatch(/process\.env/);
+      expect(result.markdown).not.toContain("MORNING_BRIEF_LLM_KEY");
+      expect(result.html).not.toContain("/Users/wook");
+      expect(result.markdown).not.toMatch(/OpenAI|DeepSeek/i);
+      expect(result.html).not.toMatch(/OpenAI|DeepSeek/i);
+      expect(result.markdown).not.toMatch(/token|secret/i);
+      expect(result.html).not.toMatch(/refresh\.ts/);
+      // Failed state stays honest + a failure reason row is still present
+      expect(result.markdown).toContain("状态：刷新失败");
+      expect(result.markdown).toContain("刷新失败原因：");
+      expect(result.markdown).toContain(
+        "Source could not be reached. Showing last saved content.",
+      );
+    }
+  });
+
+  it("still renders safe neutral refreshError messages verbatim", () => {
+    const result = composeNotePublication(articleNote(), EXPORTED_AT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.markdown).toContain(
+      "刷新失败原因：Source could not be reached. Showing last saved content.",
+    );
+    expect(result.html).toContain(
+      "Source could not be reached. Showing last saved content.",
+    );
+  });
+
+  it("renders a neutral failure label when refreshError is missing", () => {
+    const bare: LiveBlock = { ...FAILED_BLOCK };
+    delete bare.refreshError;
+    const result = composeNotePublication(
+      articleNote({ liveBlocks: [bare] }),
+      EXPORTED_AT,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.markdown).toContain("状态：刷新失败");
+    expect(result.markdown).toContain(
+      "刷新失败原因：Source could not be reached. Showing last saved content.",
+    );
+  });
+
   it("includes metadata header and audit notice", () => {
     const result = composeNotePublication(articleNote(), EXPORTED_AT);
     expect(result.ok).toBe(true);

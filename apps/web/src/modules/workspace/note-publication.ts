@@ -24,7 +24,6 @@ import { PROHIBITED_ARTICLE_PATTERN } from "@workspace/shared/schema/article";
 
 import {
   blockDateLabel,
-  blockRefreshErrorLabel,
   confidenceLabel,
   staleStateLabel,
 } from "../notes/live-block-view";
@@ -485,6 +484,42 @@ function composeEvidence(evidence: EvidenceRef[], nodes: PubNode[]): void {
   });
 }
 
+/** Neutral fallback when a stored refresh error is missing or unsafe to publish. */
+const NEUTRAL_REFRESH_FAILURE =
+  "Source could not be reached. Showing last saved content.";
+
+/**
+ * Patterns that mark a stored refreshError as unsafe for publication output:
+ * env vars (process.env.X / UPPER_SNAKE_KEY names), absolute local paths,
+ * provider/model names, credential wording, and stack-trace fragments.
+ * Legacy/dirty data may carry these; publishable Markdown/HTML must not.
+ */
+const UNSAFE_REFRESH_ERROR_PATTERNS: RegExp[] = [
+  /process\.env/i,
+  /\b[A-Z][A-Z0-9_]{3,}\b/, // UPPER_SNAKE env-var style names
+  /(?:^|[\s("'`])(?:~|\/(?:Users|home|var|etc|opt|tmp|private)\/|[A-Za-z]:[\\/])/, // local paths
+  /\b(?:openai|anthropic|deepseek|google|gemini|claude|gpt-?[\do]+|llm|azure|aws|vercel|supabase|moonshot|kimi|qwen)\b/i, // providers/models
+  /\b(?:api[\s_-]?key|token|secret|password|credential|bearer)\b/i, // credential wording
+  /\.[jt]sx?:\d+|\bat\s+\S+\s+\([^)]+\)/, // stack-trace fragments
+];
+
+/**
+ * Publication-safe refresh failure label. Unlike the in-app helper, this
+ * never renders stored `refreshError` verbatim — anything matching an
+ * unsafe pattern (env vars, paths, provider names, credentials, stack
+ * details) degrades to a neutral message. The failed state itself stays
+ * honest via the 状态 line and this failure row.
+ */
+function publicationRefreshErrorLabel(block: LiveBlock): string | null {
+  if (block.staleState !== "failed") return null;
+  const raw = block.refreshError?.trim();
+  if (!raw) return NEUTRAL_REFRESH_FAILURE;
+  if (UNSAFE_REFRESH_ERROR_PATTERNS.some((p) => p.test(raw))) {
+    return NEUTRAL_REFRESH_FAILURE;
+  }
+  return raw;
+}
+
 function composeLiveBlocks(blocks: LiveBlock[], nodes: PubNode[]): void {
   nodes.push({
     kind: "heading",
@@ -504,7 +539,7 @@ function composeLiveBlocks(blocks: LiveBlock[], nodes: PubNode[]): void {
       `上次刷新：${b.lastRefreshedAt ? b.lastRefreshedAt.slice(0, 19).replace("T", " ") : NA}`,
     ];
     if (b.sourceUrl?.trim()) metaLines.push(`链接：${b.sourceUrl.trim()}`);
-    const failure = blockRefreshErrorLabel(b);
+    const failure = publicationRefreshErrorLabel(b);
     if (failure) metaLines.push(`刷新失败原因：${failure}`);
     nodes.push({ kind: "list", ordered: false, items: metaLines });
 
