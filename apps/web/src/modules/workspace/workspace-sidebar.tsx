@@ -24,13 +24,23 @@ import {
   Send,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
 import { cn } from "@workspace/ui";
 import { Sheet, SheetContent, SheetTrigger } from "@workspace/ui-web/sheet";
 
 import { pathsConfig } from "~/config/paths";
+import { useInbox } from "~/modules/inbox/use-inbox";
+import { useNotes } from "~/modules/notes/use-notes";
+import { usePdfs } from "~/modules/pdfs/use-pdfs";
+import {
+  buildWorkspaceObjects,
+  formatObjectParam,
+  objectHref,
+  parseObjectParam,
+  type WorkspaceObject,
+} from "~/modules/workspace/workspace-object";
 
 interface SidebarItem {
   readonly label: string;
@@ -140,12 +150,78 @@ function WorkspaceSidebarItem({
   );
 }
 
+const OBJECT_ICONS = {
+  note: <NotebookPen className="h-4 w-4 shrink-0" />,
+  pdf: <FileText className="h-4 w-4 shrink-0" />,
+  inbox: <Inbox className="h-4 w-4 shrink-0" />,
+} as const;
+
+/**
+ * Recent objects — object-first navigation (#186). Real data from the
+ * notes / PDFs / inbox hooks; each row selects `?object=` in the canvas.
+ */
+function RecentObjects({ activeParam }: { activeParam: string | null }) {
+  const notesQuery = useNotes({});
+  const pdfsQuery = usePdfs({});
+  const inboxQuery = useInbox();
+
+  const objects = useMemo(
+    () =>
+      buildWorkspaceObjects({
+        notes: notesQuery.data,
+        pdfs: pdfsQuery.data,
+        inbox: inboxQuery.data,
+      }).slice(0, 6),
+    [notesQuery.data, pdfsQuery.data, inboxQuery.data],
+  );
+
+  if (objects.length === 0) return null;
+
+  return (
+    <div>
+      <p className="text-muted-foreground/60 mb-1 px-2 text-[11px] font-medium tracking-wider uppercase">
+        recent objects
+      </p>
+      <div className="space-y-0.5">
+        {objects.map((obj: WorkspaceObject) => {
+          const param = formatObjectParam(obj);
+          return (
+            <Link
+              key={param}
+              href={objectHref(ws, obj)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
+                activeParam === param
+                  ? "bg-accent text-accent-foreground font-medium"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+              )}
+            >
+              {OBJECT_ICONS[obj.kind]}
+              <span
+                className="notranslate line-clamp-1 min-w-0 flex-1"
+                translate="no"
+              >
+                {obj.title}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Inner sidebar content — shared between desktop aside and mobile Sheet.
  */
 function SidebarNav({ pathname }: { pathname: string }) {
+  const searchParams = useSearchParams();
+  const activeParam = searchParams.get("object");
+  // Section links stay active only when no object is selected — an
+  // `?object=` selection supersedes section highlighting.
+  const hasSelection = parseObjectParam(activeParam) !== null;
   const isActive = (item: SidebarItem) => {
-    if (item.exact) return pathname === item.href;
+    if (item.exact) return pathname === item.href && !hasSelection;
     return pathname.startsWith(item.href);
   };
 
@@ -175,6 +251,7 @@ function SidebarNav({ pathname }: { pathname: string }) {
             </div>
           </div>
         ))}
+        <RecentObjects activeParam={activeParam} />
       </nav>
 
       <div className="border-t px-4 py-2">
