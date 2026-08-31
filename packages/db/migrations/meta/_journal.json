@@ -183,6 +183,13 @@
       "when": 1787503811415,
       "tag": "0025_blue_norrin_radd",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1788175857527,
+      "tag": "0026_note_doc_blocks",
+      "breakpoints": true
     }
   ]
 }

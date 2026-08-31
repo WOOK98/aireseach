@@ -36,9 +36,16 @@ const mockInsert = vi.fn<(table: unknown) => { values: typeof mockValues }>(
   }),
 );
 
+// update chain (#188 doc blocks PATCH)
+const mockUpdateReturning = vi.fn<() => Promise<unknown[]>>();
+const mockUpdateSet = vi.fn<(values: unknown) => unknown>(() => ({
+  where: () => ({ returning: mockUpdateReturning }),
+}));
+
 vi.mock("@workspace/db/server", () => ({
   db: {
     insert: (table: unknown) => mockInsert(table),
+    update: () => ({ set: mockUpdateSet }),
   },
 }));
 
@@ -147,6 +154,68 @@ describe("PATCH /notes/:id — immutability guard", () => {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ asOf: "2999-01-01" }),
+    });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("PATCH /notes/:id — doc blocks (#188)", () => {
+  const patch = (body: unknown) =>
+    app.request("/notes/n1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+  it("writes blocks to the doc_blocks column (never artifact/live_blocks)", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    const row = {
+      id: "n1",
+      title: "t",
+      summary: null,
+      note: null,
+      tags: [],
+      kind: "article",
+      entityTicker: null,
+      entityName: "X",
+      artifact: VALID_ARTICLE,
+      schemaVersion: 1,
+      evidenceIds: [],
+      docBlocks: [{ id: "b1", type: "paragraph", text: "hello" }],
+      asOf: VALID_ARTICLE.entity.dataTimestamp,
+      sourceMeta: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    mockUpdateReturning.mockResolvedValue([row]);
+
+    const res = await patch({
+      blocks: [
+        { id: "b1", type: "paragraph", text: "hello" },
+        { id: "b2", type: "checklist", text: "track", checked: true },
+      ],
+    });
+    expect(res.status).toBe(200);
+
+    const setPayload = mockUpdateSet.mock.calls[0]![0] as Record<
+      string,
+      unknown
+    >;
+    expect(setPayload.docBlocks).toHaveLength(2);
+    expect(setPayload.artifact).toBeUndefined();
+    expect(setPayload.liveBlocks).toBeUndefined();
+    expect(setPayload.updatedAt).toBeInstanceOf(Date);
+
+    const body = (await res.json()) as {
+      note: { blocks: { id: string }[] };
+    };
+    expect(body.note.blocks[0]!.id).toBe("b1");
+  });
+
+  it("rejects malformed blocks with 400", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    const res = await patch({
+      blocks: [{ id: "b1", type: "html", text: "<script>" }],
     });
     expect(res.status).toBe(400);
   });

@@ -156,9 +156,18 @@ export const notesRoute = new Hono()
       throw new HTTPException(400, { message: "Nothing to update." });
     }
 
+    // `blocks` (#188) maps to the doc_blocks column — it is user-authored
+    // narrative, never the immutable artifact and never live_blocks.
+    const { blocks, ...scalarPatch } = patch;
+    const setPayload: Record<string, unknown> = {
+      ...scalarPatch,
+      updatedAt: new Date(),
+    };
+    if (blocks !== undefined) setPayload.docBlocks = blocks;
+
     const [row] = await db
       .update(researchNotes)
-      .set({ ...patch, updatedAt: new Date() })
+      .set(setPayload)
       .where(
         and(
           eq(researchNotes.id, c.req.param("id")),

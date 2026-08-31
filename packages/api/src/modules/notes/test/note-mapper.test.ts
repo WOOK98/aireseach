@@ -156,4 +156,19 @@ describe("response mappers", () => {
     expect(detail.artifact).toEqual(VALID_ARTICLE);
     expect(detail.evidenceIds).toEqual(["E1", "E2", "E3"]);
   });
+
+  it("toNoteDetail sanitizes doc blocks tolerantly (#188)", () => {
+    // Old rows lack the column → []
+    expect(toNoteDetail(row).blocks).toEqual([]);
+    // Valid blocks survive; malformed ones are dropped, never 500.
+    const detail = toNoteDetail({
+      ...row,
+      docBlocks: [
+        { id: "b1", type: "paragraph", text: "user narrative" },
+        { id: "bad", type: "html", text: "x" },
+      ],
+    });
+    expect(detail.blocks).toHaveLength(1);
+    expect(detail.blocks[0]).toMatchObject({ id: "b1", type: "paragraph" });
+  });
 });

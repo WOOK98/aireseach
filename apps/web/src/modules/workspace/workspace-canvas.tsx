@@ -38,6 +38,7 @@ import { useInbox, useInboxMutations } from "~/modules/inbox/use-inbox";
 import { NoteDetailView } from "~/modules/notes/note-detail-view";
 import { useNote, useNotes } from "~/modules/notes/use-notes";
 import { useAnnotations, usePdf, usePdfs } from "~/modules/pdfs/use-pdfs";
+import { NoteBlockEditor } from "~/modules/workspace/note-block-editor";
 import { WorkspaceCommandSurface } from "~/modules/workspace/workspace-command";
 import {
   buildWorkspaceObjects,
@@ -110,14 +111,21 @@ function NoteCanvas({
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-      {/* Document canvas — the note reads as a page, not a detail panel */}
+      {/* Document canvas — the note reads as a page, not a detail panel.
+          #188: the user-authored block editor sits above the immutable
+          snapshot so the canvas is editable first, reference second. */}
       <div className="bg-card mx-auto max-w-3xl min-w-0 rounded-xl border p-4 sm:p-6">
-        <NoteDetailView
-          note={note}
-          refetch={noteQuery.refetch}
-          onDeleted={onDeleted}
-          showBackButton={false}
-        />
+        <div className="mx-auto w-full max-w-3xl min-w-0">
+          <NoteBlockEditor note={note} onSaved={noteQuery.refetch} />
+        </div>
+        <div className="mt-8 border-t pt-6">
+          <NoteDetailView
+            note={note}
+            refetch={noteQuery.refetch}
+            onDeleted={onDeleted}
+            showBackButton={false}
+          />
+        </div>
       </div>
     </div>
   );
