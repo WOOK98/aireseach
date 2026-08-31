@@ -12,6 +12,10 @@ import { z } from "zod";
  */
 import { researchArticleSchema } from "@workspace/shared/schema/article";
 import { sanitizeLiveBlocks } from "@workspace/shared/schema/live-block";
+import {
+  noteBlocksSchema,
+  sanitizeNoteBlocks,
+} from "@workspace/shared/schema/note-block";
 
 import type { ResearchArticle } from "@workspace/shared/types/article";
 
@@ -37,6 +41,8 @@ export const patchNoteInputSchema = z
     summary: z.string().trim().max(2000).nullable().optional(),
     note: z.string().trim().max(10000).nullable().optional(),
     tags: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
+    // Doc blocks (#188) — user-authored canvas blocks, strict on write.
+    blocks: noteBlocksSchema.optional(),
   })
   .strict(); // strips nothing, rejects unknown keys (artifact immutability)
 
@@ -101,7 +107,12 @@ interface NoteRow {
   evidenceIds: string[];
   /** Live Blocks column (#167) — optional at the mapper boundary: old rows
    *  and fixtures may lack it; sanitizeLiveBlocks degrades to []. */
+  /** Live Blocks column (#167) — optional at the mapper boundary: old rows
+   *  and fixtures may lack it; sanitizeLiveBlocks degrades to []. */
   liveBlocks?: unknown;
+  /** Doc Blocks column (#188) — optional at the mapper boundary: old rows
+   *  and fixtures may lack it; sanitizeNoteBlocks degrades to []. */
+  docBlocks?: unknown;
   asOf: string;
   sourceMeta: unknown;
   createdAt: Date;
@@ -138,6 +149,7 @@ export function toNoteDetail(row: NoteRow) {
     evidenceIds: row.evidenceIds,
     // Tolerant read: malformed blocks are dropped, never 500 the page.
     liveBlocks: sanitizeLiveBlocks(row.liveBlocks),
+    blocks: sanitizeNoteBlocks(row.docBlocks),
     sourceMeta: row.sourceMeta,
   };
 }

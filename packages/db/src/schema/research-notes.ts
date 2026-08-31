@@ -27,6 +27,7 @@ import { createInsertSchema, createSelectSchema } from "../lib/zod";
 import { user } from "./auth";
 
 import type { LiveBlock } from "@workspace/shared/schema/live-block";
+import type { NoteBlock } from "@workspace/shared/schema/note-block";
 import type * as z from "zod";
 
 export const researchNotes = pgTable(
@@ -63,6 +64,11 @@ export const researchNotes = pgTable(
     // Separate column on purpose: the artifact stays an immutable as-of
     // snapshot (#154 redline); refresh only ever rewrites this array.
     liveBlocks: jsonb("live_blocks").$type<LiveBlock[]>().notNull().default([]),
+
+    // ── Doc Blocks (#188) — user-authored document canvas blocks ──
+    // Separate column on purpose: doc blocks are user narrative, NOT the
+    // immutable artifact and NOT refresh-managed live blocks.
+    docBlocks: jsonb("doc_blocks").$type<NoteBlock[]>().notNull().default([]),
 
     // ── Timestamps ──
     createdAt: timestamp("created_at").notNull().defaultNow(),

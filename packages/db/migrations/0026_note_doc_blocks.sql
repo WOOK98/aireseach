@@ -1,0 +1,1 @@
+ALTER TABLE "research_notes" ADD COLUMN "doc_blocks" jsonb DEFAULT '[]'::jsonb NOT NULL;

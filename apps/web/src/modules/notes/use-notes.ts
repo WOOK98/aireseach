@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { DraftNoteArtifact } from "@workspace/shared/schema/article";
 import type { LiveBlock } from "@workspace/shared/schema/live-block";
+import type { NoteBlock } from "@workspace/shared/schema/note-block";
 import type { ResearchArticle } from "@workspace/shared/types/article";
 
 // ── Types (mirror API responses) ─────────────────────────────────────────
@@ -37,6 +38,8 @@ export interface NoteDetail extends NoteListItem {
   evidenceIds: string[];
   /** Live Blocks (#167) — refreshable evidence blocks, outside the artifact. */
   liveBlocks: LiveBlock[];
+  /** Doc Blocks (#188) — user-authored document canvas blocks. */
+  blocks: NoteBlock[];
   sourceMeta: { query?: string; language?: "zh" | "en" } | null;
 }
 
@@ -54,6 +57,8 @@ export interface PatchNoteInput {
   summary?: string | null;
   note?: string | null;
   tags?: string[];
+  /** Doc Blocks (#188) — full replacement of the user-authored canvas. */
+  blocks?: NoteBlock[];
 }
 
 // ── Fetchers ─────────────────────────────────────────────────────────────
