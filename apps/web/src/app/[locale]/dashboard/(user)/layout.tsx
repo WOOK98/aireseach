@@ -4,6 +4,7 @@ import {
   BarChart3,
   FileText,
   Inbox,
+  Layers,
   Map,
   NotebookPen,
 } from "lucide-react";
@@ -28,6 +29,11 @@ const menu = [
   {
     label: "platform",
     items: [
+      {
+        title: "Workspace",
+        href: pathsConfig.dashboard.user.workspace,
+        icon: <Layers />,
+      },
       {
         title: "Watchlist",
         href: pathsConfig.dashboard.user.watchlist,
