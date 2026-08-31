@@ -4,11 +4,13 @@
 
 import {
   AlertCircle,
+  ArrowRight,
   BarChart3,
   BriefcaseBusiness,
   FileSearch,
   FileText,
   Globe,
+  Layers,
   ListChecks,
   Loader2,
   RotateCcw,
@@ -20,6 +22,7 @@ import {
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -31,6 +34,7 @@ import { Skeleton } from "@workspace/ui-web/skeleton";
 
 import { ArticleReport } from "~/components/article/ArticleReport";
 import { JPMReport } from "~/components/report/JPMReport";
+import { pathsConfig } from "~/config/paths";
 import { SaveNoteButton } from "~/modules/notes/save-note-button";
 import {
   FCFChart,
@@ -470,6 +474,24 @@ export default function ResearchPage() {
               );
             })}
           </div>
+          <Link
+            href={pathsConfig.dashboard.user.workspace}
+            className="border-primary/40 bg-primary/5 hover:bg-primary/10 group flex items-center gap-3 rounded-xl border px-4 py-3 transition"
+          >
+            <div className="bg-primary/10 text-primary rounded-lg p-2">
+              <Layers className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-foreground text-sm font-semibold">
+                New: Research Workspace
+              </p>
+              <p className="text-muted-foreground text-xs leading-snug">
+                Capture, analyze, and publish your research in one financial
+                notebook.
+              </p>
+            </div>
+            <ArrowRight className="text-primary h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+          </Link>
         </div>
       </div>
 
