@@ -99,7 +99,15 @@ export interface PatchPdfInput {
 
 // ── Fetchers ─────────────────────────────────────────────────────────────
 
-async function readError(res: Response): Promise<string> {
+/**
+ * P0 (#195): 5xx responses may carry internal details (raw SQL, params,
+ * paths) — never surface them. Only 4xx messages are authored for users
+ * and safe to pass through.
+ */
+export async function readError(res: Response): Promise<string> {
+  if (res.status >= 500) {
+    return "Service temporarily unavailable. Try again later.";
+  }
   const detail = await res.text().catch(() => "");
   try {
     const json = JSON.parse(detail) as { message?: string };

@@ -110,11 +110,9 @@ export default function PdfsPage() {
       {pdfsQuery.isLoading ? (
         <PdfsSkeleton />
       ) : pdfsQuery.isError ? (
+        // P0 (#195): neutral failure state — never render raw error text.
         <div className="text-destructive rounded-xl border p-6 text-sm">
-          加载失败：
-          {pdfsQuery.error instanceof Error
-            ? pdfsQuery.error.message
-            : "未知错误"}
+          PDF 库暂时不可用，请稍后重试。
         </div>
       ) : pdfs.length === 0 ? (
         <div className="text-muted-foreground rounded-xl border border-dashed p-10 text-center text-sm">

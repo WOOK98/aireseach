@@ -1,3 +1,4 @@
+import { HTTPException } from "hono/http-exception";
 import * as z from "zod";
 
 import { isKey } from "@workspace/i18n";
@@ -47,14 +48,22 @@ export const onError = async (
 
   if (isError(e)) {
     logger.error(e.code, e.message);
+    // P0 (#195): only messages we authored (HTTPException) or client-error
+    // statuses are safe to echo. Arbitrary 5xx errors (e.g. Drizzle DB
+    // failures) carry raw SQL, params and paths — return a neutral message
+    // instead; the raw error stays in logs/monitoring.
+    const trusted = e instanceof HTTPException || status < 500;
+    const code = e instanceof HTTPException ? undefined : e.code;
     return new Response(
       JSON.stringify({
-        code: e.code,
-        message: e.message
+        code: trusted ? code : "common:error.general",
+        message: trusted
           ? e.message
-          : e.code && isKey(e.code, i18n)
-            ? t(e.code)
-            : ((e.message || e.code) ?? t("common:error.general")),
+            ? e.message
+            : code && isKey(code, i18n)
+              ? t(code)
+              : ((e.message || code) ?? t("common:error.general"))
+          : t("common:error.general"),
         status,
         timestamp,
         path,

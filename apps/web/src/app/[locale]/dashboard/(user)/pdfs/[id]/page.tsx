@@ -67,7 +67,7 @@ export default function PdfDetailPage() {
   const router = useRouter();
   const id = params.id;
 
-  const { data: pdf, isLoading, isError, error } = usePdf(id);
+  const { data: pdf, isLoading, isError } = usePdf(id);
   const annotationsQuery = useAnnotations(id);
   const createAnnotation = useCreateAnnotation(id);
   const deleteAnnotation = useDeleteAnnotation(id);
@@ -189,8 +189,9 @@ export default function PdfDetailPage() {
   if (isError || !pdf) {
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
+        {/* P0 (#195): neutral failure state — never render raw error text. */}
         <div className="text-destructive rounded-xl border p-6 text-sm">
-          加载失败：{error instanceof Error ? error.message : "PDF 不存在"}
+          {isError ? "PDF 暂时不可用，请稍后重试。" : "PDF 不存在"}
         </div>
         <Link
           href={pathsConfig.dashboard.user.pdfs}
