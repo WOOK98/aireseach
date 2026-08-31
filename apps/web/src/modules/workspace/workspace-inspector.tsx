@@ -43,6 +43,7 @@ import { NoteExportMenu } from "~/modules/notes/note-export-menu";
 import { useNote } from "~/modules/notes/use-notes";
 import { WorkspaceRightRail } from "~/modules/notes/workspace-right-rail";
 import { useAnnotations, usePdf } from "~/modules/pdfs/use-pdfs";
+import { NotePublishPreview } from "~/modules/workspace/note-publish-preview";
 import { INSERT_RAIL_ELEMENT_ID } from "~/modules/workspace/workspace-command";
 import {
   formatObjectParam,
@@ -253,8 +254,9 @@ function NoteInspector({ noteId }: { noteId: string }) {
       </InspectorSection>
 
       <InspectorSection title="Export">
-        <div className="px-1">
+        <div className="flex flex-wrap items-center gap-2 px-1">
           <NoteExportMenu note={note} />
+          <NotePublishPreview note={note} />
         </div>
       </InspectorSection>
 

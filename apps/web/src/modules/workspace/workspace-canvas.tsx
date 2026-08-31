@@ -15,7 +15,7 @@
  * REDLINES:
  * - every dynamic title/ticker/source/date uses notranslate
  * - missing data renders as honest empty states / "—", never fabricated
- * - no export/publish write paths beyond the existing local Markdown export
+ * - export/publish surfaces are local-only Markdown/HTML preview with manual copy/download (#190)
  */
 import {
   ArrowRight,
