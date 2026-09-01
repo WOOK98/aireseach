@@ -151,9 +151,9 @@ export function buildWorkspaceCommands(ctx: {
     {
       id: "create-note",
       title: "Create research note",
-      hint: "Generate an AI-assisted research article, then save it as a note",
+      hint: "Create a new note in the workspace",
       enabled: true,
-      href: ctx.researchHref,
+      // #197: No href — handled locally by creating a note object.
     },
     {
       id: "open-note",

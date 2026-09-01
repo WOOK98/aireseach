@@ -6,8 +6,11 @@
  * Workspace Notes section (#197) — compact object list inside the
  * `/workspace` shell. Rows select the note in the canvas via `?object=`,
  * replacing the old standalone dashboard notes app (#170 shell).
+ *
+ * #197: When the API is unavailable, falls back to localStorage notes
+ * and shows a degraded-mode banner instead of a dead-end alert.
  */
-import { FileText, Search } from "lucide-react";
+import { FileText, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -16,6 +19,7 @@ import { Input } from "@workspace/ui-web/input";
 import { Skeleton } from "@workspace/ui-web/skeleton";
 
 import { pathsConfig } from "~/config/paths";
+import { createLocalNote } from "~/modules/notes/local-notes";
 import { useNotes } from "~/modules/notes/use-notes";
 import { objectHref } from "~/modules/workspace/workspace-object";
 
@@ -53,13 +57,30 @@ export function NotesSection() {
 
   const notes = notesQuery.data ?? [];
 
+  function handleCreateNote() {
+    const note = createLocalNote({
+      title: "Untitled note",
+    });
+    // Navigate to the new note in the workspace canvas.
+    window.location.href = objectHref(pathsConfig.workspace.index, {
+      kind: "note",
+      id: note.id,
+    });
+  }
+
   return (
     <div className="mx-auto w-full max-w-4xl space-y-4 overflow-y-auto px-4 py-6">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold">Notes</h1>
-        <p className="text-muted-foreground text-sm">
-          Select a note to open it in the workspace canvas.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold">Notes</h1>
+          <p className="text-muted-foreground text-sm">
+            Select a note to open it in the workspace canvas.
+          </p>
+        </div>
+        <Button size="sm" className="gap-1.5" onClick={handleCreateNote}>
+          <Plus className="size-3.5" />
+          New note
+        </Button>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -101,8 +122,20 @@ export function NotesSection() {
       {notesQuery.isLoading ? (
         <NotesSectionSkeleton />
       ) : notesQuery.isError ? (
-        <div className="text-destructive rounded-xl border p-6 text-sm">
-          Notes are temporarily unavailable — please try again shortly.
+        // #197: Not a dead end — show empty state with create action.
+        // The localStorage fallback in useNotes should have returned
+        // local notes. If we're here, both API and local failed.
+        <div className="rounded-xl border border-dashed px-4 py-12 text-center">
+          <FileText className="text-muted-foreground mx-auto h-8 w-8" />
+          <p className="mt-3 text-sm font-medium">No research notes yet</p>
+          <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-xs leading-relaxed">
+            Create a note to start your research. Notes are saved locally and
+            sync when the server is available.
+          </p>
+          <Button size="sm" className="mt-4 gap-1.5" onClick={handleCreateNote}>
+            <Plus className="size-3.5" />
+            Create note
+          </Button>
         </div>
       ) : notes.length === 0 ? (
         <div className="rounded-xl border border-dashed px-4 py-12 text-center">
@@ -112,6 +145,10 @@ export function NotesSection() {
             Paste a source into Inbox and convert it, or save an analysis from
             Research — notes land here as workspace objects.
           </p>
+          <Button size="sm" className="mt-4 gap-1.5" onClick={handleCreateNote}>
+            <Plus className="size-3.5" />
+            Create note
+          </Button>
         </div>
       ) : (
         <div className="divide-border bg-card divide-y rounded-xl border">
@@ -134,6 +171,11 @@ export function NotesSection() {
                 {note.kind === "draft" && (
                   <span className="shrink-0 rounded-full border border-amber-300 px-1.5 py-px text-[10px] text-amber-700 dark:border-amber-800 dark:text-amber-400">
                     draft
+                  </span>
+                )}
+                {note.id.startsWith("local_") && (
+                  <span className="shrink-0 rounded-full border border-blue-300 px-1.5 py-px text-[10px] text-blue-700 dark:border-blue-800 dark:text-blue-400">
+                    local
                   </span>
                 )}
                 <span

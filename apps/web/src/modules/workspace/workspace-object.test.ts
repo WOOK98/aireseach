@@ -191,11 +191,11 @@ describe("buildWorkspaceCommands", () => {
     expect(insertActive.disabledReason).toBeUndefined();
   });
 
-  it("points create-note at the real research path", () => {
+  it("create-note is a local action with no href", () => {
     const commands = buildWorkspaceCommands({ ...base, noteActive: false });
-    expect(commands.find((c) => c.id === "create-note")?.href).toBe(
-      "/dashboard/research",
-    );
+    const createNote = commands.find((c) => c.id === "create-note");
+    expect(createNote?.enabled).toBe(true);
+    expect(createNote?.href).toBeUndefined();
   });
 });
 
