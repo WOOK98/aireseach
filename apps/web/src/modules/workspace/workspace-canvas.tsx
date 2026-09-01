@@ -40,6 +40,7 @@ import { useNote, useNotes } from "~/modules/notes/use-notes";
 import { useAnnotations, usePdf, usePdfs } from "~/modules/pdfs/use-pdfs";
 import { NoteBlockEditor } from "~/modules/workspace/note-block-editor";
 import { WorkspaceCommandSurface } from "~/modules/workspace/workspace-command";
+import { WORKSPACE_HOME_ACTIONS } from "~/modules/workspace/workspace-nav";
 import {
   buildWorkspaceObjects,
   formatObjectParam,
@@ -49,7 +50,7 @@ import {
   type WorkspaceObjectRef,
 } from "~/modules/workspace/workspace-object";
 
-const ws = pathsConfig.dashboard.user.workspace;
+const ws = pathsConfig.workspace.index;
 
 const KIND_ICON = {
   note: NotebookPen,
@@ -425,20 +426,17 @@ function ObjectHome({
                 No research objects yet
               </p>
               <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-xs leading-relaxed">
-                Capture a URL with ⌘K, upload a PDF, or generate a report in
-                Research — everything lands here as a navigable object.
+                Use ⌘K to capture a URL, pick an action below, or start a report
+                in Research — everything lands here as a navigable object.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <Link href={pathsConfig.dashboard.user.research}>
-                  <Button size="sm" variant="outline">
-                    Generate a report
-                  </Button>
-                </Link>
-                <Link href={pathsConfig.dashboard.user.pdfs}>
-                  <Button size="sm" variant="outline">
-                    Upload a PDF
-                  </Button>
-                </Link>
+                {WORKSPACE_HOME_ACTIONS.map((action) => (
+                  <Link key={action.id} href={action.href}>
+                    <Button size="sm" variant="outline">
+                      {action.label}
+                    </Button>
+                  </Link>
+                ))}
               </div>
             </div>
           ) : (

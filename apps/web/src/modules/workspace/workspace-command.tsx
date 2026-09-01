@@ -198,7 +198,7 @@ export function WorkspaceCommandSurface() {
   const commands = buildWorkspaceCommands({
     noteActive: selection?.kind === "note",
     researchHref: pathsConfig.dashboard.user.research,
-    pdfsHref: pathsConfig.dashboard.user.pdfs,
+    pdfsHref: pathsConfig.workspace.pdfs,
   });
 
   // ⌘K / Ctrl+K toggle.

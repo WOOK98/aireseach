@@ -1,7 +1,10 @@
-import { redirect } from "next/navigation";
+import { PdfsPage } from "~/modules/pdfs/pdfs-page";
 
-import { pathsConfig } from "~/config/paths";
-
+/**
+ * `/workspace/pdfs` — PDF library inside the workspace shell (#197).
+ * Rows open the PDF object panel in the canvas; the reader stays at
+ * `/dashboard/pdfs/[id]`.
+ */
 export default function WorkspacePdfsPage() {
-  redirect(pathsConfig.dashboard.user.pdfs);
+  return <PdfsPage />;
 }

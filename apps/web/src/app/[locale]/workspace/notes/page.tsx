@@ -1,7 +1,9 @@
-import { redirect } from "next/navigation";
+import { NotesSection } from "~/modules/workspace/sections/notes-section";
 
-import { pathsConfig } from "~/config/paths";
-
+/**
+ * `/workspace/notes` — notes object list inside the workspace shell (#197).
+ * Rows deep-link into the canvas via `?object=note:<id>`.
+ */
 export default function WorkspaceNotesPage() {
-  redirect(pathsConfig.dashboard.user.notes);
+  return <NotesSection />;
 }

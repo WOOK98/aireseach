@@ -1,13 +1,5 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import {
-  Activity,
-  BarChart3,
-  FileText,
-  Inbox,
-  Layers,
-  Map,
-  NotebookPen,
-} from "lucide-react";
+import { BarChart3, Layers } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { getBillingSummaryResponseSchema } from "@workspace/api/schema";
@@ -31,38 +23,13 @@ const menu = [
     items: [
       {
         title: "Workspace",
-        href: pathsConfig.dashboard.user.workspace,
+        href: pathsConfig.workspace.index,
         icon: <Layers />,
-      },
-      {
-        title: "Watchlist",
-        href: pathsConfig.dashboard.user.watchlist,
-        icon: <Activity />,
       },
       {
         title: "Research",
         href: pathsConfig.dashboard.user.research,
         icon: <BarChart3 />,
-      },
-      {
-        title: "Notes",
-        href: pathsConfig.dashboard.user.notes,
-        icon: <NotebookPen />,
-      },
-      {
-        title: "Inbox",
-        href: pathsConfig.dashboard.user.inbox,
-        icon: <Inbox />,
-      },
-      {
-        title: "PDFs",
-        href: pathsConfig.dashboard.user.pdfs,
-        icon: <FileText />,
-      },
-      {
-        title: "Data Atlas",
-        href: pathsConfig.dashboard.user.visuals,
-        icon: <Map />,
       },
     ],
   },
