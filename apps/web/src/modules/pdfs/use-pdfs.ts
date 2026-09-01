@@ -7,8 +7,20 @@
  * Upload flow: POST /api/pdfs (metadata) → presigned PUT to storage →
  * bytes never pass through the app server.
  * Failures surface explicit errors — nothing is silently dropped.
+ *
+ * #197: When the API is unavailable (503 / network error), hooks fall back
+ * to localStorage-backed local-pdfs.ts. Local PDFs are metadata-only
+ * (no file bytes, extraction always "pending").
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import {
+  createLocalPdf,
+  deleteLocalPdf,
+  getLocalPdf,
+  isLocalPdf,
+  listLocalPdfs,
+} from "./local-pdfs";
 
 // ── Types (mirror API responses) ─────────────────────────────────────────
 
@@ -124,45 +136,105 @@ async function fetchPdfs(query: {
   if (query.q) params.set("q", query.q);
   if (query.ticker) params.set("ticker", query.ticker);
   const suffix = params.size > 0 ? `?${params.toString()}` : "";
-  const res = await fetch(`/api/pdfs${suffix}`);
-  if (!res.ok) throw new Error(await readError(res));
-  const data = (await res.json()) as { pdfs: PdfItem[] };
-  return data.pdfs;
+  try {
+    const res = await fetch(`/api/pdfs${suffix}`);
+    if (!res.ok) {
+      // #197: API unavailable — fall back to local PDFs.
+      if (res.status >= 500) {
+        return listLocalPdfs(query);
+      }
+      throw new Error(await readError(res));
+    }
+    const data = (await res.json()) as { pdfs: PdfItem[] };
+    return data.pdfs;
+  } catch (err) {
+    if (err instanceof TypeError) {
+      return listLocalPdfs(query);
+    }
+    throw err;
+  }
 }
 
 async function fetchPdf(id: string): Promise<PdfDetail> {
-  const res = await fetch(`/api/pdfs/${encodeURIComponent(id)}`);
-  if (!res.ok) throw new Error(await readError(res));
-  const data = (await res.json()) as { pdf: PdfItem; fileUrl: string };
-  return { ...data.pdf, fileUrl: data.fileUrl };
+  // #197: Local PDFs never hit the API.
+  if (isLocalPdf(id)) {
+    const local = getLocalPdf(id);
+    if (local) return { ...local, fileUrl: "" };
+    throw new Error("Local PDF not found.");
+  }
+  try {
+    const res = await fetch(`/api/pdfs/${encodeURIComponent(id)}`);
+    if (!res.ok) {
+      if (res.status >= 500) {
+        const local = getLocalPdf(id);
+        if (local) return { ...local, fileUrl: "" };
+      }
+      throw new Error(await readError(res));
+    }
+    const data = (await res.json()) as { pdf: PdfItem; fileUrl: string };
+    return { ...data.pdf, fileUrl: data.fileUrl };
+  } catch (err) {
+    if (err instanceof TypeError) {
+      const local = getLocalPdf(id);
+      if (local) return { ...local, fileUrl: "" };
+    }
+    throw err;
+  }
 }
 
 /**
  * Register metadata → upload bytes via presigned URL.
  * Throws (with the server row rolled back) when either leg fails.
+ *
+ * #197: When the API is unavailable, creates a local metadata entry
+ * with extractionStatus: "pending" (degraded — no file bytes).
  */
 async function uploadPdf(input: CreatePdfInput, file: File): Promise<PdfItem> {
-  const res = await fetch("/api/pdfs", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) throw new Error(await readError(res));
-  const data = (await res.json()) as { pdf: PdfItem; uploadUrl: string };
+  try {
+    const res = await fetch("/api/pdfs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      if (res.status >= 500) {
+        return createLocalPdf({
+          fileName: input.fileName,
+          fileSizeBytes: input.fileSizeBytes,
+          ticker: input.ticker,
+          reportPeriod: input.reportPeriod,
+          sourceLabel: input.sourceLabel,
+        });
+      }
+      throw new Error(await readError(res));
+    }
+    const data = (await res.json()) as { pdf: PdfItem; uploadUrl: string };
 
-  const put = await fetch(data.uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": "application/pdf" },
-    body: file,
-  });
-  if (!put.ok) {
-    // Best-effort cleanup: drop the metadata row so it doesn't strand.
-    await fetch(`/api/pdfs/${encodeURIComponent(data.pdf.id)}`, {
-      method: "DELETE",
-    }).catch(() => {});
-    throw new Error("Upload failed.");
+    const put = await fetch(data.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/pdf" },
+      body: file,
+    });
+    if (!put.ok) {
+      await fetch(`/api/pdfs/${encodeURIComponent(data.pdf.id)}`, {
+        method: "DELETE",
+      }).catch(() => {});
+      throw new Error("Upload failed.");
+    }
+    return data.pdf;
+  } catch (err) {
+    if (err instanceof TypeError) {
+      // Network error — save metadata locally.
+      return createLocalPdf({
+        fileName: input.fileName,
+        fileSizeBytes: input.fileSizeBytes,
+        ticker: input.ticker,
+        reportPeriod: input.reportPeriod,
+        sourceLabel: input.sourceLabel,
+      });
+    }
+    throw err;
   }
-  return data.pdf;
 }
 
 export async function patchPdf(
@@ -180,6 +252,11 @@ export async function patchPdf(
 }
 
 export async function deletePdf(id: string): Promise<void> {
+  // #197: Local PDFs delete from localStorage.
+  if (isLocalPdf(id)) {
+    deleteLocalPdf(id);
+    return;
+  }
   const res = await fetch(`/api/pdfs/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });

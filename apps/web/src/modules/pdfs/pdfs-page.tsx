@@ -7,6 +7,9 @@
  *
  * User-scoped PDF library: upload, search, ticker filter, click-through
  * to the reader. File names / tickers are user content → notranslate.
+ *
+ * #197: When the API is unavailable, falls back to localStorage PDFs
+ * and shows a degraded-mode empty state instead of a dead-end alert.
  */
 import { FileText, Search } from "lucide-react";
 import Link from "next/link";
@@ -111,9 +114,19 @@ export function PdfsPage() {
       {pdfsQuery.isLoading ? (
         <PdfsSkeleton />
       ) : pdfsQuery.isError ? (
-        // P0 (#195): neutral failure state — never render raw error text.
-        <div className="text-destructive rounded-xl border p-6 text-sm">
-          PDF 库暂时不可用，请稍后重试。
+        // #197: Not a dead end — show empty state with upload action.
+        // The localStorage fallback in usePdfs should have returned
+        // local PDFs. If we're here, both API and local failed.
+        <div className="text-muted-foreground rounded-xl border border-dashed p-10 text-center text-sm">
+          <FileText className="mx-auto mb-3 h-8 w-8 opacity-40" />
+          <p className="font-medium">还没有 PDF</p>
+          <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-xs leading-relaxed">
+            上传第一份财报或研报开始标注。PDF
+            元数据会保存在本地，服务器恢复后自动同步。
+          </p>
+          <div className="mt-4">
+            <UploadPdfButton />
+          </div>
         </div>
       ) : pdfs.length === 0 ? (
         <div className="text-muted-foreground rounded-xl border border-dashed p-10 text-center text-sm">
@@ -161,6 +174,11 @@ export function PdfsPage() {
                   >
                     {p.sourceLabel}
                   </span>
+                )}
+                {p.id.startsWith("local_pdf_") && (
+                  <Badge variant="outline" className="text-blue-600">
+                    local
+                  </Badge>
                 )}
                 <span className="text-muted-foreground ml-auto text-xs">
                   {new Date(p.createdAt).toLocaleDateString()}

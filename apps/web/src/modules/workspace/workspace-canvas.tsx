@@ -35,6 +35,7 @@ import { Skeleton } from "@workspace/ui-web/skeleton";
 
 import { pathsConfig } from "~/config/paths";
 import { useInbox, useInboxMutations } from "~/modules/inbox/use-inbox";
+import { createLocalNote } from "~/modules/notes/local-notes";
 import { NoteDetailView } from "~/modules/notes/note-detail-view";
 import { useNote, useNotes } from "~/modules/notes/use-notes";
 import { useAnnotations, usePdf, usePdfs } from "~/modules/pdfs/use-pdfs";
@@ -393,9 +394,11 @@ function InboxCanvas({
 function ObjectHome({
   objects,
   isLoading,
+  onCreateNote,
 }: {
   objects: WorkspaceObject[];
   isLoading: boolean;
+  onCreateNote: () => void;
 }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
@@ -430,6 +433,10 @@ function ObjectHome({
                 in Research — everything lands here as a navigable object.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <Button size="sm" onClick={onCreateNote}>
+                  <NotebookPen className="mr-1.5 size-3.5" />
+                  New note
+                </Button>
                 {WORKSPACE_HOME_ACTIONS.map((action) => (
                   <Link key={action.id} href={action.href}>
                     <Button size="sm" variant="outline">
@@ -510,6 +517,13 @@ export function WorkspaceCanvas() {
     );
   }
 
+  function handleCreateNote() {
+    const note = createLocalNote({
+      title: "Untitled note",
+    });
+    select({ kind: "note", id: note.id });
+  }
+
   return (
     <div className="flex h-full min-w-0 flex-col">
       {/* Canvas header — breadcrumb + command surface */}
@@ -538,6 +552,7 @@ export function WorkspaceCanvas() {
           isLoading={
             notesQuery.isLoading || pdfsQuery.isLoading || inboxQuery.isLoading
           }
+          onCreateNote={handleCreateNote}
         />
       ) : selection.kind === "note" ? (
         <NoteCanvas noteId={selection.id} onDeleted={() => select(null)} />

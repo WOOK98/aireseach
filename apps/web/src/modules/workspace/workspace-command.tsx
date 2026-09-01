@@ -46,6 +46,7 @@ import {
   useInboxMutations,
   type InboxSourceType,
 } from "~/modules/inbox/use-inbox";
+import { createLocalNote } from "~/modules/notes/local-notes";
 import { useNotes } from "~/modules/notes/use-notes";
 import { usePdfs } from "~/modules/pdfs/use-pdfs";
 import {
@@ -220,6 +221,19 @@ export function WorkspaceCommandSurface() {
   }
 
   function runCommand(id: WorkspaceCommandId, href?: string) {
+    if (id === "create-note") {
+      // #197: Create a local note directly in the workspace.
+      const note = createLocalNote({
+        title: "Untitled note",
+      });
+      close();
+      selectObject(
+        router,
+        pathname,
+        formatObjectParam({ kind: "note", id: note.id }),
+      );
+      return;
+    }
     if (href) {
       close();
       router.push(href);
