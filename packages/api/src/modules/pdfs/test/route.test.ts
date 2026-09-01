@@ -44,10 +44,21 @@ const mockDelete = vi.fn<(table: unknown) => { where: typeof mockDeleteWhere }>(
 );
 
 // select().from(t).where(...).limit(n) → rows
+// list additionally chains .orderBy(...).limit(...).offset(...)
+const mockSelectOffset = vi.fn<(...args: unknown[]) => Promise<unknown[]>>();
+const mockSelectListLimit = vi.fn<
+  (...args: unknown[]) => { offset: typeof mockSelectOffset }
+>(() => ({ offset: mockSelectOffset }));
+const mockSelectOrderBy = vi.fn<
+  (...args: unknown[]) => { limit: typeof mockSelectListLimit }
+>(() => ({ limit: mockSelectListLimit }));
 const mockSelectLimit = vi.fn<(...args: unknown[]) => Promise<unknown[]>>();
 const mockSelectWhere = vi.fn<
-  (...args: unknown[]) => { limit: typeof mockSelectLimit }
->(() => ({ limit: mockSelectLimit }));
+  (...args: unknown[]) => {
+    limit: typeof mockSelectLimit;
+    orderBy: typeof mockSelectOrderBy;
+  }
+>(() => ({ limit: mockSelectLimit, orderBy: mockSelectOrderBy }));
 const mockSelectFrom = vi.fn<
   (table: unknown) => { where: typeof mockSelectWhere }
 >(() => ({ where: mockSelectWhere }));
@@ -497,5 +508,60 @@ describe("POST /pdfs/:id/extract", () => {
     expect(setArg.extractedText).toBeNull();
 
     vi.unstubAllGlobals();
+  });
+});
+
+// ── P0 (#195): DB failure sanitization ─────────────────────────────────────
+//
+// Production leaked raw Drizzle `Failed query: ... params: ...` text when
+// the research_pdfs migrations were missing. The guard must convert any
+// unexpected DB error into a neutral 503 — no SQL, params, table names or
+// file names in the response.
+
+const drizzleError = (sql: string) =>
+  new Error(`Failed query: ${sql} params: ["user_1","NVDA-Q2.pdf"]`);
+
+describe("DB failure sanitization (#195)", () => {
+  it("GET /pdfs list failure → 503 neutral, no raw SQL/params", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockSelectOffset.mockRejectedValueOnce(
+      drizzleError('select "id", "file_name" from "research_pdfs"'),
+    );
+
+    const res = await app.request("/pdfs");
+    expect(res.status).toBe(503);
+    const text = await res.text();
+    expect(text).toContain("temporarily unavailable");
+    expect(text).not.toContain("Failed query");
+    expect(text).not.toContain("research_pdfs");
+    expect(text).not.toContain("params");
+    expect(text).not.toContain("NVDA-Q2.pdf");
+  });
+
+  it("POST /pdfs insert failure → 503 neutral, no raw SQL/params", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockReturning.mockRejectedValueOnce(
+      drizzleError('insert into "research_pdfs" ("id", "file_name")'),
+    );
+
+    const res = await post({ fileName: "a.pdf", fileSizeBytes: 1 });
+    expect(res.status).toBe(503);
+    const text = await res.text();
+    expect(text).toContain("temporarily unavailable");
+    expect(text).not.toContain("Failed query");
+    expect(text).not.toContain("research_pdfs");
+    expect(text).not.toContain("params");
+    expect(text).not.toContain("a.pdf");
+  });
+
+  it("list success still works with the orderBy chain", async () => {
+    mockGetSession.mockResolvedValue({ user: USER });
+    mockSelectOffset.mockResolvedValueOnce([PDF_ROW]);
+
+    const res = await app.request("/pdfs");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { pdfs: Record<string, unknown>[] };
+    expect(body.pdfs).toHaveLength(1);
+    expect(body.pdfs[0]).not.toHaveProperty("blobKey");
   });
 });

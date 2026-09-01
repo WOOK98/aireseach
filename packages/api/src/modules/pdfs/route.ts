@@ -37,6 +37,7 @@ import { auth } from "@workspace/auth/server";
 import { and, asc, desc, eq, ilike, or } from "@workspace/db";
 import { pdfAnnotations, researchPdfs } from "@workspace/db/schema";
 import { db } from "@workspace/db/server";
+import { logger } from "@workspace/shared/logger";
 import { generateId } from "@workspace/shared/utils";
 import {
   getDeleteUrl,
@@ -59,12 +60,31 @@ import {
   toPdfItem,
 } from "./pdf-mapper";
 
+import type { Context } from "hono";
+
 const getUser = async (headers: Headers) => {
   const session = await auth.api.getSession({ headers });
   return session?.user ?? null;
 };
 
 const unauthorized = () => new HTTPException(401, { message: "Unauthorized" });
+
+/**
+ * P0 (#195): DB/storage failures (e.g. missing production migrations) must
+ * never surface raw Drizzle errors — those leak SQL, params and file names.
+ * Route-level onError converts any unexpected error into a neutral 503;
+ * authored HTTPExceptions pass through unchanged. (Mounted sub-app onError
+ * runs before the app-level one; middleware try/catch does not catch
+ * handler errors on route()-mounted sub-apps.)
+ */
+const PDF_UNAVAILABLE =
+  "PDF library is temporarily unavailable. Try again later.";
+
+const pdfOnError = (err: Error, c: Context) => {
+  if (err instanceof HTTPException) return err.getResponse();
+  logger.error("pdfs route failure", err);
+  return c.json({ message: PDF_UNAVAILABLE }, 503);
+};
 const pdfNotFound = () => new HTTPException(404, { message: "PDF not found." });
 const annotationNotFound = () =>
   new HTTPException(404, { message: "Annotation not found." });
@@ -80,6 +100,7 @@ async function requireOwnedPdf(pdfId: string, userId: string) {
   return row;
 }
 
+// The P0 (#195) onError guard is attached at the end of the chain.
 export const pdfsRoute = new Hono()
 
   // ── Create: register metadata + hand back a presigned upload URL ─────────
@@ -366,7 +387,10 @@ export const pdfsRoute = new Hono()
       await recordStatus("failed", null);
       return c.json({ extractionStatus: "failed" as const });
     }
-  });
+  })
+
+  // P0 (#195): neutral 503 for unexpected DB/storage failures.
+  .onError(pdfOnError);
 
 /** Nested routes for individual annotations (pdf id not needed — user-scoped). */
 export const pdfAnnotationsRoute = new Hono()
@@ -414,7 +438,10 @@ export const pdfAnnotationsRoute = new Hono()
 
     if (!row) throw annotationNotFound();
     return c.json({ ok: true });
-  });
+  })
+
+  // P0 (#195): neutral 503 for unexpected DB/storage failures.
+  .onError(pdfOnError);
 
 export type PdfsRoute = typeof pdfsRoute;
 export type PdfAnnotationsRoute = typeof pdfAnnotationsRoute;

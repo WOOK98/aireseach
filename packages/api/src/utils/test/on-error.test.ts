@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { getStatusCode } from "@workspace/shared/utils";
+
 import { onError } from "../on-error";
 
 import type { Context } from "hono";
@@ -44,7 +46,8 @@ describe("onError", () => {
     vi.restoreAllMocks();
   });
 
-  it("should return a formatted error response for valid error object", async () => {
+  it("should return a formatted error response for a client (4xx) error object", async () => {
+    vi.mocked(getStatusCode).mockReturnValueOnce(400);
     const error = {
       code: "ERROR_CODE",
       message: "Something went wrong",
@@ -65,13 +68,41 @@ describe("onError", () => {
     expect(data).toMatchObject({
       code: "ERROR_CODE",
       message: "Something went wrong",
-      status: 500,
+      status: 400,
       path: "/api/test",
     });
     expect(data.timestamp).toBeDefined();
   });
 
+  it("P0 (#195): 5xx non-HTTPException errors are neutralized (no raw SQL/params leak)", async () => {
+    const error = new Error(
+      'Failed query: select "id" from "research_pdfs" params: ["user_1"]',
+    );
+
+    const context = {
+      req: { raw: { url: "http://localhost/api/pdfs" } },
+      var: { locale: "en" },
+    } as Context<{
+      Bindings: { NODE_ENV: string };
+      Variables: { locale: string };
+    }>;
+
+    const response = await onError(error, context);
+
+    const data = (await response.json()) as ErrorResponse;
+
+    expect(data.status).toBe(500);
+    expect(data.code).toBe("common:error.general");
+    expect(data.message).toBe("common:error.general");
+    const raw = JSON.stringify(data);
+    expect(raw).not.toContain("Failed query");
+    expect(raw).not.toContain("research_pdfs");
+    expect(raw).not.toContain("params");
+    expect(raw).not.toContain("user_1");
+  });
+
   it("should translate error code if message is missing", async () => {
+    vi.mocked(getStatusCode).mockReturnValueOnce(400);
     const error = {
       code: "auth.error.invalid_credentials",
       message: "",
