@@ -3,17 +3,18 @@
 /* oxlint-disable i18next/no-literal-string */
 
 /**
- * Workspace sidebar — Notion-style object space navigation.
+ * Workspace sidebar — Notion-style object space navigation (#197).
  *
- * Research objects (Notes / Inbox / PDFs), market objects
- * (Watchlist / Atlas), and disabled placeholders for future capabilities.
+ * Sections derived from the pure `WORKSPACE_SECTIONS` model in
+ * `workspace-nav.ts`. Every entry is a working surface — no disabled
+ * placeholders, no dead ends.
  *
  * Responsive: desktop renders a fixed aside; mobile renders a Sheet drawer
  * triggered by a hamburger button (positioned fixed, z-40).
  */
 import {
   Activity,
-  Archive,
+  BarChart3,
   BookOpen,
   FileText,
   Home,
@@ -21,7 +22,7 @@ import {
   Map,
   Menu,
   NotebookPen,
-  Send,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -34,6 +35,11 @@ import { pathsConfig } from "~/config/paths";
 import { useInbox } from "~/modules/inbox/use-inbox";
 import { useNotes } from "~/modules/notes/use-notes";
 import { usePdfs } from "~/modules/pdfs/use-pdfs";
+import {
+  sectionsForGroup,
+  WORKSPACE_SECTION_GROUPS,
+  type WorkspaceSectionId,
+} from "~/modules/workspace/workspace-nav";
 import {
   buildWorkspaceObjects,
   formatObjectParam,
@@ -55,68 +61,37 @@ interface SidebarGroup {
   readonly items: readonly SidebarItem[];
 }
 
-const ws = pathsConfig.dashboard.user.workspace;
+/**
+ * Icon map for workspace sections. Kept outside the pure nav model
+ * so the module stays React-free and unit-testable.
+ */
+const SECTION_ICONS: Record<WorkspaceSectionId, React.ReactNode> = {
+  home: <Home className="h-4 w-4" />,
+  notes: <NotebookPen className="h-4 w-4" />,
+  inbox: <Inbox className="h-4 w-4" />,
+  pdfs: <FileText className="h-4 w-4" />,
+  research: <BarChart3 className="h-4 w-4" />,
+  companies: <Activity className="h-4 w-4" />,
+  industries: <Map className="h-4 w-4" />,
+};
 
-const SIDEBAR_GROUPS: readonly SidebarGroup[] = [
-  {
-    label: "research",
-    items: [
-      {
-        label: "Home",
-        href: ws,
-        icon: <Home className="h-4 w-4" />,
-        exact: true,
-      },
-      {
-        label: "Notes",
-        href: `${ws}/notes`,
-        icon: <NotebookPen className="h-4 w-4" />,
-      },
-      {
-        label: "Inbox",
-        href: `${ws}/inbox`,
-        icon: <Inbox className="h-4 w-4" />,
-      },
-      {
-        label: "PDFs",
-        href: `${ws}/pdfs`,
-        icon: <FileText className="h-4 w-4" />,
-      },
-      {
-        label: "Evidence",
-        href: "#evidence",
-        icon: <Archive className="h-4 w-4" />,
-        disabled: true,
-      },
-    ],
-  },
-  {
-    label: "market",
-    items: [
-      {
-        label: "Companies",
-        href: `${ws}/watchlist`,
-        icon: <Activity className="h-4 w-4" />,
-      },
-      {
-        label: "Industries",
-        href: `${ws}/atlas`,
-        icon: <Map className="h-4 w-4" />,
-      },
-    ],
-  },
-  {
-    label: "publish",
-    items: [
-      {
-        label: "Exports",
-        href: "#exports",
-        icon: <Send className="h-4 w-4" />,
-        disabled: true,
-      },
-    ],
-  },
-];
+const ws = pathsConfig.workspace.index;
+
+/**
+ * Sidebar groups derived from the pure nav model (#197).
+ * No disabled placeholders — every entry is a working surface.
+ */
+const SIDEBAR_GROUPS: readonly SidebarGroup[] = WORKSPACE_SECTION_GROUPS.map(
+  (group) => ({
+    label: group.label,
+    items: sectionsForGroup(group.id).map((s) => ({
+      label: s.label,
+      href: s.href,
+      icon: SECTION_ICONS[s.id],
+      exact: s.exact,
+    })),
+  }),
+);
 
 function WorkspaceSidebarItem({
   item,
@@ -256,10 +231,11 @@ function SidebarNav({ pathname }: { pathname: string }) {
 
       <div className="border-t px-4 py-2">
         <Link
-          href={pathsConfig.dashboard.user.index}
+          href={pathsConfig.dashboard.user.settings.index}
           className="text-muted-foreground hover:text-foreground text-xs transition-colors"
         >
-          ← Dashboard
+          <Settings className="mr-1 inline h-3 w-3" />
+          Settings
         </Link>
       </div>
     </>

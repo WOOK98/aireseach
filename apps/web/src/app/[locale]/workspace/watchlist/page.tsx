@@ -1,7 +1,9 @@
-import { redirect } from "next/navigation";
+import { WatchlistPage } from "~/modules/watchlist/watchlist-page";
 
-import { pathsConfig } from "~/config/paths";
-
+/**
+ * `/workspace/watchlist` — judgment change feed inside the workspace
+ * shell (#197). Same component as the legacy dashboard route.
+ */
 export default function WorkspaceWatchlistPage() {
-  redirect(pathsConfig.dashboard.user.watchlist);
+  return <WatchlistPage />;
 }

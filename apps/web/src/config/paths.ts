@@ -46,6 +46,18 @@ const pathsConfig = {
     error: `${AUTH_PREFIX}/error`,
   },
   compare: "/compare",
+  /**
+   * Canonical workspace sections (#197). The workspace shell owns the
+   * research object space; legacy `/dashboard/*` list routes redirect here.
+   */
+  workspace: {
+    index: WORKSPACE_PREFIX,
+    notes: `${WORKSPACE_PREFIX}/notes`,
+    inbox: `${WORKSPACE_PREFIX}/inbox`,
+    pdfs: `${WORKSPACE_PREFIX}/pdfs`,
+    watchlist: `${WORKSPACE_PREFIX}/watchlist`,
+    atlas: `${WORKSPACE_PREFIX}/atlas`,
+  },
   dashboard: {
     user: {
       index: DASHBOARD_PREFIX,

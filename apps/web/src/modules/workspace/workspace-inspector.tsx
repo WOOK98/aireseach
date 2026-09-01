@@ -51,7 +51,7 @@ import {
   parseObjectParam,
 } from "~/modules/workspace/workspace-object";
 
-const ws = pathsConfig.dashboard.user.workspace;
+const ws = pathsConfig.workspace.index;
 
 interface InspectorContext {
   readonly key: string;
@@ -75,8 +75,8 @@ const CONTEXTS: readonly InspectorContext[] = [
       "Review conviction tiers in Companies",
     ],
     links: [
-      { label: "Notes", href: pathsConfig.dashboard.user.notes },
-      { label: "Inbox", href: pathsConfig.dashboard.user.inbox },
+      { label: "Notes", href: pathsConfig.workspace.notes },
+      { label: "Inbox", href: pathsConfig.workspace.inbox },
       { label: "Research", href: pathsConfig.dashboard.user.research },
     ],
   },
@@ -87,7 +87,7 @@ const CONTEXTS: readonly InspectorContext[] = [
     description:
       "Research notes with evidence counts. Live — backed by the existing notes workspace.",
     nextActions: ["Open the three-column notes workspace", "Edit a note"],
-    links: [{ label: "Notes", href: pathsConfig.dashboard.user.notes }],
+    links: [{ label: "Notes", href: pathsConfig.workspace.notes }],
   },
   {
     key: "inbox",
@@ -96,7 +96,7 @@ const CONTEXTS: readonly InspectorContext[] = [
     description:
       "Collect evidence from URLs, text, or posts. Live — backed by the existing inbox.",
     nextActions: ["Paste a URL or text snippet", "Triage captured evidence"],
-    links: [{ label: "Inbox", href: pathsConfig.dashboard.user.inbox }],
+    links: [{ label: "Inbox", href: pathsConfig.workspace.inbox }],
   },
   {
     key: "pdfs",
@@ -105,7 +105,7 @@ const CONTEXTS: readonly InspectorContext[] = [
     description:
       "Upload and annotate research PDFs. Live — backed by the existing PDF reader.",
     nextActions: ["Upload a PDF", "Annotate a document"],
-    links: [{ label: "PDFs", href: pathsConfig.dashboard.user.pdfs }],
+    links: [{ label: "PDFs", href: pathsConfig.workspace.pdfs }],
   },
   {
     key: "watchlist",
@@ -114,7 +114,7 @@ const CONTEXTS: readonly InspectorContext[] = [
     description:
       "Conviction tiers and invalidation conditions. Live — backed by the existing watchlist.",
     nextActions: ["Review tier changes", "Check invalidation conditions"],
-    links: [{ label: "Watchlist", href: pathsConfig.dashboard.user.watchlist }],
+    links: [{ label: "Watchlist", href: pathsConfig.workspace.watchlist }],
   },
   {
     key: "atlas",

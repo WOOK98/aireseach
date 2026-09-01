@@ -1,7 +1,9 @@
-import { redirect } from "next/navigation";
+import { InboxPage } from "~/modules/inbox/inbox-page";
 
-import { pathsConfig } from "~/config/paths";
-
+/**
+ * `/workspace/inbox` — evidence inbox inside the workspace shell (#197).
+ * Capture + convert stay in the workspace loop (canvas objects).
+ */
 export default function WorkspaceInboxPage() {
-  redirect(pathsConfig.dashboard.user.inbox);
+  return <InboxPage />;
 }
