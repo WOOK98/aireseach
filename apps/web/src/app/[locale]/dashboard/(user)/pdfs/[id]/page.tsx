@@ -255,100 +255,107 @@ export default function PdfDetailPage() {
               {pdf.extractionStatus === "pending" ? "提取全文" : "重新提取"}
             </Button>
           )}
-        <Button
-          variant={confirmDelete ? "destructive" : "ghost"}
-          size="sm"
-          className={confirmDelete ? "ml-auto" : "text-destructive ml-auto"}
-          onClick={() => void handleDeletePdf()}
-          disabled={deleting}
-        >
-          {deleting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : confirmDelete ? (
-            <span className="text-xs">确认删除？</span>
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
-
-      {/* Toolbar */}
-      <div className="bg-muted/40 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2">
-        <div className="flex gap-1">
-          {TOOLS.map((t) => (
-            <Button
-              key={t.id}
-              variant={tool === t.id ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setTool(t.id)}
-            >
-              {t.icon}
-              <span className="ml-1 hidden sm:inline">{t.label}</span>
-            </Button>
-          ))}
-        </div>
-
-        <div className="bg-border mx-2 h-5 w-px" />
-
-        <div className="flex items-center gap-1">
+        {!pdf.id.startsWith("local_pdf_") && (
           <Button
-            variant="ghost"
+            variant={confirmDelete ? "destructive" : "ghost"}
             size="sm"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className={confirmDelete ? "ml-auto" : "text-destructive ml-auto"}
+            onClick={() => void handleDeletePdf()}
+            disabled={deleting}
           >
-            <ChevronLeft className="h-4 w-4" />
+            {deleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : confirmDelete ? (
+              <span className="text-xs">确认删除？</span>
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
           </Button>
-          <span className="notranslate px-1 text-sm" translate="no">
-            {page} / {numPages ?? "…"}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={numPages !== null && page >= numPages}
-            onClick={() =>
-              setPage((p) => (numPages ? Math.min(numPages, p + 1) : p + 1))
-            }
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="bg-border mx-2 h-5 w-px" />
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={scale <= MIN_SCALE}
-            onClick={() =>
-              setScale((s) => Math.max(MIN_SCALE, +(s - 0.25).toFixed(2)))
-            }
-          >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <span className="notranslate w-12 text-center text-sm" translate="no">
-            {Math.round(scale * 100)}%
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={scale >= MAX_SCALE}
-            onClick={() =>
-              setScale((s) => Math.min(MAX_SCALE, +(s + 0.25).toFixed(2)))
-            }
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {createAnnotation.isPending && (
-          <span className="text-muted-foreground ml-auto flex items-center gap-1 text-xs">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            保存标注…
-          </span>
         )}
       </div>
+
+      {/* Toolbar — hidden for local PDFs (no file bytes for annotation) */}
+      {!pdf.id.startsWith("local_pdf_") && (
+        <div className="bg-muted/40 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2">
+          <div className="flex gap-1">
+            {TOOLS.map((t) => (
+              <Button
+                key={t.id}
+                variant={tool === t.id ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setTool(t.id)}
+              >
+                {t.icon}
+                <span className="ml-1 hidden sm:inline">{t.label}</span>
+              </Button>
+            ))}
+          </div>
+
+          <div className="bg-border mx-2 h-5 w-px" />
+
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="notranslate px-1 text-sm" translate="no">
+              {page} / {numPages ?? "…"}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={numPages !== null && page >= numPages}
+              onClick={() =>
+                setPage((p) => (numPages ? Math.min(numPages, p + 1) : p + 1))
+              }
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="bg-border mx-2 h-5 w-px" />
+
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={scale <= MIN_SCALE}
+              onClick={() =>
+                setScale((s) => Math.max(MIN_SCALE, +(s - 0.25).toFixed(2)))
+              }
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span
+              className="notranslate w-12 text-center text-sm"
+              translate="no"
+            >
+              {Math.round(scale * 100)}%
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={scale >= MAX_SCALE}
+              onClick={() =>
+                setScale((s) => Math.min(MAX_SCALE, +(s + 0.25).toFixed(2)))
+              }
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {createAnnotation.isPending && (
+            <span className="text-muted-foreground ml-auto flex items-center gap-1 text-xs">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              保存标注…
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Viewer */}
       {pdf.fileUrl ? (
@@ -390,11 +397,14 @@ export default function PdfDetailPage() {
       ) : (
         <div className="rounded-xl border border-dashed p-10 text-center">
           <FileText className="text-muted-foreground mx-auto mb-3 h-8 w-8 opacity-40" />
-          <p className="font-medium">PDF stored locally — reader unavailable</p>
+          <p className="font-medium">
+            PDF metadata saved locally — file bytes unavailable
+          </p>
           <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-xs leading-relaxed">
-            File bytes were saved in this browser. Open this page on the same
-            device to read and annotate. Annotations and evidence conversion
-            work in degraded mode.
+            This PDF was uploaded while the server was unavailable. Only
+            metadata is stored. The reader and annotations require the full file
+            to be synced to the server. Re-upload when the server recovers to
+            enable the full workflow.
           </p>
         </div>
       )}
