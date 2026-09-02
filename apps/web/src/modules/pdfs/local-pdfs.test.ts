@@ -39,6 +39,7 @@ import {
   getLocalPdf,
   isLocalPdf,
   listLocalPdfs,
+  patchLocalPdf,
 } from "./local-pdfs";
 
 afterEach(() => {
@@ -110,6 +111,40 @@ describe("local-pdfs: CRUD", () => {
     const pdf = createLocalPdf({ fileName: "Delete.pdf", fileSizeBytes: 100 });
     expect(deleteLocalPdf(pdf.id)).toBe(true);
     expect(getLocalPdf(pdf.id)).toBeNull();
+  });
+});
+
+describe("local-pdfs: patchLocalPdf", () => {
+  it("patches page count on a local PDF", () => {
+    const pdf = createLocalPdf({
+      fileName: "Test.pdf",
+      fileSizeBytes: 500,
+      ticker: "TSLA",
+    });
+    expect(pdf.pageCount).toBeNull();
+
+    const patched = patchLocalPdf(pdf.id, { pageCount: 42 });
+    expect(patched).not.toBeNull();
+    expect(patched!.pageCount).toBe(42);
+    expect(patched!.ticker).toBe("TSLA");
+
+    // Verify persisted.
+    const reloaded = getLocalPdf(pdf.id);
+    expect(reloaded!.pageCount).toBe(42);
+  });
+
+  it("patches ticker and sourceLabel", () => {
+    const pdf = createLocalPdf({ fileName: "Q.pdf", fileSizeBytes: 100 });
+    const patched = patchLocalPdf(pdf.id, {
+      ticker: "AAPL",
+      sourceLabel: "Apple IR",
+    });
+    expect(patched!.ticker).toBe("AAPL");
+    expect(patched!.sourceLabel).toBe("Apple IR");
+  });
+
+  it("returns null for non-existent id", () => {
+    expect(patchLocalPdf("local_pdf_nonexistent", { pageCount: 1 })).toBeNull();
   });
 });
 
