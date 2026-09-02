@@ -164,6 +164,8 @@ function PdfCanvas({ pdfId }: { pdfId: string }) {
 
   const pdf = pdfQuery.data;
   const annotations = annotationsQuery.data ?? [];
+  const isLocal = pdf.id.startsWith("local_pdf_");
+  const hasFileUrl = pdf.fileUrl.length > 0;
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
@@ -179,7 +181,9 @@ function PdfCanvas({ pdfId }: { pdfId: string }) {
             </h1>
           </div>
           <Badge variant="outline" className="shrink-0">
-            extraction: {pdf.extractionStatus}
+            {isLocal
+              ? "local · pending sync"
+              : `extraction: ${pdf.extractionStatus}`}
           </Badge>
         </div>
 
@@ -223,15 +227,29 @@ function PdfCanvas({ pdfId }: { pdfId: string }) {
         </dl>
 
         <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-          <Link href={pathsConfig.dashboard.user.pdf(pdf.id)}>
-            <Button size="sm">
-              Open in reader
-              <ArrowRight className="ml-1.5 size-3.5" />
-            </Button>
-          </Link>
+          {hasFileUrl ? (
+            <Link href={pathsConfig.dashboard.user.pdf(pdf.id)}>
+              <Button size="sm">
+                Open in reader
+                <ArrowRight className="ml-1.5 size-3.5" />
+              </Button>
+            </Link>
+          ) : (
+            <div className="text-muted-foreground text-xs leading-relaxed">
+              <p className="font-medium">
+                PDF stored locally — reader unavailable
+              </p>
+              <p className="mt-1">
+                File bytes were saved in this browser. The reader will work on
+                this device. You can still annotate this PDF and attach
+                annotations to notes.
+              </p>
+            </div>
+          )}
           <p className="text-muted-foreground text-xs leading-relaxed">
-            Highlight or annotate in the reader, then insert the annotation into
-            a note from the note inspector.
+            {hasFileUrl
+              ? "Highlight or annotate in the reader, then insert the annotation into a note from the note inspector."
+              : "Annotations are saved locally and can be inserted into notes. Evidence conversion works in degraded mode."}
           </p>
         </div>
       </div>

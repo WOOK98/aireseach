@@ -10,6 +10,8 @@
  * - no raw SQL, stack traces, or env var names in user-visible text
  */
 
+import { deletePdfBlob, storePdfBlob } from "./local-pdf-blobs";
+
 import type { PdfItem } from "./use-pdfs";
 
 const STORAGE_KEY = "airesearch_local_pdfs";
@@ -88,14 +90,18 @@ export function getLocalPdf(id: string): PdfItem | null {
   return rest;
 }
 
-/** Create a local PDF metadata entry (degraded — no file bytes). */
-export function createLocalPdf(input: {
-  fileName: string;
-  fileSizeBytes: number;
-  ticker?: string | null;
-  reportPeriod?: string | null;
-  sourceLabel?: string | null;
-}): LocalPdf {
+/** Create a local PDF metadata entry. If a File is provided, stores the
+ *  bytes in IndexedDB so the reader can render the PDF in degraded mode. */
+export function createLocalPdf(
+  input: {
+    fileName: string;
+    fileSizeBytes: number;
+    ticker?: string | null;
+    reportPeriod?: string | null;
+    sourceLabel?: string | null;
+  },
+  file?: File,
+): LocalPdf {
   const now = new Date().toISOString();
   const pdf: LocalPdf = {
     id: generateId(),
@@ -114,15 +120,25 @@ export function createLocalPdf(input: {
   const pdfs = readAll();
   pdfs.push(pdf);
   writeAll(pdfs);
+
+  // Store the actual file bytes in IndexedDB for reader rendering.
+  if (file) {
+    storePdfBlob(pdf.id, file).catch(() => {
+      /* IndexedDB unavailable — PDF will show honest source-card path */
+    });
+  }
+
   return pdf;
 }
 
-/** Delete a local PDF. */
+/** Delete a local PDF and its stored blob. */
 export function deleteLocalPdf(id: string): boolean {
   const pdfs = readAll();
   const filtered = pdfs.filter((p) => p.id !== id);
   if (filtered.length === pdfs.length) return false;
   writeAll(filtered);
+  // Clean up the blob from IndexedDB.
+  deletePdfBlob(id).catch(() => {});
   return true;
 }
 
