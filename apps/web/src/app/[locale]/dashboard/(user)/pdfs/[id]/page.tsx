@@ -245,15 +245,16 @@ export default function PdfDetailPage() {
         {pdf.extractionStatus === "failed" && (
           <Badge variant="destructive">提取失败</Badge>
         )}
-        {pdf.extractionStatus !== "done" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void handleExtract()}
-          >
-            {pdf.extractionStatus === "pending" ? "提取全文" : "重新提取"}
-          </Button>
-        )}
+        {pdf.extractionStatus !== "done" &&
+          !pdf.id.startsWith("local_pdf_") && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void handleExtract()}
+            >
+              {pdf.extractionStatus === "pending" ? "提取全文" : "重新提取"}
+            </Button>
+          )}
         <Button
           variant={confirmDelete ? "destructive" : "ghost"}
           size="sm"
@@ -350,39 +351,53 @@ export default function PdfDetailPage() {
       </div>
 
       {/* Viewer */}
-      <PdfViewer
-        fileUrl={pdf.fileUrl}
-        page={page}
-        scale={scale}
-        tool={tool}
-        annotations={annotationsQuery.data ?? []}
-        onDocumentLoad={handleDocumentLoad}
-        onCreateAnnotation={handleCreate}
-        onToEvidence={(annotationId) => void handleToEvidence(annotationId)}
-        onDeleteAnnotation={(annotationId) => {
-          const target = (annotationsQuery.data ?? []).find(
-            (a) => a.id === annotationId,
-          );
-          deleteAnnotation.mutate(annotationId, {
-            onError: (err) =>
-              toast.error(err instanceof Error ? err.message : "删除标注失败"),
-            onSuccess: () => {
-              if (!target) return;
-              // Undo: re-create the same payload (new id, same data).
-              toast.success("标注已删除", {
-                action: {
-                  label: "撤销",
-                  onClick: () =>
-                    createAnnotation.mutate({
-                      page: target.page,
-                      payload: target.payload,
-                    }),
-                },
-              });
-            },
-          });
-        }}
-      />
+      {pdf.fileUrl ? (
+        <PdfViewer
+          fileUrl={pdf.fileUrl}
+          page={page}
+          scale={scale}
+          tool={tool}
+          annotations={annotationsQuery.data ?? []}
+          onDocumentLoad={handleDocumentLoad}
+          onCreateAnnotation={handleCreate}
+          onToEvidence={(annotationId) => void handleToEvidence(annotationId)}
+          onDeleteAnnotation={(annotationId) => {
+            const target = (annotationsQuery.data ?? []).find(
+              (a) => a.id === annotationId,
+            );
+            deleteAnnotation.mutate(annotationId, {
+              onError: (err) =>
+                toast.error(
+                  err instanceof Error ? err.message : "删除标注失败",
+                ),
+              onSuccess: () => {
+                if (!target) return;
+                // Undo: re-create the same payload (new id, same data).
+                toast.success("标注已删除", {
+                  action: {
+                    label: "撤销",
+                    onClick: () =>
+                      createAnnotation.mutate({
+                        page: target.page,
+                        payload: target.payload,
+                      }),
+                  },
+                });
+              },
+            });
+          }}
+        />
+      ) : (
+        <div className="rounded-xl border border-dashed p-10 text-center">
+          <FileText className="text-muted-foreground mx-auto mb-3 h-8 w-8 opacity-40" />
+          <p className="font-medium">PDF stored locally — reader unavailable</p>
+          <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-xs leading-relaxed">
+            File bytes were saved in this browser. Open this page on the same
+            device to read and annotate. Annotations and evidence conversion
+            work in degraded mode.
+          </p>
+        </div>
+      )}
 
       <p className="text-muted-foreground text-xs">
         提示：点击标注选中后可删除；双击标注直接删除。标注随文档保存，仅自己可见。

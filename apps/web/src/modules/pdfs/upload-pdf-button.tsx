@@ -41,7 +41,7 @@ export function UploadPdfButton() {
         file,
       });
       if (result.id.startsWith("local_pdf_")) {
-        toast.success("PDF 元数据已保存到本地（服务器暂不可用）");
+        toast.success("PDF 已保存到本地（服务器暂不可用），可在本设备阅读标注");
       } else {
         toast.success("上传成功");
       }
