@@ -46,61 +46,78 @@ Object.defineProperty(globalThis, "localStorage", {
 
 const idbStore = new Map<string, Blob>();
 
+type IdbEventHandler = (ev: unknown) => void;
+
+/** Create a mock IDB request that supports both on* and addEventListener. */
 function createIdbRequest<T>(result: T): IDBRequest<T> {
+  const listeners: Record<string, IdbEventHandler[]> = {};
   const req = {
     result,
-    onsuccess: null as unknown as ((ev: unknown) => void) | null,
-    onerror: null as unknown as ((ev: unknown) => void) | null,
+    addEventListener(type: string, handler: IdbEventHandler) {
+      (listeners[type] ??= []).push(handler);
+    },
   } as unknown as IDBRequest<T>;
   queueMicrotask(() => {
-    if (req.onsuccess) req.onsuccess(new Event("success"));
+    for (const handler of listeners["success"] ?? [])
+      handler(new Event("success"));
   });
   return req;
+}
+
+/** Create a mock IDBOpenDBRequest with addEventListener support. */
+function createOpenRequest(db: unknown): IDBOpenDBRequest {
+  const listeners: Record<string, IdbEventHandler[]> = {};
+  const req = {
+    result: db,
+    addEventListener(type: string, handler: IdbEventHandler) {
+      (listeners[type] ??= []).push(handler);
+    },
+  } as unknown as IDBOpenDBRequest;
+  queueMicrotask(() => {
+    for (const handler of listeners["upgradeneeded"] ?? [])
+      handler(new Event("upgradeneeded") as unknown as IDBVersionChangeEvent);
+    for (const handler of listeners["success"] ?? [])
+      handler(new Event("success"));
+  });
+  return req;
+}
+
+/** Create a mock IDBTransaction with addEventListener support. */
+function createIdbTx(): IDBTransaction {
+  const listeners: Record<string, IdbEventHandler[]> = {};
+  const tx = {
+    objectStore: () => ({
+      put: (value: Blob, key: string) => {
+        idbStore.set(key, value);
+        return createIdbRequest(undefined);
+      },
+      get: (key: string) => {
+        const val = idbStore.get(key) ?? undefined;
+        return createIdbRequest(val);
+      },
+      delete: (key: string) => {
+        idbStore.delete(key);
+        return createIdbRequest(undefined);
+      },
+    }),
+    addEventListener(type: string, handler: IdbEventHandler) {
+      (listeners[type] ??= []).push(handler);
+    },
+  } as unknown as IDBTransaction;
+  queueMicrotask(() => {
+    for (const handler of listeners["complete"] ?? [])
+      handler(new Event("complete"));
+  });
+  return tx;
 }
 
 const idbMock = {
   open: (_name: string, _version?: number) => {
     const db = {
       createObjectStore: () => ({}),
-      transaction: (_storeName: string, _mode: string) => {
-        const tx = {
-          objectStore: () => ({
-            put: (value: Blob, key: string) => {
-              idbStore.set(key, value);
-              return createIdbRequest(undefined);
-            },
-            get: (key: string) => {
-              const val = idbStore.get(key) ?? undefined;
-              return createIdbRequest(val);
-            },
-            delete: (key: string) => {
-              idbStore.delete(key);
-              return createIdbRequest(undefined);
-            },
-          }),
-          oncomplete: null as unknown as (() => void) | null,
-          onerror: null as unknown as (() => void) | null,
-        };
-        queueMicrotask(() => {
-          if (tx.oncomplete) tx.oncomplete();
-        });
-        return tx as unknown as IDBTransaction;
-      },
+      transaction: (_storeName: string, _mode: string) => createIdbTx(),
     };
-    const req = {
-      result: db,
-      onsuccess: null as unknown as ((ev: unknown) => void) | null,
-      onerror: null as unknown as ((ev: unknown) => void) | null,
-      onupgradeneeded: null as unknown as ((ev: unknown) => void) | null,
-    } as unknown as IDBOpenDBRequest;
-    queueMicrotask(() => {
-      if (req.onupgradeneeded)
-        req.onupgradeneeded(
-          new Event("upgradeneeded") as unknown as IDBVersionChangeEvent,
-        );
-      if (req.onsuccess) req.onsuccess(new Event("success"));
-    });
-    return req;
+    return createOpenRequest(db);
   },
 };
 
