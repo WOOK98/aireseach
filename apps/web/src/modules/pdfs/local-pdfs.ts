@@ -1,9 +1,10 @@
 /**
  * Local PDFs — client-side fallback when /api/pdfs is unavailable (#197).
  *
- * Stores PDF metadata in localStorage so the workspace can show uploaded
- * PDFs even when the backend is down. The actual file bytes are NOT stored
- * client-side — extraction status is always "pending" in degraded mode.
+ * Stores PDF metadata in localStorage and file bytes in IndexedDB so the
+ * workspace can show and render uploaded PDFs even when the backend is down.
+ * Extraction status is always "pending" in degraded mode (no server-side
+ * text extraction available).
  *
  * REDLINES:
  * - fileName / ticker / reportPeriod / sourceLabel are user content → notranslate
@@ -140,6 +141,34 @@ export function deleteLocalPdf(id: string): boolean {
   // Clean up the blob from IndexedDB.
   deletePdfBlob(id).catch(() => {});
   return true;
+}
+
+/** Patch a local PDF metadata entry. */
+export function patchLocalPdf(
+  id: string,
+  patch: {
+    fileName?: string;
+    ticker?: string | null;
+    reportPeriod?: string | null;
+    sourceLabel?: string | null;
+    pageCount?: number;
+  },
+): PdfItem | null {
+  const pdfs = readAll();
+  const idx = pdfs.findIndex((p) => p.id === id);
+  if (idx < 0) return null;
+  const pdf = pdfs[idx]!;
+  if (patch.fileName !== undefined) pdf.fileName = patch.fileName;
+  if (patch.ticker !== undefined)
+    pdf.ticker = patch.ticker?.toUpperCase() ?? null;
+  if (patch.reportPeriod !== undefined) pdf.reportPeriod = patch.reportPeriod;
+  if (patch.sourceLabel !== undefined) pdf.sourceLabel = patch.sourceLabel;
+  if (patch.pageCount !== undefined) pdf.pageCount = patch.pageCount;
+  pdf.updatedAt = new Date().toISOString();
+  pdfs[idx] = pdf;
+  writeAll(pdfs);
+  const { _local: _, ...rest } = pdf;
+  return rest;
 }
 
 /** Check if a PDF id is a local-only entry. */

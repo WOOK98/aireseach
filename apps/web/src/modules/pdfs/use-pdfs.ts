@@ -28,6 +28,7 @@ import {
   getLocalPdf,
   isLocalPdf,
   listLocalPdfs,
+  patchLocalPdf,
 } from "./local-pdfs";
 
 // ── Types (mirror API responses) ─────────────────────────────────────────
@@ -264,6 +265,12 @@ export async function patchPdf(
   id: string,
   patch: PatchPdfInput,
 ): Promise<PdfItem> {
+  // #197: Local PDFs patch in localStorage.
+  if (isLocalPdf(id)) {
+    const result = patchLocalPdf(id, patch);
+    if (!result) throw new Error("Local PDF not found.");
+    return result;
+  }
   const res = await fetch(`/api/pdfs/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
