@@ -165,7 +165,84 @@ function PdfCanvas({ pdfId }: { pdfId: string }) {
   const pdf = pdfQuery.data;
   const annotations = annotationsQuery.data ?? [];
   const isLocal = pdf.id.startsWith("local_pdf_");
-  const hasFileUrl = pdf.fileUrl.length > 0;
+
+  // #197: Local PDFs have no file bytes — show an honest source card
+  // instead of routing to a broken reader.
+  if (isLocal) {
+    return (
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="bg-card mx-auto max-w-3xl space-y-4 rounded-xl border p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-muted-foreground text-xs">PDF · source card</p>
+              <h1
+                className="notranslate mt-1 line-clamp-2 text-lg font-semibold"
+                translate="no"
+              >
+                {pdf.fileName}
+              </h1>
+            </div>
+            <Badge
+              variant="outline"
+              className="shrink-0 text-amber-600 dark:text-amber-400"
+            >
+              local · pending sync
+            </Badge>
+          </div>
+
+          <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-muted-foreground text-xs">Ticker</dt>
+              <dd className="notranslate mt-0.5 font-mono" translate="no">
+                {pdf.ticker ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-xs">Report period</dt>
+              <dd className="notranslate mt-0.5 font-mono" translate="no">
+                {pdf.reportPeriod ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-xs">Source</dt>
+              <dd className="notranslate mt-0.5" translate="no">
+                {pdf.sourceLabel ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-xs">File size</dt>
+              <dd className="notranslate mt-0.5 font-mono" translate="no">
+                {(pdf.fileSizeBytes / 1024 / 1024).toFixed(1)} MB
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-xs">Added</dt>
+              <dd className="notranslate mt-0.5 font-mono" translate="no">
+                {pdf.createdAt.slice(0, 10)}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900/40 dark:bg-amber-950/20">
+            <p className="font-medium text-amber-800 dark:text-amber-200">
+              PDF file stored locally — reader and annotations unavailable
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-700 dark:text-amber-300">
+              This PDF was uploaded while the server was unavailable. Only the
+              metadata is saved. The reader, annotations, and evidence
+              conversion require the full file to be synced to the server.
+            </p>
+          </div>
+
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            When the server recovers, re-upload this PDF to enable the full
+            reader and annotation workflow. You can still reference this source
+            in notes by name.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
@@ -181,9 +258,7 @@ function PdfCanvas({ pdfId }: { pdfId: string }) {
             </h1>
           </div>
           <Badge variant="outline" className="shrink-0">
-            {isLocal
-              ? "local · pending sync"
-              : `extraction: ${pdf.extractionStatus}`}
+            extraction: {pdf.extractionStatus}
           </Badge>
         </div>
 
@@ -227,29 +302,15 @@ function PdfCanvas({ pdfId }: { pdfId: string }) {
         </dl>
 
         <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-          {hasFileUrl ? (
-            <Link href={pathsConfig.dashboard.user.pdf(pdf.id)}>
-              <Button size="sm">
-                Open in reader
-                <ArrowRight className="ml-1.5 size-3.5" />
-              </Button>
-            </Link>
-          ) : (
-            <div className="text-muted-foreground text-xs leading-relaxed">
-              <p className="font-medium">
-                PDF stored locally — reader unavailable
-              </p>
-              <p className="mt-1">
-                File bytes were saved in this browser. The reader will work on
-                this device. You can still annotate this PDF and attach
-                annotations to notes.
-              </p>
-            </div>
-          )}
+          <Link href={pathsConfig.dashboard.user.pdf(pdf.id)}>
+            <Button size="sm">
+              Open in reader
+              <ArrowRight className="ml-1.5 size-3.5" />
+            </Button>
+          </Link>
           <p className="text-muted-foreground text-xs leading-relaxed">
-            {hasFileUrl
-              ? "Highlight or annotate in the reader, then insert the annotation into a note from the note inspector."
-              : "Annotations are saved locally and can be inserted into notes. Evidence conversion works in degraded mode."}
+            Highlight or annotate in the reader, then insert the annotation into
+            a note from the note inspector.
           </p>
         </div>
       </div>
