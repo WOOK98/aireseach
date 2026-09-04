@@ -245,15 +245,16 @@ export default function PdfDetailPage() {
         {pdf.extractionStatus === "failed" && (
           <Badge variant="destructive">提取失败</Badge>
         )}
-        {pdf.extractionStatus !== "done" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void handleExtract()}
-          >
-            {pdf.extractionStatus === "pending" ? "提取全文" : "重新提取"}
-          </Button>
-        )}
+        {pdf.extractionStatus !== "done" &&
+          !pdf.id.startsWith("local_pdf_") && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void handleExtract()}
+            >
+              {pdf.extractionStatus === "pending" ? "提取全文" : "重新提取"}
+            </Button>
+          )}
         <Button
           variant={confirmDelete ? "destructive" : "ghost"}
           size="sm"
@@ -271,118 +272,140 @@ export default function PdfDetailPage() {
         </Button>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-muted/40 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2">
-        <div className="flex gap-1">
-          {TOOLS.map((t) => (
+      {/* Toolbar — available when file bytes exist (server PDFs or local PDFs with IndexedDB blobs) */}
+      {pdf.fileUrl && (
+        <div className="bg-muted/40 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2">
+          <div className="flex gap-1">
+            {TOOLS.map((t) => (
+              <Button
+                key={t.id}
+                variant={tool === t.id ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setTool(t.id)}
+              >
+                {t.icon}
+                <span className="ml-1 hidden sm:inline">{t.label}</span>
+              </Button>
+            ))}
+          </div>
+
+          <div className="bg-border mx-2 h-5 w-px" />
+
+          <div className="flex items-center gap-1">
             <Button
-              key={t.id}
-              variant={tool === t.id ? "default" : "ghost"}
+              variant="ghost"
               size="sm"
-              onClick={() => setTool(t.id)}
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
-              {t.icon}
-              <span className="ml-1 hidden sm:inline">{t.label}</span>
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-          ))}
+            <span className="notranslate px-1 text-sm" translate="no">
+              {page} / {numPages ?? "…"}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={numPages !== null && page >= numPages}
+              onClick={() =>
+                setPage((p) => (numPages ? Math.min(numPages, p + 1) : p + 1))
+              }
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="bg-border mx-2 h-5 w-px" />
+
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={scale <= MIN_SCALE}
+              onClick={() =>
+                setScale((s) => Math.max(MIN_SCALE, +(s - 0.25).toFixed(2)))
+              }
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span
+              className="notranslate w-12 text-center text-sm"
+              translate="no"
+            >
+              {Math.round(scale * 100)}%
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={scale >= MAX_SCALE}
+              onClick={() =>
+                setScale((s) => Math.min(MAX_SCALE, +(s + 0.25).toFixed(2)))
+              }
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {createAnnotation.isPending && (
+            <span className="text-muted-foreground ml-auto flex items-center gap-1 text-xs">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              保存标注…
+            </span>
+          )}
         </div>
-
-        <div className="bg-border mx-2 h-5 w-px" />
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="notranslate px-1 text-sm" translate="no">
-            {page} / {numPages ?? "…"}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={numPages !== null && page >= numPages}
-            onClick={() =>
-              setPage((p) => (numPages ? Math.min(numPages, p + 1) : p + 1))
-            }
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="bg-border mx-2 h-5 w-px" />
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={scale <= MIN_SCALE}
-            onClick={() =>
-              setScale((s) => Math.max(MIN_SCALE, +(s - 0.25).toFixed(2)))
-            }
-          >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <span className="notranslate w-12 text-center text-sm" translate="no">
-            {Math.round(scale * 100)}%
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={scale >= MAX_SCALE}
-            onClick={() =>
-              setScale((s) => Math.min(MAX_SCALE, +(s + 0.25).toFixed(2)))
-            }
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {createAnnotation.isPending && (
-          <span className="text-muted-foreground ml-auto flex items-center gap-1 text-xs">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            保存标注…
-          </span>
-        )}
-      </div>
+      )}
 
       {/* Viewer */}
-      <PdfViewer
-        fileUrl={pdf.fileUrl}
-        page={page}
-        scale={scale}
-        tool={tool}
-        annotations={annotationsQuery.data ?? []}
-        onDocumentLoad={handleDocumentLoad}
-        onCreateAnnotation={handleCreate}
-        onToEvidence={(annotationId) => void handleToEvidence(annotationId)}
-        onDeleteAnnotation={(annotationId) => {
-          const target = (annotationsQuery.data ?? []).find(
-            (a) => a.id === annotationId,
-          );
-          deleteAnnotation.mutate(annotationId, {
-            onError: (err) =>
-              toast.error(err instanceof Error ? err.message : "删除标注失败"),
-            onSuccess: () => {
-              if (!target) return;
-              // Undo: re-create the same payload (new id, same data).
-              toast.success("标注已删除", {
-                action: {
-                  label: "撤销",
-                  onClick: () =>
-                    createAnnotation.mutate({
-                      page: target.page,
-                      payload: target.payload,
-                    }),
-                },
-              });
-            },
-          });
-        }}
-      />
+      {pdf.fileUrl ? (
+        <PdfViewer
+          fileUrl={pdf.fileUrl}
+          page={page}
+          scale={scale}
+          tool={tool}
+          annotations={annotationsQuery.data ?? []}
+          onDocumentLoad={handleDocumentLoad}
+          onCreateAnnotation={handleCreate}
+          onToEvidence={(annotationId) => void handleToEvidence(annotationId)}
+          onDeleteAnnotation={(annotationId) => {
+            const target = (annotationsQuery.data ?? []).find(
+              (a) => a.id === annotationId,
+            );
+            deleteAnnotation.mutate(annotationId, {
+              onError: (err) =>
+                toast.error(
+                  err instanceof Error ? err.message : "删除标注失败",
+                ),
+              onSuccess: () => {
+                if (!target) return;
+                // Undo: re-create the same payload (new id, same data).
+                toast.success("标注已删除", {
+                  action: {
+                    label: "撤销",
+                    onClick: () =>
+                      createAnnotation.mutate({
+                        page: target.page,
+                        payload: target.payload,
+                      }),
+                  },
+                });
+              },
+            });
+          }}
+        />
+      ) : (
+        <div className="rounded-xl border border-dashed p-10 text-center">
+          <FileText className="text-muted-foreground mx-auto mb-3 h-8 w-8 opacity-40" />
+          <p className="font-medium">
+            PDF metadata saved locally — file bytes unavailable
+          </p>
+          <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-xs leading-relaxed">
+            This PDF was uploaded while the server was unavailable. Only
+            metadata is stored. The reader and annotations require the full file
+            to be synced to the server. Re-upload when the server recovers to
+            enable the full workflow.
+          </p>
+        </div>
+      )}
 
       <p className="text-muted-foreground text-xs">
         提示：点击标注选中后可删除；双击标注直接删除。标注随文档保存，仅自己可见。

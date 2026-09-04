@@ -35,6 +35,7 @@ import { Skeleton } from "@workspace/ui-web/skeleton";
 
 import { pathsConfig } from "~/config/paths";
 import { useInbox, useInboxMutations } from "~/modules/inbox/use-inbox";
+import { createLocalNote } from "~/modules/notes/local-notes";
 import { NoteDetailView } from "~/modules/notes/note-detail-view";
 import { useNote, useNotes } from "~/modules/notes/use-notes";
 import { useAnnotations, usePdf, usePdfs } from "~/modules/pdfs/use-pdfs";
@@ -163,6 +164,86 @@ function PdfCanvas({ pdfId }: { pdfId: string }) {
 
   const pdf = pdfQuery.data;
   const annotations = annotationsQuery.data ?? [];
+  const isLocal = pdf.id.startsWith("local_pdf_");
+
+  // #197: Local PDFs split into two paths:
+  //   a) with blob/fileUrl → show reader action (full workflow available)
+  //   b) without fileUrl → honest source-card fallback (metadata only)
+  if (isLocal && !pdf.fileUrl) {
+    return (
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="bg-card mx-auto max-w-3xl space-y-4 rounded-xl border p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-muted-foreground text-xs">PDF · source card</p>
+              <h1
+                className="notranslate mt-1 line-clamp-2 text-lg font-semibold"
+                translate="no"
+              >
+                {pdf.fileName}
+              </h1>
+            </div>
+            <Badge
+              variant="outline"
+              className="shrink-0 text-amber-600 dark:text-amber-400"
+            >
+              local · pending sync
+            </Badge>
+          </div>
+
+          <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-muted-foreground text-xs">Ticker</dt>
+              <dd className="notranslate mt-0.5 font-mono" translate="no">
+                {pdf.ticker ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-xs">Report period</dt>
+              <dd className="notranslate mt-0.5 font-mono" translate="no">
+                {pdf.reportPeriod ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-xs">Source</dt>
+              <dd className="notranslate mt-0.5" translate="no">
+                {pdf.sourceLabel ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-xs">File size</dt>
+              <dd className="notranslate mt-0.5 font-mono" translate="no">
+                {(pdf.fileSizeBytes / 1024 / 1024).toFixed(1)} MB
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-xs">Added</dt>
+              <dd className="notranslate mt-0.5 font-mono" translate="no">
+                {pdf.createdAt.slice(0, 10)}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900/40 dark:bg-amber-950/20">
+            <p className="font-medium text-amber-800 dark:text-amber-200">
+              PDF file stored locally — reader and annotations unavailable
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-700 dark:text-amber-300">
+              This PDF was uploaded while the server was unavailable. Only the
+              metadata is saved. The reader, annotations, and evidence
+              conversion require the full file to be synced to the server.
+            </p>
+          </div>
+
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            When the server recovers, re-upload this PDF to enable the full
+            reader and annotation workflow. You can still reference this source
+            in notes by name.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
@@ -178,7 +259,9 @@ function PdfCanvas({ pdfId }: { pdfId: string }) {
             </h1>
           </div>
           <Badge variant="outline" className="shrink-0">
-            extraction: {pdf.extractionStatus}
+            {isLocal
+              ? "local · file available"
+              : `extraction: ${pdf.extractionStatus}`}
           </Badge>
         </div>
 
@@ -393,9 +476,11 @@ function InboxCanvas({
 function ObjectHome({
   objects,
   isLoading,
+  onCreateNote,
 }: {
   objects: WorkspaceObject[];
   isLoading: boolean;
+  onCreateNote: () => void;
 }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
@@ -430,6 +515,10 @@ function ObjectHome({
                 in Research — everything lands here as a navigable object.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <Button size="sm" onClick={onCreateNote}>
+                  <NotebookPen className="mr-1.5 size-3.5" />
+                  New note
+                </Button>
                 {WORKSPACE_HOME_ACTIONS.map((action) => (
                   <Link key={action.id} href={action.href}>
                     <Button size="sm" variant="outline">
@@ -510,6 +599,13 @@ export function WorkspaceCanvas() {
     );
   }
 
+  function handleCreateNote() {
+    const note = createLocalNote({
+      title: "Untitled note",
+    });
+    select({ kind: "note", id: note.id });
+  }
+
   return (
     <div className="flex h-full min-w-0 flex-col">
       {/* Canvas header — breadcrumb + command surface */}
@@ -538,6 +634,7 @@ export function WorkspaceCanvas() {
           isLoading={
             notesQuery.isLoading || pdfsQuery.isLoading || inboxQuery.isLoading
           }
+          onCreateNote={handleCreateNote}
         />
       ) : selection.kind === "note" ? (
         <NoteCanvas noteId={selection.id} onDeleted={() => select(null)} />
