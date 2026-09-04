@@ -245,17 +245,16 @@ export default function PdfDetailPage() {
         {pdf.extractionStatus === "failed" && (
           <Badge variant="destructive">提取失败</Badge>
         )}
-        {pdf.extractionStatus !== "done" &&
-          !pdf.id.startsWith("local_pdf_") && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void handleExtract()}
-            >
-              {pdf.extractionStatus === "pending" ? "提取全文" : "重新提取"}
-            </Button>
-          )}
-        {!pdf.id.startsWith("local_pdf_") && (
+        {pdf.extractionStatus !== "done" && !pdf.fileUrl && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleExtract()}
+          >
+            {pdf.extractionStatus === "pending" ? "提取全文" : "重新提取"}
+          </Button>
+        )}
+        {!pdf.fileUrl && (
           <Button
             variant={confirmDelete ? "destructive" : "ghost"}
             size="sm"
@@ -274,8 +273,8 @@ export default function PdfDetailPage() {
         )}
       </div>
 
-      {/* Toolbar — hidden for local PDFs (no file bytes for annotation) */}
-      {!pdf.id.startsWith("local_pdf_") && (
+      {/* Toolbar — hidden for local PDFs without file bytes */}
+      {!pdf.fileUrl && (
         <div className="bg-muted/40 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2">
           <div className="flex gap-1">
             {TOOLS.map((t) => (

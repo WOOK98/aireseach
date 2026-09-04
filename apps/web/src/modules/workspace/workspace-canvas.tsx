@@ -164,11 +164,12 @@ function PdfCanvas({ pdfId }: { pdfId: string }) {
 
   const pdf = pdfQuery.data;
   const annotations = annotationsQuery.data ?? [];
-  const isLocal = pdf.id.startsWith("local_pdf_");
 
-  // #197: Local PDFs have no file bytes — show an honest source card
-  // instead of routing to a broken reader.
-  if (isLocal) {
+  // #197: Local PDFs without file bytes — show an honest source card
+  // instead of routing to a broken reader. When IndexedDB blob storage
+  // succeeds, fileUrl is a non-empty blob URL and the full reader path
+  // works (annotations, evidence conversion, etc.).
+  if (pdf.id.startsWith("local_pdf_") && !pdf.fileUrl) {
     return (
       <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="bg-card mx-auto max-w-3xl space-y-4 rounded-xl border p-4 sm:p-6">
