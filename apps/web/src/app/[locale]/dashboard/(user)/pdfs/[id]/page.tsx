@@ -245,36 +245,35 @@ export default function PdfDetailPage() {
         {pdf.extractionStatus === "failed" && (
           <Badge variant="destructive">提取失败</Badge>
         )}
-        {pdf.extractionStatus !== "done" && !pdf.fileUrl && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void handleExtract()}
-          >
-            {pdf.extractionStatus === "pending" ? "提取全文" : "重新提取"}
-          </Button>
-        )}
-        {!pdf.fileUrl && (
-          <Button
-            variant={confirmDelete ? "destructive" : "ghost"}
-            size="sm"
-            className={confirmDelete ? "ml-auto" : "text-destructive ml-auto"}
-            onClick={() => void handleDeletePdf()}
-            disabled={deleting}
-          >
-            {deleting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : confirmDelete ? (
-              <span className="text-xs">确认删除？</span>
-            ) : (
-              <Trash2 className="h-4 w-4" />
-            )}
-          </Button>
-        )}
+        {pdf.extractionStatus !== "done" &&
+          !pdf.id.startsWith("local_pdf_") && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void handleExtract()}
+            >
+              {pdf.extractionStatus === "pending" ? "提取全文" : "重新提取"}
+            </Button>
+          )}
+        <Button
+          variant={confirmDelete ? "destructive" : "ghost"}
+          size="sm"
+          className={confirmDelete ? "ml-auto" : "text-destructive ml-auto"}
+          onClick={() => void handleDeletePdf()}
+          disabled={deleting}
+        >
+          {deleting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : confirmDelete ? (
+            <span className="text-xs">确认删除？</span>
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+        </Button>
       </div>
 
-      {/* Toolbar — hidden for local PDFs without file bytes */}
-      {!pdf.fileUrl && (
+      {/* Toolbar — available when file bytes exist (server PDFs or local PDFs with IndexedDB blobs) */}
+      {pdf.fileUrl && (
         <div className="bg-muted/40 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2">
           <div className="flex gap-1">
             {TOOLS.map((t) => (
