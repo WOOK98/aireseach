@@ -92,8 +92,10 @@ export function getLocalPdf(id: string): PdfItem | null {
 }
 
 /** Create a local PDF metadata entry. If a File is provided, stores the
- *  bytes in IndexedDB so the reader can render the PDF in degraded mode. */
-export function createLocalPdf(
+ *  bytes in IndexedDB so the reader can render the PDF in degraded mode.
+ *  Awaits persistence before returning so bytes are durable on success.
+ *  If IndexedDB write fails, returns metadata-only (source-card fallback). */
+export async function createLocalPdf(
   input: {
     fileName: string;
     fileSizeBytes: number;
@@ -102,7 +104,7 @@ export function createLocalPdf(
     sourceLabel?: string | null;
   },
   file?: File,
-): LocalPdf {
+): Promise<LocalPdf> {
   const now = new Date().toISOString();
   const pdf: LocalPdf = {
     id: generateId(),
@@ -123,10 +125,13 @@ export function createLocalPdf(
   writeAll(pdfs);
 
   // Store the actual file bytes in IndexedDB for reader rendering.
+  // Await persistence so the caller knows bytes are durable.
   if (file) {
-    storePdfBlob(pdf.id, file).catch(() => {
+    try {
+      await storePdfBlob(pdf.id, file);
+    } catch {
       /* IndexedDB unavailable — PDF will show honest source-card path */
-    });
+    }
   }
 
   return pdf;
