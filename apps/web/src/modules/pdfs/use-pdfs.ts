@@ -9,8 +9,8 @@
  * Failures surface explicit errors — nothing is silently dropped.
  *
  * #197: When the API is unavailable (503 / network error), hooks fall back
- * to localStorage-backed local-pdfs.ts. Local PDFs are metadata-only
- * (no file bytes, extraction always "pending").
+ * to localStorage-backed local-pdfs.ts. PDF bytes persist in IndexedDB
+ * so the reader can render them; extraction is always "pending".
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -216,7 +216,7 @@ async function uploadPdf(input: CreatePdfInput, file: File): Promise<PdfItem> {
     });
     if (!res.ok) {
       if (res.status >= 500) {
-        return createLocalPdf(
+        return await createLocalPdf(
           {
             fileName: input.fileName,
             fileSizeBytes: input.fileSizeBytes,
@@ -246,7 +246,7 @@ async function uploadPdf(input: CreatePdfInput, file: File): Promise<PdfItem> {
   } catch (err) {
     if (err instanceof TypeError) {
       // Network error — save metadata + bytes locally.
-      return createLocalPdf(
+      return await createLocalPdf(
         {
           fileName: input.fileName,
           fileSizeBytes: input.fileSizeBytes,
