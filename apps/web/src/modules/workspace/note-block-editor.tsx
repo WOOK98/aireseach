@@ -52,8 +52,81 @@ import { SaveStatusIndicator } from "~/modules/workspace/save-status";
 import { useAutoSave } from "~/modules/workspace/use-auto-save";
 
 import type { NoteBlock } from "@workspace/shared/schema/note-block";
+import type { ArticleVisual } from "@workspace/shared/types/article";
 import type { KeyboardEvent } from "react";
 import type { NoteDetail } from "~/modules/notes/use-notes";
+
+/** Schema guard: validates the article response has the required structure. */
+function isResearchArticle(value: unknown): value is {
+  coreThesis?: { thesis?: string; evidenceIds?: string[] };
+  industryChain?: {
+    narrative?: string;
+    visual?: ArticleVisual;
+    evidenceIds?: string[];
+  };
+  evidenceMatrix?: {
+    narrative?: string;
+    visual?: ArticleVisual;
+    evidenceIds?: string[];
+  };
+  companyLayer?: { narrative?: string; evidenceIds?: string[] };
+  conclusion?: {
+    summary?: string;
+    risks?: Array<{ risk?: string; explanation?: string }>;
+    evidenceIds?: string[];
+  };
+  evidence?: Array<{
+    id?: string;
+    claim?: string;
+    source?: string;
+    date?: string;
+    url?: string;
+    confidence?: string;
+  }>;
+  periods?: Array<{ period?: string; value?: string }>;
+} {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  // At minimum, must have one of the section fields.
+  return !!(
+    v.coreThesis ||
+    v.industryChain ||
+    v.evidenceMatrix ||
+    v.companyLayer ||
+    v.conclusion
+  );
+}
+
+/**
+ * Format a visual into human-readable text. Renders all rows, columns,
+ * chart data, and mermaid diagrams — never truncates.
+ */
+function formatVisual(visual: ArticleVisual): string | null {
+  switch (visual.kind) {
+    case "matrix": {
+      const header = visual.columns.join(" | ");
+      const rows = visual.rows
+        .map((r) => visual.columns.map((c) => r[c] ?? "—").join(" | "))
+        .join("\n");
+      const meta = [visual.source, visual.date].filter(Boolean).join(" · ");
+      return `${visual.title}\n${header}\n${rows}${meta ? `\n来源: ${meta}` : ""}`;
+    }
+    case "chart": {
+      const seriesText = visual.series
+        .map(
+          (s) =>
+            `${s.name}: ${s.values.map((v, i) => `${visual.labels[i] ?? "?"}=${v}`).join(", ")}`,
+        )
+        .join("\n");
+      const meta = [visual.source, visual.date].filter(Boolean).join(" · ");
+      return `📊 ${visual.title} (${visual.chartType})\n${seriesText}${meta ? `\n来源: ${meta}` : ""}`;
+    }
+    case "mermaid":
+      return `📊 ${visual.title}\n${visual.diagram}`;
+    default:
+      return null;
+  }
+}
 
 const BLOCK_ICON: Record<string, typeof Type> = {
   paragraph: Type,
@@ -164,6 +237,10 @@ export function NoteBlockEditor({
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>, index: number) {
     const menu = menuForIndex(index);
+
+    // Guard IME composition before any menu handling — composition
+    // confirmation while the menu is open must not execute a command.
+    if (e.nativeEvent.isComposing) return;
 
     if (menu) {
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -283,11 +360,11 @@ export function NoteBlockEditor({
       }
 
       // Schema-validate: expect { article: ResearchArticle } shape.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const raw = (await res.json()) as any;
+      const raw: unknown = await res.json();
       if (noteIdRef.current !== boundNoteId) return;
-      const article = raw?.article ?? raw;
-      if (!article || typeof article !== "object") {
+      const article =
+        (raw as Record<string, unknown> | undefined)?.article ?? raw;
+      if (!isResearchArticle(article)) {
         setBlocks((prev) => {
           if (noteIdRef.current !== boundNoteId) return prev;
           const idx = prev.findIndex((b) => b.id === loadingBlockId);
@@ -349,15 +426,13 @@ export function NoteBlockEditor({
         newBlocks.push(
           createNoteBlock("paragraph", generateId, industryChain.narrative),
         );
-        // Preserve visual summary if available
-        if (industryChain.visual && industryChain.visual.kind !== "empty") {
-          newBlocks.push(
-            createNoteBlock(
-              "callout",
-              generateId,
-              `📊 ${industryChain.visual.title || "产业链图"}`,
-            ),
-          );
+        // Preserve full visual — render mermaid diagram, chart, or matrix
+        const icVisual = industryChain.visual as ArticleVisual | undefined;
+        if (icVisual && icVisual.kind !== "empty") {
+          const visualText = formatVisual(icVisual);
+          if (visualText) {
+            newBlocks.push(createNoteBlock("callout", generateId, visualText));
+          }
         }
       }
 
@@ -366,22 +441,13 @@ export function NoteBlockEditor({
         newBlocks.push(
           createNoteBlock("paragraph", generateId, evidenceMatrix.narrative),
         );
-        // Preserve matrix data if available
-        if (
-          evidenceMatrix.visual?.kind === "matrix" &&
-          evidenceMatrix.visual.rows?.length
-        ) {
-          const summary = evidenceMatrix.visual.rows
-            .slice(0, 3)
-            .map((r) => Object.values(r).join(" | "))
-            .join("\n");
-          newBlocks.push(
-            createNoteBlock(
-              "quote",
-              generateId,
-              `${evidenceMatrix.visual.title || "关键数据"}:\n${summary}`,
-            ),
-          );
+        // Preserve full visual — render all rows, charts, diagrams
+        const emVisual = evidenceMatrix.visual as ArticleVisual | undefined;
+        if (emVisual && emVisual.kind !== "empty") {
+          const visualText = formatVisual(emVisual);
+          if (visualText) {
+            newBlocks.push(createNoteBlock("quote", generateId, visualText));
+          }
         }
       }
 
@@ -408,28 +474,28 @@ export function NoteBlockEditor({
         }
       }
 
-      // Preserve evidence attribution — render the full evidence list
-      // from the article so sources and claims are never silently dropped.
-      const evidenceList = article.evidence as
-        | Array<{
-            id?: string;
-            claim?: string;
-            source?: string;
-            date?: string;
-            url?: string;
-            confidence?: string;
-          }>
-        | undefined;
+      // Preserve full evidence attribution — IDs, URLs, confidence,
+      // source, and date. Nothing is silently dropped.
+      const evidenceList = article.evidence;
       if (evidenceList?.length) {
         newBlocks.push(createNoteBlock("heading", generateId, "证据来源"));
         for (const ev of evidenceList) {
-          const label = [
-            ev.claim,
-            ev.source ? `(${ev.source}` : "",
-            ev.date ? ` ${ev.date})` : ev.source ? ")" : "",
-          ]
-            .filter(Boolean)
-            .join(" ");
+          const parts: string[] = [];
+          if (ev.id) parts.push(`[${ev.id}]`);
+          if (ev.claim) parts.push(ev.claim);
+          if (ev.source) parts.push(`来源: ${ev.source}`);
+          if (ev.date) parts.push(ev.date);
+          if (ev.confidence) {
+            const confLabel =
+              ev.confidence === "verified"
+                ? "✓ 已验证"
+                : ev.confidence === "partial"
+                  ? "◐ 部分验证"
+                  : "? 未验证";
+            parts.push(confLabel);
+          }
+          if (ev.url) parts.push(ev.url);
+          const label = parts.join(" · ");
           if (label) {
             newBlocks.push(
               createNoteBlock("callout", generateId, `📎 ${label}`),
@@ -451,7 +517,15 @@ export function NoteBlockEditor({
       }
 
       if (newBlocks.length === 0) {
-        mutate(blockIndex, { text: "分析完成，但未返回有效内容" });
+        // Use stable ID replacement, not index-based mutate.
+        setBlocks((prev) => {
+          if (noteIdRef.current !== boundNoteId) return prev;
+          const idx = prev.findIndex((b) => b.id === loadingBlockId);
+          if (idx < 0) return prev;
+          return updateBlockAt(prev, idx, {
+            text: "分析完成，但未返回有效内容",
+          });
+        });
         return;
       }
 

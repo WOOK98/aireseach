@@ -164,7 +164,7 @@ function SidebarNav({ pathname: _pathname }: { pathname: string }) {
               });
               void notesQuery.refetch();
               router.push(objectHref(ws, { kind: "note", id: localNote.id }));
-              toast.info("已离线创建页面，联网后自动同步");
+              toast.info("已离线创建页面（仅保存在本地）");
             } catch {
               toast.error("本地存储已满，请清理后重试");
             }
