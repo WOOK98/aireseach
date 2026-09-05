@@ -65,8 +65,16 @@ export function useAutoSave<T>({
     };
   }, []);
 
+  const pendingRef = useRef<T | null>(null);
+  const hasPendingRef = useRef(false);
+
   const doSave = useCallback(async () => {
-    if (savingRef.current) return;
+    if (savingRef.current) {
+      // Queue the latest value — never drop edits.
+      pendingRef.current = valueRef.current;
+      hasPendingRef.current = true;
+      return;
+    }
     savingRef.current = true;
     if (mountedRef.current) setStatus("saving");
 
@@ -80,10 +88,20 @@ export function useAutoSave<T>({
       if (mountedRef.current) setStatus("error");
     } finally {
       savingRef.current = false;
+      // Flush queued save if value changed during the in-flight save.
+      if (hasPendingRef.current) {
+        hasPendingRef.current = false;
+        valueRef.current = pendingRef.current!;
+        pendingRef.current = null;
+        // Use setTimeout to yield and let React process the state update.
+        setTimeout(() => void doSave(), 0);
+      }
     }
   }, [onSave]);
 
-  // Debounced auto-save when dirty changes
+  // Debounced auto-save when value changes while dirty.
+  // Include `value` so the timer resets on each edit while dirty,
+  // ensuring the latest value is always captured.
   useEffect(() => {
     if (!dirty || composing) return;
 
@@ -98,7 +116,8 @@ export function useAutoSave<T>({
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [dirty, composing, debounceMs, doSave]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, dirty, composing, debounceMs, doSave]);
 
   // ⌘S / Ctrl+S keyboard handler
   useEffect(() => {

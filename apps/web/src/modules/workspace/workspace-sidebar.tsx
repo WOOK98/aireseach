@@ -15,17 +15,19 @@ import { FileText, Menu, Plus, Search, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { cn } from "@workspace/ui";
 import { Sheet, SheetContent, SheetTrigger } from "@workspace/ui-web/sheet";
 
 import { pathsConfig } from "~/config/paths";
-import { createLocalNote } from "~/modules/notes/local-notes";
-import { useNotes } from "~/modules/notes/use-notes";
+import { useNotes, useSaveNote } from "~/modules/notes/use-notes";
 import {
   objectHref,
   parseObjectParam,
 } from "~/modules/workspace/workspace-object";
+
+import type { SaveNoteInput } from "~/modules/notes/use-notes";
 
 const ws = pathsConfig.workspace.index;
 
@@ -80,9 +82,81 @@ function SidebarNav({ pathname: _pathname }: { pathname: string }) {
     );
   }, [notesQuery.data, query]);
 
+  const saveNote = useSaveNote();
+
   function handleNewPage() {
-    const note = createLocalNote({ title: "" });
-    router.push(objectHref(ws, { kind: "note", id: note.id }));
+    // Create a blank note via the server API so it has a real persistence
+    // contract. Use a minimal degraded stub that satisfies the article schema.
+    const now = new Date().toISOString();
+    const stubArticle = {
+      schema_version: 1 as const,
+      entity: {
+        resolvedName: "Untitled",
+        mode: "ticker" as const,
+        dataTimestamp: now.slice(0, 10),
+      },
+      coreThesis: {
+        thesis: "",
+        keyDriver: "",
+        evidenceIds: ["E1"],
+      },
+      industryChain: {
+        narrative: "",
+        visual: {
+          kind: "empty" as const,
+          title: "产业链图",
+          reason: "新建页面",
+        },
+        evidenceIds: ["E1"],
+      },
+      evidenceMatrix: {
+        narrative: "",
+        visual: {
+          kind: "empty" as const,
+          title: "关键数据表",
+          reason: "新建页面",
+        },
+        evidenceIds: ["E1"],
+      },
+      companyLayer: {
+        narrative: "",
+        evidenceIds: ["E1"],
+      },
+      conclusion: {
+        summary: "",
+        risks: [],
+        invalidationConditions: [],
+        evidenceIds: ["E1"],
+      },
+      evidence: [
+        {
+          id: "E1",
+          claim: "新建空白页面",
+          source: "系统",
+          date: now.slice(0, 10),
+          url: "",
+          confidence: "unverified" as const,
+        },
+      ],
+      generatedAt: now,
+      language: "zh" as const,
+      disclaimer: "本报告仅供研究参考，不构成投资建议。",
+    };
+
+    const input: SaveNoteInput = {
+      title: "",
+      article: stubArticle,
+    };
+
+    saveNote.mutate(input, {
+      onSuccess: (note) => {
+        void notesQuery.refetch();
+        router.push(objectHref(ws, { kind: "note", id: note.id }));
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "创建页面失败");
+      },
+    });
   }
 
   return (

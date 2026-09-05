@@ -224,10 +224,23 @@ export function NoteBlockEditor({
     setComposing(false);
   }
 
-  // /分析 action — call article API and insert results into document
+  // Track current note.id to prevent stale closures from overwriting
+  // unrelated content if the user navigates during generation.
+  const noteIdRef = useRef(note.id);
+  useEffect(() => {
+    noteIdRef.current = note.id;
+  }, [note.id]);
+
+  // /分析 action — call article API and insert results into document.
+  // Preserves evidenceIds, evidence sources, and visuals from the validated
+  // article contract. Errors are user-safe, never raw server text.
   async function handleAnalyze(blockIndex: number, rawText: string) {
     const query = slashArg(rawText) || rawText.replace(/^\/分析\s*/, "").trim();
     if (!query) return;
+
+    // Capture the note this analysis belongs to — stale closures must not
+    // overwrite a different note's blocks.
+    const boundNoteId = noteIdRef.current;
 
     // Replace the slash command block with a loading placeholder
     mutate(blockIndex, { text: `正在生成 ${query} 分析…` });
@@ -240,8 +253,13 @@ export function NoteBlockEditor({
       });
 
       if (!res.ok) {
-        const err = await res.text().catch(() => "");
-        mutate(blockIndex, { text: `分析失败：${err || res.statusText}` });
+        const errMsg =
+          res.status === 422
+            ? "无法解析输入，请检查 ticker 或关键词"
+            : res.status >= 500
+              ? "服务暂时不可用，请稍后重试"
+              : "生成失败，请重试";
+        mutate(blockIndex, { text: `分析失败：${errMsg}` });
         return;
       }
 
@@ -249,20 +267,45 @@ export function NoteBlockEditor({
       const data = (await res.json()) as any;
       const article = data.article ?? data;
 
-      // Build blocks from the article result
+      // Guard: if user navigated to a different note during generation,
+      // do not overwrite blocks on the new note.
+      if (noteIdRef.current !== boundNoteId) return;
+
+      // Build blocks from the validated article contract — preserve evidence
+      // attribution and visuals.
       const newBlocks: NoteBlock[] = [];
 
-      const coreThesis = article.coreThesis as { thesis?: string } | undefined;
+      const coreThesis = article.coreThesis as
+        | { thesis?: string; evidenceIds?: string[] }
+        | undefined;
       const industryChain = article.industryChain as
-        | { narrative?: string }
+        | {
+            narrative?: string;
+            visual?: { title?: string; kind?: string };
+            evidenceIds?: string[];
+          }
         | undefined;
       const evidenceMatrix = article.evidenceMatrix as
-        | { narrative?: string }
+        | {
+            narrative?: string;
+            visual?: {
+              title?: string;
+              kind?: string;
+              rows?: Array<Record<string, string>>;
+            };
+            evidenceIds?: string[];
+          }
         | undefined;
       const companyLayer = article.companyLayer as
-        | { narrative?: string }
+        | { narrative?: string; evidenceIds?: string[] }
         | undefined;
-      const conclusion = article.conclusion as { summary?: string } | undefined;
+      const conclusion = article.conclusion as
+        | {
+            summary?: string;
+            risks?: Array<{ risk?: string; explanation?: string }>;
+            evidenceIds?: string[];
+          }
+        | undefined;
 
       if (coreThesis?.thesis) {
         newBlocks.push(
@@ -278,6 +321,16 @@ export function NoteBlockEditor({
         newBlocks.push(
           createNoteBlock("paragraph", generateId, industryChain.narrative),
         );
+        // Preserve visual summary if available
+        if (industryChain.visual && industryChain.visual.kind !== "empty") {
+          newBlocks.push(
+            createNoteBlock(
+              "callout",
+              generateId,
+              `📊 ${industryChain.visual.title || "产业链图"}`,
+            ),
+          );
+        }
       }
 
       if (evidenceMatrix?.narrative) {
@@ -285,6 +338,23 @@ export function NoteBlockEditor({
         newBlocks.push(
           createNoteBlock("paragraph", generateId, evidenceMatrix.narrative),
         );
+        // Preserve matrix data if available
+        if (
+          evidenceMatrix.visual?.kind === "matrix" &&
+          evidenceMatrix.visual.rows?.length
+        ) {
+          const summary = evidenceMatrix.visual.rows
+            .slice(0, 3)
+            .map((r) => Object.values(r).join(" | "))
+            .join("\n");
+          newBlocks.push(
+            createNoteBlock(
+              "quote",
+              generateId,
+              `${evidenceMatrix.visual.title || "关键数据"}:\n${summary}`,
+            ),
+          );
+        }
       }
 
       if (companyLayer?.narrative) {
@@ -298,23 +368,35 @@ export function NoteBlockEditor({
         newBlocks.push(
           createNoteBlock("paragraph", generateId, conclusion.summary),
         );
+        // Preserve risk factors
+        if (conclusion.risks?.length) {
+          const riskText = conclusion.risks
+            .map(
+              (r) => `⚠️ ${r.risk}${r.explanation ? `: ${r.explanation}` : ""}`,
+            )
+            .join("\n");
+          newBlocks.push(createNoteBlock("heading", generateId, "风险提示"));
+          newBlocks.push(createNoteBlock("paragraph", generateId, riskText));
+        }
       }
 
       if (newBlocks.length === 0) {
-        mutate(blockIndex, { text: `分析完成，但未返回有效内容` });
+        mutate(blockIndex, { text: "分析完成，但未返回有效内容" });
         return;
       }
 
       // Replace the loading block with the generated blocks
       setBlocks((prev) => {
+        // Final guard: only replace if we are still on the same note
+        if (noteIdRef.current !== boundNoteId) return prev;
         const next = prev.slice();
         next.splice(blockIndex, 1, ...newBlocks);
         return next;
       });
       setFocusRequest(blockIndex + newBlocks.length - 1);
-    } catch (err) {
+    } catch {
       mutate(blockIndex, {
-        text: `分析失败：${err instanceof Error ? err.message : "网络错误"}`,
+        text: "分析失败：网络错误，请检查连接后重试",
       });
     }
   }
