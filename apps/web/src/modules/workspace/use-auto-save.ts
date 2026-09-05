@@ -56,17 +56,10 @@ export function useAutoSave<T>({
     valueRef.current = value;
   }, [value]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
   const pendingRef = useRef<T | null>(null);
   const hasPendingRef = useRef(false);
+  // Snapshot of the value at save start — prevents "saved" when newer edits exist.
+  const savingSnapshotRef = useRef<T | null>(null);
 
   const doSave = useCallback(async () => {
     if (savingRef.current) {
@@ -76,18 +69,26 @@ export function useAutoSave<T>({
       return;
     }
     savingRef.current = true;
+    savingSnapshotRef.current = valueRef.current;
     if (mountedRef.current) setStatus("saving");
 
     try {
-      await onSave(valueRef.current);
+      await onSave(savingSnapshotRef.current);
       if (mountedRef.current) {
-        setStatus("saved");
-        setLastSavedAt(new Date());
+        // Only show "saved" if no newer edits arrived during save.
+        if (valueRef.current === savingSnapshotRef.current) {
+          setStatus("saved");
+          setLastSavedAt(new Date());
+        } else {
+          // Newer edits exist — stay in "saving" and flush.
+          setStatus("saving");
+        }
       }
     } catch {
       if (mountedRef.current) setStatus("error");
     } finally {
       savingRef.current = false;
+      savingSnapshotRef.current = null;
       // Flush queued save if value changed during the in-flight save.
       if (hasPendingRef.current) {
         hasPendingRef.current = false;
@@ -98,6 +99,28 @@ export function useAutoSave<T>({
       }
     }
   }, [onSave]);
+
+  // Cleanup on unmount — flush any pending save.
+  // The mounted flag is set once; only cleared on true unmount.
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Flush pending save on unmount (separate effect with stable doSave ref).
+  const doSaveRef = useRef(doSave);
+  doSaveRef.current = doSave;
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        // Flush: fire-and-forget the pending save so edits aren't lost.
+        void doSaveRef.current();
+      }
+    };
+  }, []);
 
   // Debounced auto-save when value changes while dirty.
   // Include `value` so the timer resets on each edit while dirty,

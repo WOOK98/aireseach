@@ -85,8 +85,8 @@ function SidebarNav({ pathname: _pathname }: { pathname: string }) {
   const saveNote = useSaveNote();
 
   function handleNewPage() {
-    // Create a blank note via the server API so it has a real persistence
-    // contract. Use a minimal degraded stub that satisfies the article schema.
+    // Create a blank note. Try server API first; fall back to local storage
+    // when the API is unavailable so offline users can still create pages.
     const now = new Date().toISOString();
     const stubArticle = {
       schema_version: 1 as const,
@@ -153,8 +153,24 @@ function SidebarNav({ pathname: _pathname }: { pathname: string }) {
         void notesQuery.refetch();
         router.push(objectHref(ws, { kind: "note", id: note.id }));
       },
-      onError: (err) => {
-        toast.error(err instanceof Error ? err.message : "创建页面失败");
+      onError: () => {
+        // Server unavailable — create a local note as fallback.
+        void import("~/modules/notes/local-notes").then(
+          ({ createLocalNote }): null => {
+            try {
+              const localNote = createLocalNote({
+                title: input.title,
+                article: stubArticle,
+              });
+              void notesQuery.refetch();
+              router.push(objectHref(ws, { kind: "note", id: localNote.id }));
+              toast.info("已离线创建页面，联网后自动同步");
+            } catch {
+              toast.error("本地存储已满，请清理后重试");
+            }
+            return null;
+          },
+        );
       },
     });
   }

@@ -98,10 +98,16 @@ export function NoteBlockEditor({
   const [composing, setComposing] = useState(false);
   const areaRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
 
-  // Reset local canvas when a different note (or a fresh server copy) loads.
+  // Reset local canvas only when switching to a different note.
+  // Do NOT reset on refetch (note.blocks change) — that would overwrite
+  // edits the user made while an auto-save was in flight.
+  const prevNoteIdRef = useRef(note.id);
   useEffect(() => {
-    setBlocks(note.blocks ?? []);
-  }, [note.id, note.updatedAt, note.blocks]);
+    if (prevNoteIdRef.current !== note.id) {
+      prevNoteIdRef.current = note.id;
+      setBlocks(note.blocks ?? []);
+    }
+  }, [note.id, note.blocks]);
 
   const dirty = useMemo(
     () => !blocksEqual(blocks, note.blocks ?? []),
@@ -188,7 +194,7 @@ export function NoteBlockEditor({
       return; // while the menu is open, let typing filter it
     }
 
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       setBlocks((prev) => {
         const result = insertBlockAfter(prev, index, "paragraph", generateId);
@@ -241,6 +247,9 @@ export function NoteBlockEditor({
     // Capture the note this analysis belongs to — stale closures must not
     // overwrite a different note's blocks.
     const boundNoteId = noteIdRef.current;
+    // Capture the block ID so we can replace by identity, not array index.
+    const loadingBlockId = blocks[blockIndex]?.id;
+    if (!loadingBlockId) return;
 
     // Replace the slash command block with a loading placeholder
     mutate(blockIndex, { text: `正在生成 ${query} 分析…` });
@@ -252,6 +261,10 @@ export function NoteBlockEditor({
         body: JSON.stringify({ query }),
       });
 
+      // Guard: if user navigated to a different note during generation,
+      // do not overwrite blocks on the new note.
+      if (noteIdRef.current !== boundNoteId) return;
+
       if (!res.ok) {
         const errMsg =
           res.status === 422
@@ -259,17 +272,32 @@ export function NoteBlockEditor({
             : res.status >= 500
               ? "服务暂时不可用，请稍后重试"
               : "生成失败，请重试";
-        mutate(blockIndex, { text: `分析失败：${errMsg}` });
+        // Replace loading block by ID, not index.
+        setBlocks((prev) => {
+          if (noteIdRef.current !== boundNoteId) return prev;
+          const idx = prev.findIndex((b) => b.id === loadingBlockId);
+          if (idx < 0) return prev;
+          return updateBlockAt(prev, idx, { text: `分析失败：${errMsg}` });
+        });
         return;
       }
 
+      // Schema-validate: expect { article: ResearchArticle } shape.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = (await res.json()) as any;
-      const article = data.article ?? data;
-
-      // Guard: if user navigated to a different note during generation,
-      // do not overwrite blocks on the new note.
+      const raw = (await res.json()) as any;
       if (noteIdRef.current !== boundNoteId) return;
+      const article = raw?.article ?? raw;
+      if (!article || typeof article !== "object") {
+        setBlocks((prev) => {
+          if (noteIdRef.current !== boundNoteId) return prev;
+          const idx = prev.findIndex((b) => b.id === loadingBlockId);
+          if (idx < 0) return prev;
+          return updateBlockAt(prev, idx, {
+            text: "分析失败：返回数据格式错误",
+          });
+        });
+        return;
+      }
 
       // Build blocks from the validated article contract — preserve evidence
       // attribution and visuals.
@@ -380,23 +408,72 @@ export function NoteBlockEditor({
         }
       }
 
+      // Preserve evidence attribution — render the full evidence list
+      // from the article so sources and claims are never silently dropped.
+      const evidenceList = article.evidence as
+        | Array<{
+            id?: string;
+            claim?: string;
+            source?: string;
+            date?: string;
+            url?: string;
+            confidence?: string;
+          }>
+        | undefined;
+      if (evidenceList?.length) {
+        newBlocks.push(createNoteBlock("heading", generateId, "证据来源"));
+        for (const ev of evidenceList) {
+          const label = [
+            ev.claim,
+            ev.source ? `(${ev.source}` : "",
+            ev.date ? ` ${ev.date})` : ev.source ? ")" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          if (label) {
+            newBlocks.push(
+              createNoteBlock("callout", generateId, `📎 ${label}`),
+            );
+          }
+        }
+      }
+
+      // Preserve chart/period data from the article if present.
+      const periods = article.periods as
+        | Array<{ period?: string; value?: string }>
+        | undefined;
+      if (periods?.length) {
+        newBlocks.push(createNoteBlock("heading", generateId, "关键周期"));
+        const periodText = periods
+          .map((p) => `${p.period ?? "—"}: ${p.value ?? "—"}`)
+          .join("\n");
+        newBlocks.push(createNoteBlock("quote", generateId, periodText));
+      }
+
       if (newBlocks.length === 0) {
         mutate(blockIndex, { text: "分析完成，但未返回有效内容" });
         return;
       }
 
-      // Replace the loading block with the generated blocks
+      // Replace the loading block by stable ID (not array index).
       setBlocks((prev) => {
         // Final guard: only replace if we are still on the same note
         if (noteIdRef.current !== boundNoteId) return prev;
+        const idx = prev.findIndex((b) => b.id === loadingBlockId);
+        if (idx < 0) return prev;
         const next = prev.slice();
-        next.splice(blockIndex, 1, ...newBlocks);
+        next.splice(idx, 1, ...newBlocks);
         return next;
       });
       setFocusRequest(blockIndex + newBlocks.length - 1);
     } catch {
-      mutate(blockIndex, {
-        text: "分析失败：网络错误，请检查连接后重试",
+      setBlocks((prev) => {
+        if (noteIdRef.current !== boundNoteId) return prev;
+        const idx = prev.findIndex((b) => b.id === loadingBlockId);
+        if (idx < 0) return prev;
+        return updateBlockAt(prev, idx, {
+          text: "分析失败：网络错误，请检查连接后重试",
+        });
       });
     }
   }

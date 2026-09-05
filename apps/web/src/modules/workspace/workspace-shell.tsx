@@ -7,15 +7,23 @@
  * document full width. Users can toggle it open when needed.
  */
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import { cn } from "@workspace/ui";
 
+import { authClient } from "~/lib/auth/client";
+import { setLocalNotesUser } from "~/modules/notes/local-notes";
 import { WorkspaceInspector } from "~/modules/workspace/workspace-inspector";
 import { WorkspaceSidebar } from "~/modules/workspace/workspace-sidebar";
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const [inspectorOpen, setInspectorOpen] = useState(false);
+  const session = authClient.useSession();
+
+  // Bind local-notes storage to the authenticated user.
+  useEffect(() => {
+    setLocalNotesUser(session.data?.user.id ?? null);
+  }, [session.data?.user.id]);
 
   return (
     <div className="flex h-[calc(100svh-var(--banner-height,0px))]">
