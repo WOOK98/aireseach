@@ -3,238 +3,249 @@
 /* oxlint-disable i18next/no-literal-string */
 
 /**
- * Workspace sidebar — Notion-style object space navigation (#197).
+ * Workspace sidebar — document-first navigation (Phase 1).
  *
- * Sections derived from the pure `WORKSPACE_SECTIONS` model in
- * `workspace-nav.ts`. Every entry is a working surface — no disabled
- * placeholders, no dead ends.
+ * Layout: search → new page → page list → settings.
+ * Pages are notes — the primary research object. PDFs and inbox items
+ * surface through inline commands and the right panel, not sidebar sections.
  *
- * Responsive: desktop renders a fixed aside; mobile renders a Sheet drawer
- * triggered by a hamburger button (positioned fixed, z-40).
+ * Responsive: desktop renders a fixed aside (240px); mobile renders a Sheet.
  */
-import {
-  Activity,
-  BarChart3,
-  BookOpen,
-  FileText,
-  Home,
-  Inbox,
-  Map,
-  Menu,
-  NotebookPen,
-  Settings,
-} from "lucide-react";
+import { FileText, Menu, Plus, Search, Settings, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { cn } from "@workspace/ui";
 import { Sheet, SheetContent, SheetTrigger } from "@workspace/ui-web/sheet";
 
 import { pathsConfig } from "~/config/paths";
-import { useInbox } from "~/modules/inbox/use-inbox";
-import { useNotes } from "~/modules/notes/use-notes";
-import { usePdfs } from "~/modules/pdfs/use-pdfs";
+import { useNotes, useSaveNote } from "~/modules/notes/use-notes";
 import {
-  sectionsForGroup,
-  WORKSPACE_SECTION_GROUPS,
-  type WorkspaceSectionId,
-} from "~/modules/workspace/workspace-nav";
-import {
-  buildWorkspaceObjects,
-  formatObjectParam,
   objectHref,
   parseObjectParam,
-  type WorkspaceObject,
 } from "~/modules/workspace/workspace-object";
 
-interface SidebarItem {
-  readonly label: string;
-  readonly href: string;
-  readonly icon: React.ReactNode;
-  readonly disabled?: boolean;
-  readonly exact?: boolean;
-}
-
-interface SidebarGroup {
-  readonly label: string;
-  readonly items: readonly SidebarItem[];
-}
-
-/**
- * Icon map for workspace sections. Kept outside the pure nav model
- * so the module stays React-free and unit-testable.
- */
-const SECTION_ICONS: Record<WorkspaceSectionId, React.ReactNode> = {
-  home: <Home className="h-4 w-4" />,
-  notes: <NotebookPen className="h-4 w-4" />,
-  inbox: <Inbox className="h-4 w-4" />,
-  pdfs: <FileText className="h-4 w-4" />,
-  research: <BarChart3 className="h-4 w-4" />,
-  companies: <Activity className="h-4 w-4" />,
-  industries: <Map className="h-4 w-4" />,
-};
+import type { SaveNoteInput } from "~/modules/notes/use-notes";
 
 const ws = pathsConfig.workspace.index;
 
-/**
- * Sidebar groups derived from the pure nav model (#197).
- * No disabled placeholders — every entry is a working surface.
- */
-const SIDEBAR_GROUPS: readonly SidebarGroup[] = WORKSPACE_SECTION_GROUPS.map(
-  (group) => ({
-    label: group.label,
-    items: sectionsForGroup(group.id).map((s) => ({
-      label: s.label,
-      href: s.href,
-      icon: SECTION_ICONS[s.id],
-      exact: s.exact,
-    })),
-  }),
-);
+// ── Page list item ──────────────────────────────────────────────────────────
 
-function WorkspaceSidebarItem({
-  item,
+function PageItem({
+  id,
+  title,
   active,
 }: {
-  item: SidebarItem;
+  id: string;
+  title: string;
   active: boolean;
 }) {
-  if (item.disabled) {
-    return (
-      <div className="text-muted-foreground/50 flex cursor-not-allowed items-center gap-2.5 rounded-md px-2 py-1.5 text-sm">
-        {item.icon}
-        <span>{item.label}</span>
-      </div>
-    );
-  }
-
   return (
     <Link
-      href={item.href}
+      href={objectHref(ws, { kind: "note", id })}
       className={cn(
-        "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
+        "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
         active
           ? "bg-accent text-accent-foreground font-medium"
           : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
       )}
     >
-      {item.icon}
-      <span>{item.label}</span>
+      <FileText className="size-3.5 shrink-0" />
+      <span className="notranslate line-clamp-1 min-w-0 flex-1" translate="no">
+        {title || "Untitled"}
+      </span>
     </Link>
   );
 }
 
-const OBJECT_ICONS = {
-  note: <NotebookPen className="h-4 w-4 shrink-0" />,
-  pdf: <FileText className="h-4 w-4 shrink-0" />,
-  inbox: <Inbox className="h-4 w-4 shrink-0" />,
-} as const;
+// ── Sidebar content ─────────────────────────────────────────────────────────
 
-/**
- * Recent objects — object-first navigation (#186). Real data from the
- * notes / PDFs / inbox hooks; each row selects `?object=` in the canvas.
- */
-function RecentObjects({ activeParam }: { activeParam: string | null }) {
-  const notesQuery = useNotes({});
-  const pdfsQuery = usePdfs({});
-  const inboxQuery = useInbox();
-
-  const objects = useMemo(
-    () =>
-      buildWorkspaceObjects({
-        notes: notesQuery.data,
-        pdfs: pdfsQuery.data,
-        inbox: inboxQuery.data,
-      }).slice(0, 6),
-    [notesQuery.data, pdfsQuery.data, inboxQuery.data],
-  );
-
-  if (objects.length === 0) return null;
-
-  return (
-    <div>
-      <p className="text-muted-foreground/60 mb-1 px-2 text-[11px] font-medium tracking-wider uppercase">
-        recent objects
-      </p>
-      <div className="space-y-0.5">
-        {objects.map((obj: WorkspaceObject) => {
-          const param = formatObjectParam(obj);
-          return (
-            <Link
-              key={param}
-              href={objectHref(ws, obj)}
-              className={cn(
-                "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
-                activeParam === param
-                  ? "bg-accent text-accent-foreground font-medium"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-              )}
-            >
-              {OBJECT_ICONS[obj.kind]}
-              <span
-                className="notranslate line-clamp-1 min-w-0 flex-1"
-                translate="no"
-              >
-                {obj.title}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Inner sidebar content — shared between desktop aside and mobile Sheet.
- */
-function SidebarNav({ pathname }: { pathname: string }) {
+function SidebarNav({ pathname: _pathname }: { pathname: string }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const activeParam = searchParams.get("object");
-  // Section links stay active only when no object is selected — an
-  // `?object=` selection supersedes section highlighting.
-  const hasSelection = parseObjectParam(activeParam) !== null;
-  const isActive = (item: SidebarItem) => {
-    if (item.exact) return pathname === item.href && !hasSelection;
-    return pathname.startsWith(item.href);
-  };
+  const activeRef = parseObjectParam(activeParam);
+  const [query, setQuery] = useState("");
+
+  const notesQuery = useNotes({});
+  // Filter by search query
+  const filtered = useMemo(() => {
+    const notes = notesQuery.data ?? [];
+    if (!query.trim()) return notes;
+    const q = query.toLowerCase();
+    return notes.filter(
+      (n) =>
+        (n.title || "").toLowerCase().includes(q) ||
+        (n.entityTicker || "").toLowerCase().includes(q),
+    );
+  }, [notesQuery.data, query]);
+
+  const saveNote = useSaveNote();
+
+  function handleNewPage() {
+    // Create a blank note. Try server API first; fall back to local storage
+    // when the API is unavailable so offline users can still create pages.
+    const now = new Date().toISOString();
+    const stubArticle = {
+      schema_version: 1 as const,
+      entity: {
+        resolvedName: "Untitled",
+        mode: "ticker" as const,
+        dataTimestamp: now.slice(0, 10),
+      },
+      coreThesis: {
+        thesis: "",
+        keyDriver: "",
+        evidenceIds: ["E1"],
+      },
+      industryChain: {
+        narrative: "",
+        visual: {
+          kind: "empty" as const,
+          title: "产业链图",
+          reason: "新建页面",
+        },
+        evidenceIds: ["E1"],
+      },
+      evidenceMatrix: {
+        narrative: "",
+        visual: {
+          kind: "empty" as const,
+          title: "关键数据表",
+          reason: "新建页面",
+        },
+        evidenceIds: ["E1"],
+      },
+      companyLayer: {
+        narrative: "",
+        evidenceIds: ["E1"],
+      },
+      conclusion: {
+        summary: "",
+        risks: [],
+        invalidationConditions: [],
+        evidenceIds: ["E1"],
+      },
+      evidence: [
+        {
+          id: "E1",
+          claim: "新建空白页面",
+          source: "系统",
+          date: now.slice(0, 10),
+          url: "",
+          confidence: "unverified" as const,
+        },
+      ],
+      generatedAt: now,
+      language: "zh" as const,
+      disclaimer: "本报告仅供研究参考，不构成投资建议。",
+    };
+
+    const input: SaveNoteInput = {
+      title: "",
+      article: stubArticle,
+    };
+
+    saveNote.mutate(input, {
+      onSuccess: (note) => {
+        void notesQuery.refetch();
+        router.push(objectHref(ws, { kind: "note", id: note.id }));
+      },
+      onError: () => {
+        // Server unavailable — create a local note as fallback.
+        void import("~/modules/notes/local-notes").then(
+          ({ createLocalNote }): null => {
+            try {
+              const localNote = createLocalNote({
+                title: input.title,
+                article: stubArticle,
+              });
+              void notesQuery.refetch();
+              router.push(objectHref(ws, { kind: "note", id: localNote.id }));
+              toast.info("已离线创建页面，联网后自动同步");
+            } catch {
+              toast.error("本地存储已满，请清理后重试");
+            }
+            return null;
+          },
+        );
+      },
+    });
+  }
 
   return (
     <>
-      <div className="flex items-center gap-2 border-b px-4 py-3">
-        <BookOpen className="text-primary h-5 w-5" />
-        <span className="text-sm font-semibold tracking-tight">
-          Research Workspace
-        </span>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b px-3 py-2.5">
+        <span className="text-sm font-semibold tracking-tight">Workspace</span>
       </div>
 
-      <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-3">
-        {SIDEBAR_GROUPS.map((group) => (
-          <div key={group.label}>
-            <p className="text-muted-foreground/60 mb-1 px-2 text-[11px] font-medium tracking-wider uppercase">
-              {group.label}
-            </p>
-            <div className="space-y-0.5">
-              {group.items.map((item) => (
-                <WorkspaceSidebarItem
-                  key={item.label}
-                  item={item}
-                  active={isActive(item)}
-                />
-              ))}
-            </div>
+      {/* Search */}
+      <div className="px-2 pt-2 pb-1">
+        <div className="relative">
+          <Search className="text-muted-foreground absolute top-1/2 left-2 size-3.5 -translate-y-1/2" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="搜索页面…"
+            className="w-full rounded-md border bg-transparent py-1.5 pr-7 pl-7 text-sm focus:outline-none"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* New page */}
+      <div className="px-2 pb-1">
+        <button
+          onClick={handleNewPage}
+          className="text-muted-foreground hover:bg-accent/50 hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors"
+        >
+          <Plus className="size-3.5" />
+          <span>新建页面</span>
+        </button>
+      </div>
+
+      {/* Page list */}
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-1">
+        {notesQuery.isLoading ? (
+          <div className="space-y-1 px-2 py-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-muted h-7 animate-pulse rounded-md" />
+            ))}
           </div>
-        ))}
-        <RecentObjects activeParam={activeParam} />
+        ) : filtered.length === 0 ? (
+          <p className="text-muted-foreground px-2 py-4 text-center text-xs">
+            {query ? "没有匹配的页面" : "还没有页面 — 点击上方新建"}
+          </p>
+        ) : (
+          filtered.map((note) => (
+            <PageItem
+              key={note.id}
+              id={note.id}
+              title={note.title}
+              active={activeRef?.kind === "note" && activeRef.id === note.id}
+            />
+          ))
+        )}
       </nav>
 
-      <div className="border-t px-4 py-2">
+      {/* Settings */}
+      <div className="border-t px-3 py-2">
         <Link
           href={pathsConfig.dashboard.user.settings.index}
-          className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+          className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-xs transition-colors"
         >
-          <Settings className="mr-1 inline h-3 w-3" />
+          <Settings className="size-3.5" />
           Settings
         </Link>
       </div>
@@ -242,18 +253,20 @@ function SidebarNav({ pathname }: { pathname: string }) {
   );
 }
 
+// ── Export ───────────────────────────────────────────────────────────────────
+
 export function WorkspaceSidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
-      {/* Desktop sidebar — visible at lg+ */}
-      <aside className="bg-card hidden h-full w-56 flex-col border-r lg:flex">
+      {/* Desktop sidebar — 240px */}
+      <aside className="bg-card hidden h-full w-60 flex-col border-r lg:flex">
         <SidebarNav pathname={pathname} />
       </aside>
 
-      {/* Mobile hamburger — visible below lg */}
+      {/* Mobile hamburger */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger
           render={(props, state) => (
