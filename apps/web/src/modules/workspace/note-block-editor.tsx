@@ -23,20 +23,17 @@
 import {
   Heading2,
   ListChecks,
-  Loader2,
   Plus,
   Quote,
-  Save,
   Sparkles,
   Type,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { createNoteBlock } from "@workspace/shared/schema/note-block";
 import { generateId } from "@workspace/shared/utils";
 import { Badge } from "@workspace/ui-web/badge";
-import { Button } from "@workspace/ui-web/button";
 
 import { patchNote } from "~/modules/notes/use-notes";
 import {
@@ -45,12 +42,14 @@ import {
   filterSlashCommands,
   insertBlockAfter,
   removeBlockAt,
+  slashArg,
   slashQuery,
-  SLASH_COMMANDS,
   toBlocksPayload,
   updateBlockAt,
   type SlashCommand,
 } from "~/modules/workspace/note-block-model";
+import { SaveStatusIndicator } from "~/modules/workspace/save-status";
+import { useAutoSave } from "~/modules/workspace/use-auto-save";
 
 import type { NoteBlock } from "@workspace/shared/schema/note-block";
 import type { KeyboardEvent } from "react";
@@ -94,9 +93,9 @@ export function NoteBlockEditor({
   onSaved: () => Promise<unknown>;
 }) {
   const [blocks, setBlocks] = useState<NoteBlock[]>(() => note.blocks ?? []);
-  const [saving, setSaving] = useState(false);
   const [menuIndex, setMenuIndex] = useState(0);
   const [focusRequest, setFocusRequest] = useState<number | null>(null);
+  const [composing, setComposing] = useState(false);
   const areaRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
 
   // Reset local canvas when a different note (or a fresh server copy) loads.
@@ -108,6 +107,27 @@ export function NoteBlockEditor({
     () => !blocksEqual(blocks, note.blocks ?? []),
     [blocks, note.blocks],
   );
+
+  // Auto-save with debounce
+  const doSave = useCallback(
+    async (value: NoteBlock[]) => {
+      await patchNote(note.id, { blocks: toBlocksPayload(value) });
+      await onSaved();
+    },
+    [note.id, onSaved],
+  );
+
+  const {
+    status: saveStatus,
+    saveNow,
+    lastSavedAt,
+  } = useAutoSave({
+    value: blocks,
+    dirty,
+    onSave: doSave,
+    debounceMs: 2000,
+    composing,
+  });
 
   // Focus management after structural edits.
   useEffect(() => {
@@ -151,7 +171,11 @@ export function NoteBlockEditor({
       if (e.key === "Enter") {
         e.preventDefault();
         const cmd = menu[Math.min(menuIndex, menu.length - 1)]!;
-        setBlocks((prev) => applySlashCommand(prev, index, cmd));
+        if (cmd.action === "analyze") {
+          void handleAnalyze(index, blocks[index]?.text ?? "");
+        } else {
+          setBlocks((prev) => applySlashCommand(prev, index, cmd));
+        }
         setMenuIndex(0);
         return;
       }
@@ -192,16 +216,106 @@ export function NoteBlockEditor({
     }
   }
 
-  async function handleSave() {
-    setSaving(true);
+  // IME composition tracking
+  function handleCompositionStart() {
+    setComposing(true);
+  }
+  function handleCompositionEnd() {
+    setComposing(false);
+  }
+
+  // /分析 action — call article API and insert results into document
+  async function handleAnalyze(blockIndex: number, rawText: string) {
+    const query = slashArg(rawText) || rawText.replace(/^\/分析\s*/, "").trim();
+    if (!query) return;
+
+    // Replace the slash command block with a loading placeholder
+    mutate(blockIndex, { text: `正在生成 ${query} 分析…` });
+
     try {
-      await patchNote(note.id, { blocks: toBlocksPayload(blocks) });
-      toast.success("文档块已保存");
-      await onSaved();
+      const res = await fetch("/api/article/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text().catch(() => "");
+        mutate(blockIndex, { text: `分析失败：${err || res.statusText}` });
+        return;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = (await res.json()) as any;
+      const article = data.article ?? data;
+
+      // Build blocks from the article result
+      const newBlocks: NoteBlock[] = [];
+
+      const coreThesis = article.coreThesis as { thesis?: string } | undefined;
+      const industryChain = article.industryChain as
+        | { narrative?: string }
+        | undefined;
+      const evidenceMatrix = article.evidenceMatrix as
+        | { narrative?: string }
+        | undefined;
+      const companyLayer = article.companyLayer as
+        | { narrative?: string }
+        | undefined;
+      const conclusion = article.conclusion as { summary?: string } | undefined;
+
+      if (coreThesis?.thesis) {
+        newBlocks.push(
+          createNoteBlock("heading", generateId, `${query} 分析报告`),
+        );
+        newBlocks.push(
+          createNoteBlock("paragraph", generateId, coreThesis.thesis),
+        );
+      }
+
+      if (industryChain?.narrative) {
+        newBlocks.push(createNoteBlock("heading", generateId, "产业链"));
+        newBlocks.push(
+          createNoteBlock("paragraph", generateId, industryChain.narrative),
+        );
+      }
+
+      if (evidenceMatrix?.narrative) {
+        newBlocks.push(createNoteBlock("heading", generateId, "关键数据"));
+        newBlocks.push(
+          createNoteBlock("paragraph", generateId, evidenceMatrix.narrative),
+        );
+      }
+
+      if (companyLayer?.narrative) {
+        newBlocks.push(
+          createNoteBlock("callout", generateId, companyLayer.narrative),
+        );
+      }
+
+      if (conclusion?.summary) {
+        newBlocks.push(createNoteBlock("heading", generateId, "结论"));
+        newBlocks.push(
+          createNoteBlock("paragraph", generateId, conclusion.summary),
+        );
+      }
+
+      if (newBlocks.length === 0) {
+        mutate(blockIndex, { text: `分析完成，但未返回有效内容` });
+        return;
+      }
+
+      // Replace the loading block with the generated blocks
+      setBlocks((prev) => {
+        const next = prev.slice();
+        next.splice(blockIndex, 1, ...newBlocks);
+        return next;
+      });
+      setFocusRequest(blockIndex + newBlocks.length - 1);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "保存失败");
-    } finally {
-      setSaving(false);
+      mutate(blockIndex, {
+        text: `分析失败：${err instanceof Error ? err.message : "网络错误"}`,
+      });
     }
   }
 
@@ -220,29 +334,16 @@ export function NoteBlockEditor({
           >
             {blocks.length}
           </span>
-          {dirty && (
-            <Badge variant="secondary" className="text-[10px]">
-              未保存
-            </Badge>
-          )}
         </h2>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-xs">
-            Enter 新块 · / 命令 · 空块回退删除
+            Enter 新块 · / 命令 · 空块回退删除 · ⌘S 保存
           </span>
-          <Button
-            size="sm"
-            variant={dirty ? "default" : "outline"}
-            onClick={handleSave}
-            disabled={!dirty || saving}
-          >
-            {saving ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Save className="size-3.5" />
-            )}
-            保存文档块
-          </Button>
+          <SaveStatusIndicator
+            status={saveStatus}
+            lastSavedAt={lastSavedAt}
+            onRetry={saveNow}
+          />
         </div>
       </div>
 
@@ -316,6 +417,8 @@ export function NoteBlockEditor({
                       setMenuIndex(0);
                     }}
                     onKeyDown={(e) => handleKeyDown(e, index)}
+                    onCompositionStart={handleCompositionStart}
+                    onCompositionEnd={handleCompositionEnd}
                     className={`notranslate min-w-0 flex-1 resize-none bg-transparent px-0 py-1 shadow-none focus:outline-none ${BLOCK_STYLE[block.type]}`}
                     translate="no"
                     placeholder={PLACEHOLDER_TEXT[block.type]}
@@ -344,9 +447,16 @@ export function NoteBlockEditor({
                         type="button"
                         onMouseDown={(e) => {
                           e.preventDefault();
-                          setBlocks((prev) =>
-                            applySlashCommand(prev, index, cmd),
-                          );
+                          if (cmd.action === "analyze") {
+                            void handleAnalyze(
+                              index,
+                              blocks[index]?.text ?? "",
+                            );
+                          } else {
+                            setBlocks((prev) =>
+                              applySlashCommand(prev, index, cmd),
+                            );
+                          }
                           setMenuIndex(0);
                           setFocusRequest(index);
                         }}
@@ -372,13 +482,8 @@ export function NoteBlockEditor({
         </div>
       )}
 
-      <p className="text-muted-foreground text-[11px] leading-relaxed">
-        文档块是你自己撰写的内容，保存到笔记，不影响下方数据快照与 Live 证据块。
-      </p>
-      {/* Slash command discoverability (static list, no data) */}
       <p className="text-muted-foreground/70 text-[11px] leading-relaxed">
-        可用命令：
-        {SLASH_COMMANDS.map((c) => `/${c.command}`).join(" · ")}
+        输入 / 唤起命令 · /分析 TSLA 生成分析 · ⌘S 即时保存
       </p>
     </section>
   );

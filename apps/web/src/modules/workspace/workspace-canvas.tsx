@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@workspace/ui-web/badge";
@@ -482,6 +482,23 @@ function ObjectHome({
 
 // ── Canvas root ─────────────────────────────────────────────────────────────
 
+const LAST_NOTE_KEY = "workspace:lastNoteId";
+
+function getLastNoteId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(LAST_NOTE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function setLastNoteId(id: string) {
+  try {
+    localStorage.setItem(LAST_NOTE_KEY, id);
+  } catch {}
+}
+
 export function WorkspaceCanvas() {
   const router = useRouter();
   const pathname = usePathname();
@@ -502,7 +519,29 @@ export function WorkspaceCanvas() {
     [notesQuery.data, pdfsQuery.data, inboxQuery.data],
   );
 
+  // Auto-open last edited note on first load (no selection in URL)
+  const hasAutoOpened = useRef(false);
+  useEffect(() => {
+    if (selection !== null || hasAutoOpened.current) return;
+    if (notesQuery.isLoading) return;
+
+    const notes = notesQuery.data ?? [];
+    if (notes.length === 0) return;
+
+    // Try last edited note from localStorage, then most recent
+    const lastId = getLastNoteId();
+    const target = (lastId && notes.find((n) => n.id === lastId)) ?? notes[0];
+
+    if (target) {
+      hasAutoOpened.current = true;
+      router.replace(
+        `${pathname}?object=${encodeURIComponent(formatObjectParam({ kind: "note", id: target.id }))}`,
+      );
+    }
+  }, [selection, notesQuery.isLoading, notesQuery.data, pathname, router]);
+
   function select(ref: WorkspaceObjectRef | null) {
+    if (ref?.kind === "note") setLastNoteId(ref.id);
     router.replace(
       ref
         ? `${pathname}?object=${encodeURIComponent(formatObjectParam(ref))}`
@@ -521,11 +560,10 @@ export function WorkspaceCanvas() {
             className="text-muted-foreground hover:text-foreground flex shrink-0 items-center gap-1.5 text-sm transition-colors"
           >
             <ObjectIcon kind={selection.kind} />
-            <span className="capitalize">{selection.kind}</span> · back to all
-            objects
+            <span className="capitalize">{selection.kind}</span>
           </button>
         ) : (
-          <p className="text-muted-foreground shrink-0 text-sm">All objects</p>
+          <p className="text-muted-foreground shrink-0 text-sm">Workspace</p>
         )}
         <div className="min-w-0 flex-1">
           <WorkspaceCommandSurface />

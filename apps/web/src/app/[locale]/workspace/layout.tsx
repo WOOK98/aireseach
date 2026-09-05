@@ -1,6 +1,5 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 
 import { getBillingSummaryResponseSchema } from "@workspace/api/schema";
 import { handle } from "@workspace/api/utils";
@@ -11,8 +10,7 @@ import { api } from "~/lib/api/server";
 import { getSession } from "~/lib/auth/server";
 import { getQueryClient } from "~/lib/query/server";
 import { billing } from "~/modules/billing/lib/api";
-import { WorkspaceInspector } from "~/modules/workspace/workspace-inspector";
-import { WorkspaceSidebar } from "~/modules/workspace/workspace-sidebar";
+import { WorkspaceShell } from "~/modules/workspace/workspace-shell";
 
 export default async function WorkspaceLayout({
   children,
@@ -44,15 +42,7 @@ export default async function WorkspaceLayout({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="flex h-[calc(100svh-var(--banner-height,0px))]">
-        <Suspense fallback={null}>
-          <WorkspaceSidebar />
-        </Suspense>
-        <main className="min-w-0 flex-1 overflow-hidden">{children}</main>
-        <Suspense fallback={null}>
-          <WorkspaceInspector />
-        </Suspense>
-      </div>
+      <WorkspaceShell>{children}</WorkspaceShell>
     </HydrationBoundary>
   );
 }
