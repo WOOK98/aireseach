@@ -15,6 +15,7 @@ import {
   filterSlashCommands,
   insertBlockAfter,
   removeBlockAt,
+  slashArg,
   slashQuery,
   SLASH_COMMANDS,
   toBlocksPayload,
@@ -43,12 +44,30 @@ describe("slash commands", () => {
     expect(matches[0]!.blockType).toBe("paragraph");
   });
 
-  it("detects slash mode only for a single /query token", () => {
+  it("detects slash mode for /cmd, bare /, and /cmd arg patterns", () => {
     expect(slashQuery("/head")).toBe("head");
     expect(slashQuery("/")).toBe("");
     expect(slashQuery("text /not")).toBeNull();
-    expect(slashQuery("/has space")).toBeNull();
+    expect(slashQuery("/has space")).toBe("has space");
+    expect(slashQuery("/分析 TSLA")).toBe("分析 TSLA");
+    expect(slashQuery("/分析 蔚蓝生物")).toBe("分析 蔚蓝生物");
     expect(slashQuery("plain")).toBeNull();
+  });
+
+  it("slashArg extracts the argument from /cmd arg patterns", () => {
+    expect(slashArg("/分析 TSLA")).toBe("TSLA");
+    expect(slashArg("/分析 蔚蓝生物")).toBe("蔚蓝生物");
+    expect(slashArg("/分析  TSLA")).toBe("TSLA"); // extra whitespace trimmed
+    expect(slashArg("/todo buy milk")).toBe("buy milk");
+    expect(slashArg("/分析")).toBeNull(); // no arg
+    expect(slashArg("/")).toBeNull();
+    expect(slashArg("plain")).toBeNull();
+  });
+
+  it("filterSlashCommands matches the command when query has args", () => {
+    const matches = filterSlashCommands("分析 TSLA");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.command).toBe("分析");
   });
 
   it("applySlashCommand converts shape and strips the /query token", () => {

@@ -90,10 +90,7 @@ export function filterSlashCommands(query: string): SlashCommand[] {
  */
 export function slashQuery(text: string): string | null {
   if (!text.startsWith("/")) return null;
-  const query = text.slice(1);
-  // Slash mode only for single-token commands: "/cmd" or "/".
-  if (query.includes(" ")) return null;
-  return query;
+  return text.slice(1);
 }
 
 /** Extract the argument from a slash command like `/分析 TSLA` → `TSLA`. */
