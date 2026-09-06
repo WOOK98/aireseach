@@ -1,80 +1,63 @@
 "use client";
 
 /**
- * Local Notes — client-side persistence for offline-first workspace.
+ * Local Notes — localStorage-backed note persistence for offline-first workspace.
  *
- * Stores full NoteDetail objects in localStorage when the API is
- * unavailable. Notes use a `local_note_` prefix id. On next API
- * success the workspace syncs them to the server.
+ * Notes with `local_note_` prefix IDs are stored entirely client-side.
+ * The API hooks in use-notes.ts fall back to these when the server is
+ * unavailable, and merge them with server notes on successful fetches.
  */
 import { generateId } from "@workspace/shared/utils";
 
-import type { NoteDetail, NoteListItem } from "~/modules/notes/use-notes";
+import type { NoteDetail, NoteListItem, PatchNoteInput } from "./use-notes";
 
-let userId: string | null = null;
+const STORAGE_KEY = "airesearch_local_notes";
 
-function getStorageKey(): string {
-  return userId
-    ? `workspace:localNotes:${userId}`
-    : "workspace:localNotes:anonymous";
-}
+// ── Storage helpers ─────────────────────────────────────────────────────────
 
-/** Call once when user identity is known (e.g. session loaded). */
-export function setLocalNotesUser(id: string | null) {
-  userId = id;
-}
-
-function readLocalNotes(): NoteDetail[] {
+function readAll(): NoteDetail[] {
   try {
-    const raw = localStorage.getItem(getStorageKey());
+    const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? (JSON.parse(raw) as NoteDetail[]) : [];
   } catch {
     return [];
   }
 }
 
-/** Throws on quota/security errors — callers must handle. */
-function writeLocalNotes(notes: NoteDetail[]) {
-  localStorage.setItem(getStorageKey(), JSON.stringify(notes));
+function writeAll(notes: NoteDetail[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  } catch {}
 }
 
-export function createLocalNote(input: {
-  title: string;
-  article: NoteDetail["artifact"];
-}): NoteDetail {
-  const now = new Date().toISOString();
-  const note: NoteDetail = {
-    id: `local_note_${generateId()}`,
-    title: input.title || "Untitled",
-    summary: null,
-    note: null,
-    tags: [],
-    kind: "article",
-    entityTicker: null,
-    entityName: null,
-    schemaVersion: 1,
-    evidenceCount: 0,
-    asOf: now.slice(0, 10),
-    createdAt: now,
-    updatedAt: now,
-    artifact: input.article,
-    evidenceIds: [],
-    liveBlocks: [],
-    blocks: [],
-    sourceMeta: null,
-  };
-  const existing = readLocalNotes();
-  existing.unshift(note);
-  writeLocalNotes(existing); // throws on failure
-  return note;
+// ── Public API (matches use-notes.ts expectations) ──────────────────────────
+
+export function isLocalNote(id: string): boolean {
+  return id.startsWith("local_note_");
 }
 
-export function getLocalNote(id: string): NoteDetail | null {
-  return readLocalNotes().find((n) => n.id === id) ?? null;
-}
+export function listLocalNotes(query?: {
+  q?: string;
+  ticker?: string;
+}): NoteListItem[] {
+  let notes = readAll();
 
-export function listLocalNotes(): NoteListItem[] {
-  return readLocalNotes().map((n) => ({
+  if (query?.ticker) {
+    const t = query.ticker.toUpperCase();
+    notes = notes.filter(
+      (n) => n.entityTicker && n.entityTicker.toUpperCase() === t,
+    );
+  }
+  if (query?.q) {
+    const q = query.q.toLowerCase();
+    notes = notes.filter(
+      (n) =>
+        (n.title || "").toLowerCase().includes(q) ||
+        (n.entityTicker || "").toLowerCase().includes(q),
+    );
+  }
+
+  return notes.map((n) => ({
     id: n.id,
     title: n.title,
     summary: n.summary,
@@ -84,35 +67,122 @@ export function listLocalNotes(): NoteListItem[] {
     entityTicker: n.entityTicker,
     entityName: n.entityName,
     schemaVersion: n.schemaVersion,
-    evidenceCount: n.evidenceCount,
+    evidenceCount: n.evidenceIds?.length ?? 0,
     asOf: n.asOf,
     createdAt: n.createdAt,
     updatedAt: n.updatedAt,
   }));
 }
 
+export function getLocalNote(id: string): NoteDetail | null {
+  const notes = readAll();
+  return notes.find((n) => n.id === id) ?? null;
+}
+
+export function createLocalNote(input: {
+  title: string;
+  article?: NoteDetail["artifact"];
+  entityTicker?: string;
+  entityName?: string;
+  summary?: string;
+}): NoteDetail & { _local: true } {
+  const now = new Date().toISOString();
+  const ticker = input.entityTicker ? input.entityTicker.toUpperCase() : null;
+  const artifact = input.article ?? {
+    schema_version: 1 as const,
+    entity: {
+      resolvedName: input.title || "Untitled",
+      mode: "ticker" as const,
+      dataTimestamp: now.slice(0, 10),
+    },
+    coreThesis: { thesis: "", keyDriver: "", evidenceIds: ["E1"] },
+    industryChain: {
+      narrative: "",
+      visual: { kind: "empty" as const, title: "产业链图", reason: "新建页面" },
+      evidenceIds: ["E1"],
+    },
+    evidenceMatrix: {
+      narrative: "",
+      visual: {
+        kind: "empty" as const,
+        title: "关键数据表",
+        reason: "新建页面",
+      },
+      evidenceIds: ["E1"],
+    },
+    companyLayer: { narrative: "", evidenceIds: ["E1"] },
+    conclusion: {
+      summary: "",
+      risks: [],
+      invalidationConditions: [],
+      evidenceIds: ["E1"],
+    },
+    evidence: [
+      {
+        id: "E1",
+        claim: "新建空白页面",
+        source: "系统",
+        date: now.slice(0, 10),
+        url: "",
+        confidence: "unverified" as const,
+      },
+    ],
+    generatedAt: now,
+    language: "zh" as const,
+    disclaimer: "本报告仅供研究参考，不构成投资建议。",
+  };
+
+  const note: NoteDetail & { _local: true } = {
+    id: `local_note_${generateId()}`,
+    title: input.title || "Untitled",
+    summary: input.summary ?? null,
+    note: null,
+    tags: [],
+    kind: "draft",
+    entityTicker: ticker,
+    entityName: input.entityName ?? null,
+    schemaVersion: 1,
+    evidenceCount: 0,
+    asOf: now,
+    createdAt: now,
+    updatedAt: now,
+    artifact,
+    evidenceIds: [],
+    liveBlocks: [],
+    blocks: [],
+    sourceMeta: null,
+    _local: true,
+  };
+
+  const existing = readAll();
+  existing.unshift(note);
+  writeAll(existing);
+  return note;
+}
+
 export function updateLocalNote(
   id: string,
-  patch: Partial<Pick<NoteDetail, "title" | "blocks" | "updatedAt">>,
+  patch: PatchNoteInput,
 ): NoteDetail | null {
-  const notes = readLocalNotes();
+  const notes = readAll();
   const idx = notes.findIndex((n) => n.id === id);
   if (idx < 0) return null;
-  const updated = {
-    ...notes[idx]!,
-    ...patch,
+  const note = notes[idx]!;
+  const updated: NoteDetail = {
+    ...note,
+    title: patch.title ?? note.title,
+    summary: patch.summary !== undefined ? patch.summary : note.summary,
+    note: patch.note !== undefined ? patch.note : note.note,
+    tags: patch.tags ?? note.tags,
+    blocks: patch.blocks ?? note.blocks,
     updatedAt: new Date().toISOString(),
   };
   notes[idx] = updated;
-  writeLocalNotes(notes); // throws on failure
+  writeAll(notes);
   return updated;
 }
 
 export function deleteLocalNote(id: string) {
-  const existing = readLocalNotes().filter((n) => n.id !== id);
-  writeLocalNotes(existing); // throws on failure
-}
-
-export function isLocalNote(id: string): boolean {
-  return id.startsWith("local_note_");
+  const notes = readAll().filter((n) => n.id !== id);
+  writeAll(notes);
 }
