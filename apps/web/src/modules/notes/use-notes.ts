@@ -5,8 +5,21 @@
  *
  * Talks to /api/notes (user-scoped, session cookie auth).
  * Save failures surface explicit errors — nothing is silently dropped.
+ *
+ * #197: When the API is unavailable (503 / network error), hooks fall back
+ * to localStorage-backed local-notes.ts so the workspace remains usable.
+ * Local notes are marked with id prefix "local_note_" and persist across reloads.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import {
+  createLocalNote,
+  deleteLocalNote,
+  getLocalNote,
+  isLocalNote,
+  listLocalNotes,
+  updateLocalNote,
+} from "./local-notes";
 
 import type { DraftNoteArtifact } from "@workspace/shared/schema/article";
 import type { LiveBlock } from "@workspace/shared/schema/live-block";
@@ -77,51 +90,90 @@ async function fetchNotes(query: {
   ticker?: string;
 }): Promise<NoteListItem[]> {
   // Merge local notes first (offline-created notes).
-  const { listLocalNotes } = await import("~/modules/notes/local-notes");
   const localNotes = listLocalNotes();
 
   const params = new URLSearchParams();
   if (query.q) params.set("q", query.q);
   if (query.ticker) params.set("ticker", query.ticker);
   const suffix = params.size > 0 ? `?${params.toString()}` : "";
-  const res = await fetch(`/api/notes${suffix}`);
-  if (!res.ok) {
-    // Server unavailable — return local notes only.
-    return localNotes;
+  try {
+    const res = await fetch(`/api/notes${suffix}`);
+    if (!res.ok) {
+      // Server unavailable — return local notes only.
+      if (res.status >= 500) return localNotes;
+      throw new Error(await readError(res));
+    }
+    const data = (await res.json()) as { notes: NoteListItem[] };
+    // Merge: server notes first, then local-only notes not yet synced.
+    const serverIds = new Set(data.notes.map((n) => n.id));
+    const merged = [
+      ...data.notes,
+      ...localNotes.filter((n) => !serverIds.has(n.id)),
+    ];
+    return merged;
+  } catch (err) {
+    // Network error — fall back to local notes.
+    if (err instanceof TypeError) return localNotes;
+    throw err;
   }
-  const data = (await res.json()) as { notes: NoteListItem[] };
-  // Merge: server notes first, then local-only notes not yet synced.
-  const serverIds = new Set(data.notes.map((n) => n.id));
-  const merged = [
-    ...data.notes,
-    ...localNotes.filter((n) => !serverIds.has(n.id)),
-  ];
-  return merged;
 }
 
 async function fetchNote(id: string): Promise<NoteDetail> {
   // Local notes are served from localStorage.
-  if (id.startsWith("local_note_")) {
-    const { getLocalNote } = await import("~/modules/notes/local-notes");
+  if (isLocalNote(id)) {
     const local = getLocalNote(id);
     if (local) return local;
     throw new Error("Local note not found.");
   }
-  const res = await fetch(`/api/notes/${encodeURIComponent(id)}`);
-  if (!res.ok) throw new Error(await readError(res));
-  const data = (await res.json()) as { note: NoteDetail };
-  return data.note;
+  try {
+    const res = await fetch(`/api/notes/${encodeURIComponent(id)}`);
+    if (!res.ok) {
+      if (res.status >= 500) {
+        const local = getLocalNote(id);
+        if (local) return local;
+      }
+      throw new Error(await readError(res));
+    }
+    const data = (await res.json()) as { note: NoteDetail };
+    return data.note;
+  } catch (err) {
+    if (err instanceof TypeError) {
+      const local = getLocalNote(id);
+      if (local) return local;
+    }
+    throw err;
+  }
 }
 
 async function postNote(input: SaveNoteInput): Promise<NoteDetail> {
-  const res = await fetch("/api/notes", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) throw new Error(await readError(res));
-  const data = (await res.json()) as { note: NoteDetail };
-  return data.note;
+  try {
+    const res = await fetch("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      if (res.status >= 500) {
+        // #197: API unavailable — save locally.
+        return createLocalNote({
+          title: input.title,
+          article: input.article,
+        });
+      }
+      throw new Error(await readError(res));
+    }
+    const data = (await res.json()) as { note: NoteDetail };
+    return data.note;
+  } catch (err) {
+    // Network error — save locally.
+    if (err instanceof TypeError) {
+      return createLocalNote({
+        title: input.title,
+        article: input.article,
+      });
+    }
+    throw err;
+  }
 }
 
 export async function patchNote(
@@ -129,23 +181,41 @@ export async function patchNote(
   patch: PatchNoteInput,
 ): Promise<NoteDetail> {
   // Local notes are patched in localStorage.
-  if (id.startsWith("local_note_")) {
-    const { updateLocalNote } = await import("~/modules/notes/local-notes");
+  if (isLocalNote(id)) {
     const updated = updateLocalNote(id, patch);
     if (updated) return updated;
     throw new Error("Local note not found.");
   }
-  const res = await fetch(`/api/notes/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(patch),
-  });
-  if (!res.ok) throw new Error(await readError(res));
-  const data = (await res.json()) as { note: NoteDetail };
-  return data.note;
+  try {
+    const res = await fetch(`/api/notes/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      if (res.status >= 500) {
+        const updated = updateLocalNote(id, patch);
+        if (updated) return updated;
+      }
+      throw new Error(await readError(res));
+    }
+    const data = (await res.json()) as { note: NoteDetail };
+    return data.note;
+  } catch (err) {
+    if (err instanceof TypeError) {
+      const updated = updateLocalNote(id, patch);
+      if (updated) return updated;
+    }
+    throw err;
+  }
 }
 
 export async function deleteNote(id: string): Promise<void> {
+  // #197: Local notes delete from localStorage.
+  if (isLocalNote(id)) {
+    deleteLocalNote(id);
+    return;
+  }
   const res = await fetch(`/api/notes/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });

@@ -36,11 +36,15 @@ export function UploadPdfButton() {
     }
     setBusy(true);
     try {
-      await upload.mutateAsync({
+      const result = await upload.mutateAsync({
         input: { fileName: file.name, fileSizeBytes: file.size },
         file,
       });
-      toast.success("上传成功");
+      if (result.id.startsWith("local_pdf_")) {
+        toast.success("PDF 已保存到本地（服务器暂不可用），可在本设备阅读标注");
+      } else {
+        toast.success("上传成功");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "上传失败");
     } finally {

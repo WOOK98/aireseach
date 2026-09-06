@@ -78,7 +78,9 @@ export const SLASH_COMMANDS: SlashCommand[] = [
 export function filterSlashCommands(query: string): SlashCommand[] {
   const q = query.trim().toLowerCase();
   if (!q) return SLASH_COMMANDS;
-  return SLASH_COMMANDS.filter((c) => c.command.includes(q));
+  return SLASH_COMMANDS.filter(
+    (c) => c.command.includes(q) || q.startsWith(c.command),
+  );
 }
 
 /**
