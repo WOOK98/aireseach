@@ -54,7 +54,7 @@ const emptyVisualSchema = z.object({
   reason: z.string().min(1),
 });
 
-const articleVisualSchema = z.discriminatedUnion("kind", [
+export const articleVisualSchema = z.discriminatedUnion("kind", [
   mermaidVisualSchema,
   matrixVisualSchema,
   chartVisualSchema,

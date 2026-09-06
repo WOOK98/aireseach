@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { researchArticleSchema } from "@workspace/shared/schema/article";
 import { createNoteBlock } from "@workspace/shared/schema/note-block";
 import { generateId } from "@workspace/shared/utils";
 import { Badge } from "@workspace/ui-web/badge";
@@ -50,83 +51,11 @@ import {
 } from "~/modules/workspace/note-block-model";
 import { SaveStatusIndicator } from "~/modules/workspace/save-status";
 import { useAutoSave } from "~/modules/workspace/use-auto-save";
+import { VisualBlockRenderer } from "~/modules/workspace/visual-block-renderer";
 
 import type { NoteBlock } from "@workspace/shared/schema/note-block";
-import type { ArticleVisual } from "@workspace/shared/types/article";
 import type { KeyboardEvent } from "react";
 import type { NoteDetail } from "~/modules/notes/use-notes";
-
-/** Schema guard: validates the article response has the required structure. */
-function isResearchArticle(value: unknown): value is {
-  coreThesis?: { thesis?: string; evidenceIds?: string[] };
-  industryChain?: {
-    narrative?: string;
-    visual?: ArticleVisual;
-    evidenceIds?: string[];
-  };
-  evidenceMatrix?: {
-    narrative?: string;
-    visual?: ArticleVisual;
-    evidenceIds?: string[];
-  };
-  companyLayer?: { narrative?: string; evidenceIds?: string[] };
-  conclusion?: {
-    summary?: string;
-    risks?: Array<{ risk?: string; explanation?: string }>;
-    evidenceIds?: string[];
-  };
-  evidence?: Array<{
-    id?: string;
-    claim?: string;
-    source?: string;
-    date?: string;
-    url?: string;
-    confidence?: string;
-  }>;
-  periods?: Array<{ period?: string; value?: string }>;
-} {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  // At minimum, must have one of the section fields.
-  return !!(
-    v.coreThesis ||
-    v.industryChain ||
-    v.evidenceMatrix ||
-    v.companyLayer ||
-    v.conclusion
-  );
-}
-
-/**
- * Format a visual into human-readable text. Renders all rows, columns,
- * chart data, and mermaid diagrams — never truncates.
- */
-function formatVisual(visual: ArticleVisual): string | null {
-  switch (visual.kind) {
-    case "matrix": {
-      const header = visual.columns.join(" | ");
-      const rows = visual.rows
-        .map((r) => visual.columns.map((c) => r[c] ?? "—").join(" | "))
-        .join("\n");
-      const meta = [visual.source, visual.date].filter(Boolean).join(" · ");
-      return `${visual.title}\n${header}\n${rows}${meta ? `\n来源: ${meta}` : ""}`;
-    }
-    case "chart": {
-      const seriesText = visual.series
-        .map(
-          (s) =>
-            `${s.name}: ${s.values.map((v, i) => `${visual.labels[i] ?? "?"}=${v}`).join(", ")}`,
-        )
-        .join("\n");
-      const meta = [visual.source, visual.date].filter(Boolean).join(" · ");
-      return `📊 ${visual.title} (${visual.chartType})\n${seriesText}${meta ? `\n来源: ${meta}` : ""}`;
-    }
-    case "mermaid":
-      return `📊 ${visual.title}\n${visual.diagram}`;
-    default:
-      return null;
-  }
-}
 
 const BLOCK_ICON: Record<string, typeof Type> = {
   paragraph: Type,
@@ -136,6 +65,7 @@ const BLOCK_ICON: Record<string, typeof Type> = {
   callout: Sparkles,
   evidence_placeholder: Quote,
   live_placeholder: Zap,
+  visual: Sparkles,
 };
 
 const PLACEHOLDER_TEXT: Record<NoteBlock["type"], string> = {
@@ -146,6 +76,7 @@ const PLACEHOLDER_TEXT: Record<NoteBlock["type"], string> = {
   callout: "你的判断或提醒",
   evidence_placeholder: "证据占位 — 从右栏插入真实证据后替换",
   live_placeholder: "Live 块占位 — 在下方 Live 证据区添加真实块",
+  visual: "可视化内容",
 };
 
 const BLOCK_STYLE: Record<NoteBlock["type"], string> = {
@@ -156,6 +87,7 @@ const BLOCK_STYLE: Record<NoteBlock["type"], string> = {
   callout: "text-sm leading-relaxed",
   evidence_placeholder: "text-muted-foreground text-xs italic",
   live_placeholder: "text-muted-foreground text-xs italic",
+  visual: "",
 };
 
 export function NoteBlockEditor({
@@ -315,8 +247,9 @@ export function NoteBlockEditor({
   }, [note.id]);
 
   // /分析 action — call article API and insert results into document.
-  // Preserves evidenceIds, evidence sources, and visuals from the validated
-  // article contract. Errors are user-safe, never raw server text.
+  // Uses researchArticleSchema.safeParse for contract validation.
+  // Stores structured visuals as visual blocks (rendered by VisualBlockRenderer).
+  // Preserves evidenceIds, invalidationConditions, and source metadata.
   async function handleAnalyze(blockIndex: number, rawText: string) {
     const query = slashArg(rawText) || rawText.replace(/^\/分析\s*/, "").trim();
     if (!query) return;
@@ -359,112 +292,165 @@ export function NoteBlockEditor({
         return;
       }
 
-      // Schema-validate: expect { article: ResearchArticle } shape.
+      // Contract validation: use researchArticleSchema.safeParse instead of
+      // a loose type guard. Rejects {coreThesis:{thesis:42}} and malformed
+      // visual data that previously passed.
       const raw: unknown = await res.json();
       if (noteIdRef.current !== boundNoteId) return;
-      const article =
+      const articleData =
         (raw as Record<string, unknown> | undefined)?.article ?? raw;
-      if (!isResearchArticle(article)) {
+      const parsed = researchArticleSchema.safeParse(articleData);
+      if (!parsed.success) {
+        const firstIssue = parsed.error.issues[0];
+        const errDetail = firstIssue
+          ? `${firstIssue.path.join(".")}: ${firstIssue.message}`
+          : "格式校验失败";
         setBlocks((prev) => {
           if (noteIdRef.current !== boundNoteId) return prev;
           const idx = prev.findIndex((b) => b.id === loadingBlockId);
           if (idx < 0) return prev;
           return updateBlockAt(prev, idx, {
-            text: "分析失败：返回数据格式错误",
+            text: `分析失败：${errDetail}`,
           });
         });
         return;
       }
 
-      // Build blocks from the validated article contract — preserve evidence
-      // attribution and visuals.
+      const article = parsed.data; // ValidatedArticle — fully typed, no casts
+
+      // Build blocks from the validated article contract.
+      // Visuals are stored as structured "visual" blocks — rendered by
+      // VisualBlockRenderer with actual charts, tables, and mermaid diagrams.
       const newBlocks: NoteBlock[] = [];
 
-      const coreThesis = article.coreThesis as
-        | { thesis?: string; evidenceIds?: string[] }
-        | undefined;
-      const industryChain = article.industryChain as
-        | {
-            narrative?: string;
-            visual?: { title?: string; kind?: string };
-            evidenceIds?: string[];
-          }
-        | undefined;
-      const evidenceMatrix = article.evidenceMatrix as
-        | {
-            narrative?: string;
-            visual?: {
-              title?: string;
-              kind?: string;
-              rows?: Array<Record<string, string>>;
-            };
-            evidenceIds?: string[];
-          }
-        | undefined;
-      const companyLayer = article.companyLayer as
-        | { narrative?: string; evidenceIds?: string[] }
-        | undefined;
-      const conclusion = article.conclusion as
-        | {
-            summary?: string;
-            risks?: Array<{ risk?: string; explanation?: string }>;
-            evidenceIds?: string[];
-          }
-        | undefined;
-
-      if (coreThesis?.thesis) {
+      // ── Core Thesis ─────────────────────────────────────────────────────
+      if (article.coreThesis.thesis) {
         newBlocks.push(
           createNoteBlock("heading", generateId, `${query} 分析报告`),
         );
         newBlocks.push(
-          createNoteBlock("paragraph", generateId, coreThesis.thesis),
+          createNoteBlock("paragraph", generateId, article.coreThesis.thesis),
         );
+        if (article.coreThesis.keyDriver) {
+          newBlocks.push(
+            createNoteBlock(
+              "callout",
+              generateId,
+              `关键驱动: ${article.coreThesis.keyDriver}`,
+            ),
+          );
+        }
+        if (article.coreThesis.evidenceIds.length > 0) {
+          newBlocks.push(
+            createNoteBlock(
+              "callout",
+              generateId,
+              `📎 证据: ${article.coreThesis.evidenceIds.join(", ")}`,
+            ),
+          );
+        }
       }
 
-      if (industryChain?.narrative) {
+      // ── Industry Chain ───────────────────────────────────────────────────
+      if (article.industryChain.narrative) {
         newBlocks.push(createNoteBlock("heading", generateId, "产业链"));
         newBlocks.push(
-          createNoteBlock("paragraph", generateId, industryChain.narrative),
+          createNoteBlock(
+            "paragraph",
+            generateId,
+            article.industryChain.narrative,
+          ),
         );
-        // Preserve full visual — render mermaid diagram, chart, or matrix
-        const icVisual = industryChain.visual as ArticleVisual | undefined;
-        if (icVisual && icVisual.kind !== "empty") {
-          const visualText = formatVisual(icVisual);
-          if (visualText) {
-            newBlocks.push(createNoteBlock("callout", generateId, visualText));
-          }
+        // Store structured visual — rendered as chart/table/mermaid
+        if (article.industryChain.visual.kind !== "empty") {
+          newBlocks.push({
+            id: generateId(),
+            type: "visual",
+            text: article.industryChain.visual.title,
+            data: article.industryChain.visual,
+          });
+        }
+        if (article.industryChain.evidenceIds.length > 0) {
+          newBlocks.push(
+            createNoteBlock(
+              "callout",
+              generateId,
+              `📎 证据: ${article.industryChain.evidenceIds.join(", ")}`,
+            ),
+          );
         }
       }
 
-      if (evidenceMatrix?.narrative) {
+      // ── Evidence Matrix ──────────────────────────────────────────────────
+      if (article.evidenceMatrix.narrative) {
         newBlocks.push(createNoteBlock("heading", generateId, "关键数据"));
         newBlocks.push(
-          createNoteBlock("paragraph", generateId, evidenceMatrix.narrative),
+          createNoteBlock(
+            "paragraph",
+            generateId,
+            article.evidenceMatrix.narrative,
+          ),
         );
-        // Preserve full visual — render all rows, charts, diagrams
-        const emVisual = evidenceMatrix.visual as ArticleVisual | undefined;
-        if (emVisual && emVisual.kind !== "empty") {
-          const visualText = formatVisual(emVisual);
-          if (visualText) {
-            newBlocks.push(createNoteBlock("quote", generateId, visualText));
-          }
+        if (article.evidenceMatrix.visual.kind !== "empty") {
+          newBlocks.push({
+            id: generateId(),
+            type: "visual",
+            text: article.evidenceMatrix.visual.title,
+            data: article.evidenceMatrix.visual,
+          });
+        }
+        if (article.evidenceMatrix.evidenceIds.length > 0) {
+          newBlocks.push(
+            createNoteBlock(
+              "callout",
+              generateId,
+              `📎 证据: ${article.evidenceMatrix.evidenceIds.join(", ")}`,
+            ),
+          );
         }
       }
 
-      if (companyLayer?.narrative) {
+      // ── Company Layer ────────────────────────────────────────────────────
+      if (article.companyLayer.narrative) {
+        newBlocks.push(createNoteBlock("heading", generateId, "公司层"));
         newBlocks.push(
-          createNoteBlock("callout", generateId, companyLayer.narrative),
+          createNoteBlock(
+            "paragraph",
+            generateId,
+            article.companyLayer.narrative,
+          ),
         );
+        if (
+          article.companyLayer.visual &&
+          article.companyLayer.visual.kind !== "empty"
+        ) {
+          newBlocks.push({
+            id: generateId(),
+            type: "visual",
+            text: article.companyLayer.visual.title,
+            data: article.companyLayer.visual,
+          });
+        }
+        if (article.companyLayer.evidenceIds.length > 0) {
+          newBlocks.push(
+            createNoteBlock(
+              "callout",
+              generateId,
+              `📎 证据: ${article.companyLayer.evidenceIds.join(", ")}`,
+            ),
+          );
+        }
       }
 
-      if (conclusion?.summary) {
+      // ── Conclusion ───────────────────────────────────────────────────────
+      if (article.conclusion.summary) {
         newBlocks.push(createNoteBlock("heading", generateId, "结论"));
         newBlocks.push(
-          createNoteBlock("paragraph", generateId, conclusion.summary),
+          createNoteBlock("paragraph", generateId, article.conclusion.summary),
         );
-        // Preserve risk factors
-        if (conclusion.risks?.length) {
-          const riskText = conclusion.risks
+        // Risk factors
+        if (article.conclusion.risks.length > 0) {
+          const riskText = article.conclusion.risks
             .map(
               (r) => `⚠️ ${r.risk}${r.explanation ? `: ${r.explanation}` : ""}`,
             )
@@ -472,48 +458,50 @@ export function NoteBlockEditor({
           newBlocks.push(createNoteBlock("heading", generateId, "风险提示"));
           newBlocks.push(createNoteBlock("paragraph", generateId, riskText));
         }
-      }
-
-      // Preserve full evidence attribution — IDs, URLs, confidence,
-      // source, and date. Nothing is silently dropped.
-      const evidenceList = article.evidence;
-      if (evidenceList?.length) {
-        newBlocks.push(createNoteBlock("heading", generateId, "证据来源"));
-        for (const ev of evidenceList) {
-          const parts: string[] = [];
-          if (ev.id) parts.push(`[${ev.id}]`);
-          if (ev.claim) parts.push(ev.claim);
-          if (ev.source) parts.push(`来源: ${ev.source}`);
-          if (ev.date) parts.push(ev.date);
-          if (ev.confidence) {
-            const confLabel =
-              ev.confidence === "verified"
-                ? "✓ 已验证"
-                : ev.confidence === "partial"
-                  ? "◐ 部分验证"
-                  : "? 未验证";
-            parts.push(confLabel);
-          }
-          if (ev.url) parts.push(ev.url);
-          const label = parts.join(" · ");
-          if (label) {
+        // Invalidation conditions — previously dropped, now preserved
+        if (article.conclusion.invalidationConditions.length > 0) {
+          newBlocks.push(createNoteBlock("heading", generateId, "失效条件"));
+          for (const ic of article.conclusion.invalidationConditions) {
+            const parts: string[] = [ic.condition];
+            if (ic.metric) parts.push(`指标: ${ic.metric}`);
+            if (ic.threshold) parts.push(`阈值: ${ic.threshold}`);
             newBlocks.push(
-              createNoteBlock("callout", generateId, `📎 ${label}`),
+              createNoteBlock("paragraph", generateId, parts.join(" · ")),
             );
           }
         }
+        if (article.conclusion.evidenceIds.length > 0) {
+          newBlocks.push(
+            createNoteBlock(
+              "callout",
+              generateId,
+              `📎 证据: ${article.conclusion.evidenceIds.join(", ")}`,
+            ),
+          );
+        }
       }
 
-      // Preserve chart/period data from the article if present.
-      const periods = article.periods as
-        | Array<{ period?: string; value?: string }>
-        | undefined;
-      if (periods?.length) {
-        newBlocks.push(createNoteBlock("heading", generateId, "关键周期"));
-        const periodText = periods
-          .map((p) => `${p.period ?? "—"}: ${p.value ?? "—"}`)
-          .join("\n");
-        newBlocks.push(createNoteBlock("quote", generateId, periodText));
+      // ── Evidence Attribution ─────────────────────────────────────────────
+      if (article.evidence.length > 0) {
+        newBlocks.push(createNoteBlock("heading", generateId, "证据来源"));
+        for (const ev of article.evidence) {
+          const parts: string[] = [];
+          parts.push(`[${ev.id}]`);
+          parts.push(ev.claim);
+          parts.push(`来源: ${ev.source}`);
+          parts.push(ev.date);
+          const confLabel =
+            ev.confidence === "verified"
+              ? "✓ 已验证"
+              : ev.confidence === "partial"
+                ? "◐ 部分验证"
+                : "? 未验证";
+          parts.push(confLabel);
+          if (ev.url) parts.push(ev.url);
+          newBlocks.push(
+            createNoteBlock("callout", generateId, `📎 ${parts.join(" · ")}`),
+          );
+        }
       }
 
       if (newBlocks.length === 0) {
@@ -605,6 +593,20 @@ export function NoteBlockEditor({
       ) : (
         <div className="space-y-1">
           {blocks.map((block, index) => {
+            // Visual blocks: render structured chart/table/mermaid data
+            if (block.type === "visual") {
+              return (
+                <div key={block.id} className="group relative">
+                  <div className="flex items-start gap-2 rounded-md border border-blue-200/60 bg-blue-50/30 px-2 py-1 dark:border-blue-900/40 dark:bg-blue-950/10">
+                    <Sparkles className="text-muted-foreground/60 mt-2 size-3.5 shrink-0" />
+                    <div className="min-w-0 flex-1 overflow-auto">
+                      <VisualBlockRenderer visual={block.data} />
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             const menu = menuForIndex(index);
             const Icon = BLOCK_ICON[block.type] ?? Type;
             const isPlaceholder =
