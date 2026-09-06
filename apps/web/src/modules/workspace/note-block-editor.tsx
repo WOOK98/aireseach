@@ -40,14 +40,13 @@ import { patchNote } from "~/modules/notes/use-notes";
 import {
   applySlashCommand,
   blocksEqual,
-  filterSlashCommands,
   insertBlockAfter,
+  menuForIndex,
   removeBlockAt,
+  resolveKeyDispatch,
   slashArg,
-  slashQuery,
   toBlocksPayload,
   updateBlockAt,
-  type SlashCommand,
 } from "~/modules/workspace/note-block-model";
 import { SaveStatusIndicator } from "~/modules/workspace/save-status";
 import { useAutoSave } from "~/modules/workspace/use-auto-save";
@@ -151,14 +150,7 @@ export function NoteBlockEditor({
     setFocusRequest(null);
   }, [focusRequest, blocks.length]);
 
-  const menuForIndex = (index: number): SlashCommand[] | null => {
-    const block = blocks[index];
-    if (!block) return null;
-    const q = slashQuery(block.text);
-    if (q === null) return null;
-    const matches = filterSlashCommands(q);
-    return matches.length > 0 ? matches : null;
-  };
+  const menuAt = (index: number) => menuForIndex(blocks, index);
 
   function mutate(
     index: number,
@@ -168,66 +160,59 @@ export function NoteBlockEditor({
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>, index: number) {
-    const menu = menuForIndex(index);
+    const result = resolveKeyDispatch(blocks, index, {
+      key: e.key,
+      isComposing: e.nativeEvent.isComposing,
+      shiftKey: e.shiftKey,
+      menuIndex,
+    });
 
-    // Guard IME composition before any menu handling — composition
-    // confirmation while the menu is open must not execute a command.
-    if (e.nativeEvent.isComposing) return;
+    if (!result) return; // not handled — let typing proceed
 
-    if (menu) {
-      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-        e.preventDefault();
+    // IME guard and "let typing filter" cases
+    if (result.action === "ime-guard") return;
+
+    // Prevent default for all handled actions
+    e.preventDefault();
+
+    switch (result.action) {
+      case "menu-nav":
         setMenuIndex(
           (m) =>
-            (m + (e.key === "ArrowDown" ? 1 : menu.length - 1)) % menu.length,
+            (m +
+              (result.direction === "down" ? 1 : menuAt(index)!.length - 1)) %
+            menuAt(index)!.length,
         );
-        return;
-      }
-      if (e.key === "Enter") {
-        e.preventDefault();
-        const cmd = menu[Math.min(menuIndex, menu.length - 1)]!;
-        if (cmd.action === "analyze") {
-          void handleAnalyze(index, blocks[index]?.text ?? "");
-        } else {
-          setBlocks((prev) => applySlashCommand(prev, index, cmd));
-        }
+        break;
+      case "analyze":
+        void handleAnalyze(index, result.analyzeText);
         setMenuIndex(0);
-        return;
-      }
-      if (e.key === "Escape") {
-        e.preventDefault();
+        break;
+      case "apply":
+        setBlocks((_prev) => result.blocks);
+        setMenuIndex(0);
+        break;
+      case "dismiss":
         mutate(index, { text: "" });
         setMenuIndex(0);
-        return;
-      }
-      return; // while the menu is open, let typing filter it
-    }
-
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-      e.preventDefault();
-      setBlocks((prev) => {
-        const result = insertBlockAfter(prev, index, "paragraph", generateId);
-        setFocusRequest(result.focusIndex);
-        return result.blocks;
-      });
-      return;
-    }
-
-    if (e.key === "Escape") {
-      (e.target as HTMLTextAreaElement).blur();
-      return;
-    }
-
-    if (e.key === "Backspace") {
-      const block = blocks[index];
-      if (block && block.text === "" && blocks.length > 0) {
-        e.preventDefault();
+        break;
+      case "insert":
         setBlocks((prev) => {
-          const result = removeBlockAt(prev, index);
-          if (result.focusIndex >= 0) setFocusRequest(result.focusIndex);
-          return result.blocks;
+          const r = insertBlockAfter(prev, index, "paragraph", generateId);
+          setFocusRequest(r.focusIndex);
+          return r.blocks;
         });
-      }
+        break;
+      case "blur":
+        (e.target as HTMLTextAreaElement).blur();
+        break;
+      case "backspace-empty":
+        setBlocks((prev) => {
+          const r = removeBlockAt(prev, index);
+          if (r.focusIndex >= 0) setFocusRequest(r.focusIndex);
+          return r.blocks;
+        });
+        break;
     }
   }
 
@@ -607,7 +592,7 @@ export function NoteBlockEditor({
               );
             }
 
-            const menu = menuForIndex(index);
+            const menu = menuAt(index);
             const Icon = BLOCK_ICON[block.type] ?? Type;
             const isPlaceholder =
               block.type === "evidence_placeholder" ||
