@@ -12,7 +12,12 @@
  * - Object URLs are revoked when no longer needed.
  */
 
-import { getOwnerId, trackObjectUrl } from "../../lib/storage/owner-id";
+import {
+  getOwnerId,
+  isStaleGeneration,
+  snapshotGeneration,
+  trackObjectUrl,
+} from "../../lib/storage/owner-id";
 
 const DB_NAME_PREFIX = "airesearch_local_pdfs_";
 const DB_VERSION = 1;
@@ -89,7 +94,10 @@ export async function deletePdfBlob(id: string): Promise<void> {
 export async function createLocalPdfObjectUrl(
   id: string,
 ): Promise<string | null> {
+  const gen = snapshotGeneration();
   const blob = await getPdfBlob(id);
+  // Reject stale results: the owner changed during the async gap.
+  if (isStaleGeneration(gen)) return null;
   if (!blob) return null;
   const url = URL.createObjectURL(blob);
   trackObjectUrl(url);

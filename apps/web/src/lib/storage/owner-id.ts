@@ -15,6 +15,10 @@
 
 let currentOwnerId: string | null = null;
 
+/** Monotonic generation counter. Incremented on every setOwnerId/clearOwnerId
+ *  call so async operations can detect stale results after an owner switch. */
+let ownerGeneration = 0;
+
 /** Object URLs created during this owner session. */
 const activeObjectUrls: Set<string> = new Set();
 
@@ -24,7 +28,14 @@ const activeObjectUrls: Set<string> = new Set();
  */
 export function setOwnerId(id: string): void {
   if (!id) return;
+  // Idempotent: same owner re-set does NOT bump generation.
+  // Prevents unnecessary invalidation of legitimate in-flight reads
+  // when the auth session object changes but the user is the same.
+  if (currentOwnerId === id) return;
+  // Implicit clear of old state (URLs, etc.) before setting new owner.
+  revokeActiveUrls();
   currentOwnerId = id;
+  ownerGeneration++;
 }
 
 /**
@@ -37,8 +48,14 @@ export function setOwnerId(id: string): void {
  * so the owner can re-access their offline PDFs after re-login.
  */
 export function clearOwnerId(): void {
+  if (currentOwnerId === null) return; // idempotent
   currentOwnerId = null;
-  // Revoke all object URLs created during this session.
+  ownerGeneration++;
+  revokeActiveUrls();
+}
+
+/** Revoke all tracked object URLs. Called internally on owner transitions. */
+function revokeActiveUrls(): void {
   for (const url of activeObjectUrls) {
     try {
       URL.revokeObjectURL(url);
@@ -83,4 +100,20 @@ export function trackObjectUrl(url: string): void {
  */
 export function untrackObjectUrl(url: string): void {
   activeObjectUrls.delete(url);
+}
+
+/**
+ * Snapshot the current owner generation. Pass the returned value to
+ * `isStaleGeneration()` after an async gap to detect owner switches.
+ */
+export function snapshotGeneration(): number {
+  return ownerGeneration;
+}
+
+/**
+ * Check whether the owner changed since the given snapshot.
+ * Returns true if the owner switched (or was cleared) during an async gap.
+ */
+export function isStaleGeneration(snapshot: number): boolean {
+  return ownerGeneration !== snapshot;
 }
