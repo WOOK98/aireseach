@@ -1,0 +1,7 @@
+interface:
+  display_name: "OpenClaw Coordinator"
+  short_description: "Route OpenClaw work and review PR evidence."
+  default_prompt: "Use $openclaw-coordinator to route an airesearch task to OpenClaw and define the PR evidence gate."
+
+policy:
+  allow_implicit_invocation: true
