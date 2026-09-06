@@ -76,17 +76,37 @@ async function fetchNotes(query: {
   q?: string;
   ticker?: string;
 }): Promise<NoteListItem[]> {
+  // Merge local notes first (offline-created notes).
+  const { listLocalNotes } = await import("~/modules/notes/local-notes");
+  const localNotes = listLocalNotes();
+
   const params = new URLSearchParams();
   if (query.q) params.set("q", query.q);
   if (query.ticker) params.set("ticker", query.ticker);
   const suffix = params.size > 0 ? `?${params.toString()}` : "";
   const res = await fetch(`/api/notes${suffix}`);
-  if (!res.ok) throw new Error(await readError(res));
+  if (!res.ok) {
+    // Server unavailable — return local notes only.
+    return localNotes;
+  }
   const data = (await res.json()) as { notes: NoteListItem[] };
-  return data.notes;
+  // Merge: server notes first, then local-only notes not yet synced.
+  const serverIds = new Set(data.notes.map((n) => n.id));
+  const merged = [
+    ...data.notes,
+    ...localNotes.filter((n) => !serverIds.has(n.id)),
+  ];
+  return merged;
 }
 
 async function fetchNote(id: string): Promise<NoteDetail> {
+  // Local notes are served from localStorage.
+  if (id.startsWith("local_note_")) {
+    const { getLocalNote } = await import("~/modules/notes/local-notes");
+    const local = getLocalNote(id);
+    if (local) return local;
+    throw new Error("Local note not found.");
+  }
   const res = await fetch(`/api/notes/${encodeURIComponent(id)}`);
   if (!res.ok) throw new Error(await readError(res));
   const data = (await res.json()) as { note: NoteDetail };
@@ -108,6 +128,13 @@ export async function patchNote(
   id: string,
   patch: PatchNoteInput,
 ): Promise<NoteDetail> {
+  // Local notes are patched in localStorage.
+  if (id.startsWith("local_note_")) {
+    const { updateLocalNote } = await import("~/modules/notes/local-notes");
+    const updated = updateLocalNote(id, patch);
+    if (updated) return updated;
+    throw new Error("Local note not found.");
+  }
   const res = await fetch(`/api/notes/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },

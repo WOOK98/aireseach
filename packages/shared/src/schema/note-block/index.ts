@@ -18,6 +18,8 @@
 
 import { z } from "zod";
 
+import { articleVisualSchema } from "../article";
+
 export const NOTE_BLOCK_TYPES = [
   "paragraph",
   "heading",
@@ -26,6 +28,7 @@ export const NOTE_BLOCK_TYPES = [
   "callout",
   "evidence_placeholder",
   "live_placeholder",
+  "visual",
 ] as const;
 export type NoteBlockType = (typeof NOTE_BLOCK_TYPES)[number];
 
@@ -72,6 +75,13 @@ export const noteBlockSchema = z.discriminatedUnion("type", [
     type: z.literal("live_placeholder"),
     text: blockText,
   }),
+  // Structured visual block: stores validated ArticleVisual data.
+  // Renders charts, matrices, and mermaid diagrams instead of plain text.
+  noteBlockBase.extend({
+    type: z.literal("visual"),
+    text: blockText,
+    data: articleVisualSchema,
+  }),
 ]);
 export type NoteBlock = z.infer<typeof noteBlockSchema>;
 
@@ -104,6 +114,16 @@ export function createNoteBlock(
       return { ...base, type, level: 2 };
     case "checklist":
       return { ...base, type, checked: false };
+    case "visual":
+      return {
+        ...base,
+        type,
+        data: {
+          kind: "empty",
+          title: "占位",
+          reason: "等待分析结果",
+        },
+      };
     default:
       return { ...base, type };
   }

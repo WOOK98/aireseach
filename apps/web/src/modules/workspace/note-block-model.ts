@@ -30,6 +30,8 @@ export interface SlashCommand {
   label: string;
   description: string;
   blockType: NoteBlockType;
+  /** If set, this command triggers an action instead of block type change. */
+  action?: "analyze";
 }
 
 export const SLASH_COMMANDS: SlashCommand[] = [
@@ -64,16 +66,11 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     blockType: "callout",
   },
   {
-    command: "evidence",
-    label: "证据占位",
-    description: "标记待插入的证据 — 从右栏插入真实证据",
-    blockType: "evidence_placeholder",
-  },
-  {
-    command: "live",
-    label: "Live 块占位",
-    description: "标记待插入的 Live 证据块 — 在下方 Live 区添加",
-    blockType: "live_placeholder",
+    command: "分析",
+    label: "分析",
+    description: "输入 ticker 或主题，生成分析插入正文",
+    blockType: "paragraph",
+    action: "analyze",
   },
 ];
 
@@ -85,13 +82,21 @@ export function filterSlashCommands(query: string): SlashCommand[] {
 }
 
 /**
- * A block is in "slash mode" while its text is a single `/query` token
- * (starts with `/`, no whitespace). Returns the query or null.
+ * A block is in "slash mode" while its text starts with `/`.
+ * Returns the query string (everything after `/`), or null.
+ * Supports both `/cmd` and `/cmd arg` patterns.
  */
 export function slashQuery(text: string): string | null {
   if (!text.startsWith("/")) return null;
-  const q = text.slice(1);
-  return /\s/.test(q) ? null : q;
+  return text.slice(1) || null;
+}
+
+/** Extract the argument from a slash command like `/分析 TSLA` → `TSLA`. */
+export function slashArg(text: string): string | null {
+  const q = slashQuery(text);
+  if (!q) return null;
+  const spaceIdx = q.indexOf(" ");
+  return spaceIdx > 0 ? q.slice(spaceIdx + 1).trim() : null;
 }
 
 // ── Block list operations ───────────────────────────────────────────────────
