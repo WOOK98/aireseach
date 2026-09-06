@@ -157,9 +157,7 @@ async function postNote(input: SaveNoteInput): Promise<NoteDetail> {
         // #197: API unavailable — save locally.
         return createLocalNote({
           title: input.title,
-          article: input.article.kind === "research-article"
-            ? input.article
-            : { kind: "research-article", sections: {} },
+          article: input.article,
         });
       }
       throw new Error(await readError(res));
@@ -171,9 +169,7 @@ async function postNote(input: SaveNoteInput): Promise<NoteDetail> {
     if (err instanceof TypeError) {
       return createLocalNote({
         title: input.title,
-        article: input.article.kind === "research-article"
-          ? input.article
-          : { kind: "research-article", sections: {} },
+        article: input.article,
       });
     }
     throw err;
