@@ -38,9 +38,9 @@ describe("slash commands", () => {
   });
 
   it("filters by latin token, case-insensitive", () => {
-    const matches = filterSlashCommands("EVI");
+    const matches = filterSlashCommands("tex");
     expect(matches).toHaveLength(1);
-    expect(matches[0]!.blockType).toBe("evidence_placeholder");
+    expect(matches[0]!.blockType).toBe("paragraph");
   });
 
   it("detects slash mode only for a single /query token", () => {
