@@ -11,13 +11,30 @@ import { generateId } from "@workspace/shared/utils";
 
 import type { NoteDetail, NoteListItem, PatchNoteInput } from "./use-notes";
 
-const STORAGE_KEY = "airesearch_local_notes";
+const STORAGE_PREFIX = "workspace:localNotes:";
+
+function getStorageKey(): string {
+  // Try to get userId from the page or use a fallback.
+  // The workspace shell binds the user ID on mount.
+  try {
+    const stored = localStorage.getItem("__airesearch_user_id");
+    if (stored) return STORAGE_PREFIX + stored;
+  } catch {}
+  // Fallback: scan for existing user-scoped keys
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_PREFIX)) return key;
+    }
+  } catch {}
+  return STORAGE_PREFIX + "default";
+}
 
 // ── Storage helpers ─────────────────────────────────────────────────────────
 
 function readAll(): NoteDetail[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey());
     return raw ? (JSON.parse(raw) as NoteDetail[]) : [];
   } catch {
     return [];
@@ -26,7 +43,7 @@ function readAll(): NoteDetail[] {
 
 function writeAll(notes: NoteDetail[]) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+    localStorage.setItem(getStorageKey(), JSON.stringify(notes));
   } catch {}
 }
 
