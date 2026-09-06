@@ -128,6 +128,7 @@ Object.defineProperty(globalThis, "URL", {
 
 // ── Imports (after mocks) ──────────────────────────────────────────────────
 
+import { clearOwnerId, setOwnerId } from "../../lib/storage/owner-id";
 import { createLocalPdfObjectUrl, getPdfBlob } from "./local-pdf-blobs";
 import {
   createLocalPdf,
@@ -139,11 +140,13 @@ import {
 } from "./local-pdfs";
 
 beforeEach(() => {
+  setOwnerId("test-user-1");
   localStorage.clear();
   idbStore.clear();
 });
 
 afterEach(() => {
+  clearOwnerId();
   localStorage.clear();
   idbStore.clear();
 });
@@ -317,6 +320,112 @@ describe("local-pdfs: isLocalPdf", () => {
   it("identifies local PDF ids", () => {
     expect(isLocalPdf("local_pdf_123_abc")).toBe(true);
     expect(isLocalPdf("remote_id")).toBe(false);
+  });
+});
+
+describe("local-pdfs: owner isolation", () => {
+  it("throws when no owner is set", async () => {
+    clearOwnerId();
+    await expect(
+      createLocalPdf({ fileName: "ghost.pdf", fileSizeBytes: 100 }),
+    ).rejects.toThrow(/no authenticated owner/i);
+    expect(listLocalPdfs()).toHaveLength(0);
+  });
+
+  it("user A's PDFs are invisible to user B", async () => {
+    setOwnerId("user-a");
+    await createLocalPdf({
+      fileName: "A-secret.pdf",
+      fileSizeBytes: 100,
+      ticker: "TSLA",
+    });
+    expect(listLocalPdfs()).toHaveLength(1);
+
+    // User B logs in.
+    clearOwnerId();
+    setOwnerId("user-b");
+    expect(listLocalPdfs()).toHaveLength(0);
+
+    // User B creates their own.
+    await createLocalPdf({ fileName: "B-doc.pdf", fileSizeBytes: 200 });
+    expect(listLocalPdfs()).toHaveLength(1);
+    expect(listLocalPdfs()[0]!.fileName).toBe("B-doc.pdf");
+
+    // User A logs back.
+    clearOwnerId();
+    setOwnerId("user-a");
+    expect(listLocalPdfs()).toHaveLength(1);
+    expect(listLocalPdfs()[0]!.fileName).toBe("A-secret.pdf");
+  });
+});
+
+describe("local-pdfs: lifecycle regression", () => {
+  it("stale localStorage marker does NOT grant authority", async () => {
+    clearOwnerId();
+    localStorage.setItem("__airesearch_user_id", "stale-user-id");
+
+    // getOwnerId must NOT read from localStorage.
+    expect(listLocalPdfs()).toHaveLength(0);
+    await expect(
+      createLocalPdf({ fileName: "ghost.pdf", fileSizeBytes: 100 }),
+    ).rejects.toThrow(/no authenticated owner/i);
+  });
+
+  it("logout does NOT destroy IndexedDB blobs — re-login reads durable data", async () => {
+    // User A uploads a PDF with bytes.
+    setOwnerId("user-a");
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    const file = new File([pdfBytes], "A-secret.pdf", {
+      type: "application/pdf",
+    });
+    const pdf = await createLocalPdf(
+      { fileName: "A-secret.pdf", fileSizeBytes: file.size },
+      file,
+    );
+
+    // Blob is durable.
+    const blobBefore = await getPdfBlob(pdf.id);
+    expect(blobBefore).not.toBeNull();
+
+    // Logout.
+    clearOwnerId();
+
+    // User B must not see A's data.
+    setOwnerId("user-b");
+    expect(listLocalPdfs()).toHaveLength(0);
+
+    // Logout B.
+    clearOwnerId();
+
+    // User A re-logs in — blob bytes still readable (not destroyed by logout).
+    setOwnerId("user-a");
+    const blobAfter = await getPdfBlob(pdf.id);
+    expect(blobAfter).not.toBeNull();
+    expect(blobAfter!.size).toBe(pdfBytes.length);
+
+    // PDF metadata still present.
+    const pdfs = listLocalPdfs();
+    expect(pdfs).toHaveLength(1);
+    expect(pdfs[0]!.fileName).toBe("A-secret.pdf");
+  });
+
+  it("writes fail explicitly until auth layer calls setOwnerId", async () => {
+    clearOwnerId();
+    await expect(
+      createLocalPdf({ fileName: "X.pdf", fileSizeBytes: 100 }),
+    ).rejects.toThrow(/no authenticated owner/i);
+    expect(() => deleteLocalPdf("x")).toThrow(/no authenticated owner/i);
+    expect(() => patchLocalPdf("x", { pageCount: 1 })).toThrow(
+      /no authenticated owner/i,
+    );
+
+    // After auth layer sets owner, writes succeed.
+    setOwnerId("verified-user");
+    const pdf = await createLocalPdf({
+      fileName: "Works.pdf",
+      fileSizeBytes: 100,
+    });
+    expect(pdf.fileName).toBe("Works.pdf");
   });
 });
 

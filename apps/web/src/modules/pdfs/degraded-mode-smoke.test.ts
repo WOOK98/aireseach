@@ -145,6 +145,7 @@ Object.defineProperty(globalThis, "URL", {
 
 // ── Imports (after mocks) ──────────────────────────────────────────────────
 
+import { setOwnerId } from "../../lib/storage/owner-id";
 import {
   createLocalNote,
   getLocalNote,
@@ -167,6 +168,7 @@ import {
 } from "./local-pdfs";
 
 beforeEach(() => {
+  setOwnerId("test-user-1");
   localStorage.clear();
   idbStore.clear();
   createdUrls.length = 0;
