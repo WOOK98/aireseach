@@ -320,6 +320,92 @@ describe("local-pdfs: isLocalPdf", () => {
   });
 });
 
+describe("local-pdfs: user-scoped storage keys", () => {
+  it("uses default key when no user ID is set", async () => {
+    await createLocalPdf({ fileName: "Test.pdf", fileSizeBytes: 100 });
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("airesearch:localPdfs:")) keys.push(key);
+    }
+    expect(keys).toHaveLength(1);
+    expect(keys[0]).toContain("airesearch:localPdfs:");
+  });
+
+  it("uses user-specific key when user ID is set", async () => {
+    localStorage.setItem("__airesearch_user_id", "user_abc");
+    await createLocalPdf({ fileName: "Test.pdf", fileSizeBytes: 100 });
+    const raw = localStorage.getItem("airesearch:localPdfs:user_abc");
+    expect(raw).toBeTruthy();
+    const parsed = JSON.parse(raw!);
+    expect(parsed).toHaveLength(1);
+  });
+
+  it("different users see different PDFs (account isolation)", async () => {
+    localStorage.setItem("__airesearch_user_id", "user_a");
+    await createLocalPdf({ fileName: "A.pdf", fileSizeBytes: 100 });
+
+    localStorage.setItem("__airesearch_user_id", "user_b");
+    expect(listLocalPdfs()).toHaveLength(0);
+    await createLocalPdf({ fileName: "B.pdf", fileSizeBytes: 200 });
+    expect(listLocalPdfs()).toHaveLength(1);
+    expect(listLocalPdfs()[0]!.fileName).toBe("B.pdf");
+
+    localStorage.setItem("__airesearch_user_id", "user_a");
+    expect(listLocalPdfs()).toHaveLength(1);
+    expect(listLocalPdfs()[0]!.fileName).toBe("A.pdf");
+  });
+});
+
+describe("local-pdfs: quota error propagation", () => {
+  it("createLocalPdf throws on quota exceeded", async () => {
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = () => {
+      throw new DOMException("QuotaExceededError", "QuotaExceededError");
+    };
+
+    await expect(
+      createLocalPdf({ fileName: "Fail.pdf", fileSizeBytes: 100 }),
+    ).rejects.toThrow(/QuotaExceededError/);
+
+    localStorage.setItem = originalSetItem;
+  });
+
+  it("deleteLocalPdf throws on quota exceeded", async () => {
+    const pdf = await createLocalPdf({
+      fileName: "Delete.pdf",
+      fileSizeBytes: 100,
+    });
+
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = () => {
+      throw new DOMException("QuotaExceededError", "QuotaExceededError");
+    };
+
+    expect(() => deleteLocalPdf(pdf.id)).toThrow(/QuotaExceededError/);
+
+    localStorage.setItem = originalSetItem;
+  });
+
+  it("patchLocalPdf throws on quota exceeded", async () => {
+    const pdf = await createLocalPdf({
+      fileName: "Patch.pdf",
+      fileSizeBytes: 100,
+    });
+
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = () => {
+      throw new DOMException("QuotaExceededError", "QuotaExceededError");
+    };
+
+    expect(() => patchLocalPdf(pdf.id, { pageCount: 5 })).toThrow(
+      /QuotaExceededError/,
+    );
+
+    localStorage.setItem = originalSetItem;
+  });
+});
+
 describe("local-pdfs: degraded mode acceptance", () => {
   it("create → list → open → reload cycle for TSLA PDF", async () => {
     const pdf = await createLocalPdf({

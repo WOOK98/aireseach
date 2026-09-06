@@ -139,19 +139,21 @@ describe("local-notes: CRUD", () => {
 
   it("deletes a note", () => {
     const note = createLocalNote({ title: "To delete" });
-    expect(deleteLocalNote(note.id)).toBe(true);
+    deleteLocalNote(note.id);
     expect(getLocalNote(note.id)).toBeNull();
     expect(listLocalNotes()).toHaveLength(0);
   });
 
-  it("returns false when deleting non-existent note", () => {
-    expect(deleteLocalNote("local_nonexistent")).toBe(false);
+  it("deleting non-existent note is a no-op", () => {
+    deleteLocalNote("local_note_nonexistent");
+    // No error thrown — just a silent no-op.
+    expect(listLocalNotes()).toHaveLength(0);
   });
 });
 
 describe("local-notes: isLocalNote", () => {
   it("identifies local note ids", () => {
-    expect(isLocalNote("local_123_abc")).toBe(true);
+    expect(isLocalNote("local_note_123_abc")).toBe(true);
     expect(isLocalNote("remote_db_id_123")).toBe(false);
     expect(isLocalNote("")).toBe(false);
   });
