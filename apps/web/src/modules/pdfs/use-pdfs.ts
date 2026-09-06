@@ -141,6 +141,9 @@ async function fetchPdfs(query: {
   q?: string;
   ticker?: string;
 }): Promise<PdfItem[]> {
+  // Collect local PDFs first so we can merge on recovery.
+  const localPdfs = listLocalPdfs(query);
+
   const params = new URLSearchParams();
   if (query.q) params.set("q", query.q);
   if (query.ticker) params.set("ticker", query.ticker);
@@ -150,15 +153,17 @@ async function fetchPdfs(query: {
     if (!res.ok) {
       // #197: API unavailable — fall back to local PDFs.
       if (res.status >= 500) {
-        return listLocalPdfs(query);
+        return localPdfs;
       }
       throw new Error(await readError(res));
     }
     const data = (await res.json()) as { pdfs: PdfItem[] };
-    return data.pdfs;
+    // Merge: server PDFs first, then local-only PDFs not yet synced.
+    const serverIds = new Set(data.pdfs.map((p) => p.id));
+    return [...data.pdfs, ...localPdfs.filter((p) => !serverIds.has(p.id))];
   } catch (err) {
     if (err instanceof TypeError) {
-      return listLocalPdfs(query);
+      return localPdfs;
     }
     throw err;
   }

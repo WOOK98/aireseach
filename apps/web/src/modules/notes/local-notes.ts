@@ -41,10 +41,13 @@ function readAll(): NoteDetail[] {
   }
 }
 
+/**
+ * Write the full note list to localStorage.
+ * THROWS on quota/security errors — callers must handle and surface
+ * the failure to the user instead of reporting false success.
+ */
 function writeAll(notes: NoteDetail[]) {
-  try {
-    localStorage.setItem(getStorageKey(), JSON.stringify(notes));
-  } catch {}
+  localStorage.setItem(getStorageKey(), JSON.stringify(notes));
 }
 
 // ── Public API (matches use-notes.ts expectations) ──────────────────────────

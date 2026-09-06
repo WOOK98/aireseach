@@ -15,7 +15,26 @@ import type {
   AnnotationPayload,
 } from "./use-pdfs";
 
-const STORAGE_KEY = "airesearch_local_annotations";
+const STORAGE_PREFIX = "airesearch:localAnnotations:";
+
+/**
+ * User-scoped storage key. Reads `__airesearch_user_id` bound by the
+ * workspace shell on mount. Falls back to scanning for an existing
+ * user-scoped key, then to "default".
+ */
+function getStorageKey(): string {
+  try {
+    const stored = localStorage.getItem("__airesearch_user_id");
+    if (stored) return STORAGE_PREFIX + stored;
+  } catch {}
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_PREFIX)) return key;
+    }
+  } catch {}
+  return STORAGE_PREFIX + "default";
+}
 
 interface StoredAnnotation {
   id: string;
@@ -34,7 +53,7 @@ function generateId(): string {
 function readAll(): StoredAnnotation[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey());
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -44,13 +63,14 @@ function readAll(): StoredAnnotation[] {
   }
 }
 
+/**
+ * Write the full annotation list to localStorage.
+ * THROWS on quota/security errors — callers must handle and surface
+ * the failure to the user instead of reporting false success.
+ */
 function writeAll(annotations: StoredAnnotation[]): void {
   if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(annotations));
-  } catch {
-    /* quota exceeded */
-  }
+  localStorage.setItem(getStorageKey(), JSON.stringify(annotations));
 }
 
 /** List all annotations for a local PDF. */

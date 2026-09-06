@@ -122,15 +122,14 @@ export function NotesSection() {
       {notesQuery.isLoading ? (
         <NotesSectionSkeleton />
       ) : notesQuery.isError ? (
-        // #197: Not a dead end — show empty state with create action.
-        // The localStorage fallback in useNotes should have returned
-        // local notes. If we're here, both API and local failed.
+        // #197: Not a dead end — but be honest that loading failed.
+        // localStorage fallback should have returned local notes; if we're
+        // here, both API and local storage failed.
         <div className="rounded-xl border border-dashed px-4 py-12 text-center">
           <FileText className="text-muted-foreground mx-auto h-8 w-8" />
-          <p className="mt-3 text-sm font-medium">No research notes yet</p>
+          <p className="mt-3 text-sm font-medium">无法加载笔记</p>
           <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-xs leading-relaxed">
-            Create a note to start your research. Notes are saved locally and
-            sync when the server is available.
+            本地存储不可用，请检查浏览器设置后重试。你仍可以创建新笔记。
           </p>
           <Button size="sm" className="mt-4 gap-1.5" onClick={handleCreateNote}>
             <Plus className="size-3.5" />
