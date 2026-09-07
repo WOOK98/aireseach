@@ -221,6 +221,23 @@ export const resolveEntity = async (
       return resolveFromCandidate(query, exactTickerCandidate);
     }
 
+    // Yahoo APIs unreachable but query looks like a valid ticker —
+    // construct a minimal resolved entity so downstream can still generate.
+    if (candidates.length === 0 && isLikelyTicker(query)) {
+      return {
+        ok: true,
+        mode: "ticker",
+        input: query,
+        ticker,
+        companyName: ticker,
+        exchange: "",
+        quoteType: "EQUITY",
+        price: null,
+        currency: null,
+        entityLock: `ENTITY: ${ticker} - ${ticker}`,
+      };
+    }
+
     return {
       ok: false,
       mode: "clarify",
