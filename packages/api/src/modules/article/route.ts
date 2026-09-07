@@ -342,20 +342,30 @@ articleRoute.post(
   async (c) => {
     const { query } = c.req.valid("json");
 
-    // 1. Resolve entity
+    // 1. Resolve entity + fetch data sources in parallel
     const resolution = await cachedResolveEntity(query);
     let financials: FinancialMetrics | null = null;
     let industryData = "";
 
-    if (resolution.ok && resolution.mode === "ticker") {
-      try {
-        const raw = await cachedFetchYahooFinance(resolution.ticker);
-        const { metrics } = sanitizeFinancialMetrics(raw);
-        financials = metrics;
-      } catch {
-        // Financials unavailable
-      }
-    } else if (!resolution.ok && resolution.mode === "industry") {
+    // Parallel: Yahoo Finance + IMA knowledge (independent, don't block each other)
+    const symbol = resolution.ok ? resolution.ticker : query;
+    const [yahooResult, imaKnowledge] = await Promise.allSettled([
+      resolution.ok && resolution.mode === "ticker"
+        ? cachedFetchYahooFinance(resolution.ticker).then((raw) => {
+            const { metrics } = sanitizeFinancialMetrics(raw);
+            return metrics;
+          })
+        : Promise.resolve(null),
+      searchImaKnowledge(symbol, {
+        limit: 6,
+      }),
+    ]);
+
+    if (yahooResult.status === "fulfilled" && yahooResult.value) {
+      financials = yahooResult.value;
+    }
+
+    if (!resolution.ok && resolution.mode === "industry") {
       try {
         const baseUniverse = await buildIndustryUniverse(
           query,
@@ -377,13 +387,10 @@ articleRoute.post(
       }
     }
 
-    // 2. IMA knowledge
-    const symbol = resolution.ok ? resolution.ticker : query;
-    const imaKnowledge = await searchImaKnowledge(symbol, {
-      limit: 6,
-      market: symbol.match(/^\d{6}$/) ? "a-stocks" : "us-stocks",
-    });
-    const imaContext = formatImaKnowledgeForPrompt(imaKnowledge);
+    // 2. Format IMA knowledge
+    const imaHits =
+      imaKnowledge.status === "fulfilled" ? imaKnowledge.value : [];
+    const imaContext = formatImaKnowledgeForPrompt(imaHits);
 
     // 3. Data gate: require at least one verified input
     const spine = buildInputSpine(financials, industryData, imaContext);
