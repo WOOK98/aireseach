@@ -347,7 +347,7 @@ articleRoute.post(
     let financials: FinancialMetrics | null = null;
     let industryData = "";
 
-    // Parallel: Yahoo Finance + IMA knowledge (independent, don't block each other)
+    // Parallel: market data + IMA knowledge (independent, don't block each other)
     const symbol = resolution.ok ? resolution.ticker : query;
     const [yahooResult, imaKnowledge] = await Promise.allSettled([
       resolution.ok && resolution.mode === "ticker"
