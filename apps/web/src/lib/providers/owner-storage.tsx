@@ -55,13 +55,13 @@ export const OwnerStorageProvider = ({
           setOwnerId(userId);
           // A→B transition or first set with a previous owner: flush stale caches.
           if (currentOwner !== null) {
-             queryClient.removeQueries();
+            queryClient.removeQueries();
           }
         }
       } else {
         if (currentOwner !== null) {
           clearOwnerId();
-           queryClient.removeQueries();
+          queryClient.removeQueries();
         }
       }
     },
@@ -81,7 +81,7 @@ export const OwnerStorageProvider = ({
       const currentOwner = getOwnerId();
       if (currentOwner !== null) {
         clearOwnerId();
-         queryClient.removeQueries();
+        queryClient.removeQueries();
       }
       prevOwnerRef.current = null;
       setReady(true);
