@@ -6,35 +6,38 @@
  * Notes with `local_note_` prefix IDs are stored entirely client-side.
  * The API hooks in use-notes.ts fall back to these when the server is
  * unavailable, and merge them with server notes on successful fetches.
+ *
+ * OWNER ISOLATION: requires `setOwnerId()` from @/lib/storage/owner-id
+ * to be called before any storage operations. When no owner is set,
+ * reads return empty and writes are no-ops.
  */
 import { generateId } from "@workspace/shared/utils";
+
+import { getOwnerId, isOwnerReady } from "../../lib/storage/owner-id";
 
 import type { NoteDetail, NoteListItem, PatchNoteInput } from "./use-notes";
 
 const STORAGE_PREFIX = "workspace:localNotes:";
 
-function getStorageKey(): string {
-  // Try to get userId from the page or use a fallback.
-  // The workspace shell binds the user ID on mount.
-  try {
-    const stored = localStorage.getItem("__airesearch_user_id");
-    if (stored) return STORAGE_PREFIX + stored;
-  } catch {}
-  // Fallback: scan for existing user-scoped keys
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(STORAGE_PREFIX)) return key;
-    }
-  } catch {}
-  return STORAGE_PREFIX + "default";
+/**
+ * User-scoped storage key. Returns null when no owner is set,
+ * which makes reads return empty and writes no-op.
+ *
+ * NEVER scans localStorage for other users' keys.
+ */
+function getStorageKey(): string | null {
+  const ownerId = getOwnerId();
+  if (!ownerId) return null;
+  return STORAGE_PREFIX + ownerId;
 }
 
 // ── Storage helpers ─────────────────────────────────────────────────────────
 
 function readAll(): NoteDetail[] {
+  const key = getStorageKey();
+  if (!key) return [];
   try {
-    const raw = localStorage.getItem(getStorageKey());
+    const raw = localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as NoteDetail[]) : [];
   } catch {
     return [];
@@ -43,11 +46,19 @@ function readAll(): NoteDetail[] {
 
 /**
  * Write the full note list to localStorage.
- * THROWS on quota/security errors — callers must handle and surface
- * the failure to the user instead of reporting false success.
+ * THROWS when no owner is set (unauthenticated write) or on
+ * quota/security errors — callers must handle and surface the failure
+ * to the user instead of reporting false success.
  */
 function writeAll(notes: NoteDetail[]) {
-  localStorage.setItem(getStorageKey(), JSON.stringify(notes));
+  const key = getStorageKey();
+  if (!key) {
+    throw new Error(
+      "Cannot write notes: no authenticated owner. " +
+        "Storage writes require a verified session.",
+    );
+  }
+  localStorage.setItem(key, JSON.stringify(notes));
 }
 
 // ── Public API (matches use-notes.ts expectations) ──────────────────────────
@@ -99,6 +110,18 @@ export function getLocalNote(id: string): NoteDetail | null {
   return notes.find((n) => n.id === id) ?? null;
 }
 
+/**
+ * Check that an owner is set before a mutation.
+ * Throws a clear error so the UI can surface it.
+ */
+function requireOwner(): void {
+  if (!isOwnerReady()) {
+    throw new Error(
+      "No authenticated owner — cannot create or modify local notes.",
+    );
+  }
+}
+
 export function createLocalNote(input: {
   title: string;
   article?: NoteDetail["artifact"];
@@ -106,6 +129,7 @@ export function createLocalNote(input: {
   entityName?: string;
   summary?: string;
 }): NoteDetail & { _local: true } {
+  requireOwner();
   const now = new Date().toISOString();
   const ticker = input.entityTicker ? input.entityTicker.toUpperCase() : null;
   const artifact = input.article ?? {
@@ -184,6 +208,7 @@ export function updateLocalNote(
   id: string,
   patch: PatchNoteInput,
 ): NoteDetail | null {
+  requireOwner();
   const notes = readAll();
   const idx = notes.findIndex((n) => n.id === id);
   if (idx < 0) return null;
@@ -203,6 +228,7 @@ export function updateLocalNote(
 }
 
 export function deleteLocalNote(id: string) {
+  requireOwner();
   const notes = readAll().filter((n) => n.id !== id);
   writeAll(notes);
 }

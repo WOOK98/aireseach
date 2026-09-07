@@ -6,6 +6,7 @@ import { I18nProvider } from "@workspace/i18n";
 import { appConfig } from "~/config/app";
 import { QueryClientProvider } from "~/lib/query/client";
 
+import { OwnerStorageProvider } from "./owner-storage";
 import { ThemeProvider } from "./theme";
 
 // Lazy-load non-critical providers to reduce initial JS bundle
@@ -28,17 +29,19 @@ export const Providers = memo<ProvidersProps>(({ children, locale }) => {
   return (
     <I18nProvider locale={locale} defaultLocale={appConfig.locale}>
       <QueryClientProvider>
-        <ThemeProvider>
-          <Suspense fallback={null}>
-            <NuqsAdapter>
-              <LazyAnalyticsProvider>
-                <LazyMonitoringProvider>
-                  <LazyMotionProvider>{children}</LazyMotionProvider>
-                </LazyMonitoringProvider>
-              </LazyAnalyticsProvider>
-            </NuqsAdapter>
-          </Suspense>
-        </ThemeProvider>
+        <OwnerStorageProvider>
+          <ThemeProvider>
+            <Suspense fallback={null}>
+              <NuqsAdapter>
+                <LazyAnalyticsProvider>
+                  <LazyMonitoringProvider>
+                    <LazyMotionProvider>{children}</LazyMotionProvider>
+                  </LazyMonitoringProvider>
+                </LazyAnalyticsProvider>
+              </NuqsAdapter>
+            </Suspense>
+          </ThemeProvider>
+        </OwnerStorageProvider>
       </QueryClientProvider>
     </I18nProvider>
   );

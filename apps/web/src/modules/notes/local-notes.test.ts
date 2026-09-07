@@ -5,7 +5,7 @@
  * read, updated, and deleted in localStorage. This test would fail
  * on the pre-#197 codebase where API failure showed a dead-end alert.
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 // localStorage mock for Node test environment.
 const store = new Map<string, string>();
@@ -35,6 +35,7 @@ Object.defineProperty(globalThis, "localStorage", {
   writable: true,
 });
 
+import { clearOwnerId, setOwnerId } from "../../lib/storage/owner-id";
 import {
   createLocalNote,
   deleteLocalNote,
@@ -44,8 +45,14 @@ import {
   updateLocalNote,
 } from "./local-notes";
 
+// Set owner before tests so storage operations work.
+beforeEach(() => {
+  setOwnerId("test-user-1");
+});
+
 // Clean up localStorage between tests.
 afterEach(() => {
+  clearOwnerId();
   localStorage.clear();
 });
 
@@ -139,19 +146,21 @@ describe("local-notes: CRUD", () => {
 
   it("deletes a note", () => {
     const note = createLocalNote({ title: "To delete" });
-    expect(deleteLocalNote(note.id)).toBe(true);
+    deleteLocalNote(note.id);
     expect(getLocalNote(note.id)).toBeNull();
     expect(listLocalNotes()).toHaveLength(0);
   });
 
-  it("returns false when deleting non-existent note", () => {
-    expect(deleteLocalNote("local_nonexistent")).toBe(false);
+  it("returns void when deleting non-existent note", () => {
+    // deleteLocalNote returns void — just verify no crash.
+    const result = deleteLocalNote("local_note_nonexistent");
+    expect(result).toBeUndefined();
   });
 });
 
 describe("local-notes: isLocalNote", () => {
   it("identifies local note ids", () => {
-    expect(isLocalNote("local_123_abc")).toBe(true);
+    expect(isLocalNote("local_note_123_abc")).toBe(true);
     expect(isLocalNote("remote_db_id_123")).toBe(false);
     expect(isLocalNote("")).toBe(false);
   });
@@ -164,6 +173,103 @@ describe("local-notes: persistence", () => {
     const notes = listLocalNotes();
     expect(notes).toHaveLength(1);
     expect(notes[0]!.title).toBe("Persisted");
+  });
+});
+
+describe("local-notes: owner isolation", () => {
+  it("throws when no owner is set", () => {
+    clearOwnerId();
+    expect(() => createLocalNote({ title: "Should not persist" })).toThrow(
+      /no authenticated owner/i,
+    );
+    expect(listLocalNotes()).toHaveLength(0);
+  });
+
+  it("user A's data is invisible to user B", () => {
+    // User A creates a note.
+    setOwnerId("user-a");
+    createLocalNote({ title: "A's secret note", entityTicker: "TSLA" });
+    expect(listLocalNotes()).toHaveLength(1);
+
+    // User B logs in — must NOT see A's data.
+    clearOwnerId();
+    setOwnerId("user-b");
+    expect(listLocalNotes()).toHaveLength(0);
+
+    // User B creates their own note.
+    createLocalNote({ title: "B's note" });
+    expect(listLocalNotes()).toHaveLength(1);
+    expect(listLocalNotes()[0]!.title).toBe("B's note");
+
+    // User A logs back — must only see their own data.
+    clearOwnerId();
+    setOwnerId("user-a");
+    expect(listLocalNotes()).toHaveLength(1);
+    expect(listLocalNotes()[0]!.title).toBe("A's secret note");
+  });
+
+  it("no localStorage scanning for other users' keys", () => {
+    // Simulate leftover key from a previous user.
+    localStorage.setItem(
+      "workspace:localNotes:stale-user",
+      JSON.stringify([{ id: "stale", title: "Stale data" }]),
+    );
+
+    // New user with no owner set must NOT see stale data.
+    clearOwnerId();
+    expect(listLocalNotes()).toHaveLength(0);
+
+    // Even with a different owner, must not pick up stale key.
+    setOwnerId("fresh-user");
+    expect(listLocalNotes()).toHaveLength(0);
+  });
+});
+
+describe("local-notes: lifecycle regression", () => {
+  it("stale localStorage marker does NOT grant authority", () => {
+    // Simulate a stale __airesearch_user_id in localStorage from a
+    // previous session where setOwnerId was called.
+    clearOwnerId();
+    localStorage.setItem("__airesearch_user_id", "stale-user-id");
+
+    // getOwnerId must NOT read from localStorage — the auth layer
+    // must call setOwnerId() with a verified session ID.
+    expect(listLocalNotes()).toHaveLength(0);
+    expect(() => createLocalNote({ title: "Should fail" })).toThrow(
+      /no authenticated owner/i,
+    );
+  });
+
+  it("writes fail explicitly until auth layer calls setOwnerId", () => {
+    clearOwnerId();
+    // Multiple write attempts all throw.
+    expect(() => createLocalNote({ title: "A" })).toThrow(
+      /no authenticated owner/i,
+    );
+    expect(() => updateLocalNote("x", { title: "B" })).toThrow(
+      /no authenticated owner/i,
+    );
+    expect(() => deleteLocalNote("x")).toThrow(/no authenticated owner/i);
+
+    // After auth layer sets owner, writes succeed.
+    setOwnerId("verified-user");
+    const note = createLocalNote({ title: "Now works" });
+    expect(note.title).toBe("Now works");
+  });
+
+  it("clearOwnerId does not destroy durable data — re-login sees previous notes", () => {
+    setOwnerId("user-a");
+    createLocalNote({ title: "A's note" });
+    expect(listLocalNotes()).toHaveLength(1);
+
+    // Logout.
+    clearOwnerId();
+    expect(listLocalNotes()).toHaveLength(0);
+
+    // User A re-logs in — setOwnerId restores authority and data remains.
+    setOwnerId("user-a");
+    expect(listLocalNotes()).toHaveLength(1);
+    expect(listLocalNotes()[0]!.title).toBe("A's note");
   });
 });
 

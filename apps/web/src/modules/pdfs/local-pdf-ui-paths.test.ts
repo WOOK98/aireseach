@@ -142,6 +142,7 @@ Object.defineProperty(globalThis, "URL", {
 
 // ── Imports (after mocks) ──────────────────────────────────────────────────
 
+import { setOwnerId } from "../../lib/storage/owner-id";
 import {
   createLocalAnnotation,
   listLocalAnnotations,
@@ -151,6 +152,7 @@ import { createLocalPdfObjectUrl, getPdfBlob } from "./local-pdf-blobs";
 import { createLocalPdf, isLocalPdf } from "./local-pdfs";
 
 beforeEach(() => {
+  setOwnerId("test-user-1");
   localStorage.clear();
   idbStore.clear();
 });

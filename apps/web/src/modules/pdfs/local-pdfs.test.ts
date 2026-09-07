@@ -37,7 +37,17 @@ Object.defineProperty(globalThis, "localStorage", {
 
 // ── IndexedDB mock (minimal) ───────────────────────────────────────────────
 
-const idbStore = new Map<string, Blob>();
+const idbStores = new Map<string, Map<string, Blob>>();
+let currentDbName = "";
+
+function getIdbStore(dbName: string): Map<string, Blob> {
+  let store = idbStores.get(dbName);
+  if (!store) {
+    store = new Map();
+    idbStores.set(dbName, store);
+  }
+  return store;
+}
 
 type IdbEventHandler = (ev: unknown) => void;
 
@@ -74,19 +84,20 @@ function createOpenRequest(db: unknown): IDBOpenDBRequest {
 }
 
 function createIdbTx(): IDBTransaction {
+  const store = getIdbStore(currentDbName);
   const listeners: Record<string, IdbEventHandler[]> = {};
   const tx = {
     objectStore: () => ({
       put: (value: Blob, key: string) => {
-        idbStore.set(key, value);
+        store.set(key, value);
         return createIdbRequest(undefined);
       },
       get: (key: string) => {
-        const val = idbStore.get(key) ?? undefined;
+        const val = store.get(key) ?? undefined;
         return createIdbRequest(val);
       },
       delete: (key: string) => {
-        idbStore.delete(key);
+        store.delete(key);
         return createIdbRequest(undefined);
       },
     }),
@@ -102,7 +113,8 @@ function createIdbTx(): IDBTransaction {
 }
 
 const idbMock = {
-  open: (_name: string, _version?: number) => {
+  open: (name: string, _version?: number) => {
+    currentDbName = name;
     const db = {
       createObjectStore: () => ({}),
       transaction: (_storeName: string, _mode: string) => createIdbTx(),
@@ -128,6 +140,13 @@ Object.defineProperty(globalThis, "URL", {
 
 // ── Imports (after mocks) ──────────────────────────────────────────────────
 
+import {
+  clearOwnerId,
+  getOwnerId,
+  setOwnerId,
+  snapshotGeneration,
+  isStaleGeneration,
+} from "../../lib/storage/owner-id";
 import { createLocalPdfObjectUrl, getPdfBlob } from "./local-pdf-blobs";
 import {
   createLocalPdf,
@@ -139,13 +158,15 @@ import {
 } from "./local-pdfs";
 
 beforeEach(() => {
+  setOwnerId("test-user-1");
   localStorage.clear();
-  idbStore.clear();
+  idbStores.clear();
 });
 
 afterEach(() => {
+  clearOwnerId();
   localStorage.clear();
-  idbStore.clear();
+  idbStores.clear();
 });
 
 describe("local-pdfs: CRUD", () => {
@@ -320,6 +341,182 @@ describe("local-pdfs: isLocalPdf", () => {
   });
 });
 
+describe("local-pdfs: owner isolation", () => {
+  it("throws when no owner is set", async () => {
+    clearOwnerId();
+    await expect(
+      createLocalPdf({ fileName: "ghost.pdf", fileSizeBytes: 100 }),
+    ).rejects.toThrow(/no authenticated owner/i);
+    expect(listLocalPdfs()).toHaveLength(0);
+  });
+
+  it("user A's PDFs are invisible to user B", async () => {
+    setOwnerId("user-a");
+    await createLocalPdf({
+      fileName: "A-secret.pdf",
+      fileSizeBytes: 100,
+      ticker: "TSLA",
+    });
+    expect(listLocalPdfs()).toHaveLength(1);
+
+    // User B logs in.
+    clearOwnerId();
+    setOwnerId("user-b");
+    expect(listLocalPdfs()).toHaveLength(0);
+
+    // User B creates their own.
+    await createLocalPdf({ fileName: "B-doc.pdf", fileSizeBytes: 200 });
+    expect(listLocalPdfs()).toHaveLength(1);
+    expect(listLocalPdfs()[0]!.fileName).toBe("B-doc.pdf");
+
+    // User A logs back.
+    clearOwnerId();
+    setOwnerId("user-a");
+    expect(listLocalPdfs()).toHaveLength(1);
+    expect(listLocalPdfs()[0]!.fileName).toBe("A-secret.pdf");
+  });
+});
+
+describe("local-pdfs: lifecycle regression", () => {
+  it("stale localStorage marker does NOT grant authority", async () => {
+    clearOwnerId();
+    localStorage.setItem("__airesearch_user_id", "stale-user-id");
+
+    // getOwnerId must NOT read from localStorage.
+    expect(listLocalPdfs()).toHaveLength(0);
+    await expect(
+      createLocalPdf({ fileName: "ghost.pdf", fileSizeBytes: 100 }),
+    ).rejects.toThrow(/no authenticated owner/i);
+  });
+
+  it("logout does NOT destroy IndexedDB blobs — re-login reads durable data", async () => {
+    // User A uploads a PDF with bytes.
+    setOwnerId("user-a");
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    const file = new File([pdfBytes], "A-secret.pdf", {
+      type: "application/pdf",
+    });
+    const pdf = await createLocalPdf(
+      { fileName: "A-secret.pdf", fileSizeBytes: file.size },
+      file,
+    );
+
+    // Blob is durable.
+    const blobBefore = await getPdfBlob(pdf.id);
+    expect(blobBefore).not.toBeNull();
+
+    // Logout.
+    clearOwnerId();
+
+    // User B must not see A's data.
+    setOwnerId("user-b");
+    expect(listLocalPdfs()).toHaveLength(0);
+
+    // Logout B.
+    clearOwnerId();
+
+    // User A re-logs in — blob bytes still readable (not destroyed by logout).
+    setOwnerId("user-a");
+    const blobAfter = await getPdfBlob(pdf.id);
+    expect(blobAfter).not.toBeNull();
+    expect(blobAfter!.size).toBe(pdfBytes.length);
+
+    // PDF metadata still present.
+    const pdfs = listLocalPdfs();
+    expect(pdfs).toHaveLength(1);
+    expect(pdfs[0]!.fileName).toBe("A-secret.pdf");
+  });
+
+  it("writes fail explicitly until auth layer calls setOwnerId", async () => {
+    clearOwnerId();
+    await expect(
+      createLocalPdf({ fileName: "X.pdf", fileSizeBytes: 100 }),
+    ).rejects.toThrow(/no authenticated owner/i);
+    expect(() => deleteLocalPdf("x")).toThrow(/no authenticated owner/i);
+    expect(() => patchLocalPdf("x", { pageCount: 1 })).toThrow(
+      /no authenticated owner/i,
+    );
+
+    // After auth layer sets owner, writes succeed.
+    setOwnerId("verified-user");
+    const pdf = await createLocalPdf({
+      fileName: "Works.pdf",
+      fileSizeBytes: 100,
+    });
+    expect(pdf.fileName).toBe("Works.pdf");
+  });
+});
+
+describe("local-pdfs: owner-generation race guard", () => {
+  it("snapshotGeneration detects owner switch across clear+set", () => {
+    setOwnerId("user-a");
+    const gen = snapshotGeneration();
+    clearOwnerId();
+    expect(isStaleGeneration(gen)).toBe(true);
+
+    setOwnerId("user-b");
+    expect(isStaleGeneration(gen)).toBe(true);
+  });
+
+  it("same-owner re-set is idempotent — does NOT bump generation", () => {
+    setOwnerId("user-a");
+    const gen = snapshotGeneration();
+    // Same owner re-set (e.g. session token refresh).
+    setOwnerId("user-a");
+    expect(isStaleGeneration(gen)).toBe(false);
+    expect(snapshotGeneration()).toBe(gen);
+  });
+
+  it("same-owner snapshot is not stale", () => {
+    setOwnerId("user-a");
+    const gen = snapshotGeneration();
+    expect(isStaleGeneration(gen)).toBe(false);
+  });
+
+  it("different-owner re-set bumps generation", () => {
+    setOwnerId("user-a");
+    const gen = snapshotGeneration();
+    setOwnerId("user-b");
+    expect(isStaleGeneration(gen)).toBe(true);
+    expect(getOwnerId()).toBe("user-b");
+  });
+
+  it("B cannot read A's blob URL — different IndexedDB databases", async () => {
+    setOwnerId("user-a");
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    const file = new File([pdfBytes], "A-doc.pdf", {
+      type: "application/pdf",
+    });
+    const pdf = await createLocalPdf(
+      { fileName: "A-doc.pdf", fileSizeBytes: file.size },
+      file,
+    );
+
+    // Verify A can read their own blob.
+    const urlA = await createLocalPdfObjectUrl(pdf.id);
+    expect(urlA).toBeTruthy();
+    expect(urlA).toMatch(/^blob:/);
+
+    // Switch to B.
+    clearOwnerId();
+    setOwnerId("user-b");
+
+    // B attempts to read A's PDF — null because B's IndexedDB is a different
+    // database (airesearch_local_pdfs_user-b has no blobs).
+    const urlB = await createLocalPdfObjectUrl(pdf.id);
+    expect(urlB).toBeNull();
+
+    // B's own list is empty.
+    expect(listLocalPdfs()).toHaveLength(0);
+
+    // Switch back to A — blob still readable (durable, not destroyed on logout).
+    clearOwnerId();
+    setOwnerId("user-a");
+    const urlA2 = await createLocalPdfObjectUrl(pdf.id);
+    expect(urlA2).toBeTruthy();
+  });
+});
+
 describe("local-pdfs: degraded mode acceptance", () => {
   it("create → list → open → reload cycle for TSLA PDF", async () => {
     const pdf = await createLocalPdf({
@@ -372,5 +569,61 @@ describe("local-pdfs: degraded mode acceptance", () => {
     const objectUrl = await createLocalPdfObjectUrl(pdf.id);
     expect(objectUrl).toBeTruthy();
     expect(objectUrl).toMatch(/^blob:/);
+  });
+});
+
+describe("local-pdfs: delayed A blob read after B login", () => {
+  it("truly delayed A blob read resolves to null after B login (not sequential)", async () => {
+    // A creates a PDF with bytes.
+    setOwnerId("user-a");
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    const file = new File([pdfBytes], "A-delayed.pdf", {
+      type: "application/pdf",
+    });
+    const pdf = await createLocalPdf(
+      { fileName: "A-delayed.pdf", fileSizeBytes: file.size },
+      file,
+    );
+
+    // Start an async blob URL read for A — do NOT await yet.
+    // This simulates a slow network/IDB read.
+    const pendingUrlPromise = createLocalPdfObjectUrl(pdf.id);
+
+    // B logs in before A's read completes.
+    // setOwnerId("user-b") internally calls clearOwnerId (revokes URLs)
+    // then sets the new owner — this bumps the generation.
+    setOwnerId("user-b");
+
+    // Now await A's pending read.
+    const result = await pendingUrlPromise;
+
+    // Must be null — the generation snapshot taken before the await
+    // is now stale because the owner changed during the async gap.
+    expect(result).toBeNull();
+
+    // B's own storage is empty.
+    expect(listLocalPdfs()).toHaveLength(0);
+
+    // Cleanup.
+    clearOwnerId();
+  });
+
+  it("A reads its own blob URL when no owner switch occurs", async () => {
+    setOwnerId("user-a");
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    const file = new File([pdfBytes], "A-same.pdf", {
+      type: "application/pdf",
+    });
+    const pdf = await createLocalPdf(
+      { fileName: "A-same.pdf", fileSizeBytes: file.size },
+      file,
+    );
+
+    // No owner switch — A's read should succeed.
+    const url = await createLocalPdfObjectUrl(pdf.id);
+    expect(url).toBeTruthy();
+    expect(url).toMatch(/^blob:/);
+
+    clearOwnerId();
   });
 });

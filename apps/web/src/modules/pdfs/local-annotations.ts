@@ -9,6 +9,8 @@
  * - No raw backend errors, secrets, or internal paths in user-visible text
  */
 
+import { getOwnerId, isOwnerReady } from "../../lib/storage/owner-id";
+
 import type {
   AnnotationItem,
   AnnotationKind,
@@ -18,22 +20,15 @@ import type {
 const STORAGE_PREFIX = "airesearch:localAnnotations:";
 
 /**
- * User-scoped storage key. Reads `__airesearch_user_id` bound by the
- * workspace shell on mount. Falls back to scanning for an existing
- * user-scoped key, then to "default".
+ * User-scoped storage key. Returns null when no owner is set,
+ * which makes reads return empty and writes no-op.
+ *
+ * NEVER scans localStorage for other users' keys.
  */
-function getStorageKey(): string {
-  try {
-    const stored = localStorage.getItem("__airesearch_user_id");
-    if (stored) return STORAGE_PREFIX + stored;
-  } catch {}
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(STORAGE_PREFIX)) return key;
-    }
-  } catch {}
-  return STORAGE_PREFIX + "default";
+function getStorageKey(): string | null {
+  const ownerId = getOwnerId();
+  if (!ownerId) return null;
+  return STORAGE_PREFIX + ownerId;
 }
 
 interface StoredAnnotation {
@@ -52,8 +47,10 @@ function generateId(): string {
 
 function readAll(): StoredAnnotation[] {
   if (typeof window === "undefined") return [];
+  const key = getStorageKey();
+  if (!key) return [];
   try {
-    const raw = localStorage.getItem(getStorageKey());
+    const raw = localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -65,12 +62,28 @@ function readAll(): StoredAnnotation[] {
 
 /**
  * Write the full annotation list to localStorage.
- * THROWS on quota/security errors — callers must handle and surface
- * the failure to the user instead of reporting false success.
+ * THROWS when no owner is set (unauthenticated write) or on
+ * quota/security errors — callers must handle and surface the failure
+ * to the user instead of reporting false success.
  */
 function writeAll(annotations: StoredAnnotation[]): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(getStorageKey(), JSON.stringify(annotations));
+  const key = getStorageKey();
+  if (!key) {
+    throw new Error(
+      "Cannot write annotations: no authenticated owner. " +
+        "Storage writes require a verified session.",
+    );
+  }
+  localStorage.setItem(key, JSON.stringify(annotations));
+}
+
+function requireOwner(): void {
+  if (!isOwnerReady()) {
+    throw new Error(
+      "No authenticated owner — cannot create or modify annotations.",
+    );
+  }
 }
 
 /** List all annotations for a local PDF. */
@@ -86,6 +99,7 @@ export function createLocalAnnotation(
   pdfId: string,
   input: { page: number; payload: AnnotationPayload },
 ): AnnotationItem {
+  requireOwner();
   const now = new Date().toISOString();
   const annotation: StoredAnnotation = {
     id: generateId(),
@@ -106,6 +120,7 @@ export function createLocalAnnotation(
 
 /** Delete a local annotation by id. */
 export function deleteLocalAnnotation(id: string): boolean {
+  requireOwner();
   const all = readAll();
   const filtered = all.filter((a) => a.id !== id);
   if (filtered.length === all.length) return false;

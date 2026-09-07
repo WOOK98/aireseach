@@ -4,14 +4,31 @@
  * When the API is unavailable, the actual PDF bytes are stored in
  * IndexedDB so the reader can render them via object URLs.
  *
+ * OWNER ISOLATION: DB name includes the owner ID so each user's blobs
+ * are in a separate database. When no owner is set, operations reject.
+ *
  * REDLINES:
  * - No file paths, secrets, or internal identifiers in user-visible text.
  * - Object URLs are revoked when no longer needed.
  */
 
-const DB_NAME = "airesearch_local_pdfs";
+import {
+  getOwnerId,
+  isStaleGeneration,
+  snapshotGeneration,
+  trackObjectUrl,
+} from "../../lib/storage/owner-id";
+
+const DB_NAME_PREFIX = "airesearch_local_pdfs_";
 const DB_VERSION = 1;
 const STORE_NAME = "blobs";
+
+/** Get the user-scoped DB name, or null if no owner. */
+function getDbName(): string | null {
+  const ownerId = getOwnerId();
+  if (!ownerId) return null;
+  return DB_NAME_PREFIX + ownerId;
+}
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -19,7 +36,12 @@ function openDB(): Promise<IDBDatabase> {
       reject(new Error("IndexedDB unavailable"));
       return;
     }
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    const dbName = getDbName();
+    if (!dbName) {
+      reject(new Error("No authenticated owner"));
+      return;
+    }
+    const req = indexedDB.open(dbName, DB_VERSION);
     req.addEventListener("upgradeneeded", () => {
       req.result.createObjectStore(STORE_NAME);
     });
@@ -72,7 +94,12 @@ export async function deletePdfBlob(id: string): Promise<void> {
 export async function createLocalPdfObjectUrl(
   id: string,
 ): Promise<string | null> {
+  const gen = snapshotGeneration();
   const blob = await getPdfBlob(id);
+  // Reject stale results: the owner changed during the async gap.
+  if (isStaleGeneration(gen)) return null;
   if (!blob) return null;
-  return URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
+  trackObjectUrl(url);
+  return url;
 }
