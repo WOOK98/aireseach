@@ -12,6 +12,7 @@ export interface InputSpine {
   hasFinancials: boolean;
   hasIndustryData: boolean;
   hasImaKnowledge: boolean;
+  hasResolvedEntity: boolean;
   verifiedSources: string[];
 }
 
@@ -19,6 +20,11 @@ export function buildInputSpine(
   financials: FinancialMetrics | null,
   industryData: string,
   imaContext: string,
+  resolvedEntity?: {
+    ok: boolean;
+    ticker?: string;
+    companyName?: string;
+  } | null,
 ): InputSpine {
   const sources: string[] = [];
 
@@ -33,18 +39,29 @@ export function buildInputSpine(
   if (imaContext) {
     sources.push("IMA 知识库文献");
   }
+  if (resolvedEntity?.ok && !financials) {
+    sources.push(
+      `实体解析: ${resolvedEntity.companyName ?? resolvedEntity.ticker ?? "unknown"} (${resolvedEntity.ticker ?? "N/A"})`,
+    );
+  }
 
   return {
     hasFinancials: !!financials,
     hasIndustryData: !!industryData,
     hasImaKnowledge: !!imaContext,
+    hasResolvedEntity: !!resolvedEntity?.ok,
     verifiedSources: sources,
   };
 }
 
 export function hasVerifiedInput(spine: InputSpine): boolean {
-  // At least one of: financials, industry data, or IMA knowledge
-  return spine.hasFinancials || spine.hasIndustryData || spine.hasImaKnowledge;
+  // At least one of: financials, industry data, IMA knowledge, or resolved entity
+  return (
+    spine.hasFinancials ||
+    spine.hasIndustryData ||
+    spine.hasImaKnowledge ||
+    spine.hasResolvedEntity
+  );
 }
 
 // ── Numeric formatting ──────────────────────────────────────────────────────

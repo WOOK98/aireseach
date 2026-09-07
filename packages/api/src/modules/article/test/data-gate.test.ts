@@ -117,6 +117,7 @@ describe("hasVerifiedInput", () => {
       hasFinancials: false,
       hasIndustryData: false,
       hasImaKnowledge: false,
+      hasResolvedEntity: false,
       verifiedSources: [],
     };
 
@@ -128,6 +129,7 @@ describe("hasVerifiedInput", () => {
       hasFinancials: true,
       hasIndustryData: false,
       hasImaKnowledge: false,
+      hasResolvedEntity: false,
       verifiedSources: ["NVIDIA (NVDA) 财务数据 via verified market data"],
     };
 
@@ -139,6 +141,7 @@ describe("hasVerifiedInput", () => {
       hasFinancials: false,
       hasIndustryData: true,
       hasImaKnowledge: false,
+      hasResolvedEntity: false,
       verifiedSources: ["产业 ETF 成分股数据"],
     };
 
@@ -150,7 +153,20 @@ describe("hasVerifiedInput", () => {
       hasFinancials: false,
       hasIndustryData: false,
       hasImaKnowledge: true,
+      hasResolvedEntity: false,
       verifiedSources: ["IMA 知识库文献"],
+    };
+
+    expect(hasVerifiedInput(spine)).toBe(true);
+  });
+
+  it("returns true when only resolved entity present", () => {
+    const spine: InputSpine = {
+      hasFinancials: false,
+      hasIndustryData: false,
+      hasImaKnowledge: false,
+      hasResolvedEntity: true,
+      verifiedSources: ["实体解析: Tesla, Inc. (TSLA)"],
     };
 
     expect(hasVerifiedInput(spine)).toBe(true);
@@ -161,6 +177,7 @@ describe("hasVerifiedInput", () => {
       hasFinancials: true,
       hasIndustryData: true,
       hasImaKnowledge: true,
+      hasResolvedEntity: true,
       verifiedSources: ["a", "b", "c"],
     };
 
