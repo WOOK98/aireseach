@@ -393,7 +393,12 @@ articleRoute.post(
     const imaContext = formatImaKnowledgeForPrompt(imaHits);
 
     // 3. Data gate: require at least one verified input
-    const spine = buildInputSpine(financials, industryData, imaContext);
+    const spine = buildInputSpine(
+      financials,
+      industryData,
+      imaContext,
+      resolution,
+    );
 
     if (!hasVerifiedInput(spine)) {
       // No verified data — degrade immediately, don't call LLM
