@@ -65,16 +65,17 @@ const kimiProvider = createOpenAI({
 const ARTICLE_MAX_OUTPUT_TOKENS = 8000;
 
 /**
- * Model selection with fallback chain:
- * OpenAI → DeepSeek → Kimi K3
- * First provider with a configured API key wins.
+ * Model selection: Kimi K3 (always-on thinking, best for Chinese research articles).
+ * Falls back to DeepSeek/OpenAI only if Kimi key is unavailable.
  */
 const getArticleModelConfig = () => {
+  if (env.KIMI_API_KEY || env.LLM_API_KEY) {
+    return kimiProvider("k3");
+  }
   if (env.OPENAI_API_KEY) {
     return openaiProvider("gpt-4o-mini");
   }
-  if (env.DEEPSEEK_API_KEY || env.LLM_API_KEY) {
-    // Try DeepSeek first, but Kimi as fallback is handled at the provider level
+  if (env.DEEPSEEK_API_KEY) {
     return deepseekProvider.chat("deepseek-chat");
   }
   throw new HTTPException(500, {
@@ -436,45 +437,16 @@ articleRoute.post(
 
       for (let attempt = 0; attempt < 3; attempt += 1) {
         try {
-          // Try primary model first, then fallback to Kimi K3
-          let result;
-          try {
-            result = await generateText({
-              model,
-              system: systemPrompt,
-              prompt:
-                attempt === 0
-                  ? userPrompt
-                  : `${userPrompt}\n\n上一次输出验证失败（${lastError?.message ?? "schema error"}）。请修正：\n1. 确保每个 section/visual/risk 的 evidenceIds 引用 evidence[] 中存在的 id\n2. 确保 evidence[] 中每条都被至少一个 evidenceIds 引用\n3. 确保非 empty visual 的 source/date 必填`,
-              temperature: 0.3,
-              maxOutputTokens: ARTICLE_MAX_OUTPUT_TOKENS,
-            });
-          } catch (primaryErr) {
-            // Primary model failed — try Kimi K3 as fallback
-            const primaryMsg =
-              primaryErr instanceof Error
-                ? primaryErr.message
-                : String(primaryErr);
-            if (
-              primaryMsg.includes("api key") ||
-              primaryMsg.includes("Unauthorized") ||
-              primaryMsg.includes("authentication") ||
-              primaryMsg.includes("401")
-            ) {
-              result = await generateText({
-                model: kimiProvider("k3"),
-                system: systemPrompt,
-                prompt:
-                  attempt === 0
-                    ? userPrompt
-                    : `${userPrompt}\n\n上一次输出验证失败（${lastError?.message ?? "schema error"}）。请修正`,
-                temperature: 0.3,
-                maxOutputTokens: ARTICLE_MAX_OUTPUT_TOKENS,
-              });
-            } else {
-              throw primaryErr;
-            }
-          }
+          const result = await generateText({
+            model,
+            system: systemPrompt,
+            prompt:
+              attempt === 0
+                ? userPrompt
+                : `${userPrompt}\n\n上一次输出验证失败（${lastError?.message ?? "schema error"}）。请修正：\n1. 确保每个 section/visual/risk 的 evidenceIds 引用 evidence[] 中存在的 id\n2. 确保 evidence[] 中每条都被至少一个 evidenceIds 引用\n3. 确保非 empty visual 的 source/date 必填`,
+            temperature: 0.3,
+            maxOutputTokens: ARTICLE_MAX_OUTPUT_TOKENS,
+          });
 
           const text = result.text;
 
