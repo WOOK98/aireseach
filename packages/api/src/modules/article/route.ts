@@ -57,9 +57,8 @@ const deepseekProvider = createOpenAI({
 });
 
 // Kimi provider (OpenAI-compatible API)
-const KIMI_API_KEY = env.LLM_API_KEY; // Kimi uses the shared LLM_API_KEY
 const kimiProvider = createOpenAI({
-  apiKey: KIMI_API_KEY,
+  apiKey: env.KIMI_API_KEY || env.LLM_API_KEY,
   baseURL: "https://api.kimi.com/coding/v1",
 });
 
