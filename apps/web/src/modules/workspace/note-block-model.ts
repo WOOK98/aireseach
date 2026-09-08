@@ -90,7 +90,7 @@ export function filterSlashCommands(query: string): SlashCommand[] {
  */
 export function slashQuery(text: string): string | null {
   if (!text.startsWith("/")) return null;
-  return text.slice(1) || null;
+  return text.slice(1);
 }
 
 /** Extract the argument from a slash command like `/分析 TSLA` → `TSLA`. */
@@ -178,6 +178,114 @@ export function updateBlockAt(
       next[index] = { ...target, text: patch.text ?? target.text };
   }
   return next;
+}
+
+// ── Key dispatch (shared between component and tests) ──────────────────────
+
+/**
+ * Pure key-event dispatch — resolves the action for a keydown event on a
+ * note block. Used by NoteBlockEditor.handleKeyDown AND exercised by
+ * note-block-editor-dispatch.test.ts so that tests and component share
+ * the exact same code path (deleting the real handler breaks both).
+ *
+ * The component is responsible for: state updates, focus management,
+ * and calling handleAnalyze. This function only resolves WHAT to do.
+ */
+export function resolveKeyDispatch(
+  blocks: NoteBlock[],
+  index: number,
+  opts: {
+    key: string;
+    isComposing: boolean;
+    shiftKey: boolean;
+    menuIndex: number;
+  },
+):
+  | {
+      action: "ime-guard" | "insert" | "blur";
+    }
+  | {
+      action: "menu-nav";
+      direction: "up" | "down";
+    }
+  | {
+      action: "select-command";
+      nextMenuIndex: number;
+    }
+  | {
+      action: "analyze";
+      analyzeText: string;
+    }
+  | {
+      action: "apply";
+      command: SlashCommand;
+      blocks: NoteBlock[];
+    }
+  | {
+      action: "dismiss";
+    }
+  | {
+      action: "backspace-empty";
+    }
+  | null {
+  const menu = menuForIndex(blocks, index);
+
+  // IME composition guard — compositionEnd must not execute a command.
+  if (opts.isComposing) return { action: "ime-guard" };
+
+  if (menu) {
+    if (opts.key === "ArrowDown" || opts.key === "ArrowUp") {
+      return {
+        action: "menu-nav",
+        direction: opts.key === "ArrowDown" ? "down" : "up",
+      };
+    }
+    if (opts.key === "Enter") {
+      const cmd = menu[Math.min(opts.menuIndex, menu.length - 1)]!;
+      if (cmd.action === "analyze") {
+        return { action: "analyze", analyzeText: blocks[index]?.text ?? "" };
+      }
+      return {
+        action: "apply",
+        command: cmd,
+        blocks: applySlashCommand(blocks, index, cmd),
+      };
+    }
+    if (opts.key === "Escape") {
+      return { action: "dismiss" };
+    }
+    return null; // while menu is open, let typing filter it
+  }
+
+  if (opts.key === "Enter" && !opts.shiftKey) {
+    return { action: "insert" };
+  }
+
+  if (opts.key === "Escape") {
+    return { action: "blur" };
+  }
+
+  if (opts.key === "Backspace") {
+    const block = blocks[index];
+    if (block && block.text === "" && blocks.length > 0) {
+      return { action: "backspace-empty" };
+    }
+  }
+
+  return null;
+}
+
+/** Internal: resolve menu for a block index (used by resolveKeyDispatch and the component render). */
+export function menuForIndex(
+  blocks: NoteBlock[],
+  index: number,
+): SlashCommand[] | null {
+  const block = blocks[index];
+  if (!block) return null;
+  const q = slashQuery(block.text);
+  if (q === null) return null;
+  const matches = filterSlashCommands(q);
+  return matches.length > 0 ? matches : null;
 }
 
 /** Normalize for the PATCH payload: tolerant sanitize + cap. */
