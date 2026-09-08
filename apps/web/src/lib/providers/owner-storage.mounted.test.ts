@@ -454,43 +454,21 @@ describe("OwnerStorageProvider (mounted): query isolation", () => {
 });
 
 describe("OwnerStorageProvider (mounted): regression — pre-fix behavior", () => {
-  it("pre-fix provider (no synchronous gate) leaks A draft into B frame", () => {
+  it("fixed provider does NOT leak A draft into B frame (see negative-control in prefix-regression.test.ts)", () => {
     /**
-     * This test DEMONSTRATES the failure mode by simulating what the
-     * pre-fix provider did: no synchronous gate, effect-only identity
-     * switching. The pre-fix provider rendered children with ready=true
-     * whenever appliedOwner !== undefined, regardless of whether the
-     * session identity matched. On A→B:
+     * This test verifies the FIX: after A→B, no committed frame contains
+     * A's draft. The matching NEGATIVE CONTROL (proving the pre-fix
+     * provider DOES leak) lives in owner-storage.prefix-regression.test.ts.
      *
-     *   1. Render: appliedOwner="user-a", session="user-b"
-     *      Pre-fix ready = appliedOwner !== undefined → true (BUG)
-     *      Post-fix ready = appliedOwner === expectedOwner → false (FIX)
-     *   2. Children render under A's identity one more frame
-     *   3. A draft data is visible in B's first committed frame
+     * The pre-fix provider had: ready = appliedOwner !== undefined
+     * When session changed A→B, appliedOwner was still "user-a" →
+     * ready=true → child rendered one more frame under A's identity.
      *
-     * We verify the fix by asserting NO committed frame contains A draft.
-     * To demonstrate this is a real regression, we also verify the
-     * synchronous gate logic would produce ready=false for the same inputs.
+     * The fix gates on: appliedOwner === expectedOwner
+     * So when session changes to B, ready=false immediately.
      */
     const qc = createQueryClient();
 
-    // At the A→B transition point:
-    // appliedOwner = "user-a" (committed by effect under A)
-    // session = user-b (just switched)
-    const appliedOwnerAfterA: string | null | undefined = "user-a";
-    const sessionUserId: string | null = "user-b";
-
-    // Pre-fix: ready = appliedOwner !== undefined → true (BUG)
-    expect(appliedOwnerAfterA !== undefined).toBe(true);
-
-    // Post-fix: ready = appliedOwner === expectedOwner → false (FIX)
-    const postFixReady =
-      appliedOwnerAfterA !== undefined &&
-      !false &&
-      appliedOwnerAfterA === sessionUserId;
-    expect(postFixReady).toBe(false);
-
-    // Full mounted test: no A draft in any committed frame
     sessionState = {
       isPending: false,
       error: null,
