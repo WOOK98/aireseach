@@ -4,20 +4,16 @@
  * OwnerStorageProvider — bridges better-auth session state to the
  * client-side storage isolation layer (owner-id.ts).
  *
- * **Rendering gate:** Children are NOT rendered until the auth session
- * has resolved (isPending=false) and a verified owner (or confirmed
- * unauthenticated state) has been applied. This prevents storage
- * consumers from mounting with owner=null on initial render.
+ * **Synchronous gate:** Children are NOT rendered until the applied owner
+ * identity MATCHES the session identity. The gate is derived in the render
+ * phase — when the session identity changes (e.g. A→B), `ready` becomes
+ * false immediately because `appliedOwner` still holds the old value.
+ * There is no frame where children render under a stale identity.
  *
- * **Gate reset:** If the session re-enters pending state (e.g. during
- * an A→B account switch), the gate closes again — children unmount
- * and remount under the new identity once it resolves.
- *
- * **Identity transition:** On A→B account switch, calls clearOwnerId()
- * before setOwnerId() so stale A object URLs are revoked and the
- * generation counter reflects the actual transition. Same-user
- * session updates (e.g. token refresh) are idempotent — no generation
- * bump, no URL revocation.
+ * **Identity key:** Children are wrapped in a component keyed on the
+ * applied owner. On identity transitions, React unmounts the entire
+ * subtree and remounts it fresh, clearing component-local state
+ * (editor drafts, unsaved form data) that removeQueries() cannot reach.
  *
  * **Query removal:** On identity change, all react-query caches are
  * REMOVED (not just invalidated) so stale data from the previous
@@ -31,10 +27,19 @@
  */
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { authClient } from "~/lib/auth/client";
 import { clearOwnerId, getOwnerId, setOwnerId } from "~/lib/storage/owner-id";
+
+/**
+ * Pass-through wrapper keyed on owner identity. When the key changes
+ * (A→B transition), React unmounts this component and all its children,
+ * then remounts fresh — clearing local state that cache removal cannot reach.
+ */
+function IdentityGate({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
 
 export const OwnerStorageProvider = ({
   children,
@@ -43,8 +48,14 @@ export const OwnerStorageProvider = ({
 }) => {
   const session = authClient.useSession();
   const queryClient = useQueryClient();
-  const prevOwnerRef = useRef<string | null>(null);
-  const [ready, setReady] = useState(false);
+
+  // Tracks the owner identity that has been applied via side effects.
+  // undefined = not yet initialised (gate closed).
+  // null = unauthenticated applied.
+  // string = authenticated user id applied.
+  const [appliedOwner, setAppliedOwner] = useState<string | null | undefined>(
+    undefined,
+  );
 
   const applyOwner = useCallback(
     (userId: string | null) => {
@@ -55,44 +66,43 @@ export const OwnerStorageProvider = ({
           setOwnerId(userId);
           // A→B transition or first set with a previous owner: flush stale caches.
           if (currentOwner !== null) {
-             queryClient.removeQueries();
+            queryClient.removeQueries();
           }
         }
       } else {
         if (currentOwner !== null) {
           clearOwnerId();
-           queryClient.removeQueries();
+          queryClient.removeQueries();
         }
       }
     },
     [queryClient],
   );
 
+  // Effect: apply side effects and commit the applied owner.
+  // The gate itself is derived synchronously in the render phase below.
   useEffect(() => {
-    // Re-entering pending state (e.g. A→B re-auth) → close the gate
-    // so children unmount and don't render under a stale identity.
+    // Re-entering pending state (e.g. A→B re-auth):
+    // Reset appliedOwner so the synchronous gate closes immediately.
     if (session.isPending) {
-      setReady(false);
+      setAppliedOwner(undefined);
       return;
     }
 
-    // Session error → treat as unauthenticated: clear stale owner, flush caches.
+    // Session error → treat as unauthenticated.
     if (session.error) {
       const currentOwner = getOwnerId();
       if (currentOwner !== null) {
         clearOwnerId();
-         queryClient.removeQueries();
+        queryClient.removeQueries();
       }
-      prevOwnerRef.current = null;
-      setReady(true);
+      setAppliedOwner(null);
       return;
     }
 
     const userId = session.data?.user?.id ?? null;
     applyOwner(userId);
-
-    prevOwnerRef.current = userId;
-    setReady(true);
+    setAppliedOwner(userId);
   }, [session, queryClient, applyOwner]);
 
   // Unmount cleanup: clear owner identity and revoke tracked object URLs
@@ -103,9 +113,32 @@ export const OwnerStorageProvider = ({
     };
   }, []);
 
-  // Don't render children until the session has resolved and ownership
-  // has been applied (or confirmed unauthenticated).
+  // ── Synchronous gate ──────────────────────────────────────────────────────
+  //
+  // Derive the "expected" owner from the current session state.
+  // Compare it to `appliedOwner` (what side effects have committed).
+  // When they diverge (identity transition, pending, error), the gate
+  // closes synchronously in this render — no effect delay, no stale frame.
+  //
+  const expectedOwner = session.isPending
+    ? undefined
+    : session.error
+      ? null
+      : (session.data?.user?.id ?? null);
+
+  const ready =
+    appliedOwner !== undefined &&
+    !session.isPending &&
+    appliedOwner === expectedOwner;
+
   if (!ready) return null;
 
-  return <>{children}</>;
+  // Key children on applied identity so React unmounts/remounts the
+  // entire subtree on identity transitions. This clears component-local
+  // state (editor drafts, form data) that removeQueries() cannot reach.
+  return (
+    <IdentityGate key={appliedOwner ?? "__unauthenticated"}>
+      {children}
+    </IdentityGate>
+  );
 };
