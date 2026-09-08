@@ -14,18 +14,15 @@
  * - Schema-enforced evidence linkage via superRefine
  * - Data gate: requires at least one verified input before LLM call
  */
-import { createOpenAI } from "@ai-sdk/openai";
 import { zValidator } from "@hono/zod-validator";
 import { generateText } from "ai";
 import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { stream } from "hono/streaming";
 import { z } from "zod";
 
 import { researchArticleSchema } from "@workspace/shared/schema/article";
 import { SHARED_HARD_RULES } from "@workspace/shared/skill-contract";
 
-import { env } from "../../env";
 import {
   cachedFetchYahooFinance,
   sanitizeFinancialMetrics,
@@ -37,6 +34,7 @@ import {
   formatImaKnowledgeForPrompt,
 } from "../report/knowledge";
 import { buildInputSpine, hasVerifiedInput, fmt, fmtB } from "./data-gate";
+import { getModelCandidates } from "./model-candidates";
 
 import type { FinancialMetrics } from "@workspace/shared/types/report";
 
@@ -45,43 +43,7 @@ import type { FinancialMetrics } from "@workspace/shared/types/report";
 const PROHIBITED_ARTICLE_PATTERN =
   /\b(target price|price target|buy rating|sell rating|strong buy|strong sell|buy-hold-sell|position sizing|portfolio weights?|entry levels?|stop levels?)\b/i;
 
-// ── Providers ────────────────────────────────────────────────────────────────
-
-const openaiProvider = createOpenAI({
-  apiKey: env.OPENAI_API_KEY,
-});
-
-const deepseekProvider = createOpenAI({
-  apiKey: env.DEEPSEEK_API_KEY || env.LLM_API_KEY,
-  baseURL: "https://api.deepseek.com/v1",
-});
-
-// Kimi provider (OpenAI-compatible API)
-const kimiProvider = createOpenAI({
-  apiKey: env.KIMI_API_KEY || env.LLM_API_KEY,
-  baseURL: "https://api.kimi.com/coding/v1",
-});
-
 const ARTICLE_MAX_OUTPUT_TOKENS = 8000;
-
-/**
- * Model selection: Kimi K3 (always-on thinking, best for Chinese research articles).
- * Falls back to DeepSeek/OpenAI only if Kimi key is unavailable.
- */
-const getArticleModelConfig = () => {
-  if (env.KIMI_API_KEY || env.LLM_API_KEY) {
-    return kimiProvider("k3");
-  }
-  if (env.OPENAI_API_KEY) {
-    return openaiProvider("gpt-4o-mini");
-  }
-  if (env.DEEPSEEK_API_KEY) {
-    return deepseekProvider.chat("deepseek-chat");
-  }
-  throw new HTTPException(500, {
-    message: "Article generation is temporarily unavailable.",
-  });
-};
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -421,8 +383,8 @@ articleRoute.post(
       });
     }
 
-    // 4. Build prompt & generate
-    const model = getArticleModelConfig();
+    // 4. Build prompt & generate (fallback chain: try each provider in order)
+    const candidates = getModelCandidates();
     const systemPrompt = buildArticleSystemPrompt();
     const userPrompt = buildArticleUserPrompt(
       query,
@@ -435,7 +397,10 @@ articleRoute.post(
     return stream(c, async (s) => {
       let lastError: Error | null = null;
 
-      for (let attempt = 0; attempt < 3; attempt += 1) {
+      // Each attempt picks the next candidate model; schema/validation retries
+      // reuse the same model (the error is in the prompt, not the provider).
+      for (let attempt = 0; attempt < candidates.length; attempt += 1) {
+        const model = candidates[attempt]!;
         try {
           const result = await generateText({
             model,

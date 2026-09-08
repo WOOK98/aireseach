@@ -118,6 +118,10 @@ vi.mock("@ai-sdk/openai", () => ({
     .mockReturnValue(() => ({})),
 }));
 
+vi.mock("../model-candidates", () => ({
+  getModelCandidates: () => [{}],
+}));
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 import { articleRoute } from "../route";
