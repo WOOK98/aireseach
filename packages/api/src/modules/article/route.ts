@@ -238,6 +238,11 @@ ${
 ${m.description?.slice(0, 500) || "N/A"}`;
   }
 
+  // When no verified financial data, instruct LLM to use training knowledge
+  const trainingKnowledgeBlock = !financials
+    ? `\n## 数据可用性说明\n实时财务数据暂不可用。请基于你的训练知识撰写定性分析：\n- 聚焦商业模式、竞争格局、行业地位、风险因素\n- 不要编造具体财务数字（营收、利润、估值等），无法验证的数据标注"数据不可用"\n- 在 evidence 中将训练知识来源标记为 confidence: "partial"\n- visual 尽量用 kind: "empty" 并说明原因，除非你有把握用训练知识构建\n`
+    : "";
+
   const sourcesBlock =
     verifiedSources.length > 0
       ? `\n## 已验证数据来源\n${verifiedSources.map((s, i) => `[S${i + 1}] ${s}`).join("\n")}\n\n请基于以上已验证数据生成研报。evidence[] 中的 source 字段必须引用上述来源。`
@@ -251,7 +256,7 @@ ${dataSection}
 ${industryData ? `## 产业数据\n${industryData}` : ""}
 
 ${imaContext ? `## 知识库参考\n${imaContext}` : ""}
-
+${trainingKnowledgeBlock}
 ${sourcesBlock}
 
 请根据以上数据，生成一篇完整的中文研报文章。严格遵循 8 段固定结构，返回 JSON。
@@ -491,6 +496,8 @@ articleRoute.post(
             ...validation.data,
             generatedAt: new Date().toISOString(),
             language: "zh" as const,
+            // Flag when generated from training knowledge (no verified financial data)
+            ...(!financials ? { _limitedData: true } : {}),
           };
 
           await s.write(JSON.stringify(article));
