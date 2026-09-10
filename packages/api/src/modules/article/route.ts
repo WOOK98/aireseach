@@ -355,8 +355,26 @@ articleRoute.post(
   async (c) => {
     const { query } = c.req.valid("json");
 
-    // 1. Resolve entity + fetch data sources in parallel
-    const resolution = await cachedResolveEntity(query);
+    // 1. Resolve entity — wrap in try/catch so Yahoo failures don't kill the whole route
+    let resolution: Awaited<ReturnType<typeof cachedResolveEntity>>;
+    try {
+      resolution = await cachedResolveEntity(query);
+    } catch {
+      // Yahoo APIs completely unreachable — construct minimal entity
+      const ticker = query.trim().toUpperCase();
+      resolution = {
+        ok: true,
+        mode: "ticker",
+        input: query,
+        ticker,
+        companyName: ticker,
+        exchange: "",
+        quoteType: "EQUITY",
+        price: null,
+        currency: null,
+        entityLock: `ENTITY: ${ticker} - ${ticker}`,
+      };
+    }
     let financials: FinancialMetrics | null = null;
     let industryData = "";
 
