@@ -66,6 +66,18 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     blockType: "callout",
   },
   {
+    command: "evidence",
+    label: "证据占位",
+    description: "插入证据占位块，在右栏补充真实数据",
+    blockType: "evidence_placeholder",
+  },
+  {
+    command: "live",
+    label: "实时块占位",
+    description: "插入实时块占位，在 Live Blocks 区域补充",
+    blockType: "live_placeholder",
+  },
+  {
     command: "分析",
     label: "分析",
     description: "输入 ticker 或主题，生成分析插入正文",
@@ -90,7 +102,11 @@ export function filterSlashCommands(query: string): SlashCommand[] {
  */
 export function slashQuery(text: string): string | null {
   if (!text.startsWith("/")) return null;
-  return text.slice(1) || null;
+  const q = text.slice(1);
+  // Slash mode only for a single token — if there's a space, the user
+  // has moved past the command and is typing regular text.
+  if (q.includes(" ")) return null;
+  return q;
 }
 
 /** Extract the argument from a slash command like `/分析 TSLA` → `TSLA`. */
