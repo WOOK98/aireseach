@@ -55,13 +55,10 @@ export function buildInputSpine(
 }
 
 export function hasVerifiedInput(spine: InputSpine): boolean {
-  // At least one of: financials, industry data, IMA knowledge, or resolved entity
-  return (
-    spine.hasFinancials ||
-    spine.hasIndustryData ||
-    spine.hasImaKnowledge ||
-    spine.hasResolvedEntity
-  );
+  // Resolved entity alone is identity (ticker/company name), NOT financial evidence.
+  // Require at least one verified data source: financials, industry data, or IMA knowledge.
+  // Identity-only mode should produce a labeled research outline, not a factual report.
+  return spine.hasFinancials || spine.hasIndustryData || spine.hasImaKnowledge;
 }
 
 // ── Numeric formatting ──────────────────────────────────────────────────────

@@ -107,6 +107,20 @@ describe("buildInputSpine", () => {
     expect(spine.hasImaKnowledge).toBe(true);
     expect(spine.verifiedSources).toHaveLength(3);
   });
+
+  it("sets hasResolvedEntity and adds source when resolved entity provided", () => {
+    const spine = buildInputSpine(null, "", "", {
+      ok: true,
+      ticker: "TSLA",
+      companyName: "Tesla, Inc.",
+    });
+
+    expect(spine.hasResolvedEntity).toBe(true);
+    expect(spine.hasFinancials).toBe(false);
+    expect(spine.verifiedSources).toHaveLength(1);
+    expect(spine.verifiedSources[0]).toContain("Tesla, Inc.");
+    expect(spine.verifiedSources[0]).toContain("TSLA");
+  });
 });
 
 // ── hasVerifiedInput ─────────────────────────────────────────────────────────
@@ -160,7 +174,9 @@ describe("hasVerifiedInput", () => {
     expect(hasVerifiedInput(spine)).toBe(true);
   });
 
-  it("returns true when only resolved entity present", () => {
+  it("returns false when only resolved entity present (identity ≠ evidence)", () => {
+    // Resolved entity is just identity (ticker/company name), not financial evidence.
+    // Identity-only mode should produce a labeled research outline, not a factual report.
     const spine: InputSpine = {
       hasFinancials: false,
       hasIndustryData: false,
@@ -169,7 +185,7 @@ describe("hasVerifiedInput", () => {
       verifiedSources: ["实体解析: Tesla, Inc. (TSLA)"],
     };
 
-    expect(hasVerifiedInput(spine)).toBe(true);
+    expect(hasVerifiedInput(spine)).toBe(false);
   });
 
   it("returns true when all inputs present", () => {
