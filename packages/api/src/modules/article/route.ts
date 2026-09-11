@@ -581,23 +581,48 @@ articleRoute.get("/debug-env", async (c) => {
 // TEMP DEBUG: test LLM call directly (remove after fixing #205)
 articleRoute.get("/debug-llm", async (c) => {
   try {
-    const model = getArticleModelConfig();
-    const result = await generateText({
-      model,
-      prompt: "Reply with exactly: OK",
-      maxOutputTokens: 100,
-    });
-    return c.json({
-      ok: true,
-      text: result.text,
-      usage: result.usage,
-      finishReason: result.finishReason,
-    });
+    // Raw HTTP call to Kimi API to see the exact response format
+    const rawResponse = await fetch(
+      "https://api.kimi.com/coding/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.KIMI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "k3",
+          messages: [{ role: "user", content: "Reply with exactly: OK" }],
+          max_tokens: 500,
+        }),
+      },
+    );
+    const rawJson = await rawResponse.json();
+
+    // Also test via AI SDK
+    let sdkResult = null;
+    let sdkError = null;
+    try {
+      const model = getArticleModelConfig();
+      const result = await generateText({
+        model,
+        prompt: "Reply with exactly: OK",
+        maxOutputTokens: 500,
+      });
+      sdkResult = {
+        text: result.text,
+        usage: result.usage,
+        finishReason: result.finishReason,
+      };
+    } catch (err) {
+      sdkError = err instanceof Error ? err.message : String(err);
+    }
+
+    return c.json({ raw: rawJson, sdk: sdkResult, sdkError });
   } catch (err) {
     return c.json({
       ok: false,
       error: err instanceof Error ? err.message : String(err),
-      name: err instanceof Error ? err.name : "unknown",
     });
   }
 });
