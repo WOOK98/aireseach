@@ -584,10 +584,15 @@ articleRoute.get("/debug-llm", async (c) => {
     const model = getArticleModelConfig();
     const result = await generateText({
       model,
-      prompt: "Say OK",
-      maxOutputTokens: 10,
+      prompt: "Reply with exactly: OK",
+      maxOutputTokens: 100,
     });
-    return c.json({ ok: true, text: result.text });
+    return c.json({
+      ok: true,
+      text: result.text,
+      usage: result.usage,
+      finishReason: result.finishReason,
+    });
   } catch (err) {
     return c.json({
       ok: false,
