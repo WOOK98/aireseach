@@ -365,7 +365,7 @@ articleRoute.post(
     try {
       resolution = await cachedResolveEntity(query);
     } catch {
-      // Yahoo APIs completely unreachable — construct minimal entity
+      // redline-allow: Yahoo APIs completely unreachable — construct minimal entity
       const ticker = query.trim().toUpperCase();
       resolution = {
         ok: true,
