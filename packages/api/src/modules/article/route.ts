@@ -467,7 +467,7 @@ articleRoute.post(
               attempt === 0
                 ? userPrompt
                 : `${userPrompt}\n\n上一次输出验证失败（${lastError?.message ?? "schema error"}）。请修正：\n1. 确保每个 section/visual/risk 的 evidenceIds 引用 evidence[] 中存在的 id\n2. 确保 evidence[] 中每条都被至少一个 evidenceIds 引用\n3. 确保非 empty visual 的 source/date 必填`,
-            temperature: 0.3,
+            temperature: 1, // Kimi K3 only supports temperature=1
             maxOutputTokens: ARTICLE_MAX_OUTPUT_TOKENS,
           });
 
@@ -715,7 +715,7 @@ articleRoute.get("/debug-article/:query", async (c) => {
       model,
       system: systemPrompt,
       prompt: userPrompt,
-      temperature: 0.3,
+      temperature: 1, // Kimi K3 only supports temperature=1
       maxOutputTokens: ARTICLE_MAX_OUTPUT_TOKENS,
     });
 
