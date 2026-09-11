@@ -55,10 +55,15 @@ export function buildInputSpine(
 }
 
 export function hasVerifiedInput(spine: InputSpine): boolean {
-  // Resolved entity alone is identity (ticker/company name), NOT financial evidence.
-  // Require at least one verified data source: financials, industry data, or IMA knowledge.
-  // Identity-only mode should produce a labeled research outline, not a factual report.
-  return spine.hasFinancials || spine.hasIndustryData || spine.hasImaKnowledge;
+  // Any data source opens the gate. Resolved entity alone also opens it —
+  // the LLM can generate qualitative analysis from training knowledge
+  // without fabricating specific financial numbers (prompt enforces this).
+  return (
+    spine.hasFinancials ||
+    spine.hasIndustryData ||
+    spine.hasImaKnowledge ||
+    spine.hasResolvedEntity
+  );
 }
 
 // ── Numeric formatting ──────────────────────────────────────────────────────

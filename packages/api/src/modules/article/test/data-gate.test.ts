@@ -174,9 +174,10 @@ describe("hasVerifiedInput", () => {
     expect(hasVerifiedInput(spine)).toBe(true);
   });
 
-  it("returns false when only resolved entity present (identity ≠ evidence)", () => {
-    // Resolved entity is just identity (ticker/company name), not financial evidence.
-    // Identity-only mode should produce a labeled research outline, not a factual report.
+  it("returns true when only resolved entity present (training knowledge mode)", () => {
+    // Resolved entity alone opens the gate — the LLM generates qualitative
+    // analysis from training knowledge. The prompt explicitly forbids
+    // fabricating financial numbers when verified data is unavailable.
     const spine: InputSpine = {
       hasFinancials: false,
       hasIndustryData: false,
@@ -185,7 +186,7 @@ describe("hasVerifiedInput", () => {
       verifiedSources: ["实体解析: Tesla, Inc. (TSLA)"],
     };
 
-    expect(hasVerifiedInput(spine)).toBe(false);
+    expect(hasVerifiedInput(spine)).toBe(true);
   });
 
   it("returns true when all inputs present", () => {
