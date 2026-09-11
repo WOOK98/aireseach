@@ -577,3 +577,22 @@ articleRoute.get("/debug-env", async (c) => {
     hasOpenaiKey: !!env.OPENAI_API_KEY,
   });
 });
+
+// TEMP DEBUG: test LLM call directly (remove after fixing #205)
+articleRoute.get("/debug-llm", async (c) => {
+  try {
+    const model = getArticleModelConfig();
+    const result = await generateText({
+      model,
+      prompt: "Say OK",
+      maxOutputTokens: 10,
+    });
+    return c.json({ ok: true, text: result.text });
+  } catch (err) {
+    return c.json({
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+      name: err instanceof Error ? err.name : "unknown",
+    });
+  }
+});
