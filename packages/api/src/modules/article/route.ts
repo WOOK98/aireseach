@@ -365,7 +365,7 @@ articleRoute.post(
     try {
       resolution = await cachedResolveEntity(query);
     } catch {
-      // Yahoo APIs completely unreachable — construct minimal entity
+      // redline-allow: Yahoo APIs completely unreachable — construct minimal entity
       const ticker = query.trim().toUpperCase();
       resolution = {
         ok: true,
@@ -565,3 +565,15 @@ articleRoute.get(
     });
   },
 );
+
+// TEMP DEBUG: check env var availability (remove after fixing #205)
+articleRoute.get("/debug-env", async (c) => {
+  return c.json({
+    hasKimiKey: !!env.KIMI_API_KEY,
+    kimiKeyLen: env.KIMI_API_KEY?.length ?? 0,
+    hasLlmKey: !!env.LLM_API_KEY,
+    llmKeyLen: env.LLM_API_KEY?.length ?? 0,
+    hasDeepseekKey: !!env.DEEPSEEK_API_KEY,
+    hasOpenaiKey: !!env.OPENAI_API_KEY,
+  });
+});
